@@ -8,16 +8,19 @@ Library           String
 
 *** Test Cases ***
 InstallTestshimucTpl
+    [Tags]    testshimuc1
     Given Unlock token holder succeed
     ${reqId} =    When User installs contract template    github.com/palletone/go-palletone/contracts/example/go/testshimuc1    testshimuc
     Then Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
 
 DeployTestshimuc
+    [Tags]    testshimuc1
     Given Unlock token holder succeed
     ${reqId} =    When User deploys contract
     Then Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
 
 AddState
+    [Tags]    testshimuc1
     Given Unlock token holder succeed
     ${reqId}=    When User put state    testPutState    state1    state1
     And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
@@ -41,6 +44,7 @@ AddState
     And User query state    testGetContractAllState    ${null}    ${allState}    dict    ${null}
 
 DelState
+    [Tags]    testshimuc1
     Given Unlock token holder succeed
     ${reqId}=    When User delete state    testDelState    state1
     And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
@@ -55,6 +59,7 @@ DelState
     And User query state    testGetContractAllState    ${null}    ${allState}    dict    ${null}
 
 HandleToken
+    [Tags]    testshimuc1
     Given Unlock token holder succeed
     # -> define token
     ${reqId}=    When User define token    my token    YY    1    100000
@@ -77,16 +82,19 @@ HandleToken
     And Query balance by contract    ${newAddr}    PTN    ${4500}
 
 TestSendRecvJury
+    [Tags]    testshimuc1
     Given Unlock token holder succeed
     ${reqId}=    When Test send and recv jury by contract
     Then Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
 
 TestSetEvent
+    [Tags]    testshimuc1
     Given Unlock token holder succeed
     ${reqId}=    When Test set_event by contract
     Then Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
 
 Get Invoke Info
+    [Tags]    testshimuc1
     Given Unlock token holder succeed
     ${args}=    And Create List    arg1    arg2
     ${newAddr}=    newAccount
@@ -96,6 +104,7 @@ Get Invoke Info
     Then Check all invoke info    ${payload}    ${args}    testGetInvokeInfo    ${reqId}    ${newAddr}
 
 Stop testshimuc contract
+    [Tags]    testshimuc1
     Given Unlock token holder succeed
     ${reqId}=    Then stopContract    ${tokenHolder}    ${tokenHolder}    100    100    ${gContractId}
     And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}

@@ -5,11 +5,13 @@ Resource          ../../commonlib/setups.robot
 
 *** Test Cases ***
 install
+    [Tags]    trace
     Given Unlock token holder succeed
     ${reqId} =    When User installs contract template    github.com/palletone/go-palletone/contracts/example/go/trace    trace
     Then Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
 
 deploy
+    [Tags]    trace
     Given Unlock token holder succeed
     ${reqId} =    When User deploys contract
     Then Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
@@ -17,6 +19,7 @@ deploy
 
 invoke01
     [Documentation]    tokenholder
+    [Tags]    trace
     GetAdmin
     Given Unlock token holder succeed
     ${reqId} =    AddProof    ${tokenHolder}    enterprises    enterprisesId1    enterprisesMessage1    enterprisesId1
@@ -37,6 +40,7 @@ invoke01
 
 invoke02
     [Documentation]    ${newAddr}
+    [Tags]    trace
     ${newAddr}    newAccount
     log    ${newAddr}
     unlockAddr    ${newAddr}    1
@@ -71,6 +75,7 @@ invoke02
 
 invoke03
     [Documentation]    ${newAddr1}
+    [Tags]    trace
     ${newAddr1}    newAccount
     log    ${newAddr1}
     unlockAddr    ${newAddr1}    1
@@ -144,6 +149,7 @@ invoke03
     GetProofByCategory    goods
 
 stop
+    [Tags]    trace
     Given Unlock token holder succeed
     ${reqId}=    Then stopContract    ${tokenHolder}    ${tokenHolder}    100    100    ${gContractId}
     And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}

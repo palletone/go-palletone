@@ -196,7 +196,7 @@ func (s *PublicMediatorAPI) GetSchedule() (*modules.MediatorSchedule, error) {
 	return s.Dag().GetMediatorSchl(), nil
 }
 
-// 返回距离下一个生产槽的时间差（秒）
+// 返回当前离下一个生产槽的时间差（秒）
 func (s *PublicMediatorAPI) NextSlotTime() (int64, error) {
 	// 获取当前的生产槽的编号
 	//nowFine := time.Now()
@@ -210,6 +210,18 @@ func (s *PublicMediatorAPI) NextSlotTime() (int64, error) {
 	// 获取下个生产槽的时间
 	nextSlotTime := s.Dag().GetSlotTime(slot+1)
 	diffSecs := nextSlotTime.Unix() - now.Unix()
+
+	return diffSecs, nil
+}
+
+// 返回当前离下一次换届的时间差（秒）
+func (s *PublicMediatorAPI) NextUpdateTime() (int64, error) {
+	now := time.Now()
+
+	dgp := s.Dag().GetDynGlobalProp()
+	nextUpdateTime := int64(dgp.NextMaintenanceTime)
+
+	diffSecs := nextUpdateTime - now.Unix()
 
 	return diffSecs, nil
 }
@@ -421,7 +433,7 @@ func (a *PrivateMediatorAPI) Vote(voterStr string, mediatorStrs []string) (*TxEx
 	}
 
 	// 创建交易
-	tx, fee, err := a.Dag().GenVoteMediatorTx(voter, mp, a.TxPool())
+	tx, fee, err := a.Dag().GenVoteMediatorTx(voter, mp)
 	if err != nil {
 		return nil, err
 	}

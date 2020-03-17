@@ -40,7 +40,6 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/palletcache"
-	"github.com/palletone/go-palletone/txspool"
 	"github.com/palletone/go-palletone/validator"
 )
 
@@ -67,7 +66,7 @@ func TestMemDag_AddUnit(t *testing.T) {
 	memdag := NewMemDag(gasToken, 2, false,
 		db, unitRep, propRep, stateRep, cache(), tokenengine.Instance, validator.NewValidatorAllPass)
 	parent := common.HexToHash("0x2c30cd5b06c4c6d184aae3e1ed76492f16a0fa335673dba99c8efa813c1a1e30")
-	_, _, _, _, _, err := memdag.AddUnit(newTestUnit(parent, 1, key2), nil, true)
+	_, _, _, _, _, err := memdag.AddUnit(newTestUnit(parent, 1, key2), true)
 	assert.Nil(t, err)
 }
 func BenchmarkMemDag_AddUnit(b *testing.B) {
@@ -96,7 +95,7 @@ func BenchmarkMemDag_AddUnit(b *testing.B) {
 	parentHash := lastHeader.Hash()
 	for i := 0; i < b.N; i++ {
 		unit := newTestUnit(parentHash, uint64(i+1), key1)
-		_, _, _, _, _, err := memdag.AddUnit(unit, nil, true)
+		_, _, _, _, _, err := memdag.AddUnit(unit, true)
 		assert.Nil(b, err)
 		parentHash = unit.Hash()
 	}
@@ -150,10 +149,10 @@ func newTestHeader(parentHash common.Hash, height uint64, key []byte) *modules.H
 func TestMemDag_AddOrphanUnit(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
-	txpool := txspool.NewMockITxPool(mockCtrl)
+	//txpool := txpool2.NewMockITxPool(mockCtrl)
 	lastHeader := newTestUnit(common.Hash{}, 0, key1)
-	txpool.EXPECT().SetPendingTxs(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
-	txpool.EXPECT().ResetPendingTxs(gomock.Any()).Return(nil).AnyTimes()
+	//txpool.EXPECT().SetPendingTxs(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	//txpool.EXPECT().ResetPendingTxs(gomock.Any()).Return(nil).AnyTimes()
 	db, _ := ptndb.NewMemDatabase()
 	dagDb := storage.NewDagDb(db)
 	utxoDb := storage.NewUtxoDb(db, tokenengine.Instance, false)
@@ -174,18 +173,18 @@ func TestMemDag_AddOrphanUnit(t *testing.T) {
 	log.Debugf("Try add unit[%x] to memdag, index: %d", u1.Hash(), u1.NumberU64())
 
 	log.Debugf("unit txs:[%#x]", u1.Txs.GetTxIds())
-	_, _, _, _, _, err := memdag.AddUnit(u1, txpool, true)
+	_, _, _, _, _, err := memdag.AddUnit(u1, true)
 	assert.Nil(t, err)
 	assert.EqualValues(t, 1, memdag.GetLastMainChainUnit().NumberU64())
 
 	u2 := newTestUnit(u1.Hash(), 2, key1)
 	u3 := newTestUnit(u2.Hash(), 3, key2)
 	log.Debugf("Try add orphan unit[%x] to memdag, index: %d", u3.Hash(), u3.NumberU64())
-	_, _, _, _, _, err = memdag.AddUnit(u3, txpool, true)
+	_, _, _, _, _, err = memdag.AddUnit(u3, true)
 	assert.Nil(t, err)
 	assert.EqualValues(t, 1, memdag.GetLastMainChainUnit().NumberU64())
 	log.Debugf("Try add missed unit[%x] to memdag, index: %d", u2.Hash(), u2.NumberU64())
-	_, _, _, _, _, err = memdag.AddUnit(u2, txpool, true)
+	_, _, _, _, _, err = memdag.AddUnit(u2, true)
 	assert.Nil(t, err)
 	time.Sleep(1 * time.Second)
 	assert.EqualValues(t, 3, memdag.GetLastMainChainUnit().NumberU64())
@@ -195,9 +194,9 @@ func TestMemDag_AddOrphanUnit(t *testing.T) {
 func TestMemDag_SwitchMainChain(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
-	txpool := txspool.NewMockITxPool(mockCtrl)
-	txpool.EXPECT().SetPendingTxs(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
-	txpool.EXPECT().ResetPendingTxs(gomock.Any()).Return(nil).AnyTimes()
+	//txpool := txpool2.NewMockITxPool(mockCtrl)
+	//txpool.EXPECT().SetPendingTxs(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	//txpool.EXPECT().ResetPendingTxs(gomock.Any()).Return(nil).AnyTimes()
 	u0 := newTestUnit(common.Hash{}, 1, key1)
 
 	db, _ := ptndb.NewMemDatabase()
@@ -219,20 +218,20 @@ func TestMemDag_SwitchMainChain(t *testing.T) {
 
 	u1 := newTestUnit(u0.Hash(), 2, key2)
 	log.Debugf("Try add unit[%x] to memdag", u1.Hash())
-	_, _, _, _, _, err := memdag.AddUnit(u1, txpool, true)
+	_, _, _, _, _, err := memdag.AddUnit(u1, true)
 	assert.Nil(t, err)
 	assert.EqualValues(t, 2, memdag.GetLastMainChainUnit().NumberU64())
 
 	u22 := newTestUnit(u0.Hash(), 2, key1)
 	log.Debugf("Try add side unit[%x] to memdag", u22.Hash())
-	_, _, _, _, _, err = memdag.AddUnit(u22, txpool, true)
+	_, _, _, _, _, err = memdag.AddUnit(u22, true)
 	assert.Nil(t, err)
 	assert.EqualValues(t, u1.Hash(), memdag.GetLastMainChainUnit().Hash())
 
 	u33 := newTestUnit(u22.Hash(), 3, key2)
 	log.Debugf("Try add new longest chain unit[%x] to memdag", u33.Hash())
 
-	_, _, _, _, _, err = memdag.AddUnit(u33, txpool, true)
+	_, _, _, _, _, err = memdag.AddUnit(u33, true)
 	assert.Nil(t, err)
 	time.Sleep(1 * time.Second)
 	assert.EqualValues(t, 3, memdag.GetLastMainChainUnit().NumberU64())

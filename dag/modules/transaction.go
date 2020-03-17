@@ -743,6 +743,29 @@ func (tx *Transaction) GetFromAddrs(queryUtxoFunc QueryUtxoFunc, getAddrFunc Get
 	}
 	return keys, nil
 }
+func (tx *Transaction) GetToAddrs(getAddrFunc GetAddressFromScriptFunc) ([]common.Address, error) {
+	resultMap := map[common.Address]int{}
+	msgs := tx.TxMessages()
+	for _, msg := range msgs {
+		if msg.App == APP_PAYMENT {
+			pay := msg.Payload.(*PaymentPayload)
+			for _, output := range pay.Outputs {
+				lockScript := output.PkScript
+				addr, _ := getAddrFunc(lockScript)
+				if _, ok := resultMap[addr]; !ok {
+					resultMap[addr] = 1
+				}
+			}
+
+		}
+	}
+
+	keys := make([]common.Address, 0, len(resultMap))
+	for k := range resultMap {
+		keys = append(keys, k)
+	}
+	return keys, nil
+}
 
 //获取该交易的发起人地址
 func (tx *Transaction) GetRequesterAddr(queryUtxoFunc QueryUtxoFunc, getAddrFunc GetAddressFromScriptFunc) (
@@ -918,6 +941,22 @@ func (tx *Transaction) IsSystemContract() bool {
 		}
 	}
 	return false //没有Request，当然就不是系统合约
+}
+
+//是否是一个用户合约的交易
+func (tx *Transaction) IsUserContract() bool {
+	for _, msg := range tx.txdata.TxMessages {
+		if msg.App == APP_CONTRACT_INVOKE_REQUEST {
+			contractId := msg.Payload.(*ContractInvokeRequestPayload).ContractId
+			contractAddr := common.NewAddress(contractId, common.ContractHash)
+			//log.Debug("isSystemContract", "contract id", contractAddr, "len", len(contractAddr))
+			return !contractAddr.IsSystemContractAddress() //, nil
+
+		} else if msg.App == APP_CONTRACT_DEPLOY_REQUEST || msg.App == APP_CONTRACT_STOP_REQUEST {
+			return true //只有用户合约才有deploy和stop
+		}
+	}
+	return false //没有Request，当然就不是合约
 }
 
 //判断一个交易是否是一个合约请求交易，并且还没有被执行
