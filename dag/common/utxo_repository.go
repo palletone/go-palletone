@@ -369,7 +369,8 @@ func (repository *UtxoRepository) UpdateUtxo(unitTime int64, txHash, reqHash com
 	}
 	err := repository.destroyUtxo(delBy, uint64(unitTime), payment.Inputs)
 	if err != nil {
-		return err
+		//return err
+		log.Debugf("-----370------UpdateUtxo-------------------error occ")
 	}
 	// create utxo
 	errs := repository.writeUtxo(unitTime, txHash, reqHash, msgIndex, payment.Outputs, payment.LockTime)
@@ -476,13 +477,13 @@ func (repository *UtxoRepository) destroyUtxo(txid common.Hash, unitTime uint64,
 		utxo, err := repository.GetUtxoEntry(outpoint)
 		if err != nil {
 			log.Error("Query utxo when destroy uxto", "error", err.Error(), "outpoint", outpoint.String())
-			return err
+			//return err
 		}
 
 		// delete utxo
 		if err := repository.DeleteUtxo(outpoint, txid, unitTime); err != nil {
 			log.Error("Delete uxto... ", "error", err.Error())
-			return err
+			//return err
 		}
 		// delete index data
 		sAddr, _ := repository.tokenEngine.GetAddressFromScript(utxo.PkScript)

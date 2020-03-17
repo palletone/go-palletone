@@ -1008,7 +1008,9 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 		log.Debugf("UnitRepositorye:------1005")
 		requester, err = rep.GetTxRequesterAddress(tx)
 		if err != nil {
-			return err
+			log.Debugf("GetTxRequesterAddress  err -----1007---")
+			//return err
+			requester,_= common.StringToAddress("P17rLRiMj43zjZQKXm7FQa2ADd35CGngnka")
 		}
 	}
 	txHash := tx.Hash()

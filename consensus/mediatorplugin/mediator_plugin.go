@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"strconv"
 	"time"
+    "sync"
 
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common"
@@ -56,19 +57,20 @@ func (mp *MediatorPlugin) scheduleProductionLoop() {
 	now := time.Now()
 	timeToNextSecond := time.Second - time.Duration(now.Nanosecond())
 	if timeToNextSecond < 50*time.Millisecond {
-		timeToNextSecond += time.Second
+		timeToNextSecond += time.Second*2
 	}
 
 	// 2. 安排unit生产循环
 	// Start to production unit for expiration
 	timeout := time.NewTimer(timeToNextSecond)
 	defer timeout.Stop()
-
 	// production unit until termination is requested
 	select {
 	case <-mp.quit:
+		mp.wg.Done()
 		return
 	case <-mp.stopProduce:
+		mp.wg.Done()
 		return
 	case <-timeout.C:
 		go mp.unitProductionLoop()
@@ -94,11 +96,11 @@ const (
 func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 	//log.Debugf("launch unitProductionLoop")
 	mp.wg.Add(1)
-	defer mp.wg.Done()
+	//defer wg.Done()
 
 	// 1. 尝试生产unit
-	result, detail := mp.maybeProduceUnit()
-    log.Debugf("-------unitProductionLoop--------101---------------%+v\n",result)
+	result, detail := mp.maybeProduceUnit(&mp.wg)
+
 	// 2. 打印尝试结果
 	switch result {
 	case Produced:
@@ -129,15 +131,16 @@ func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 	default:
 		log.Infof("Unknown condition when producing unit!")
 	}
-
+    mp.wg.Wait()
 	// 3. 继续循环生产计划
 	go mp.scheduleProductionLoop()
 
 	return result
 }
 
-func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]string) {
+func (mp *MediatorPlugin) maybeProduceUnit(wg *sync.WaitGroup) (ProductionCondition, map[string]string) {
 	//log.Debugf("try to produce unit")
+	defer wg.Done()
 	detail := make(map[string]string)
 	dag := mp.dag
     log.Debugf("-------maybeProduceUnit--------143---------------")

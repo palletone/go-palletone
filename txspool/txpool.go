@@ -1607,20 +1607,19 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 	log.Debugf("unithigh-------1604----------%d\n",unithigh)
 	map_pretxs := make(map[common.Hash]int)
 	// get sequenTxs
-	stxs := pool.GetSequenTxs()
+	stxs_txs := pool.GetSequenTxs()
 	poolTxs := pool.AllTxpoolTxs()
 	orphanTxs := pool.AllOrphanTxs()
-
-	/*or_list := make(orList, 0)
-	for _, tx := range stxs {
-		or_list = append(or_list, tx)
+	unit_size := common.StorageSize(parameter.CurrentSysParameters.UnitMaxSize)
+	
+    stxs := make(orList, 0)
+	for _, tx := range stxs_txs {
+		stxs = append(stxs, tx)
 	}
 	// 按入池时间排序
-	if len(or_list) > 1 {
-		sort.Sort(or_list)
-	}*/
-
-	unit_size := common.StorageSize(parameter.CurrentSysParameters.UnitMaxSize)
+	if len(stxs) > 1 {
+		sort.Sort(stxs)
+	}
 	for _, tx := range stxs {
 		list = append(list, tx)
 		total += tx.Tx.Size()
@@ -1644,6 +1643,8 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 				}
 				log.Debugf("pool tx  is not  nil      ")
 				// add precusorTxs 获取该交易的前驱交易列表
+				poolTxs = pool.AllTxpoolTxs()
+	            orphanTxs = pool.AllOrphanTxs()
 				_, p_txs := pool.getPrecusorTxs(tx, poolTxs, orphanTxs)
 				for _, p_tx := range p_txs {
 					if _, has := map_pretxs[p_tx.Tx.Hash()]; !has {
@@ -1898,25 +1899,25 @@ func (pool *TxPool) addOrphan(otx *TxPoolTransaction, tag uint64) {
 	otx.Tag = tag
 	otx.IsOrphan = true
 	pool.orphans.Store(otx.Tx.Hash(), otx)
-
-	for i, msg := range otx.Tx.TxMessages() {
-		if msg.App == modules.APP_PAYMENT {
-			payment, ok := msg.Payload.(*modules.PaymentPayload)
-			if ok {
-				// add utxo in outputs
-				preout := modules.OutPoint{TxHash: otx.Tx.Hash()}
-				for j, out := range payment.Outputs {
-					preout.MessageIndex = uint32(i)
-					preout.OutIndex = uint32(j)
-					utxo := &modules.Utxo{Amount: out.Value, Asset: &modules.Asset{
-						AssetId: out.Asset.AssetId, UniqueId: out.Asset.UniqueId},
-						PkScript: out.PkScript[:]}
-					pool.outputs.Store(preout, utxo)
-				}
-				log.Debugf("Stored orphan tx's hash:[%s] (total: %d)", otx.Tx.Hash().String(), len(pool.AllOrphanTxs()))
-			}
-		}
-	}
+	log.Debugf("Stored orphan tx's hash:[%s] (total: %d)", otx.Tx.Hash().String(), len(pool.AllOrphanTxs()))
+	//for i, msg := range otx.Tx.TxMessages() {
+	//	if msg.App == modules.APP_PAYMENT {
+	//		payment, ok := msg.Payload.(*modules.PaymentPayload)
+	//		if ok {
+	//			// add utxo in outputs
+	//			preout := modules.OutPoint{TxHash: otx.Tx.Hash()}
+	//			for j, out := range payment.Outputs {
+	//				preout.MessageIndex = uint32(i)
+	//				preout.OutIndex = uint32(j)
+	//				utxo := &modules.Utxo{Amount: out.Value, Asset: &modules.Asset{
+	//					AssetId: out.Asset.AssetId, UniqueId: out.Asset.UniqueId},
+	//					PkScript: out.PkScript[:]}
+	//				pool.outputs.Store(preout, utxo)
+	//			}
+	//
+	//		}
+	//	}
+	//}
 }
 
 func (pool *TxPool) removeOrphan(tx *TxPoolTransaction, reRedeemers bool) {
