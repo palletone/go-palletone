@@ -140,8 +140,11 @@ func New(ctx *node.ServiceContext, config *ptn.Config, protocolname string, cach
 	if config.TxPool.Journal != "" {
 		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
 	}
-	lptn.txPool = txpool2.NewTxPool(config.TxPool, cache, lptn.dag)
-
+	if config.TxPool.Version==2{
+		lptn.txPool = txpool2.NewTxPool(config.TxPool, cache, lptn.dag)
+	}else {
+		lptn.txPool = txspool.NewTxPool(config.TxPool, cache, lptn.dag)
+	}
 	if lptn.protocolManager, err = NewProtocolManager(true, lptn.peers, config.NetworkId, gasToken, nil,
 		dag, lptn.eventMux, genesis, quitSync, configure.LPSProtocol); err != nil {
 		return nil, err

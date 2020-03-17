@@ -165,8 +165,11 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
 	}
 	//val:=validator.NewValidate(ptn.dag,ptn.dag,ptn.dag,ptn.dag,cache)
-	ptn.txPool = txpool2.NewTxPool(config.TxPool, cache, dag)
-
+	if config.TxPool.Version==2{
+		ptn.txPool = txpool2.NewTxPool(config.TxPool, cache, ptn.dag)
+	}else {
+		ptn.txPool = txspool.NewTxPool(config.TxPool, cache, ptn.dag)
+	}
 	//Test for P2P
 	ptn.engine = consensus.New(dag, ptn.txPool)
 
