@@ -1,0 +1,49 @@
+name: MediatorBdd
+
+on: push
+
+jobs:
+
+  job1:
+    name: MediatorBdd
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Set up Go 1.12
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.12
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v2
+
+    - name: Install Dependencies
+      run: |
+            sudo -H pip install --upgrade pip
+            sudo -H pip install robotframework==2.8.5
+            sudo -H pip install requests
+            sudo -H pip install robotframework-requests
+            sudo -H pip install demjson
+            sudo -H pip install pexpect
+            sudo -H apt-get install expect
+
+    - name: Build Gptn
+      run: |
+           go build -mod=vendor ./cmd/gptn
+
+    - name: Run Mediator Vote
+      run: |
+           mkdir bdd/mediator-vote/node
+           cp gptn bdd/mediator-vote/node
+           cd ./bdd/mediator-vote
+           chmod +x ./init.sh
+           ./init.sh
+           sleep 15
+           python -m robot.run -d ../logs .
+
+    - name: Upload artifact
+      if: always()
+      uses: actions/upload-artifact@v1
+      with:
+        name: mediatorLogs
+        path: bdd/logs
