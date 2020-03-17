@@ -6,64 +6,64 @@ Resource          ../../commonlib/setups.robot
 *** Test Cases ***
 Install
     [Tags]    container
-    Given Unlock token holder succeed
-    ${reqId} =    When User installs contract template    github.com/palletone/go-palletone/contracts/example/go/container    container
-    Then Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
+    #    Given Unlock token holder succeed
+    #    ${reqId} =    When User installs contract template    github.com/palletone/go-palletone/contracts/example/go/container    container
+    #    Then Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
 
 Deploy
     [Tags]    container
-    Given Unlock token holder succeed
-    ${reqId} =    When User deploys contract
-    Then Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
-    sleep    10
+    #    Given Unlock token holder succeed
+    #    ${reqId} =    When User deploys contract
+    #    Then Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
+    #    sleep    10
 
 Invoke
     [Tags]    container
-    Given Unlock token holder succeed
-    ${reqId} =    GetValueWithInvokeAddress
-    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
-    Given Unlock token holder succeed
-    ${reqId} =    OutOfMemory
+    #    Given Unlock token holder succeed
+    #    ${reqId} =    GetValueWithInvokeAddress
+    #    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
+    #    Given Unlock token holder succeed
+    #    ${reqId} =    OutOfMemory
     #    ${reqId}    ${true}
-    sleep    60
-    GetTxByReqId    ${reqId}
-    Given Unlock token holder succeed
-    ${reqId} =    GetValueWithInvokeAddress
-    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
-    Given Unlock token holder succeed
-    ${reqId} =    DivideByZero
-    sleep    60
-    GetTxByReqId    ${reqId}
-    Given Unlock token holder succeed
-    ${reqId} =    GetValueWithInvokeAddress
-    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
-    Given Unlock token holder succeed
-    ${reqId} =    IndexOutOfRange
-    sleep    60
-    GetTxByReqId    ${reqId}
-    Given Unlock token holder succeed
-    ${reqId} =    GetValueWithInvokeAddress
-    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
-    Given Unlock token holder succeed
-    ${reqId} =    ForLoop
-    sleep    60
-    GetTxByReqId    ${reqId}
-    Given Unlock token holder succeed
-    ${reqId} =    GetValueWithInvokeAddress
-    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
-    Given Unlock token holder succeed
-    ${reqId} =    WriteHomePageToContainer
-    sleep    60
-    GetTxByReqId    ${reqId}
-    Given Unlock token holder succeed
-    ${reqId} =    GetValueWithInvokeAddress
-    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
+    #    sleep    60
+    #    GetTxByReqId    ${reqId}
+    #    Given Unlock token holder succeed
+    #    ${reqId} =    GetValueWithInvokeAddress
+    #    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
+    #    Given Unlock token holder succeed
+    #    ${reqId} =    DivideByZero
+    #    sleep    60
+    #    GetTxByReqId    ${reqId}
+    #    Given Unlock token holder succeed
+    #    ${reqId} =    GetValueWithInvokeAddress
+    #    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
+    #    Given Unlock token holder succeed
+    #    ${reqId} =    IndexOutOfRange
+    #    sleep    60
+    #    GetTxByReqId    ${reqId}
+    #    Given Unlock token holder succeed
+    #    ${reqId} =    GetValueWithInvokeAddress
+    #    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
+    #    Given Unlock token holder succeed
+    #    ${reqId} =    ForLoop
+    #    sleep    60
+    #    GetTxByReqId    ${reqId}
+    #    Given Unlock token holder succeed
+    #    ${reqId} =    GetValueWithInvokeAddress
+    #    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
+    #    Given Unlock token holder succeed
+    #    ${reqId} =    WriteHomePageToContainer
+    #    sleep    60
+    #    GetTxByReqId    ${reqId}
+    #    Given Unlock token holder succeed
+    #    ${reqId} =    GetValueWithInvokeAddress
+    #    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
 
 Stop
     [Tags]    container
-    Given Unlock token holder succeed
-    ${reqId}=    Then stopContract    ${tokenHolder}    ${tokenHolder}    100    100    ${gContractId}
-    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
+    #    Given Unlock token holder succeed
+    #    ${reqId}=    Then stopContract    ${tokenHolder}    ${tokenHolder}    100    100    ${gContractId}
+    #    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
 
 *** Keywords ***
 Invoke
