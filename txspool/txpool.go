@@ -1605,10 +1605,19 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 	unithigh := int64(chainindex.Index)
 	map_pretxs := make(map[common.Hash]int)
 	// get sequenTxs
-	stxs := pool.GetSequenTxs()
+	stxs_txs := pool.GetSequenTxs()
 	poolTxs := pool.AllTxpoolTxs()
 	orphanTxs := pool.AllOrphanTxs()
 	unit_size := common.StorageSize(parameter.CurrentSysParameters.UnitMaxSize)
+	
+    stxs := make(orList, 0)
+	for _, tx := range stxs_txs {
+		stxs = append(stxs, tx)
+	}
+	// 按入池时间排序
+	if len(stxs) > 1 {
+		sort.Sort(stxs)
+	}
 	for _, tx := range stxs {
 		list = append(list, tx)
 		total += tx.Tx.Size()
