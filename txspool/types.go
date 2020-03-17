@@ -66,6 +66,14 @@ func (tx *TxPoolTransaction) IsFrom(addr common.Address) bool {
 	}
 	return false
 }
+func (tx *TxPoolTransaction) IsTo(addr common.Address) bool {
+	for _, a := range tx.ToAddr {
+		if a == addr {
+			return true
+		}
+	}
+	return false
+}
 func (tx *TxPoolTransaction) GetTxFee2() uint64 {
 	total := uint64(0)
 	for _, aa := range tx.TxFee {
@@ -95,6 +103,7 @@ type TxPoolTransaction struct {
 	TxHash               common.Hash
 	ReqHash              common.Hash
 	FromAddr             []common.Address
+	ToAddr               []common.Address
 	IsSysContractRequest bool
 	IsUserContractFullTx bool
 

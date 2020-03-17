@@ -180,6 +180,7 @@ func (pool *TxPool) convertTx(tx *modules.Transaction, fee []*modules.Addition) 
 	for _, o := range tx.GetSpendOutpoints() {
 		dependOnTxs[o.TxHash] = false
 	}
+	txAddr, _ := tx.GetToAddrs(pool.tokenengine.GetAddressFromScript)
 
 	return &txspool.TxPoolTransaction{
 		Tx:                   tx,
@@ -190,6 +191,7 @@ func (pool *TxPool) convertTx(tx *modules.Transaction, fee []*modules.Addition) 
 		FromAddr:             fromAddr,
 		DependOnTxs:          dependOnTxs,
 		From:                 tx.GetSpendOutpoints(),
+		ToAddr:               txAddr,
 		IsSysContractRequest: tx.IsNewContractInvokeRequest() && tx.IsSystemContract(),
 		IsUserContractFullTx: tx.IsUserContract() && !tx.IsNewContractInvokeRequest(),
 	}
@@ -300,7 +302,7 @@ func (pool *TxPool) GetUnpackedTxsByAddr(addr common.Address) ([]*txspool.TxPool
 	}
 	result := []*txspool.TxPoolTransaction{}
 	for _, tx := range txs {
-		if tx.IsFrom(addr) {
+		if tx.IsFrom(addr) || tx.IsTo(addr) {
 			result = append(result, tx)
 		}
 	}

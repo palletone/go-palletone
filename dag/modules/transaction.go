@@ -743,6 +743,29 @@ func (tx *Transaction) GetFromAddrs(queryUtxoFunc QueryUtxoFunc, getAddrFunc Get
 	}
 	return keys, nil
 }
+func (tx *Transaction) GetToAddrs(getAddrFunc GetAddressFromScriptFunc) ([]common.Address, error) {
+	resultMap := map[common.Address]int{}
+	msgs := tx.TxMessages()
+	for _, msg := range msgs {
+		if msg.App == APP_PAYMENT {
+			pay := msg.Payload.(*PaymentPayload)
+			for _, output := range pay.Outputs {
+				lockScript := output.PkScript
+				addr, _ := getAddrFunc(lockScript)
+				if _, ok := resultMap[addr]; !ok {
+					resultMap[addr] = 1
+				}
+			}
+
+		}
+	}
+
+	keys := make([]common.Address, 0, len(resultMap))
+	for k := range resultMap {
+		keys = append(keys, k)
+	}
+	return keys, nil
+}
 
 //获取该交易的发起人地址
 func (tx *Transaction) GetRequesterAddr(queryUtxoFunc QueryUtxoFunc, getAddrFunc GetAddressFromScriptFunc) (
