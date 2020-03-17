@@ -138,7 +138,7 @@ func initGenesis(ctx *cli.Context) error {
 	}
 	log.Debugf("Save unit:%#v", unit)
 	//将Unit存入数据库中
-	err = dag.SaveUnit(unit, nil, true)
+	err = dag.SaveUnit(unit, true)
 	if err != nil {
 		return err
 	}

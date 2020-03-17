@@ -132,25 +132,24 @@ type txPool interface {
 	// AddRemotes should add the given transactions to the pool.
 	Stop()
 	AddLocal(tx *modules.Transaction) error
-	AddLocals(txs []*modules.Transaction) []error
-	AddSequenTx(tx *modules.Transaction) error
-	AddSequenTxs(txs []*modules.Transaction) error
-	AllHashs() []*common.Hash
-	AllTxpoolTxs() map[common.Hash]*txspool.TxPoolTransaction
+	//AddLocals(txs []*modules.Transaction) []error
+	//AddSequenTx(tx *modules.Transaction) error
+	//AddSequenTxs(txs []*modules.Transaction) error
+	//AllHashs() []*common.Hash
+	//AllTxpoolTxs() map[common.Hash]*txspool.TxPoolTransaction
 	Content() (map[common.Hash]*txspool.TxPoolTransaction, map[common.Hash]*txspool.TxPoolTransaction)
-	Get(hash common.Hash) (*txspool.TxPoolTransaction, common.Hash)
-	GetPoolTxsByAddr(addr string) ([]*txspool.TxPoolTransaction, error)
-	GetUnpackedTxsByAddr(addr string) ([]*txspool.TxPoolTransaction, error)
-	Stats() (int, int, int)
-	GetSortedTxs(hash common.Hash, index uint64) ([]*txspool.TxPoolTransaction, common.StorageSize)
-	SendStoredTxs(hashs []common.Hash) error
-	DiscardTxs(hashs []common.Hash) error
+	GetTx(hash common.Hash) (*txspool.TxPoolTransaction, error)
+	//GetPoolTxsByAddr(addr string) ([]*txspool.TxPoolTransaction, error)
+	GetUnpackedTxsByAddr(addr common.Address) ([]*txspool.TxPoolTransaction, error)
+	Status() (int, int, int)
+	GetSortedTxs(processor func(tx *txspool.TxPoolTransaction) (getNext bool, err error)) error
+	//SendStoredTxs(hashs []common.Hash) error
+	DiscardTxs(txs []*modules.Transaction) error
 	//DiscardTx(hash common.Hash) error
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	AddRemote(tx *modules.Transaction) error
-	AddRemotes([]*modules.Transaction) []error
-	ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool,
-		tag txspool.Tag) ([]*txspool.TxDesc, error)
+	//AddRemotes([]*modules.Transaction) []error
+	//ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag txspool.Tag) ([]*txspool.TxDesc, error)
 	// Pending should return pending transactions.
 	// The slice should be modifiable by the caller.
 	Pending() (map[common.Hash][]*txspool.TxPoolTransaction, error)
@@ -160,9 +159,9 @@ type txPool interface {
 	// SubscribeTxPreEvent should return an event subscription of
 	// TxPreEvent and send events to the given channel.
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
-	GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error)
-	OutPointIsSpend(outPoint *modules.OutPoint) (bool, error)
-	ValidateOrphanTx(tx *modules.Transaction) (bool, error)
+	//GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error)
+	//OutPointIsSpend(outPoint *modules.OutPoint) (bool, error)
+	//ValidateOrphanTx(tx *modules.Transaction) (bool, error)
 }
 
 // statusData is the network packet for the status message.

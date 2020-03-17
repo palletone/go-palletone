@@ -25,8 +25,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/palletone/go-palletone/txspool"
-
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/ptndb"
@@ -494,7 +492,7 @@ func (dl *downloadTester) InsertHeaderDag(headers []*modules.Header, checkFreq i
 }
 
 // InsertChain injects a new batch of blocks into the simulated chain.
-func (dl *downloadTester) InsertDag(blocks modules.Units, txpool txspool.ITxPool, b bool) (int, error) {
+func (dl *downloadTester) InsertDag(blocks modules.Units, b bool) (int, error) {
 	dl.lock.Lock()
 	defer dl.lock.Unlock()
 	//blocks modules.Units

@@ -31,7 +31,7 @@ import (
 	"github.com/palletone/go-palletone/validator"
 )
 
-type dags interface {
+type IDag interface {
 	GetDb() ptndb.Database
 	CurrentUnit(token modules.AssetId) *modules.Unit
 	GetUnitByHash(hash common.Hash) (*modules.Unit, error)
@@ -71,4 +71,5 @@ type dags interface {
 
 type IValidator interface {
 	ValidateTx(tx *modules.Transaction, isFullTx bool) ([]*modules.Addition, validator.ValidationCode, error)
+	SetUtxoQuery(query validator.IUtxoQuery)
 }

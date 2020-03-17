@@ -126,7 +126,7 @@ func init() {
 
 type TxPool struct {
 	config      TxPoolConfig
-	unit        dags
+	unit        IDag
 	txFeed      event.Feed
 	scope       event.SubscriptionScope
 	txValidator IValidator
@@ -173,7 +173,7 @@ type TxDesc struct {
 
 // NewTxPool creates a new transaction pool to gather, sort and filter inbound
 // transactions from the network.
-func NewTxPool(config TxPoolConfig, cachedb palletcache.ICache, unit dags) *TxPool {
+func NewTxPool(config TxPoolConfig, cachedb palletcache.ICache, unit IDag) *TxPool {
 	tokenEngine := tokenengine.Instance
 	pool := NewTxPool4DI(config, cachedb, unit, tokenEngine, nil)
 	val := validator.NewValidate(unit, pool, unit, unit, nil, cachedb, false)
@@ -183,7 +183,7 @@ func NewTxPool(config TxPoolConfig, cachedb palletcache.ICache, unit dags) *TxPo
 }
 
 //构造函数的依赖注入，主要用于UT
-func NewTxPool4DI(config TxPoolConfig, cachedb palletcache.ICache, unit dags,
+func NewTxPool4DI(config TxPoolConfig, cachedb palletcache.ICache, unit IDag,
 	tokenEngine tokenengine.ITokenEngine, validator IValidator) *TxPool { // chainconfig *params.ChainConfig,
 	// Sanitize the input to ensure no vulnerable gas prices are set
 	config = (&config).sanitize()
@@ -316,7 +316,7 @@ func (pool *TxPool) loop() {
 
 // Stats retrieves the current pool stats, namely the number of pending and the
 // number of queued (non-executable) transactions.
-func (pool *TxPool) Stats() (int, int, int) {
+func (pool *TxPool) Status() (int, int, int) {
 	return pool.stats()
 }
 
@@ -723,10 +723,10 @@ func (pool *TxPool) addLocal(tx *TxPoolTransaction) error {
 // sender is not among the locally tracked ones, full pricing constraints will
 // apply.
 func (pool *TxPool) AddRemote(tx *modules.Transaction) error {
-	if tx.IsNewContractInvokeRequest() { //Request不能进入交易池
-		log.Infof("Tx[%s] is a request, do not allow add to txpool", tx.Hash().String())
-		return nil
-	}
+	//if tx.IsNewContractInvokeRequest() { //Request不能进入交易池
+	//	log.Infof("Tx[%s] is a request, do not allow add to txpool", tx.Hash().String())
+	//	return nil
+	//}
 	if tx.TxMessages()[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
 		return nil
 	}
@@ -959,46 +959,46 @@ const (
 
 // Status returns the status (unknown/pending/queued) of a batch of transactions
 // identified by their hashes.
-func (pool *TxPool) Status(hashes []common.Hash) []TxStatus {
-	status := make([]TxStatus, len(hashes))
-	poolTxs := pool.AllTxpoolTxs()
-	for i, hash := range hashes {
-		if tx, has := poolTxs[hash]; has {
-			if tx != nil {
-				if tx.Pending {
-					status[i] = TxStatusPending
-				} else if tx.Confirmed {
-					status[i] = TxStatusConfirmed
-				} else if !tx.Discarded {
-					status[i] = TxStatusQueued
-				} else {
-					status[i] = TxStatusIncluded
-				}
-			} else {
-				status[i] = TxStatusUnKnow
-			}
-		} else {
-			status[i] = TxStatusNotIncluded
-		}
-	}
-	return status
-}
+//func (pool *TxPool) Status(hashes []common.Hash) []TxStatus {
+//	status := make([]TxStatus, len(hashes))
+//	poolTxs := pool.AllTxpoolTxs()
+//	for i, hash := range hashes {
+//		if tx, has := poolTxs[hash]; has {
+//			if tx != nil {
+//				if tx.Pending {
+//					status[i] = TxStatusPending
+//				} else if tx.Confirmed {
+//					status[i] = TxStatusConfirmed
+//				} else if !tx.Discarded {
+//					status[i] = TxStatusQueued
+//				} else {
+//					status[i] = TxStatusIncluded
+//				}
+//			} else {
+//				status[i] = TxStatusUnKnow
+//			}
+//		} else {
+//			status[i] = TxStatusNotIncluded
+//		}
+//	}
+//	return status
+//}
 
 // GetUnpackedTxsByAddr returns all tx by addr.
-func (pool *TxPool) GetPoolTxsByAddr(addr string) ([]*TxPoolTransaction, error) {
+func (pool *TxPool) GetPoolTxsByAddr(addr common.Address) ([]*TxPoolTransaction, error) {
 	pool.mu.RLock()
 	defer pool.mu.RUnlock()
 	return pool.getPoolTxsByAddr(addr, false)
 }
 
-func (pool *TxPool) GetUnpackedTxsByAddr(addr string) ([]*TxPoolTransaction, error) {
+func (pool *TxPool) GetUnpackedTxsByAddr(addr common.Address) ([]*TxPoolTransaction, error) {
 	pool.mu.RLock()
 	defer pool.mu.RUnlock()
 	return pool.getPoolTxsByAddr(addr, true)
 }
 
-func (pool *TxPool) getPoolTxsByAddr(addr string, onlyUnpacked bool) ([]*TxPoolTransaction, error) {
-	txs := make(map[string][]*TxPoolTransaction)
+func (pool *TxPool) getPoolTxsByAddr(addr common.Address, onlyUnpacked bool) ([]*TxPoolTransaction, error) {
+	txs := make(map[common.Address][]*TxPoolTransaction)
 	// 将交易按地址分类
 	poolTxs := pool.AllTxpoolTxs()
 	for _, tx := range poolTxs {
@@ -1016,15 +1016,14 @@ func (pool *TxPool) getPoolTxsByAddr(addr string, onlyUnpacked bool) ([]*TxPoolT
 						if err != nil {
 							return nil, err
 						}
-						for _, addr := range addrs {
-							addr1 := addr.String()
-							txs[addr1] = append(txs[addr1], tx)
+						for _, a := range addrs {
+							txs[a] = append(txs[a], tx)
 						}
 
 						for _, out := range payment.Outputs {
 							address, err1 := pool.tokenEngine.GetAddressFromScript(out.PkScript[:])
 							if err1 == nil {
-								txs[address.String()] = append(txs[address.String()], tx)
+								txs[address] = append(txs[address], tx)
 							} else {
 								log.Error("PKSCript to address failed.", "error", err1)
 							}
@@ -1048,15 +1047,14 @@ func (pool *TxPool) getPoolTxsByAddr(addr string, onlyUnpacked bool) ([]*TxPoolT
 						return nil, err
 					}
 					//if addrs, err := pool.unit.GetTxFromAddress(tx.Tx); err == nil {
-					for _, addr := range addrs {
-						addr1 := addr.String()
-						txs[addr1] = append(txs[addr1], tx)
+					for _, a := range addrs {
+						txs[a] = append(txs[a], tx)
 					}
 					//}
 					for _, out := range payment.Outputs {
 						address, err1 := pool.tokenEngine.GetAddressFromScript(out.PkScript[:])
 						if err1 == nil {
-							txs[address.String()] = append(txs[address.String()], tx)
+							txs[address] = append(txs[address], tx)
 						} else {
 							log.Error("PKSCript to address failed.", "error", err1)
 						}
@@ -1090,8 +1088,8 @@ func (pool *TxPool) getPoolTxsByAddr(addr string, onlyUnpacked bool) ([]*TxPoolT
 
 // Get returns a transaction if it is contained in the pool
 // and nil otherwise.
-func (pool *TxPool) Get(hash common.Hash) (*TxPoolTransaction, common.Hash) {
-	var u_hash common.Hash
+func (pool *TxPool) GetTx(hash common.Hash) (*TxPoolTransaction, error) {
+	//var u_hash common.Hash
 	//tx := new(TxPoolTransaction)
 	interTx, has := pool.all.Load(hash)
 	if has {
@@ -1099,21 +1097,21 @@ func (pool *TxPool) Get(hash common.Hash) (*TxPoolTransaction, common.Hash) {
 		if tx.Tx.Hash() != hash {
 			pool.all.Delete(hash)
 			pool.priority_sorted.Removed()
-			return nil, u_hash
+			return nil, errors.New("not found")
 		}
 		if tx.Pending {
 			log.Debug("get tx info by hash in txpool... tx in unit hash:", "unit_hash", tx.UnitHash, "p_tx", tx)
-			return tx, tx.UnitHash
+			return tx, nil
 		}
-		return tx, u_hash
+		return tx, nil
 	} else {
 		if itx, exist := pool.orphans.Load(hash); exist {
 			tx := itx.(*TxPoolTransaction)
 			log.Debug("get tx info by hash in orphan txpool... ", "txhash", tx.Tx.Hash(), "info", tx)
-			return tx, u_hash
+			return tx, nil
 		}
 	}
-	return nil, u_hash
+	return nil, errors.New("not found")
 }
 
 // DeleteTx
@@ -1467,9 +1465,9 @@ func (pool *TxPool) SendStoredTxs(hashs []common.Hash) error {
 }
 
 // 打包后的没有被最终确认的交易，废弃处理
-func (pool *TxPool) DiscardTxs(hashs []common.Hash) error {
-	for _, hash := range hashs {
-		err := pool.discardTx(hash)
+func (pool *TxPool) DiscardTxs(txs []*modules.Transaction) error {
+	for _, tx := range txs {
+		err := pool.discardTx(tx.Hash())
 		if err != nil {
 			return err
 		}
@@ -1591,7 +1589,8 @@ func (pool *TxPool) resetPendingTx(tx *modules.Transaction) error {
 
 /******  end utxoSet  *****/
 // GetSortedTxs returns 根据优先级返回list
-func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTransaction, common.StorageSize) {
+func (pool *TxPool) GetSortedTxs(processor func(tx *TxPoolTransaction) (getNext bool, err error)) error {
+	//GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTransaction, common.StorageSize) {
 	t0 := time.Now()
 	canbe_packaged := false
 	var total common.StorageSize
@@ -1600,7 +1599,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 	gasAsset := dagconfig.DagConfig.GetGasToken()
 	_, chainindex, err := pool.unit.GetNewestUnit(gasAsset)
 	if err != nil {
-		return nil, 0
+		return err
 	}
 	unithigh := int64(chainindex.Index)
 	map_pretxs := make(map[common.Hash]int)
@@ -1672,8 +1671,8 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 			}
 			if (locktime >= 500000000 && locktime-time.Now().Unix() < 0) || canbe_packaged {
 				tx.Pending = true
-				tx.UnitHash = hash
-				tx.UnitIndex = index
+				//tx.UnitHash = hash
+				//tx.UnitIndex = index
 				tx.IsOrphan = false
 				pool.all.Store(txhash, tx)
 				pool.orphans.Delete(txhash)
@@ -1689,8 +1688,8 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 		if !ok && err == nil {
 			//  更改孤儿交易的状态
 			tx.Pending = true
-			tx.UnitHash = hash
-			tx.UnitIndex = index
+			//tx.UnitHash = hash
+			//tx.UnitIndex = index
 			tx.IsOrphan = false
 			pool.all.Store(txhash, tx)
 			pool.orphans.Delete(txhash)
@@ -1722,13 +1721,22 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 				continue
 			}
 			list = append(list, tx)
-			go pool.promoteTx(hash, tx, index, uint64(i))
+			//go pool.promoteTx(hash, tx, index, uint64(i))
 		}
 	}
 	log.Debugf("get sorted and rm Orphan txs spent times: %s , count: %d ,t2: %s , txs_size %s,  "+
 		"total_size %s", time.Since(t0), len(list), time.Since(t2), total.String(), unit_size.String())
-
-	return list, total
+	for _, t := range list {
+		getnext, err := processor(t)
+		if err != nil {
+			log.Error(err.Error())
+		}
+		if !getnext {
+			return err
+		}
+	}
+	return nil
+	//return list, total
 }
 func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs,
 	orphanTxs map[common.Hash]*TxPoolTransaction) (bool, []*TxPoolTransaction) {
@@ -1745,17 +1753,17 @@ func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs,
 		//  若该utxo在db里找不到,try to find it in pool and ophans txs
 		queue_tx, has := poolTxs[op.TxHash]
 		if !has {
-			poolloop:
+		poolloop:
 			for _, otx := range poolTxs {
 				if otx.Tx.RequestHash() == op.TxHash {
 					for i, msg := range otx.Tx.Messages() {
 						if msg.App != modules.APP_PAYMENT {
-                            continue
+							continue
 						}
 						payment := msg.Payload.(*modules.PaymentPayload)
 						for j := range payment.Outputs {
 							if op.OutIndex == uint32(j) && op.MessageIndex == uint32(i) {
-					
+
 								log.Debugf("found  in pool")
 								queue_tx = otx
 								break poolloop
@@ -1764,7 +1772,7 @@ func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs,
 					}
 				}
 			}
-			orphTxsLOOP:
+		orphTxsLOOP:
 			for _, otx := range orphanTxs {
 				if otx.Tx.RequestHash() == op.TxHash {
 					for i, msg := range otx.Tx.Messages() {
@@ -1782,7 +1790,7 @@ func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs,
 			}
 		}
 		if queue_tx != nil {
-			//if find precusor tx  ,and go on to find its 
+			//if find precusor tx  ,and go on to find its
 			log.Info("find in precusor tx.", "hash", queue_tx.Tx.Hash().String(), "ohash", op.TxHash.String(),
 				"pending", tx.Pending)
 			if !queue_tx.Pending {

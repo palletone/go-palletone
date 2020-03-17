@@ -1,10 +1,10 @@
 package light
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 
-	"bytes"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -315,8 +315,9 @@ func (pm *ProtocolManager) SendTxMsg(msg p2p.Msg, p *peer) error {
 	//if reject(uint64(reqCnt), MaxTxSend) {
 	//	return errResp(ErrRequestRejected, "")
 	//}
-	pm.txpool.AddRemotes(txs)
-
+	for _, tx := range txs {
+		pm.txpool.AddRemote(tx)
+	}
 	//_, rcost := p.fcClient.RequestProcessed(costs.baseCost + uint64(reqCnt)*costs.reqCost)
 	//pm.server.fcCostStats.update(msg.Code, uint64(reqCnt), rcost)
 	return nil
