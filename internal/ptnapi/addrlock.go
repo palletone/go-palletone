@@ -86,7 +86,7 @@ func decodeHexStr(hexStr string) ([]byte, error) {
 
 //type response struct {
 //	result []byte
-//err    error
+	//err    error
 //}
 //type FutureGetTxOutResult chan *response
 type SignatureError struct {
@@ -95,20 +95,20 @@ type SignatureError struct {
 }
 
 //var (
-// zeroHash is the zero value for a chainhash.Hash and is defined as
-// a package level variable to avoid the need to create a new instance
-// every time a check is needed.
-//zeroHash common.Hash
+	// zeroHash is the zero value for a chainhash.Hash and is defined as
+	// a package level variable to avoid the need to create a new instance
+	// every time a check is needed.
+	//zeroHash common.Hash
 
-// block91842Hash is one of the two nodes which violate the rules
-// set forth in BIP0030.  It is defined as a package level variable to
-// avoid the need to create a new instance every time a check is needed.
-//block91842Hash ,err = common.NewHashFromStr("00000000000a4d0a398161ffc163c503763b1f4360639393e0e4c8e300e0caec")
+	// block91842Hash is one of the two nodes which violate the rules
+	// set forth in BIP0030.  It is defined as a package level variable to
+	// avoid the need to create a new instance every time a check is needed.
+	//block91842Hash ,err = common.NewHashFromStr("00000000000a4d0a398161ffc163c503763b1f4360639393e0e4c8e300e0caec")
 
-// block91880Hash is one of the two nodes which violate the rules
-// set forth in BIP0030.  It is defined as a package level variable to
-// avoid the need to create a new instance every time a check is needed.
-//block91880Hash ,err = common.NewHashFromStr("00000000000743f190a18c5577a3c2d2a1f610ae9601ac046a38084ccb7cd721")
+	// block91880Hash is one of the two nodes which violate the rules
+	// set forth in BIP0030.  It is defined as a package level variable to
+	// avoid the need to create a new instance every time a check is needed.
+	//block91880Hash ,err = common.NewHashFromStr("00000000000743f190a18c5577a3c2d2a1f610ae9601ac046a38084ccb7cd721")
 //)
 
 type (

@@ -323,9 +323,10 @@ func TestTransactionAddingTxs(t *testing.T) {
 	unit_hash := common.HexToHash("0x0e7e7e3bd7c1e9ce440089712d61de38f925eb039f152ae03c6688ed714af729")
 	defer func(p *TxPool) {
 		sortedtxs, total := p.GetSortedTxs(unit_hash, 1)
-		log.Debugf(" total size is :%v ,the cout:%d ", total, len(txs))
+		log.Debugf(" total size is :%v ,the cout:%d ,sorted:%d", total, len(txs), len(sortedtxs))
 		for i, tx := range sortedtxs {
-			if i < len(txs)-1 {
+			log.Debugf("index:%d,hash:%s", i+1, tx.Tx.Hash().String())
+			if i < len(sortedtxs)-1 {
 				if sortedtxs[i].Priority_lvl < sortedtxs[i+1].Priority_lvl {
 					t.Error("sorted failed.", i, tx.Priority_lvl)
 				}
@@ -335,9 +336,9 @@ func TestTransactionAddingTxs(t *testing.T) {
 		poolTxs := pool.AllTxpoolTxs()
 		for _, tx := range poolTxs {
 			if tx.Pending {
-				pending_cache++ //6
+				pending_cache++ //4
 			} else {
-				queue_cache++ // 0
+				queue_cache++ // 2
 			}
 		}
 		//  add tx : failed , and discared the tx.

@@ -48,12 +48,12 @@ func TestRlpDeploy(t *testing.T) {
 }
 
 func TestRlpContractInvokeRequest(t *testing.T) {
-	addr, _ := common.StringToAddress("PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM")
-	invoke := &ContractInvokeRequestPayload{ContractId: addr.Bytes(),
-		Args:    [][]byte{[]byte("PledgeWithdraw"), []byte("1000000000000")},
-		Timeout: 0,
-	}
-	data, err := rlp.EncodeToBytes(invoke)
+	addr,_:=common.StringToAddress("PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM")
+		invoke := &ContractInvokeRequestPayload{ContractId:addr.Bytes(),
+			Args:[][]byte{[]byte("PledgeWithdraw"),[]byte("1000000000000") },
+			Timeout:0,
+		}
+	data,err := rlp.EncodeToBytes(invoke)
 	assert.Nil(t, err)
 	t.Logf("%x", data)
 }

@@ -242,7 +242,7 @@ func TestJurors(t *testing.T) {
 	assert.NotNil(t, j)
 }
 
-func TestMapToSlice(t *testing.T) {
+func TestMapToSlice(t *testing.T){
 	db, _ := ptndb.NewMemDatabase()
 	statedb := NewStateDb(db)
 	depositeContractAddress := syscontract.DepositContractAddress
@@ -263,8 +263,8 @@ func TestMapToSlice(t *testing.T) {
 	//前面是 map,先改为 slice
 	sliceKey := []string{}
 	for k := range jl {
-		fmt.Println("key = ", k)
-		sliceKey = append(sliceKey, k)
+		fmt.Println("key = ",k)
+		sliceKey = append(sliceKey,k)
 	}
 	sort.Strings(sliceKey)
 	lb, _ = json.Marshal(sliceKey)
@@ -276,6 +276,6 @@ func TestMapToSlice(t *testing.T) {
 	jl, err = statedb.GetJuryCandidateList()
 	assert.Nil(t, err)
 	for k := range jl {
-		fmt.Println("key = ", k)
+		fmt.Println("key = ",k)
 	}
 }

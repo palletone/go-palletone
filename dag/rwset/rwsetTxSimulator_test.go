@@ -274,16 +274,16 @@ func TestRwSetTxSimulator_Rollback(t *testing.T) {
 }
 func TestMapKeyToSlice(t *testing.T) {
 	values := map[string]*modules.ContractStateValue{}
-	values["p1"] = &modules.ContractStateValue{Value: []byte("1")}
-	values["p2"] = &modules.ContractStateValue{Value: []byte("2")}
-	values["p3"] = &modules.ContractStateValue{Value: []byte("3")}
-	values["p4"] = &modules.ContractStateValue{Value: []byte("4")}
+	values["p1"] = &modules.ContractStateValue{Value:[]byte("1")}
+	values["p2"] = &modules.ContractStateValue{Value:[]byte("2")}
+	values["p3"] = &modules.ContractStateValue{Value:[]byte("3")}
+	values["p4"] = &modules.ContractStateValue{Value:[]byte("4")}
 
-	for k, v := range values {
-		fmt.Println("key = ", k, ", value = ", string(v.Value))
+	for k,v := range values {
+		fmt.Println("key = ",k,", value = ",string(v.Value))
 	}
 	sliceKey := mapKeyToSlice(values)
-	for i, k := range sliceKey {
-		fmt.Println("i = ", i, ", key = ", k, ", value = ", string(values[k].Value))
+	for i,k := range sliceKey {
+		fmt.Println("i = ",i,", key = ",k,", value = ",string(values[k].Value))
 	}
 }

@@ -106,17 +106,17 @@ const (
 //申请退出
 type QuitNode struct {
 	Address string `json:"address"` //请求地址
-	Role    string `json:"role"`    //请求角色
-	Time    string `json:"time"`    //请求时间
+	Role string `json:"role"` //请求角色
+	Time string `json:"time"` //请求时间
 }
 
 //申请没收保证金
 type Forfeiture struct {
-	ApplyAddress      string `json:"apply_address"`      //谁发起的
+	ApplyAddress string `json:"apply_address"` //谁发起的
 	ForfeitureAddress string `json:"forfeiture_address"` //没收节点地址
-	ForfeitureRole    string `json:"forfeiture_role"`    //没收角色
-	Extra             string `json:"extra"`              //备注
-	ApplyTime         string `json:"apply_time"`         //请求时间
+	ForfeitureRole string `json:"forfeiture_role"` //没收角色
+	Extra          string `json:"extra"`           //备注
+	ApplyTime      string `json:"apply_time"`      //请求时间
 }
 
 //交易的内容

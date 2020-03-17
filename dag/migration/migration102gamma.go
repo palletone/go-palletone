@@ -64,7 +64,7 @@ func (m *Migration102beta_102gamma) upgradeMediatorInfo() error {
 		}
 
 		mib := &core.MediatorInfoBase{
-			AddStr: oldMediator.AddStr,
+			AddStr:     oldMediator.AddStr,
 			//RewardAdd:  oldMediator.AddStr,
 			RewardAdd:  "",
 			InitPubKey: oldMediator.InitPubKey,
@@ -72,8 +72,8 @@ func (m *Migration102beta_102gamma) upgradeMediatorInfo() error {
 		}
 
 		newMediator := &MediatorInfo105alpha{
-			MediatorInfoBase:           mib,
-			MediatorApplyInfo:          oldMediator.MediatorApplyInfo,
+			MediatorInfoBase:   mib,
+			MediatorApplyInfo:  oldMediator.MediatorApplyInfo,
 			MediatorInfoExpand105alpha: oldMediator.MediatorInfoExpand105alpha,
 		}
 
