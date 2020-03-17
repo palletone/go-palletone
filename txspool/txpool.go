@@ -126,7 +126,7 @@ func init() {
 
 type TxPool struct {
 	config      TxPoolConfig
-	unit        dags
+	unit        IDag
 	txFeed      event.Feed
 	scope       event.SubscriptionScope
 	txValidator IValidator
@@ -173,7 +173,7 @@ type TxDesc struct {
 
 // NewTxPool creates a new transaction pool to gather, sort and filter inbound
 // transactions from the network.
-func NewTxPool(config TxPoolConfig, cachedb palletcache.ICache, unit dags) *TxPool {
+func NewTxPool(config TxPoolConfig, cachedb palletcache.ICache, unit IDag) *TxPool {
 	tokenEngine := tokenengine.Instance
 	pool := NewTxPool4DI(config, cachedb, unit, tokenEngine, nil)
 	val := validator.NewValidate(unit, pool, unit, unit, nil, cachedb, false)
@@ -183,7 +183,7 @@ func NewTxPool(config TxPoolConfig, cachedb palletcache.ICache, unit dags) *TxPo
 }
 
 //构造函数的依赖注入，主要用于UT
-func NewTxPool4DI(config TxPoolConfig, cachedb palletcache.ICache, unit dags,
+func NewTxPool4DI(config TxPoolConfig, cachedb palletcache.ICache, unit IDag,
 	tokenEngine tokenengine.ITokenEngine, validator IValidator) *TxPool { // chainconfig *params.ChainConfig,
 	// Sanitize the input to ensure no vulnerable gas prices are set
 	config = (&config).sanitize()

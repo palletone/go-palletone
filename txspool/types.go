@@ -33,6 +33,47 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
+type TxPoolTxStatus byte
+
+const (
+	//未打包
+	TxPoolTxStatus_Unpacked TxPoolTxStatus = iota
+	//已打包,未稳定
+	TxPoolTxStatus_Packed
+	//已丢弃
+	TxPoolTxStatus_Discarded
+	//孤儿交易
+	TxPoolTxStatus_Orphan
+)
+
+//对于孤儿Tx来说，现在有一个新的Tx到来，那么本Tx是否可以判断为普通交易
+func (tx *TxPoolTransaction) IsFineToNormal(hash common.Hash) bool {
+	for h, b := range tx.DependOnTxs {
+		if h == hash {
+			continue
+		}
+		if b == false {
+			return false
+		}
+	}
+	return true
+}
+func (tx *TxPoolTransaction) IsFrom(addr common.Address) bool {
+	for _, a := range tx.FromAddr {
+		if a == addr {
+			return true
+		}
+	}
+	return false
+}
+func (tx *TxPoolTransaction) GetTxFee2() uint64 {
+	total := uint64(0)
+	for _, aa := range tx.TxFee {
+		total += aa.Amount
+	}
+	return total
+}
+
 type TxPoolTransaction struct {
 	Tx *modules.Transaction
 
@@ -50,8 +91,16 @@ type TxPoolTransaction struct {
 	Extra        []byte
 	Tag          uint64
 	Expiration   time.Time
-	//该Tx依赖于哪些TxId作为先决条件
-	DependOnTxs []common.Hash
+
+	TxHash               common.Hash
+	ReqHash              common.Hash
+	FromAddr             []common.Address
+	IsSysContractRequest bool
+	IsUserContractFullTx bool
+
+	Status TxPoolTxStatus
+	//该Tx依赖于哪些TxId作为先决条件，value是表示该依赖的Tx是否已经在Dag或者交易池找到
+	DependOnTxs map[common.Hash]bool
 }
 
 func (tx *TxPoolTransaction) Less(otherTx interface{}) bool {
@@ -218,21 +267,22 @@ type txpoolTransactionTemp struct {
 	CertId  []byte
 	Illegal bool
 
-	From         []modules.OutPoint
-	CreationDate time.Time `json:"creation_date"`
-	Priority_lvl string    `json:"priority_lvl"`
-	UnitHash     common.Hash
-	UnitIndex    uint64
-	Pending      bool
-	Confirmed    bool
-	IsOrphan     bool
-	Discarded    bool               // will remove
-	TxFee        []modules.Addition `json:"tx_fee"`
-	Index        uint64             `json:"index"`
-	Extra        []byte
-	Tag          uint64
-	Expiration   time.Time
-	DependOnTxs  []common.Hash
+	From             []modules.OutPoint
+	CreationDate     time.Time `json:"creation_date"`
+	Priority_lvl     string    `json:"priority_lvl"`
+	UnitHash         common.Hash
+	UnitIndex        uint64
+	Pending          bool
+	Confirmed        bool
+	IsOrphan         bool
+	Discarded        bool               // will remove
+	TxFee            []modules.Addition `json:"tx_fee"`
+	Index            uint64             `json:"index"`
+	Extra            []byte
+	Tag              uint64
+	Expiration       time.Time
+	DependOnTxsTrue  []common.Hash
+	DependOnTxsFalse []common.Hash
 }
 
 type messageTemp struct {
@@ -275,7 +325,14 @@ func (pooltx *TxPoolTransaction) EncodeRLP(w io.Writer) error {
 	temp.Tag = pooltx.Tag
 	temp.Expiration = pooltx.Expiration
 	if len(pooltx.DependOnTxs) > 0 {
-		temp.DependOnTxs = append(temp.DependOnTxs, pooltx.DependOnTxs...)
+		//temp.DependOnTxs = append(temp.DependOnTxs, pooltx.DependOnTxs...)
+		for tx, pass := range pooltx.DependOnTxs {
+			if pass {
+				temp.DependOnTxsTrue = append(temp.DependOnTxsTrue, tx)
+			} else {
+				temp.DependOnTxsFalse = append(temp.DependOnTxsFalse, tx)
+			}
+		}
 	}
 	return rlp.Encode(w, temp)
 }
@@ -423,9 +480,16 @@ func (pooltx *TxPoolTransaction) DecodeRLP(s *rlp.Stream) error {
 	pooltx.Extra = common.CopyBytes(temp.Extra)
 	pooltx.Tag = temp.Tag
 	pooltx.Expiration = temp.Expiration
-	if len(temp.DependOnTxs) > 0 {
-		pooltx.DependOnTxs = append(temp.DependOnTxs, temp.DependOnTxs...)
+
+	for _, tx := range temp.DependOnTxsTrue {
+		pooltx.DependOnTxs[tx] = true
 	}
+	for _, tx := range temp.DependOnTxsFalse {
+		pooltx.DependOnTxs[tx] = false
+	}
+	//if len(temp.DependOnTxs) > 0 {
+	//	pooltx.DependOnTxs = append(temp.DependOnTxs, temp.DependOnTxs...)
+	//}
 
 	return nil
 }
