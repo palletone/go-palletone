@@ -1047,12 +1047,10 @@ func (pool *TxPool) getPoolTxsByAddr(addr string, onlyUnpacked bool) ([]*TxPoolT
 					if err != nil {
 						return nil, err
 					}
-					//if addrs, err := pool.unit.GetTxFromAddress(tx.Tx); err == nil {
 					for _, addr := range addrs {
 						addr1 := addr.String()
 						txs[addr1] = append(txs[addr1], tx)
 					}
-					//}
 					for _, out := range payment.Outputs {
 						address, err1 := pool.tokenEngine.GetAddressFromScript(out.PkScript[:])
 						if err1 == nil {
@@ -1085,7 +1083,7 @@ func (pool *TxPool) getPoolTxsByAddr(addr string, onlyUnpacked bool) ([]*TxPoolT
 		}
 		return result, nil
 	}
-	return result, nil //nil, errors.New(fmt.Sprintf("not found txs by addr:(%s).", addr))
+	return result, nil
 }
 
 // Get returns a transaction if it is contained in the pool
