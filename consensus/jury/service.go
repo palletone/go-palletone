@@ -89,9 +89,9 @@ type iDag interface {
 	IsActiveMediator(addr common.Address) bool
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
-		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
+		msg *modules.Message) (*modules.Transaction, uint64, error)
 	CreateTokenTransaction(from, to common.Address, token *modules.Asset, daoAmountToken, daoFee uint64,
-		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
+		msg *modules.Message) (*modules.Transaction, uint64, error)
 	GetTransaction(hash common.Hash) (*modules.TransactionWithUnitInfo, error)
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
@@ -620,7 +620,7 @@ func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool,
 			}
 			tx = sigTx
 		}
-		if err := txpool.AddSequenTx(tx); err != nil {
+		if err := txpool.AddLocal(tx); err != nil {
 			log.Errorf("[%s]AddContractLoop, error:%s", shortId(reqId.String()), err.Error())
 			continue
 		}
@@ -919,7 +919,7 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 
 func (p *Processor) createContractTxReqToken(contractId, from, to common.Address, token *modules.Asset,
 	daoAmountToken, daoFee uint64, msg *modules.Message) (common.Hash, *modules.Transaction, error) {
-	tx, _, err := p.dag.CreateTokenTransaction(from, to, token, daoAmountToken, daoFee, msg, p.ptn.TxPool())
+	tx, _, err := p.dag.CreateTokenTransaction(from, to, token, daoAmountToken, daoFee, msg)
 	if err != nil {
 		return common.Hash{}, nil, err
 	}
@@ -930,7 +930,7 @@ func (p *Processor) createContractTxReqToken(contractId, from, to common.Address
 
 func (p *Processor) createContractTxReq(contractId, from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
 	msg *modules.Message) (common.Hash, *modules.Transaction, error) {
-	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, certID, msg, p.ptn.TxPool())
+	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, certID, msg)
 	if err != nil {
 		return common.Hash{}, nil, err
 	}

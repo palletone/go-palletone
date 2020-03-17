@@ -16,6 +16,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestDagIsIDag(t *testing.T) {
+	var d IDag
+	d = &Dag{}
+	t.Logf("%p", d)
+}
+
 func TestCreateUnit(t *testing.T) {
 
 	db, err := ptndb.NewMemDatabase()
@@ -31,8 +37,8 @@ func TestCreateUnit(t *testing.T) {
 		return
 	}
 
-	//txpool := txspool.NewTxPool(txspool.DefaultTxPoolConfig, test_dag)
-	if err := test_dag.SaveUnit(unit, nil, true); err != nil {
+	//txpool := txpool2.NewTxPool(txpool2.DefaultTxPoolConfig, test_dag)
+	if err := test_dag.SaveUnit(unit, true); err != nil {
 		log.Error("Save unit error", "error", err.Error())
 		return
 	}
@@ -135,7 +141,7 @@ func setupDag() (*Dag, error) {
 		log.Error("New dag error", "error", err.Error())
 		return nil, err
 	}
-	if err := initDag.SaveUnit(unit, nil, true); err != nil {
+	if err := initDag.SaveUnit(unit, true); err != nil {
 		log.Error("Save unit error", "error", err.Error())
 		return nil, err
 	}

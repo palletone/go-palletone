@@ -78,7 +78,7 @@ type BlockChain interface {
 }
 
 type txPool interface {
-	AddRemotes(txs []*modules.Transaction) []error
+	AddRemote(tx *modules.Transaction) error
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
 }
 

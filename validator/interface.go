@@ -43,6 +43,7 @@ type Validator interface {
 	CheckTxIsExist(tx *modules.Transaction) bool
 
 	SetContractTxCheckFun(checkFun ContractTxCheckFunc)
+	SetUtxoQuery(query IUtxoQuery)
 	//验证一个交易是否是双花交易
 	//ValidateTxDoubleSpend(tx *modules.Transaction) error
 }

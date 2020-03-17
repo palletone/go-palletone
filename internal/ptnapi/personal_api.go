@@ -24,7 +24,6 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/palletone/go-palletone/common"
@@ -33,8 +32,6 @@ import (
 	"github.com/palletone/go-palletone/common/math"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
-
-	"github.com/shopspring/decimal"
 )
 
 // PrivateAccountAPI provides an API to access accounts managed by this node.
@@ -256,26 +253,26 @@ func (s *PrivateAccountAPI) SignHex(ctx context.Context, data hexutil.Bytes, add
 }
 
 // appended by albert·gou
-func (s *PrivateAccountAPI) TransferPtn(from, to string, amount decimal.Decimal, text *string,
-	password string) (*TxExecuteResult, error) {
-	// 参数检查
-	fromAdd, err := common.StringToAddress(from)
-	if err != nil {
-		return nil, fmt.Errorf("invalid account address: %v", from)
-	}
-
-	// 解锁账户
-	ks := fetchKeystore(s.am)
-	if !ks.IsUnlock(fromAdd) {
-		duration := 1 * time.Second
-		err = ks.TimedUnlock(accounts.Account{Address: fromAdd}, password, duration)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return s.b.TransferPtn(from, to, amount, text)
-}
+//func (s *PrivateAccountAPI) TransferPtn(from, to string, amount decimal.Decimal, text *string,
+//	password string) (*TxExecuteResult, error) {
+//	// 参数检查
+//	fromAdd, err := common.StringToAddress(from)
+//	if err != nil {
+//		return nil, fmt.Errorf("invalid account address: %v", from)
+//	}
+//
+//	// 解锁账户
+//	ks := fetchKeystore(s.am)
+//	if !ks.IsUnlock(fromAdd) {
+//		duration := 1 * time.Second
+//		err = ks.TimedUnlock(accounts.Account{Address: fromAdd}, password, duration)
+//		if err != nil {
+//			return nil, err
+//		}
+//	}
+//
+//	return s.b.TransferPtn(from, to, amount, text)
+//}
 func (s *PrivateAccountAPI) GetPublicKey(address string, password string) (string, error) {
 	addr, err := common.StringToAddress(address)
 	if err != nil {

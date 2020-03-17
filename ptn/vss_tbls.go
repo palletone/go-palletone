@@ -126,7 +126,7 @@ func (pm *ProtocolManager) groupSigBroadcastLoop() {
 		select {
 		case event := <-pm.groupSigCh:
 			pm.IsExistInCache(event.Hash().Bytes())
-			go pm.dag.SetUnitGroupSign(event.UnitHash, event.GroupSig, pm.txpool)
+			go pm.dag.SetUnitGroupSign(event.UnitHash, event.GroupSig)
 			go pm.BroadcastGroupSig(&event)
 
 		// Err() channel will be closed when unsubscribing.

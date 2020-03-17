@@ -44,7 +44,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/dag/state"
-	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/light/les"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptnjson"
@@ -85,10 +84,10 @@ func (b *PtnApiBackend) GetKeyStore() *keystore.KeyStore {
 	return b.ptn.GetKeyStore()
 }
 
-func (b *PtnApiBackend) TransferPtn(from, to string, amount decimal.Decimal,
-	text *string) (*ptnapi.TxExecuteResult, error) {
-	return b.ptn.TransferPtn(from, to, amount, text)
-}
+//func (b *PtnApiBackend) TransferPtn(from, to string, amount decimal.Decimal,
+//	text *string) (*ptnapi.TxExecuteResult, error) {
+//	return b.ptn.TransferPtn(from, to, amount, text)
+//}
 
 //func (b *PtnApiBackend) ChainConfig() *configure.ChainConfig {
 //	return nil
@@ -204,7 +203,14 @@ func (b *PtnApiBackend) SendTx(ctx context.Context, signedTx *modules.Transactio
 }
 
 func (b *PtnApiBackend) SendTxs(ctx context.Context, signedTxs []*modules.Transaction) []error {
-	return b.ptn.txPool.AddLocals(signedTxs)
+	result := []error{}
+	for _, tx := range signedTxs {
+		err := b.ptn.txPool.AddLocal(tx)
+		if err != nil {
+			result = append(result, err)
+		}
+	}
+	return result
 }
 
 func (b *PtnApiBackend) GetPoolTransactions() (modules.Transactions, error) {
@@ -222,7 +228,7 @@ func (b *PtnApiBackend) GetPoolTransactions() (modules.Transactions, error) {
 }
 
 func (b *PtnApiBackend) GetPoolTransaction(hash common.Hash) *modules.Transaction {
-	tx, _ := b.ptn.txPool.Get(hash)
+	tx, _ := b.ptn.txPool.GetTx(hash)
 	return tx.Tx
 }
 
@@ -261,8 +267,8 @@ func (b *PtnApiBackend) GetChainParameters() *core.ChainParameters {
 	return b.Dag().GetChainParameters()
 }
 
-func (b *PtnApiBackend) Stats() (int, int, int) {
-	return b.ptn.txPool.Stats()
+func (b *PtnApiBackend) Status() (int, int, int) {
+	return b.ptn.txPool.Status()
 }
 
 func (b *PtnApiBackend) TxPoolContent() (map[common.Hash]*txspool.TxPoolTransaction,
@@ -534,15 +540,16 @@ func (b *PtnApiBackend) GetTxPackInfo(txHash common.Hash) (*ptnjson.TxPackInfoJs
 
 // GetPoolTxByHash return a json of the tx in pool.
 func (b *PtnApiBackend) GetTxPoolTxByHash(hash common.Hash) (*ptnjson.TxPoolTxJson, error) {
-	tx, unit_hash := b.ptn.txPool.Get(hash)
-	if tx == nil {
+	tx, err := b.ptn.txPool.GetTx(hash)
+	if err != nil {
 		return nil, fmt.Errorf("the tx[%s] is not exist in txppol.", hash.String())
 	}
-	return ptnjson.ConvertTxPoolTx2Json(tx, unit_hash), nil
+	return ptnjson.ConvertTxPoolTx2Json(tx, tx.UnitHash), nil
 }
 
 func (b *PtnApiBackend) GetUnpackedTxsByAddr(addr string) ([]*txspool.TxPoolTransaction, error) {
-	tx, err := b.ptn.txPool.GetUnpackedTxsByAddr(addr)
+	address, _ := common.StringToAddress(addr)
+	tx, err := b.ptn.txPool.GetUnpackedTxsByAddr(address)
 	return tx, err
 }
 

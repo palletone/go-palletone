@@ -23,6 +23,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/mock"
+	"github.com/palletone/go-palletone/txspool"
 
 	//"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/rlp"
@@ -74,7 +75,7 @@ func getUnitHashbyNumber(pm *ProtocolManager, index0 *modules.ChainIndex) common
 	return u.Hash()
 }
 func testGetBlockHeaders(t *testing.T, protocol int) {
-	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, downloader.MaxHashFetch+15, nil, nil, nil, nil)
+	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, downloader.MaxHashFetch+15, nil, nil, nil, nil, nil)
 	peer, _ := newTestPeer("peer", protocol, pm, true, pm.dag)
 	defer peer.close()
 	// Create a "random" unknown hash for testing
@@ -332,6 +333,7 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 	defer mockCtrl.Finish()
 
 	dag := mock.NewMockIDag(mockCtrl)
+	txpool := txspool.NewMockITxPool(mockCtrl)
 	pro := NewMockproducer(mockCtrl)
 	height := 10
 	mockUnit := unitForTest(height)
@@ -354,7 +356,10 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 	pro.EXPECT().LocalHaveActiveMediator().Return(false).AnyTimes()
 	dag.EXPECT().SubscribeUnstableRepositoryUpdatedEvent(gomock.Any()).Return(&rpc.ClientSubscription{}).AnyTimes()
 	dag.EXPECT().SubscribeSaveStableUnitEvent(gomock.Any()).Return(&rpc.ClientSubscription{}).AnyTimes()
+	dag.EXPECT().SubscribeSaveUnitEvent(gomock.Any()).Return(&rpc.ClientSubscription{}).AnyTimes()
+	dag.EXPECT().SubscribeRollbackUnitEvent(gomock.Any()).Return(&rpc.ClientSubscription{}).AnyTimes()
 
+	txpool.EXPECT().SubscribeTxPreEvent(gomock.Any()).Return(&rpc.ClientSubscription{}).AnyTimes()
 	/*
 		pro.EXPECT().SubscribeNewUnitEvent(gomock.Any()).DoAndReturn(func(ch chan<- mp.NewUnitEvent) event.Subscription {
 			return nil
@@ -374,7 +379,7 @@ func testGetBlockBodies(t *testing.T, protocol int) {
 	*/
 	pro = pro
 
-	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, downloader.MaxBlockFetch+15, dag, nil, nil, nil)
+	pm, _ := newTestProtocolManagerMust(t, downloader.FullSync, downloader.MaxBlockFetch+15, dag, txpool, nil, nil, nil)
 
 	peer, _ := newTestPeer("peer", protocol, pm, true, pm.dag)
 	defer peer.close()
