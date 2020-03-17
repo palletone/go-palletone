@@ -47,6 +47,7 @@ import (
 	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/palletone/go-palletone/txpool2"
 	"github.com/palletone/go-palletone/txspool"
 )
 
@@ -164,7 +165,7 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
 	}
 	//val:=validator.NewValidate(ptn.dag,ptn.dag,ptn.dag,ptn.dag,cache)
-	ptn.txPool = txspool.NewTxPool(config.TxPool, cache, dag)
+	ptn.txPool = txpool2.NewTxPool(config.TxPool, cache, dag)
 
 	//Test for P2P
 	ptn.engine = consensus.New(dag, ptn.txPool)

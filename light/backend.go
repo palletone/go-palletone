@@ -26,6 +26,7 @@ import (
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/ptn"
 	"github.com/palletone/go-palletone/ptn/downloader"
+	"github.com/palletone/go-palletone/txpool2"
 
 	//	"github.com/palletone/go-palletone/ptn/filters"
 	//"github.com/ethereum/go-ethereum/eth/gasprice"
@@ -59,7 +60,7 @@ type LightPalletone struct {
 	// Handlers
 	peers *peerSet
 	//txPool *les.TxPool
-	txPool *txspool.TxPool
+	txPool txspool.ITxPool
 	//blockchain      *light.LightChain
 	protocolManager *ProtocolManager
 
@@ -139,7 +140,7 @@ func New(ctx *node.ServiceContext, config *ptn.Config, protocolname string, cach
 	if config.TxPool.Journal != "" {
 		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
 	}
-	lptn.txPool = txspool.NewTxPool(config.TxPool, cache, lptn.dag)
+	lptn.txPool = txpool2.NewTxPool(config.TxPool, cache, lptn.dag)
 
 	if lptn.protocolManager, err = NewProtocolManager(true, lptn.peers, config.NetworkId, gasToken, nil,
 		dag, lptn.eventMux, genesis, quitSync, configure.LPSProtocol); err != nil {
@@ -208,7 +209,7 @@ func (s *LightPalletone) APIs() []rpc.API {
 //}
 
 func (s *LightPalletone) ProtocolManager() *ProtocolManager { return s.protocolManager }
-func (s *LightPalletone) TxPool() *txspool.TxPool           { return s.txPool }
+func (s *LightPalletone) TxPool() txspool.ITxPool           { return s.txPool }
 
 //func (s *LightPalletone) Engine() consensus.Engine           { return s.engine }
 func (s *LightPalletone) LesVersion() int                    { return int(s.protocolManager.SubProtocols[0].Version) }
