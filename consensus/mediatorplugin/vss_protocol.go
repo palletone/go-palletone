@@ -125,7 +125,12 @@ func (mp *MediatorPlugin) completeVSSProtocol() {
 
 	// 停止所有vss相关的循环
 	go func() {
-		mp.stopVSS <- struct{}{}
+		select {
+		case <-mp.quit:
+			return
+		default:
+			mp.stopVSS <- struct{}{}
+		}
 	}()
 
 	// 验证vss是否完成，并开启群签名
