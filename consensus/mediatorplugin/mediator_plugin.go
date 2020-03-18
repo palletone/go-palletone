@@ -81,7 +81,7 @@ type ProductionCondition uint8
 
 // unit生产的状态枚举
 const (
-	Produced           ProductionCondition = iota // 正常生产unit
+	Produced ProductionCondition = iota // 正常生产unit
 	NotSynced
 	NotMyTurn
 	NotTimeYet
@@ -95,12 +95,15 @@ const (
 func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 	//log.Debugf("launch unitProductionLoop")
 	mp.wg.Add(1)
+
+	// 继续循环生产计划
+	defer mp.scheduleProductionLoop()
 	defer mp.wg.Done()
 
-	// 1. 尝试生产unit
+	// 尝试生产unit
 	result, detail := mp.maybeProduceUnit()
 
-	// 2. 打印尝试结果
+	// 打印尝试结果
 	switch result {
 	case Produced:
 		log.Infof("Generated unit(%v) #%v parent(%v) @%v signed by %v", detail["Hash"], detail["Num"],
@@ -131,9 +134,6 @@ func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 		log.Infof("Unknown condition when producing unit!")
 	}
 
-	// 3. 继续循环生产计划
-	go mp.scheduleProductionLoop()
-
 	return result
 }
 
@@ -144,9 +144,9 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 
 	// 整秒调整，四舍五入
 	nowFine := time.Now()
-	now := time.Unix(nowFine.Add(500 * time.Millisecond).Unix(), 0)
+	now := time.Unix(nowFine.Add(500*time.Millisecond).Unix(), 0)
 
-	// 1. 判断是否满足生产的各个条件
+	// 判断是否满足生产的各个条件
 	nextSlotTime := dag.GetSlotTime(1)
 	// If the next Unit production opportunity is in the present or future, we're synced.
 	if !mp.productionEnabled {
@@ -222,6 +222,7 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 		detail["Now"] = now.Format("2006-01-02 15:04:05")
 		return Lag, detail
 	}
+
 	unitNumber := dag.HeadUnitNum() + 1
 	unitId := fmt.Sprintf("%d", unitNumber)
 
@@ -235,14 +236,6 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	//广播节点选取签名请求事件
 	go mp.ptn.ContractProcessor().BroadcastElectionSigRequestEvent()
 
-	// 2. 生产单元
-	var groupPubKey []byte = nil
-	if mp.groupSigningEnabled {
-		groupPubKey = mp.localMediatorPubKey(scheduledMediator)
-		if len(groupPubKey) == 0 {
-			log.Debugf("the groupPubKey is nil")
-		}
-	}
 	txpool := mp.ptn.TxPool()
 	p := mp.ptn.ContractProcessor()
 	txHashStr := ""
@@ -302,6 +295,16 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 		return fmt.Sprintf("txpool GetSortedTxs cost:%s,count:%d,txs[%s]", time.Since(startTime).String(),
 			len(tx4Pack), txHashStr)
 	})
+
+	// 生产单元
+	var groupPubKey []byte = nil
+	if mp.groupSigningEnabled {
+		groupPubKey = mp.localMediatorPubKey(scheduledMediator)
+		if len(groupPubKey) == 0 {
+			log.Debugf("the groupPubKey is nil")
+		}
+	}
+
 	newUnit, err := dag.GenerateUnit(scheduledTime, scheduledMediator, groupPubKey, ks, tx4Pack)
 	if err != nil {
 		detail["Msg"] = fmt.Sprintf("GenerateUnit err: %v", err.Error())
@@ -316,10 +319,10 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	detail["Hash"] = unitHash.TerminalString()
 	detail["ParentHash"] = newUnit.ParentHash()[0].TerminalString()
 
-	// 3. 对 unit 进行群签名
+	// 对 unit 进行群签名
 	go mp.groupSignUnit(scheduledMediator, unitHash)
 
-	// 4. 异步向区块链网络广播新unit
+	// 异步向区块链网络广播新unit
 	go mp.newProducedUnitFeed.Send(NewProducedUnitEvent{Unit: newUnit})
 
 	return Produced, detail

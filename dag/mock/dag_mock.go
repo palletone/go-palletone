@@ -1301,18 +1301,33 @@ func (mr *MockIDagMockRecorder) GetTxPackInfo(txHash interface{}) *gomock.Call {
 }
 
 // GetFileInfo mocks base method
-func (m *MockIDag) GetFileInfo(filehash []byte) ([]*modules.FileInfo, error) {
+func (m *MockIDag) GetFileInfo(maindata []byte) ([]*modules.ProofOfExistencesInfo, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFileInfo", filehash)
-	ret0, _ := ret[0].([]*modules.FileInfo)
+	ret := m.ctrl.Call(m, "GetFileInfo", maindata)
+	ret0, _ := ret[0].([]*modules.ProofOfExistencesInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetFileInfo indicates an expected call of GetFileInfo
-func (mr *MockIDagMockRecorder) GetFileInfo(filehash interface{}) *gomock.Call {
+func (mr *MockIDagMockRecorder) GetFileInfo(maindata interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFileInfo", reflect.TypeOf((*MockIDag)(nil).GetFileInfo), filehash)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFileInfo", reflect.TypeOf((*MockIDag)(nil).GetFileInfo), maindata)
+}
+
+// GetProofOfExistencesByMaindata mocks base method
+func (m *MockIDag) GetProofOfExistencesByMaindata(maindata []byte) ([]*modules.ProofOfExistencesInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetProofOfExistencesByMaindata", maindata)
+	ret0, _ := ret[0].([]*modules.ProofOfExistencesInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetProofOfExistencesByMaindata indicates an expected call of GetProofOfExistencesByMaindata
+func (mr *MockIDagMockRecorder) GetProofOfExistencesByMaindata(maindata interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProofOfExistencesByMaindata", reflect.TypeOf((*MockIDag)(nil).GetProofOfExistencesByMaindata), maindata)
 }
 
 // GetLightHeaderByHash mocks base method

@@ -1499,6 +1499,7 @@ func (s *PrivateWalletAPI) CreateTraceability(ctx context.Context, addr, uid, sy
 	return submitTransaction(ctx, s.b, rawTx)
 }
 
+//
 //根据maindata信息 查询存证结果  filehash  --> maindata
 func (s *PublicWalletAPI) getFileInfo(filehash string) ([]*ptnjson.ProofOfExistenceJson, error) {
 	files, err := s.b.GetFileInfo(filehash)
@@ -1517,6 +1518,24 @@ func (s *PublicWalletAPI) getFileInfo(filehash string) ([]*ptnjson.ProofOfExiste
 	return result, nil
 }
 
+func (s *PublicWalletAPI) getProofOfExistencesByMaindata(maindata string) ([]*ptnjson.ProofOfExistenceJson, error) {
+	files, err := s.b.GetFileInfo(maindata)
+	if err != nil {
+		return nil, err
+	}
+	result := []*ptnjson.ProofOfExistenceJson{}
+	for _, file := range files {
+		tx, err := s.b.GetTxByHash(file.Txid)
+		if err != nil {
+			return nil, err
+		}
+		poe := ptnjson.ConvertTx2ProofOfExistence(tx)
+		result = append(result, poe)
+	}
+	return result, nil
+}
+
+
 //根据交易哈希 查询存证结果
 func (s *PublicWalletAPI) GetFileInfoByTxid(ctx context.Context, txid common.Hash) (*ptnjson.ProofOfExistenceJson, error) {
 	tx, err := s.b.GetTxByHash(txid)
@@ -1526,8 +1545,14 @@ func (s *PublicWalletAPI) GetFileInfoByTxid(ctx context.Context, txid common.Has
 	return ptnjson.ConvertTx2ProofOfExistence(tx), err
 }
 
-func (s *PublicWalletAPI) GetFileInfoByFileHash(ctx context.Context, filehash string) ([]*ptnjson.ProofOfExistenceJson, error) {
-	result, err := s.getFileInfo(filehash)
+//GetProofOfExistencesByMaindata替代GetFileInfoByFileHash
+func (s *PublicWalletAPI) GetFileInfoByFileHash(ctx context.Context, maindata string) ([]*ptnjson.ProofOfExistenceJson, error) {
+	result, err := s.getProofOfExistencesByMaindata(maindata)
+	return result, err
+}
+
+func (s *PublicWalletAPI) GetProofOfExistencesByMaindata(ctx context.Context, maindata string) ([]*ptnjson.ProofOfExistenceJson, error) {
+	result, err := s.getProofOfExistencesByMaindata(maindata)
 	return result, err
 }
 
