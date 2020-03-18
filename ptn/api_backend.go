@@ -191,6 +191,7 @@ func (b *PtnApiBackend) SendTx(ctx context.Context, signedTx *modules.Transactio
 				return
 			case <-saveUnitSub.Err():
 				log.Debugf("SubscribeSaveUnitEvent err")
+				return
 			}
 		}
 	}(signedTx.Hash())
