@@ -261,6 +261,7 @@ func (s *PrivateContractAPI) Ccinstalltx(ctx context.Context, from, to string, a
 		"installByteCode",
 		tplName,
 		ccdescription,
+		path,
 		base64.StdEncoding.EncodeToString(byteCode),
 		version,
 		ccabi,
@@ -270,7 +271,7 @@ func (s *PrivateContractAPI) Ccinstalltx(ctx context.Context, from, to string, a
 	if err != nil {
 		return nil, err
 	}
-	tplId := getTemplateId(tplName, "", version)
+	tplId := getTemplateId(tplName, path, version)
 	sTplId := hex.EncodeToString(tplId)
 
 	rsp := &ContractInstallRsp{

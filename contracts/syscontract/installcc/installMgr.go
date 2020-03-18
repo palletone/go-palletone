@@ -62,24 +62,25 @@ func (p *InstallMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 
 	switch f {
 	case "installByteCode": //安装合约模板
-		if len(args) != 7 {
-			return shim.Error("must input 7 args: name, description,codeBase64,version,abi,language,[]juryAddress")
+		if len(args) != 8 {
+			return shim.Error("must input 8 args: name, description,path,codeBase64,version,abi,language,[]juryAddress")
 		}
 		name := args[0]
 		description := args[1]
-		code, err := base64.StdEncoding.DecodeString(args[2])
+		path := args[2]
+		code, err := base64.StdEncoding.DecodeString(args[3])
 		if err != nil {
 			return shim.Error("Invalid code base64 format")
 		}
-		version := args[3]
-		abi := args[4]
-		language := args[5]
+		version := args[4]
+		abi := args[5]
+		language := args[6]
 		addrs := []common.Address{}
-		err = json.Unmarshal([]byte(args[6]), &addrs)
+		err = json.Unmarshal([]byte(args[7]), &addrs)
 		if err != nil {
-			return shim.Error("Invalid jury address:" + args[6])
+			return shim.Error("Invalid jury address:" + args[7])
 		}
-		err = p.InstallByteCode(stub, name, description, code, version, abi, language, addrs)
+		err = p.InstallByteCode(stub, name, description, path, code, version, abi, language, addrs)
 		if err != nil {
 			return shim.Error("InstallByteCode error:" + err.Error())
 		}
@@ -118,7 +119,7 @@ func (p *InstallMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	}
 }
 
-func (p *InstallMgr) InstallByteCode(stub shim.ChaincodeStubInterface, name, description string, code []byte,
+func (p *InstallMgr) InstallByteCode(stub shim.ChaincodeStubInterface, name, description, path string, code []byte,
 	version, abi, language string, addrs []common.Address) error {
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
@@ -139,7 +140,7 @@ func (p *InstallMgr) InstallByteCode(stub shim.ChaincodeStubInterface, name, des
 	for _, addr := range addrs {
 		addrHashes = append(addrHashes, util.RlpHash(addr))
 	}
-	tplId := getTemplateId(name, "", version)
+	tplId := getTemplateId(name, path, version)
 	dbTpl, _ := getContractTemplate(stub, tplId)
 	if dbTpl != nil {
 		return fmt.Errorf("TemplateId[%x] already exist", tplId)
@@ -148,7 +149,7 @@ func (p *InstallMgr) InstallByteCode(stub shim.ChaincodeStubInterface, name, des
 		TplId:          tplId,
 		TplName:        name,
 		TplDescription: description,
-		Path:           "",
+		Path:           path,
 		Version:        version,
 		Abi:            abi,
 		Language:       language,
@@ -226,7 +227,7 @@ func (p *InstallMgr) InstallRemoteCode(stub shim.ChaincodeStubInterface, name, d
 		TplId:          tplId,
 		TplName:        name,
 		TplDescription: description,
-		Path:           "",
+		Path:           url,
 		Version:        version,
 		Abi:            abi,
 		Language:       language,
