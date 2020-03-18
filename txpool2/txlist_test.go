@@ -60,7 +60,12 @@ func Hash(s string) common.Hash {
 	return common.BytesToHash([]byte(s))
 }
 func mockTxpoolTx(parentTxHash []common.Hash, txHash common.Hash) *txspool.TxPoolTransaction {
-	tx := &txspool.TxPoolTransaction{DependOnTxs: map[common.Hash]bool{}, Tx: modules.NewTransaction(nil)}
+	pHash := Hash("p")
+	if len(parentTxHash) > 0 {
+		pHash = parentTxHash[0]
+	}
+	pay := mockPaymentTx(pHash, 0, 0)
+	tx := &txspool.TxPoolTransaction{DependOnTxs: map[common.Hash]bool{}, Tx: pay}
 	for _, p := range parentTxHash {
 		tx.DependOnTxs[p] = true
 	}
