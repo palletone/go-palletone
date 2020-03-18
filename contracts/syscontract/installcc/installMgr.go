@@ -34,6 +34,7 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/contracts/shim"
+	"github.com/palletone/go-palletone/contracts/syscontract"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
 )
@@ -254,25 +255,36 @@ func (p *InstallMgr) GetTemplates(stub shim.ChaincodeStubInterface) ([]*modules.
 //  判断是否Dev发起的
 func isDeveloperInvoke(stub shim.ChaincodeStubInterface) bool {
 	//  判断是否Dev发起的
-	//TODO 基金会改为Developer
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
 		log.Error("get invoke address err: ", "error", err)
 		return false
 	}
-	//  获取
-	gp, err := stub.GetSystemConfig()
+	//  获取DeveloperList
+	list, err := getDeveloperList(stub)
 	if err != nil {
-		//log.Error("strconv.ParseUint err:", "error", err)
+		log.Error(err.Error())
 		return false
 	}
-	foundationAddress := gp.ChainParameters.FoundationAddress
-	// 判断当前请求的是否为基金会
-	if invokeAddr.String() != foundationAddress {
-		log.Error("please use foundation address")
-		return false
+	if _, ok := list[invokeAddr.String()]; ok {
+		return true
 	}
-	return true
+	return false
+}
+func getDeveloperList(stub shim.ChaincodeStubInterface) (map[string]bool, error) {
+	byte, err := stub.GetContractState(syscontract.DepositContractAddress, modules.DeveloperList)
+	if err != nil {
+		return nil, err
+	}
+	if byte == nil {
+		return nil, nil
+	}
+	list := make(map[string]bool)
+	err = json.Unmarshal(byte, &list)
+	if err != nil {
+		return nil, err
+	}
+	return list, nil
 }
 
 //  判断是否基金会发起的
