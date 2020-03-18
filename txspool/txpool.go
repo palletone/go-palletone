@@ -1632,7 +1632,7 @@ func (pool *TxPool) GetSortedTxs(processor func(tx *TxPoolTransaction) (getNext 
 					continue
 				}
 				// add precusorTxs 获取该交易的前驱交易列表
-				_, p_txs := pool.getPrecusorTxs(tx, poolTxs)
+				p_txs := pool.getPrecusorTxs(tx, poolTxs)
 				for _, p_tx := range p_txs {
 					if _, has := map_pretxs[p_tx.Tx.Hash()]; !has {
 						map_pretxs[p_tx.Tx.Hash()] = len(list)
@@ -1673,8 +1673,6 @@ func (pool *TxPool) GetSortedTxs(processor func(tx *TxPoolTransaction) (getNext 
 			}
 			if (locktime >= 500000000 && locktime-time.Now().Unix() < 0) || canbe_packaged {
 				tx.Pending = true
-				//tx.UnitHash = hash
-				//tx.UnitIndex = index
 				tx.IsOrphan = false
 				pool.all.Store(txhash, tx)
 				pool.orphans.Delete(txhash)
@@ -1690,8 +1688,6 @@ func (pool *TxPool) GetSortedTxs(processor func(tx *TxPoolTransaction) (getNext 
 		if !ok && err == nil {
 			//  更改孤儿交易的状态
 			tx.Pending = true
-			//tx.UnitHash = hash
-			//tx.UnitIndex = index
 			tx.IsOrphan = false
 			pool.all.Store(txhash, tx)
 			pool.orphans.Delete(txhash)
@@ -1738,18 +1734,14 @@ func (pool *TxPool) GetSortedTxs(processor func(tx *TxPoolTransaction) (getNext 
 		}
 	}
 	return nil
-	//return list, total
 }
-func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs map[common.Hash]*TxPoolTransaction) (bool, []*TxPoolTransaction) {
-	var isNotOriginal bool
+func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs map[common.Hash]*TxPoolTransaction) []*TxPoolTransaction {
 	pretxs := make([]*TxPoolTransaction, 0)
 	for _, op := range tx.Tx.GetSpendOutpoints() {
 		// 交易池做了utxo的缓存，包括request交易的缓存utxo，不能用pool.GetUtxoEntry
 		_, err := pool.unit.GetUtxoEntry(op)
 		if err == nil {
 			continue
-		} else {
-			isNotOriginal = true
 		}
 		//  若该utxo在db里找不到,try to find it in pool and ophans txs
 		queue_tx, has := poolTxs[op.TxHash]
@@ -1795,7 +1787,7 @@ func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs map[common.Has
 			log.Info("find in precusor tx.", "hash", queue_tx.Tx.Hash().String(), "ohash", op.TxHash.String(),
 				"pending", tx.Pending)
 			if !queue_tx.Pending {
-				_, list := pool.getPrecusorTxs(queue_tx, poolTxs)
+				list := pool.getPrecusorTxs(queue_tx, poolTxs)
 				for _, p_tx := range list {
 					pretxs = append(pretxs, p_tx)
 					delete(poolTxs, p_tx.Tx.Hash())
@@ -1804,7 +1796,7 @@ func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs map[common.Has
 		}
 	}
 	pretxs = append(pretxs, tx)
-	return isNotOriginal, pretxs
+	return pretxs
 }
 func (pool *TxPool) GetSequenTxs() []*TxPoolTransaction {
 	return pool.getSequenTxs()
