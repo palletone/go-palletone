@@ -120,11 +120,18 @@ func (p *InstallMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 
 func (p *InstallMgr) InstallByteCode(stub shim.ChaincodeStubInterface, name, description string, code []byte,
 	version, abi, language string, addrs []common.Address) error {
-	if !isDeveloperInvoke(stub) && !isFoundationInvoke(stub) {
-		return errors.New("only developer address can call this function")
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		log.Error("get invoke address err: ", "error", err)
+		return err
+	}
+
+	if !isDeveloperInvoke(stub, invokeAddr) && !isFoundationInvoke(stub, invokeAddr) {
+		log.Warnf("Address[%s] not a developer or foundation", invokeAddr.String())
+		return errors.New("only developer and foundation can call install template")
 	}
 	if len(addrs) > 0 {
-		if !isFoundationInvoke(stub) {
+		if !isFoundationInvoke(stub, invokeAddr) {
 			return errors.New("only foundation can use static jury")
 		}
 	}
@@ -132,7 +139,6 @@ func (p *InstallMgr) InstallByteCode(stub shim.ChaincodeStubInterface, name, des
 	for _, addr := range addrs {
 		addrHashes = append(addrHashes, util.RlpHash(addr))
 	}
-	invokeAddr, _ := stub.GetInvokeAddress()
 	tplId := getTemplateId(name, "", version)
 	dbTpl, _ := getContractTemplate(stub, tplId)
 	if dbTpl != nil {
@@ -150,7 +156,7 @@ func (p *InstallMgr) InstallByteCode(stub shim.ChaincodeStubInterface, name, des
 		Size:           uint16(len(code)),
 		Creator:        invokeAddr.String(),
 	}
-	err := saveContractTemplate(stub, tpl)
+	err = saveContractTemplate(stub, tpl)
 	if err != nil {
 		return err
 	}
@@ -196,15 +202,19 @@ func saveContractTemplateCode(stub shim.ChaincodeStubInterface, tplId, code []by
 
 func (p *InstallMgr) InstallRemoteCode(stub shim.ChaincodeStubInterface, name, description, url string,
 	version, abi, language string, addrHashes []common.Hash) error {
-	if !isDeveloperInvoke(stub) {
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		log.Error("get invoke address err: ", "error", err)
+		return err
+	}
+	if !isDeveloperInvoke(stub, invokeAddr) && !isFoundationInvoke(stub, invokeAddr) {
 		return errors.New("only developer address can call this function")
 	}
 	if len(addrHashes) > 0 {
-		if !isFoundationInvoke(stub) {
+		if !isFoundationInvoke(stub, invokeAddr) {
 			return errors.New("only foundation can use static jury")
 		}
 	}
-	invokeAddr, _ := stub.GetInvokeAddress()
 	tplId := getTemplateId(name, url, version)
 	dbTpl, _ := getContractTemplate(stub, tplId)
 	if dbTpl != nil {
@@ -224,7 +234,7 @@ func (p *InstallMgr) InstallRemoteCode(stub shim.ChaincodeStubInterface, name, d
 		Size:           uint16(len(code)),
 		Creator:        invokeAddr.String(),
 	}
-	err := saveContractTemplate(stub, tpl)
+	err = saveContractTemplate(stub, tpl)
 	if err != nil {
 		return err
 	}
@@ -253,20 +263,14 @@ func (p *InstallMgr) GetTemplates(stub shim.ChaincodeStubInterface) ([]*modules.
 }
 
 //  判断是否Dev发起的
-func isDeveloperInvoke(stub shim.ChaincodeStubInterface) bool {
-	//  判断是否Dev发起的
-	invokeAddr, err := stub.GetInvokeAddress()
-	if err != nil {
-		log.Error("get invoke address err: ", "error", err)
-		return false
-	}
+func isDeveloperInvoke(stub shim.ChaincodeStubInterface, addr common.Address) bool {
 	//  获取DeveloperList
 	list, err := getDeveloperList(stub)
 	if err != nil {
 		log.Error(err.Error())
 		return false
 	}
-	if _, ok := list[invokeAddr.String()]; ok {
+	if _, ok := list[addr.String()]; ok {
 		return true
 	}
 	return false
@@ -279,6 +283,7 @@ func getDeveloperList(stub shim.ChaincodeStubInterface) (map[string]bool, error)
 	if byte == nil {
 		return nil, nil
 	}
+	log.Debugf("query DeveloperList:%s", string(byte))
 	list := make(map[string]bool)
 	err = json.Unmarshal(byte, &list)
 	if err != nil {
@@ -288,13 +293,9 @@ func getDeveloperList(stub shim.ChaincodeStubInterface) (map[string]bool, error)
 }
 
 //  判断是否基金会发起的
-func isFoundationInvoke(stub shim.ChaincodeStubInterface) bool {
+func isFoundationInvoke(stub shim.ChaincodeStubInterface, addr common.Address) bool {
 	//  判断是否基金会发起的
-	invokeAddr, err := stub.GetInvokeAddress()
-	if err != nil {
-		log.Error("get invoke address err: ", "error", err)
-		return false
-	}
+
 	//  获取
 	gp, err := stub.GetSystemConfig()
 	if err != nil {
@@ -303,7 +304,7 @@ func isFoundationInvoke(stub shim.ChaincodeStubInterface) bool {
 	}
 	foundationAddress := gp.ChainParameters.FoundationAddress
 	// 判断当前请求的是否为基金会
-	if invokeAddr.String() != foundationAddress {
+	if addr.String() != foundationAddress {
 		log.Error("please use foundation address")
 		return false
 	}
