@@ -13,7 +13,6 @@ import (
 	core "github.com/palletone/go-palletone/core"
 	dboperation "github.com/palletone/go-palletone/dag/dboperation"
 	modules "github.com/palletone/go-palletone/dag/modules"
-	txspool "github.com/palletone/go-palletone/txspool"
 	big "math/big"
 	reflect "reflect"
 	time "time"
@@ -226,18 +225,18 @@ func (mr *MockIDagMockRecorder) GetCurrentMemUnit(assetId interface{}) *gomock.C
 }
 
 // InsertDag mocks base method
-func (m *MockIDag) InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable bool) (int, error) {
+func (m *MockIDag) InsertDag(units modules.Units, is_stable bool) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InsertDag", units, txpool, is_stable)
+	ret := m.ctrl.Call(m, "InsertDag", units, is_stable)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // InsertDag indicates an expected call of InsertDag
-func (mr *MockIDagMockRecorder) InsertDag(units, txpool, is_stable interface{}) *gomock.Call {
+func (mr *MockIDagMockRecorder) InsertDag(units, is_stable interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertDag", reflect.TypeOf((*MockIDag)(nil).InsertDag), units, txpool, is_stable)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertDag", reflect.TypeOf((*MockIDag)(nil).InsertDag), units, is_stable)
 }
 
 // GetUnitByHash mocks base method
@@ -566,17 +565,17 @@ func (mr *MockIDagMockRecorder) IsHeaderExist(hash interface{}) *gomock.Call {
 }
 
 // SaveUnit mocks base method
-func (m *MockIDag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error {
+func (m *MockIDag) SaveUnit(unit *modules.Unit, isGenesis bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SaveUnit", unit, txpool, isGenesis)
+	ret := m.ctrl.Call(m, "SaveUnit", unit, isGenesis)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SaveUnit indicates an expected call of SaveUnit
-func (mr *MockIDagMockRecorder) SaveUnit(unit, txpool, isGenesis interface{}) *gomock.Call {
+func (mr *MockIDagMockRecorder) SaveUnit(unit, isGenesis interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveUnit", reflect.TypeOf((*MockIDag)(nil).SaveUnit), unit, txpool, isGenesis)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveUnit", reflect.TypeOf((*MockIDag)(nil).SaveUnit), unit, isGenesis)
 }
 
 // SaveTransaction mocks base method
@@ -727,21 +726,6 @@ func (mr *MockIDagMockRecorder) GetUnitNumber(hash interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnitNumber", reflect.TypeOf((*MockIDag)(nil).GetUnitNumber), hash)
 }
 
-// GetUtxoView mocks base method
-func (m *MockIDag) GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUtxoView", tx)
-	ret0, _ := ret[0].(*txspool.UtxoViewpoint)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetUtxoView indicates an expected call of GetUtxoView
-func (mr *MockIDagMockRecorder) GetUtxoView(tx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUtxoView", reflect.TypeOf((*MockIDag)(nil).GetUtxoView), tx)
-}
-
 // IsUtxoSpent mocks base method
 func (m *MockIDag) IsUtxoSpent(outpoint *modules.OutPoint) (bool, error) {
 	m.ctrl.T.Helper()
@@ -755,48 +739,6 @@ func (m *MockIDag) IsUtxoSpent(outpoint *modules.OutPoint) (bool, error) {
 func (mr *MockIDagMockRecorder) IsUtxoSpent(outpoint interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsUtxoSpent", reflect.TypeOf((*MockIDag)(nil).IsUtxoSpent), outpoint)
-}
-
-// SubscribeChainHeadEvent mocks base method
-func (m *MockIDag) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubscribeChainHeadEvent", ch)
-	ret0, _ := ret[0].(event.Subscription)
-	return ret0
-}
-
-// SubscribeChainHeadEvent indicates an expected call of SubscribeChainHeadEvent
-func (mr *MockIDagMockRecorder) SubscribeChainHeadEvent(ch interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeChainHeadEvent", reflect.TypeOf((*MockIDag)(nil).SubscribeChainHeadEvent), ch)
-}
-
-// SubscribeChainEvent mocks base method
-func (m *MockIDag) SubscribeChainEvent(ch chan<- modules.ChainEvent) event.Subscription {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubscribeChainEvent", ch)
-	ret0, _ := ret[0].(event.Subscription)
-	return ret0
-}
-
-// SubscribeChainEvent indicates an expected call of SubscribeChainEvent
-func (mr *MockIDagMockRecorder) SubscribeChainEvent(ch interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeChainEvent", reflect.TypeOf((*MockIDag)(nil).SubscribeChainEvent), ch)
-}
-
-// SubscribeSaveStableUnitEvent mocks base method
-func (m *MockIDag) SubscribeSaveStableUnitEvent(ch chan<- modules.SaveUnitEvent) event.Subscription {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubscribeSaveStableUnitEvent", ch)
-	ret0, _ := ret[0].(event.Subscription)
-	return ret0
-}
-
-// SubscribeSaveStableUnitEvent indicates an expected call of SubscribeSaveStableUnitEvent
-func (mr *MockIDagMockRecorder) SubscribeSaveStableUnitEvent(ch interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeSaveStableUnitEvent", reflect.TypeOf((*MockIDag)(nil).SubscribeSaveStableUnitEvent), ch)
 }
 
 // PostChainEvents mocks base method
@@ -1213,31 +1155,17 @@ func (mr *MockIDagMockRecorder) GetAddrByOutPoint(outPoint interface{}) *gomock.
 }
 
 // SetUnitGroupSign mocks base method
-func (m *MockIDag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error {
+func (m *MockIDag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetUnitGroupSign", unitHash, groupSign, txpool)
+	ret := m.ctrl.Call(m, "SetUnitGroupSign", unitHash, groupSign)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SetUnitGroupSign indicates an expected call of SetUnitGroupSign
-func (mr *MockIDagMockRecorder) SetUnitGroupSign(unitHash, groupSign, txpool interface{}) *gomock.Call {
+func (mr *MockIDagMockRecorder) SetUnitGroupSign(unitHash, groupSign interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetUnitGroupSign", reflect.TypeOf((*MockIDag)(nil).SetUnitGroupSign), unitHash, groupSign, txpool)
-}
-
-// SubscribeToGroupSignEvent mocks base method
-func (m *MockIDag) SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent) event.Subscription {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubscribeToGroupSignEvent", ch)
-	ret0, _ := ret[0].(event.Subscription)
-	return ret0
-}
-
-// SubscribeToGroupSignEvent indicates an expected call of SubscribeToGroupSignEvent
-func (mr *MockIDagMockRecorder) SubscribeToGroupSignEvent(ch interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeToGroupSignEvent", reflect.TypeOf((*MockIDag)(nil).SubscribeToGroupSignEvent), ch)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetUnitGroupSign", reflect.TypeOf((*MockIDag)(nil).SetUnitGroupSign), unitHash, groupSign)
 }
 
 // IsSynced mocks base method
@@ -1252,20 +1180,6 @@ func (m *MockIDag) IsSynced(toStrictly bool) bool {
 func (mr *MockIDagMockRecorder) IsSynced(toStrictly interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSynced", reflect.TypeOf((*MockIDag)(nil).IsSynced), toStrictly)
-}
-
-// SubscribeActiveMediatorsUpdatedEvent mocks base method
-func (m *MockIDag) SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubscribeActiveMediatorsUpdatedEvent", ch)
-	ret0, _ := ret[0].(event.Subscription)
-	return ret0
-}
-
-// SubscribeActiveMediatorsUpdatedEvent indicates an expected call of SubscribeActiveMediatorsUpdatedEvent
-func (mr *MockIDagMockRecorder) SubscribeActiveMediatorsUpdatedEvent(ch interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeActiveMediatorsUpdatedEvent", reflect.TypeOf((*MockIDag)(nil).SubscribeActiveMediatorsUpdatedEvent), ch)
 }
 
 // GetPrecedingMediatorNodes mocks base method
@@ -1309,22 +1223,6 @@ func (m *MockIDag) IsIrreversibleUnit(hash common.Hash) (bool, error) {
 func (mr *MockIDagMockRecorder) IsIrreversibleUnit(hash interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsIrreversibleUnit", reflect.TypeOf((*MockIDag)(nil).IsIrreversibleUnit), hash)
-}
-
-// GenTransferPtnTx mocks base method
-func (m *MockIDag) GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string, txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GenTransferPtnTx", from, to, daoAmount, text, txPool)
-	ret0, _ := ret[0].(*modules.Transaction)
-	ret1, _ := ret[1].(uint64)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// GenTransferPtnTx indicates an expected call of GenTransferPtnTx
-func (mr *MockIDagMockRecorder) GenTransferPtnTx(from, to, daoAmount, text, txPool interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenTransferPtnTx", reflect.TypeOf((*MockIDag)(nil).GenTransferPtnTx), from, to, daoAmount, text, txPool)
 }
 
 // QueryDbByKey mocks base method
@@ -1664,9 +1562,9 @@ func (mr *MockIDagMockRecorder) RefreshAddrTxIndex() *gomock.Call {
 }
 
 // GenVoteMediatorTx mocks base method
-func (m *MockIDag) GenVoteMediatorTx(voter common.Address, mediators map[string]bool, txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
+func (m *MockIDag) GenVoteMediatorTx(voter common.Address, mediators map[string]bool) (*modules.Transaction, uint64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GenVoteMediatorTx", voter, mediators, txPool)
+	ret := m.ctrl.Call(m, "GenVoteMediatorTx", voter, mediators)
 	ret0, _ := ret[0].(*modules.Transaction)
 	ret1, _ := ret[1].(uint64)
 	ret2, _ := ret[2].(error)
@@ -1674,9 +1572,9 @@ func (m *MockIDag) GenVoteMediatorTx(voter common.Address, mediators map[string]
 }
 
 // GenVoteMediatorTx indicates an expected call of GenVoteMediatorTx
-func (mr *MockIDagMockRecorder) GenVoteMediatorTx(voter, mediators, txPool interface{}) *gomock.Call {
+func (mr *MockIDagMockRecorder) GenVoteMediatorTx(voter, mediators interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenVoteMediatorTx", reflect.TypeOf((*MockIDag)(nil).GenVoteMediatorTx), voter, mediators, txPool)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenVoteMediatorTx", reflect.TypeOf((*MockIDag)(nil).GenVoteMediatorTx), voter, mediators)
 }
 
 // GetDynGlobalProp mocks base method
@@ -2093,9 +1991,9 @@ func (mr *MockIDagMockRecorder) IsContractDeveloper(addr interface{}) *gomock.Ca
 }
 
 // CreateGenericTransaction mocks base method
-func (m *MockIDag) CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int, msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
+func (m *MockIDag) CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int, msg *modules.Message) (*modules.Transaction, uint64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateGenericTransaction", from, to, daoAmount, daoFee, certID, msg, txPool)
+	ret := m.ctrl.Call(m, "CreateGenericTransaction", from, to, daoAmount, daoFee, certID, msg)
 	ret0, _ := ret[0].(*modules.Transaction)
 	ret1, _ := ret[1].(uint64)
 	ret2, _ := ret[2].(error)
@@ -2103,15 +2001,15 @@ func (m *MockIDag) CreateGenericTransaction(from, to common.Address, daoAmount, 
 }
 
 // CreateGenericTransaction indicates an expected call of CreateGenericTransaction
-func (mr *MockIDagMockRecorder) CreateGenericTransaction(from, to, daoAmount, daoFee, certID, msg, txPool interface{}) *gomock.Call {
+func (mr *MockIDagMockRecorder) CreateGenericTransaction(from, to, daoAmount, daoFee, certID, msg interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateGenericTransaction", reflect.TypeOf((*MockIDag)(nil).CreateGenericTransaction), from, to, daoAmount, daoFee, certID, msg, txPool)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateGenericTransaction", reflect.TypeOf((*MockIDag)(nil).CreateGenericTransaction), from, to, daoAmount, daoFee, certID, msg)
 }
 
 // CreateTokenTransaction mocks base method
-func (m *MockIDag) CreateTokenTransaction(from, to common.Address, token *modules.Asset, daoAmountToken, daoFee uint64, msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
+func (m *MockIDag) CreateTokenTransaction(from, to common.Address, token *modules.Asset, daoAmountToken, daoFee uint64, msg *modules.Message) (*modules.Transaction, uint64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateTokenTransaction", from, to, token, daoAmountToken, daoFee, msg, txPool)
+	ret := m.ctrl.Call(m, "CreateTokenTransaction", from, to, token, daoAmountToken, daoFee, msg)
 	ret0, _ := ret[0].(*modules.Transaction)
 	ret1, _ := ret[1].(uint64)
 	ret2, _ := ret[2].(error)
@@ -2119,9 +2017,9 @@ func (m *MockIDag) CreateTokenTransaction(from, to common.Address, token *module
 }
 
 // CreateTokenTransaction indicates an expected call of CreateTokenTransaction
-func (mr *MockIDagMockRecorder) CreateTokenTransaction(from, to, token, daoAmountToken, daoFee, msg, txPool interface{}) *gomock.Call {
+func (mr *MockIDagMockRecorder) CreateTokenTransaction(from, to, token, daoAmountToken, daoFee, msg interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTokenTransaction", reflect.TypeOf((*MockIDag)(nil).CreateTokenTransaction), from, to, token, daoAmountToken, daoFee, msg, txPool)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTokenTransaction", reflect.TypeOf((*MockIDag)(nil).CreateTokenTransaction), from, to, token, daoAmountToken, daoFee, msg)
 }
 
 // ChainThreshold mocks base method
@@ -2225,34 +2123,6 @@ func (mr *MockIDagMockRecorder) GetJurorReward(jurorAdd interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetJurorReward", reflect.TypeOf((*MockIDag)(nil).GetJurorReward), jurorAdd)
 }
 
-// SubscribeSaveUnitEvent mocks base method
-func (m *MockIDag) SubscribeSaveUnitEvent(ch chan<- modules.SaveUnitEvent) event.Subscription {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubscribeSaveUnitEvent", ch)
-	ret0, _ := ret[0].(event.Subscription)
-	return ret0
-}
-
-// SubscribeSaveUnitEvent indicates an expected call of SubscribeSaveUnitEvent
-func (mr *MockIDagMockRecorder) SubscribeSaveUnitEvent(ch interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeSaveUnitEvent", reflect.TypeOf((*MockIDag)(nil).SubscribeSaveUnitEvent), ch)
-}
-
-// SubscribeUnstableRepositoryUpdatedEvent mocks base method
-func (m *MockIDag) SubscribeUnstableRepositoryUpdatedEvent(ch chan<- modules.UnstableRepositoryUpdatedEvent) event.Subscription {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubscribeUnstableRepositoryUpdatedEvent", ch)
-	ret0, _ := ret[0].(event.Subscription)
-	return ret0
-}
-
-// SubscribeUnstableRepositoryUpdatedEvent indicates an expected call of SubscribeUnstableRepositoryUpdatedEvent
-func (mr *MockIDagMockRecorder) SubscribeUnstableRepositoryUpdatedEvent(ch interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeUnstableRepositoryUpdatedEvent", reflect.TypeOf((*MockIDag)(nil).SubscribeUnstableRepositoryUpdatedEvent), ch)
-}
-
 // GetContractsWithJuryAddr mocks base method
 func (m *MockIDag) GetContractsWithJuryAddr(addr common.Hash) []*modules.Contract {
 	m.ctrl.T.Helper()
@@ -2338,4 +2208,116 @@ func (m *MockIDag) SaveLocalTxStatus(txId common.Hash, status modules.TxStatus) 
 func (mr *MockIDagMockRecorder) SaveLocalTxStatus(txId, status interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveLocalTxStatus", reflect.TypeOf((*MockIDag)(nil).SaveLocalTxStatus), txId, status)
+}
+
+// SubscribeChainHeadEvent mocks base method
+func (m *MockIDag) SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubscribeChainHeadEvent", ch)
+	ret0, _ := ret[0].(event.Subscription)
+	return ret0
+}
+
+// SubscribeChainHeadEvent indicates an expected call of SubscribeChainHeadEvent
+func (mr *MockIDagMockRecorder) SubscribeChainHeadEvent(ch interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeChainHeadEvent", reflect.TypeOf((*MockIDag)(nil).SubscribeChainHeadEvent), ch)
+}
+
+// SubscribeChainEvent mocks base method
+func (m *MockIDag) SubscribeChainEvent(ch chan<- modules.ChainEvent) event.Subscription {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubscribeChainEvent", ch)
+	ret0, _ := ret[0].(event.Subscription)
+	return ret0
+}
+
+// SubscribeChainEvent indicates an expected call of SubscribeChainEvent
+func (mr *MockIDagMockRecorder) SubscribeChainEvent(ch interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeChainEvent", reflect.TypeOf((*MockIDag)(nil).SubscribeChainEvent), ch)
+}
+
+// SubscribeSaveStableUnitEvent mocks base method
+func (m *MockIDag) SubscribeSaveStableUnitEvent(ch chan<- modules.SaveUnitEvent) event.Subscription {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubscribeSaveStableUnitEvent", ch)
+	ret0, _ := ret[0].(event.Subscription)
+	return ret0
+}
+
+// SubscribeSaveStableUnitEvent indicates an expected call of SubscribeSaveStableUnitEvent
+func (mr *MockIDagMockRecorder) SubscribeSaveStableUnitEvent(ch interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeSaveStableUnitEvent", reflect.TypeOf((*MockIDag)(nil).SubscribeSaveStableUnitEvent), ch)
+}
+
+// SubscribeRollbackUnitEvent mocks base method
+func (m *MockIDag) SubscribeRollbackUnitEvent(ch chan<- modules.RollbackUnitEvent) event.Subscription {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubscribeRollbackUnitEvent", ch)
+	ret0, _ := ret[0].(event.Subscription)
+	return ret0
+}
+
+// SubscribeRollbackUnitEvent indicates an expected call of SubscribeRollbackUnitEvent
+func (mr *MockIDagMockRecorder) SubscribeRollbackUnitEvent(ch interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeRollbackUnitEvent", reflect.TypeOf((*MockIDag)(nil).SubscribeRollbackUnitEvent), ch)
+}
+
+// SubscribeSaveUnitEvent mocks base method
+func (m *MockIDag) SubscribeSaveUnitEvent(ch chan<- modules.SaveUnitEvent) event.Subscription {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubscribeSaveUnitEvent", ch)
+	ret0, _ := ret[0].(event.Subscription)
+	return ret0
+}
+
+// SubscribeSaveUnitEvent indicates an expected call of SubscribeSaveUnitEvent
+func (mr *MockIDagMockRecorder) SubscribeSaveUnitEvent(ch interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeSaveUnitEvent", reflect.TypeOf((*MockIDag)(nil).SubscribeSaveUnitEvent), ch)
+}
+
+// SubscribeUnstableRepositoryUpdatedEvent mocks base method
+func (m *MockIDag) SubscribeUnstableRepositoryUpdatedEvent(ch chan<- modules.UnstableRepositoryUpdatedEvent) event.Subscription {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubscribeUnstableRepositoryUpdatedEvent", ch)
+	ret0, _ := ret[0].(event.Subscription)
+	return ret0
+}
+
+// SubscribeUnstableRepositoryUpdatedEvent indicates an expected call of SubscribeUnstableRepositoryUpdatedEvent
+func (mr *MockIDagMockRecorder) SubscribeUnstableRepositoryUpdatedEvent(ch interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeUnstableRepositoryUpdatedEvent", reflect.TypeOf((*MockIDag)(nil).SubscribeUnstableRepositoryUpdatedEvent), ch)
+}
+
+// SubscribeToGroupSignEvent mocks base method
+func (m *MockIDag) SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent) event.Subscription {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubscribeToGroupSignEvent", ch)
+	ret0, _ := ret[0].(event.Subscription)
+	return ret0
+}
+
+// SubscribeToGroupSignEvent indicates an expected call of SubscribeToGroupSignEvent
+func (mr *MockIDagMockRecorder) SubscribeToGroupSignEvent(ch interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeToGroupSignEvent", reflect.TypeOf((*MockIDag)(nil).SubscribeToGroupSignEvent), ch)
+}
+
+// SubscribeActiveMediatorsUpdatedEvent mocks base method
+func (m *MockIDag) SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubscribeActiveMediatorsUpdatedEvent", ch)
+	ret0, _ := ret[0].(event.Subscription)
+	return ret0
+}
+
+// SubscribeActiveMediatorsUpdatedEvent indicates an expected call of SubscribeActiveMediatorsUpdatedEvent
+func (mr *MockIDagMockRecorder) SubscribeActiveMediatorsUpdatedEvent(ch interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeActiveMediatorsUpdatedEvent", reflect.TypeOf((*MockIDag)(nil).SubscribeActiveMediatorsUpdatedEvent), ch)
 }

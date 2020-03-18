@@ -1,4 +1,4 @@
-#!/usr/bin/expect
+#!/usr/bin/expect -f
 #!/bin/bash
 
 set taker [lindex $argv 0]

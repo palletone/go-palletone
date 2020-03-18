@@ -9,3 +9,4 @@ cd ../../node
 rm ./createaccount_c.sh
 
 cd ../contract/transfercases
+

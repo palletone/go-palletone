@@ -7,6 +7,7 @@ Library           Collections
 
 *** Test Cases ***
 testprepare
+    [Tags]    contractpay    testshimuc1    trace    container
     Given queryTokenHolder
     And startProduce
     And Unlock token holder succeed

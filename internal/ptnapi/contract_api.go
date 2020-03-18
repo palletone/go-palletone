@@ -248,24 +248,30 @@ func (s *PrivateContractAPI) Ccinvoketx(ctx context.Context, from, to string, am
 
 func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token string, amountToken, fee decimal.Decimal,
 	contractAddress string, param []string, pwd *string, timeout *Int) (*ContractInvokeRsp, error) {
-	contractAddr, _ := common.StringToAddress(contractAddress)
+
 	password := ""
 	if pwd != nil {
 		password = *pwd
+	}
+	fromAddr, _ := common.StringToAddress(from)
+	toAddr, _ := common.StringToAddress(to)
+	contractAddr, _ := common.StringToAddress(contractAddress)
+
+	log.Info("Ccinvoketx info:")
+	log.Infof("   fromAddr[%s], toAddr[%s]", fromAddr.String(), toAddr.String())
+	log.Infof("   token[%s], amountToken[%d], fee[%d]", token, amountToken, fee)
+	log.Infof("   contractAddr[%s], is systemContract[%v]", contractAddr.String(), contractAddr.IsSystemContractAddress())
+	log.Infof("   param len[%d]", len(param))
+	args := make([][]byte, len(param))
+	for i, arg := range param {
+		args[i] = []byte(arg)
+		log.Infof("      index[%d], value[%s]\n", i, arg)
 	}
 	s.b.Lock()
 	defer s.b.Unlock()
 	tx, usedUtxo, err := buildRawTransferTx(s.b, token, from, to, amountToken, fee, password)
 	if err != nil {
 		return nil, err
-	}
-	//log.Debugf("CcinvokeToken, buildRawTransferTx tx[%s]:%s ", tx.Hash(), tx.String())
-
-	log.Infof("   param len[%d]", len(param))
-	args := make([][]byte, len(param))
-	for i, arg := range param {
-		args[i] = []byte(arg)
-		log.Infof("      index[%d], value[%s]\n", i, arg)
 	}
 	exeTimeout := timeout.Uint32()
 
@@ -289,14 +295,7 @@ func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token 
 		log.Errorf("CcinvokeToken, submitTransaction err:%s", err.Error())
 		return nil, err
 	}
-	//err = saveTransaction2mDag(tx)
-	//if err != nil {
-	//	log.Errorf("CcinvokeToken err:%s", err.Error())
-	//	return nil, err
-	//}
 
-	//reqId, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, daoAmount, daoFee, intCertID, contractAddr, args, uint32(timeout64))
-	//log.Debug("-----ContractInvokeTxReq:" + hex.EncodeToString(reqId[:]))
 	log.Infof("   reqId[%s]", hex.EncodeToString(reqId[:]))
 	rsp1 := &ContractInvokeRsp{
 		ReqId:      hex.EncodeToString(reqId[:]),
@@ -305,43 +304,6 @@ func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token 
 	return rsp1, err
 }
 
-/*func (s *PrivateContractAPI) CcinvoketxPass(ctx context.Context, from, to string, amount, fee decimal.Decimal,
-	deployId string, param []string, password string, duration *Int, certID string) (string, error) {
-	contractAddr, _ := common.StringToAddress(deployId)
-	fromAddr, _ := common.StringToAddress(from)
-	toAddr, _ := common.StringToAddress(to)
-	daoAmount := ptnjson.Ptn2Dao(amount)
-	daoFee := ptnjson.Ptn2Dao(fee)
-
-	log.Info("CcinvoketxPass info:")
-	log.Infof("   fromAddr[%s], toAddr[%s]", fromAddr.String(), toAddr.String())
-	log.Infof("   daoAmount[%d], daoFee[%d]", daoAmount, daoFee)
-	log.Infof("   contractId[%s], certID[%s], password[%s]", contractAddr.String(), certID, password)
-
-	intCertID := new(big.Int)
-	if len(certID) > 0 {
-		if _, ok := intCertID.SetString(certID, 10); !ok {
-			return "", fmt.Errorf("certid is invalid")
-		}
-	}
-	log.Infof("   param len[%d]", len(param))
-	args := make([][]byte, len(param))
-	for i, arg := range param {
-		args[i] = []byte(arg)
-		log.Infof("      index[%d], value[%s]\n", i, arg)
-	}
-
-	//2.
-	err := unlockKS(s.b, fromAddr, password, duration)
-	if err != nil {
-		return "", err
-	}
-
-	reqId, err := s.b.ContractInvokeReqTx(fromAddr, toAddr, daoAmount, daoFee, intCertID, contractAddr, args, 0)
-	log.Infof("   reqId[%s]", hex.EncodeToString(reqId[:]))
-
-	return hex.EncodeToString(reqId[:]), err
-}*/
 func (s *PrivateContractAPI) Ccstoptx(ctx context.Context, from, to string, amount, fee decimal.Decimal, contractId string) (*ContractStopRsp, error) {
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)

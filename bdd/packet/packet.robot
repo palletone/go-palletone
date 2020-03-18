@@ -15,9 +15,7 @@ packet
     ...    min = 1
     ...    max = 10
     listAccounts    #    主要获取 tokenHolder
-    sleep    3
     unlockAccount    ${tokenHolder}    1    #    解锁 tokenHolder
-    sleep    3
     ${twoAddr}    newAccount
     sleep    3
     transferPtn    ${tokenHolder}    ${twoAddr}    10000    1    1
@@ -25,128 +23,91 @@ packet
     unlockAccount    ${twoAddr}    1
     sleep    3
     getBalance    ${twoAddr}
-    sleep    3
     getPublicKey    ${twoAddr}
-    sleep    3
     createPacket    ${twoAddr}    90    ${tokenHolderPubKey}    10    1    10
     ...    ${EMPTY}    false
     sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
     ${oneAddr}    newAccount
-    sleep    3
     sign    ${twoAddr}    1
     sleep    3
     pullPacket    ${tokenHolder}    1    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     sign    ${twoAddr}    2
     sleep    3
     pullPacket    ${tokenHolder}    2    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     sign    ${twoAddr}    3
     sleep    3
     pullPacket    ${tokenHolder}    3    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     sign    ${twoAddr}    4
     sleep    3
     pullPacket    ${tokenHolder}    4    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     sign    ${twoAddr}    5
     sleep    3
     pullPacket    ${tokenHolder}    5    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     sign    ${twoAddr}    6
     sleep    3
     pullPacket    ${tokenHolder}    6    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     sign    ${twoAddr}    7
     sleep    3
     pullPacket    ${tokenHolder}    7    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     sign    ${twoAddr}    8
     sleep    3
     pullPacket    ${tokenHolder}    8    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     sign    ${twoAddr}    9
     sleep    3
     pullPacket    ${tokenHolder}    9    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     sign    ${twoAddr}    10
     sleep    3
     pullPacket    ${tokenHolder}    10    ${signature}    ${oneAddr}    0
     sleep    3
     ${amount}    getBalance    ${oneAddr}
     Should Be Equal As Numbers    ${amount}    90
-    sleep    3
     ${result}    getPacketInfo    ${tokenHolderPubKey}
     Should Be Equal As Strings    ${result["BalanceAmount"]}    0
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     pullPacket    ${tokenHolder}    10    ${signature}    ${oneAddr}    0
     sleep    3
     ${amount}    getBalance    ${oneAddr}
     Should Be Equal As Numbers    ${amount}    90
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     ${pulled}    isPulledPacket    ${tokenHolderPubKey}    10
     Should Be Equal As Strings    ${pulled}    true
     sleep    3
@@ -156,9 +117,7 @@ packet
     sleep    3
     ${amount}    getBalance    ${oneAddr}
     Should Be Equal As Numbers    ${amount}    90
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
 
 packet1
@@ -174,30 +133,23 @@ packet1
     ...    min = 2
     ...    max = 11
     listAccounts    #    主要获取 tokenHolder
-    sleep    3
     unlockAccount    ${tokenHolder}    1    #    解锁 tokenHolder
-    sleep    3
     ${twoAddr}    newAccount
     sleep    3
     transferPtn    ${tokenHolder}    ${twoAddr}    10000    1    1
     sleep    3
     unlockAccount    ${twoAddr}    1
-    sleep    3
     getBalance    ${twoAddr}
-    sleep    3
     getPublicKey    ${twoAddr}
-    sleep    3
     createPacket    ${twoAddr}    90    ${tokenHolderPubKey}    10    1    10
     ...    ${EMPTY}    false
     sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     updatePacket    ${twoAddr}    ${twoAddr}    0    ${tokenHolderPubKey}    11    2
     ...    11    ${EMPTY}    false
     sleep    3
     ${result}    getPacketInfo    ${tokenHolderPubKey}
     Should Be Equal As Strings    ${result["BalanceCount"]}    11
-    sleep    3
     getBalance    ${twoAddr}
     getAllPacketInfo
 
@@ -214,24 +166,18 @@ packet2
     ...    min = 2
     ...    max = 11
     listAccounts    #    主要获取 tokenHolder
-    sleep    3
     unlockAccount    ${tokenHolder}    1    #    解锁 tokenHolder
-    sleep    3
     ${twoAddr}    newAccount
     sleep    3
     transferPtn    ${tokenHolder}    ${twoAddr}    10000    1    1
     sleep    3
     unlockAccount    ${twoAddr}    1
-    sleep    3
     getBalance    ${twoAddr}
-    sleep    3
     getPublicKey    ${twoAddr}
-    sleep    3
     createPacket    ${twoAddr}    90    ${tokenHolderPubKey}    10    1    10
     ...    ${EMPTY}    false
     sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     updatePacket    ${twoAddr}    PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99    10    ${tokenHolderPubKey}    11    2
     ...    11    ${EMPTY}    TRUE
     sleep    3
@@ -244,128 +190,91 @@ packet3
     ...    min = 1
     ...    max = 10
     listAccounts    #    主要获取 tokenHolder
-    sleep    3
     unlockAccount    ${tokenHolder}    1    #    解锁 tokenHolder
-    sleep    3
     ${twoAddr}    newAccount
     sleep    3
     transferPtn    ${tokenHolder}    ${twoAddr}    10000    1    1
     sleep    3
     unlockAccount    ${twoAddr}    1
-    sleep    3
     getBalance    ${twoAddr}
-    sleep    3
     getPublicKey    ${twoAddr}
-    sleep    3
     createPacket    ${twoAddr}    9    ${tokenHolderPubKey}    10    1    10
     ...    ${EMPTY}    false
     sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
     ${oneAddr}    newAccount
-    sleep    3
     sign    ${twoAddr}    1
     sleep    3
     pullPacket    ${tokenHolder}    1    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     sign    ${twoAddr}    2
     sleep    3
     pullPacket    ${tokenHolder}    2    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     sign    ${twoAddr}    3
     sleep    3
     pullPacket    ${tokenHolder}    3    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     sign    ${twoAddr}    4
     sleep    3
     pullPacket    ${tokenHolder}    4    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     sign    ${twoAddr}    5
     sleep    3
     pullPacket    ${tokenHolder}    5    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     sign    ${twoAddr}    6
     sleep    3
     pullPacket    ${tokenHolder}    6    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     sign    ${twoAddr}    7
     sleep    3
     pullPacket    ${tokenHolder}    7    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     sign    ${twoAddr}    8
     sleep    3
     pullPacket    ${tokenHolder}    8    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     sign    ${twoAddr}    9
     sleep    3
     pullPacket    ${tokenHolder}    9    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     ${result}    getPacketInfo    ${tokenHolderPubKey}
     Should Be Equal As Strings    ${result["BalanceAmount"]}    0
     Should Be Equal As Strings    ${result["BalanceCount"]}    1
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     pullPacket    ${tokenHolder}    9    ${signature}    ${oneAddr}    0
     sleep    3
     ${amount}    getBalance    ${oneAddr}
     Should Be Equal As Numbers    ${amount}    9
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     ${pulled}    isPulledPacket    ${tokenHolderPubKey}    9
     Should Be Equal As Strings    ${pulled}    true
     sleep    3
@@ -374,9 +283,7 @@ packet3
     pullPacket    ${tokenHolder}    10    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
 
 packet4
@@ -385,24 +292,18 @@ packet4
     ...    min = 1
     ...    max = 10
     listAccounts    #    主要获取 tokenHolder
-    sleep    3
     unlockAccount    ${tokenHolder}    1    #    解锁 tokenHolder
-    sleep    3
     ${twoAddr}    newAccount
     sleep    3
     transferPtn    ${tokenHolder}    ${twoAddr}    10000    1    1
     sleep    3
     unlockAccount    ${twoAddr}    1
-    sleep    3
     getBalance    ${twoAddr}
-    sleep    3
     getPublicKey    ${twoAddr}
-    sleep    3
     createPacket    ${twoAddr}    900    ${tokenHolderPubKey}    10    1    10
     ...    ${EMPTY}    true
     sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
     ${oneAddr}    newAccount
     sleep    3
@@ -411,81 +312,59 @@ packet4
     pullPacket    ${tokenHolder}    1    ${signature}    ${oneAddr}    1
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     sign    ${twoAddr}    22
     sleep    3
     pullPacket    ${tokenHolder}    2    ${signature}    ${oneAddr}    2
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     sign    ${twoAddr}    33
     sleep    3
     pullPacket    ${tokenHolder}    3    ${signature}    ${oneAddr}    3
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     pullPacket    ${tokenHolder}    3    ${signature}    ${oneAddr}    3
     sleep    3
     ${amount}    getBalance    ${oneAddr}
     Should Be Equal As Numbers    ${amount}    6
-    sleep    3
     ${result}    getPacketInfo    ${tokenHolderPubKey}
     Should Be Equal As Strings    ${result["BalanceAmount"]}    894
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     ${pulled}    isPulledPacket    ${tokenHolderPubKey}    3
     Should Be Equal As Strings    ${pulled}    true
 
 packet5
     [Documentation]    红包过期退回
+    ${time}    Get Time
+    log    ${time}
     listAccounts    #    主要获取 tokenHolder
-    sleep    3
     unlockAccount    ${tokenHolder}    1    #    解锁 tokenHolder
-    sleep    3
     ${twoAddr}    newAccount
     sleep    3
     transferPtn    ${tokenHolder}    ${twoAddr}    10000    1    1
-    sleep    3
+    sleep    5
     unlockAccount    ${twoAddr}    1
     sleep    3
     getPublicKey    ${twoAddr}
-    sleep    3
-    ${time}    Get Time
-    log    ${time}
-    sleep    3
     createPacket    ${twoAddr}    900    ${tokenHolderPubKey}    10    1    10
     ...    ${time}    false
-    sleep    5
+    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    5
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    5
     getBalance    ${twoAddr}
-    sleep    10
     recyclePacket    ${twoAddr}    ${tokenHolderPubKey}
     sleep    3
     ${result}    getPacketInfo    ${tokenHolderPubKey}
     Should Be Equal As Strings    ${result["BalanceAmount"]}    0
     Should Be Equal As Strings    ${result["BalanceCount"]}    0
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     ${amount}    getBalance    ${twoAddr}
     Should Be Equal As Numbers    ${amount}    9998
-    sleep    3
     sign    ${twoAddr}    1
     sleep    3
     pullPacket    ${tokenHolder}    1    ${signature}    ${tokenHolder}    0
@@ -496,24 +375,18 @@ packet6
     ...    min = 1
     ...    max = 10
     listAccounts    #    主要获取 tokenHolder
-    sleep    3
     unlockAccount    ${tokenHolder}    1    #    解锁 tokenHolder
-    sleep    3
     ${twoAddr}    newAccount
     sleep    3
     transferPtn    ${tokenHolder}    ${twoAddr}    10000    1    1
     sleep    3
     unlockAccount    ${twoAddr}    1
-    sleep    3
     getBalance    ${twoAddr}
-    sleep    3
     getPublicKey    ${twoAddr}
-    sleep    3
     createPacket    ${twoAddr}    900    ${tokenHolderPubKey}    10    1    10
     ...    ${EMPTY}    false
     sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
     ${oneAddr}    newAccount
     sleep    3
@@ -522,112 +395,80 @@ packet6
     pullPacket    ${tokenHolder}    1    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     sign    ${twoAddr}    2
     sleep    3
     pullPacket    ${tokenHolder}    2    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     sign    ${twoAddr}    3
     sleep    3
     pullPacket    ${tokenHolder}    3    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     sign    ${twoAddr}    4
     sleep    3
     pullPacket    ${tokenHolder}    4    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     sign    ${twoAddr}    5
     sleep    3
     pullPacket    ${tokenHolder}    5    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     sign    ${twoAddr}    6
     sleep    3
     pullPacket    ${tokenHolder}    6    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     sign    ${twoAddr}    7
     sleep    3
     pullPacket    ${tokenHolder}    7    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     sign    ${twoAddr}    8
     sleep    3
     pullPacket    ${tokenHolder}    8    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     sign    ${twoAddr}    9
     sleep    3
     pullPacket    ${tokenHolder}    9    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     sign    ${twoAddr}    10
     sleep    3
     pullPacket    ${tokenHolder}    10    ${signature}    ${oneAddr}    0
     sleep    3
     ${amount}    getBalance    ${oneAddr}
     Should Be Equal As Numbers    ${amount}    100
-    sleep    3
     ${result}    getPacketInfo    ${tokenHolderPubKey}
     Should Be Equal As Strings    ${result["BalanceAmount"]}    800
     Should Be Equal As Strings    ${result["BalanceCount"]}    0
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sleep    3
     pullPacket    ${tokenHolder}    10    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     ${pulled}    isPulledPacket    ${tokenHolderPubKey}    10
     Should Be Equal As Strings    ${pulled}    true
     sleep    3
@@ -636,9 +477,7 @@ packet6
     pullPacket    ${tokenHolder}    11    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
 
 packet7
@@ -649,9 +488,7 @@ packet7
     ...
     ...    count = 0====》无限领取
     listAccounts    #    主要获取 tokenHolder
-    sleep    3
     unlockAccount    ${tokenHolder}    1    #    解锁 tokenHolder
-    sleep    3
     ${twoAddr}    newAccount
     sleep    3
     transferPtn    ${tokenHolder}    ${twoAddr}    10000    1    1
@@ -659,14 +496,11 @@ packet7
     unlockAccount    ${twoAddr}    1
     sleep    3
     getBalance    ${twoAddr}
-    sleep    3
     getPublicKey    ${twoAddr}
-    sleep    3
     createPacket    ${twoAddr}    30    ${tokenHolderPubKey}    0    1    10
     ...    ${EMPTY}    false
     sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
     ${oneAddr}    newAccount
     sleep    3
@@ -675,51 +509,37 @@ packet7
     pullPacket    ${tokenHolder}    1    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     sign    ${twoAddr}    2
     sleep    3
     pullPacket    ${tokenHolder}    2    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     sign    ${twoAddr}    3
     sleep    3
     pullPacket    ${tokenHolder}    3    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     ${result}    getPacketInfo    ${tokenHolderPubKey}
     Should Be Equal As Strings    ${result["BalanceAmount"]}    0
     Should Be Equal As Strings    ${result["BalanceCount"]}    0
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     sign    ${twoAddr}    4
     sleep    3
     pullPacket    ${tokenHolder}    4    ${signature}    ${oneAddr}    0
     sleep    3
     ${amount}    getBalance    ${oneAddr}
     Should Be Equal As Numbers    ${amount}    30
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     pullPacket    ${tokenHolder}    3    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     ${pulled}    isPulledPacket    ${tokenHolderPubKey}    3
     Should Be Equal As Strings    ${pulled}    true
     getAllPacketInfo
@@ -730,7 +550,6 @@ packet8
     ...    min = 1
     ...    max = 10
     listAccounts    #    主要获取 tokenHolder
-    sleep    3
     unlockAccount    ${tokenHolder}    1    #    解锁 tokenHolder
     sleep    3
     ${twoAddr}    newAccount
@@ -740,14 +559,11 @@ packet8
     unlockAccount    ${twoAddr}    1
     sleep    3
     getBalance    ${twoAddr}
-    sleep    3
     getPublicKey    ${twoAddr}
-    sleep    3
     createPacket    ${twoAddr}    30    ${tokenHolderPubKey}    3    1    10
     ...    ${EMPTY}    false
     sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
     ${oneAddr}    newAccount
     sleep    3
@@ -756,52 +572,37 @@ packet8
     pullPacket    ${tokenHolder}    1    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     sign    ${twoAddr}    2
     sleep    3
     pullPacket    ${tokenHolder}    2    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     sign    ${twoAddr}    3
     sleep    3
     pullPacket    ${tokenHolder}    3    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     ${result}    getPacketInfo    ${tokenHolderPubKey}
     Should Be Equal As Strings    ${result["BalanceAmount"]}    0
     Should Be Equal As Strings    ${result["BalanceCount"]}    0
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     sign    ${twoAddr}    4
     sleep    3
     pullPacket    ${tokenHolder}    4    ${signature}    ${oneAddr}    0
     sleep    3
     getBalance    ${oneAddr}
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     pullPacket    ${tokenHolder}    3    ${signature}    ${oneAddr}    0
     sleep    3
     ${amount}    getBalance    ${oneAddr}
     Should Be Equal As Numbers    ${amount}    30
-    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    sleep    3
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    sleep    3
     isPulledPacket    ${tokenHolderPubKey}    3
     getAllPacketInfo
 

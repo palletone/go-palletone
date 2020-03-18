@@ -475,6 +475,13 @@ func (u *Unit) Header() *Header {
 func (u *Unit) Transactions() []*Transaction {
 	return u.Txs
 }
+func (u *Unit) TxHashes() []common.Hash {
+	hashes := make([]common.Hash, len(u.Txs))
+	for i, tx := range u.Txs {
+		hashes[i] = tx.Hash()
+	}
+	return hashes
+}
 
 // return transaction
 func (u *Unit) Transaction(hash common.Hash) *Transaction {

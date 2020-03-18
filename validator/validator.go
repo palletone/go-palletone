@@ -320,3 +320,6 @@ func (validate *Validate) SetContractTxCheckFun(checkFun ContractTxCheckFunc) {
 //	v.buildTempDagFunc = buildFunc
 //	log.Debug("SetBuildTempContractDagFunc ok")
 //}
+func (validate *Validate) SetUtxoQuery(query IUtxoQuery) {
+	validate.utxoquery = query
+}

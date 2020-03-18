@@ -173,7 +173,7 @@ type BlockDag interface {
 	FastSyncCommitHead(common.Hash) error
 	//SaveDag(unit modules.Unit, isGenesis bool) (int, error)
 	//InsertDag(modules.Units) (int, error)
-	InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable bool) (int, error)
+	InsertDag(units modules.Units, is_stable bool) (int, error)
 
 	UnstableHeadUnitProperty(asset modules.AssetId) (*modules.UnitProperty, error)
 
@@ -1441,7 +1441,7 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 
 	log.Debug("Inserting downloaded chain", "items", len(results),
 		"index", first.GetNumber().Index, "index", last.GetNumber().Index, "fastnum", s_index)
-	if index, err := d.dag.InsertDag(blocks, d.txpool, s_index > last.NumberU64()); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
+	if index, err := d.dag.InsertDag(blocks, s_index > last.NumberU64()); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
 		log.Debug("Downloaded item processing failed", "number", results[index].Header.GetNumber().Index,
 			"hash", results[index].Header.Hash(), "err", err)
 		return errInvalidChain
@@ -1578,7 +1578,7 @@ func (d *Downloader) commitFastSyncData(results []*fetchResult /*, stateSync *st
 	log.Debug("Inserting fast-sync blocks", "items", len(results),
 		"firstnum", first.GetNumber().Index, "lastnumn", last.GetNumber().Index, "fastnum", s_index,
 	)
-	if index, err := d.dag.InsertDag(blocks, d.txpool, s_index > last.GetNumber().Index); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
+	if index, err := d.dag.InsertDag(blocks, s_index > last.GetNumber().Index); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
 		log.Debug("Downloaded item processing failed", "number", results[index].Header.GetNumber().Index,
 			"hash", results[index].Header.Hash(), "err", err)
 		return errInvalidChain
@@ -1601,7 +1601,7 @@ func (d *Downloader) commitPivotBlock(result *fetchResult) error {
 	}
 	log.Debug("Committing fast sync pivot as new head", "index:", block.UnitHeader.GetNumber().Index, "unit", *block,
 		"fastnum", s_index)
-	if _, err := d.dag.InsertDag(units, d.txpool, s_index > block.NumberU64()); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
+	if _, err := d.dag.InsertDag(units, s_index > block.NumberU64()); err != nil && err.Error() != dagerrors.ErrUnitExist.Error() {
 		log.Debug("Downloaded item processing failed", "index:", block.UnitHeader.GetNumber().Index, "err:", err)
 		return errInvalidChain
 	}

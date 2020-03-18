@@ -89,9 +89,9 @@ type iDag interface {
 	IsActiveMediator(addr common.Address) bool
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
-		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
+		msg *modules.Message) (*modules.Transaction, uint64, error)
 	CreateTokenTransaction(from, to common.Address, token *modules.Asset, daoAmountToken, daoFee uint64,
-		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
+		msg *modules.Message) (*modules.Transaction, uint64, error)
 	GetTransaction(hash common.Hash) (*modules.TransactionWithUnitInfo, error)
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
@@ -121,6 +121,15 @@ type iDag interface {
 	SaveContract(contract *modules.Contract) error
 	GetImmutableChainParameters() *core.ImmutableChainParameters
 	NewTemp() (dboperation.IContractDag, error)
+	HeadUnitNum() uint64
+
+	SubscribeSaveUnitEvent(ch chan<- modules.SaveUnitEvent) event.Subscription
+	//SubscribeUnstableRepositoryUpdatedEvent(ch chan<- modules.UnstableRepositoryUpdatedEvent) event.Subscription
+	SubscribeSaveStableUnitEvent(ch chan<- modules.SaveUnitEvent) event.Subscription
+	//localdb
+	SaveLocalTx(tx *modules.Transaction) error
+	GetLocalTx(txId common.Hash) (*modules.Transaction, modules.TxStatus, error)
+	SaveLocalTxStatus(txId common.Hash, status modules.TxStatus) error
 }
 
 type electionVrf struct {
@@ -296,6 +305,7 @@ func (p *Processor) runContractReq(reqId common.Hash, ele *modules.ElectionNode,
 		Dag:          dag,
 		Ele:          ele,
 		RwM:          txMgr,
+		TxPool:       p.ptn.TxPool(),
 		Contract:     p.contract,
 		ErrMsgEnable: p.errMsgEnable,
 	}
@@ -513,7 +523,7 @@ func (p *Processor) GenContractSigTransaction(signer common.Address, password st
 	return tx, nil
 }
 func (p *Processor) RunAndSignTx(reqTx *modules.Transaction, txMgr rwset.TxManager, dag dboperation.IContractDag,
-	mediatorAddr common.Address, ks *keystore.KeyStore) (*modules.Transaction, error) {
+	addr common.Address) (*modules.Transaction, error) {
 	cctx := &contracts.ContractProcessContext{
 		RequestId:    reqTx.RequestHash(),
 		Dag:          dag,
@@ -521,6 +531,7 @@ func (p *Processor) RunAndSignTx(reqTx *modules.Transaction, txMgr rwset.TxManag
 		RwM:          txMgr,
 		Contract:     p.contract,
 		ErrMsgEnable: p.errMsgEnable,
+		TxPool:       p.ptn.TxPool(),
 	}
 	reqId := reqTx.Hash()
 	msgs, err := runContractCmd(cctx, reqTx) //contract exec long time...
@@ -536,108 +547,12 @@ func (p *Processor) RunAndSignTx(reqTx *modules.Transaction, txMgr rwset.TxManag
 		log.Error("[%s]runContractReq, GenContractSigTransactions error:%s", shortId(reqId.String()), err.Error())
 		return nil, err
 	}
-	sigTx, err := p.GenContractSigTransaction(mediatorAddr, "", tx, ks, dag.GetUtxoEntry)
+	sigTx, err := p.GenContractSigTransaction(addr, "", tx, p.ptn.GetKeyStore(), dag.GetUtxoEntry)
 	if err != nil {
 		log.Error("GenContractSigTransctions", "error", err.Error())
 		return nil, err
 	}
 	return sigTx, nil
-}
-func (p *Processor) AddContractLoop(rwM rwset.TxManager, txpool txspool.ITxPool, addr common.Address,
-	ks *keystore.KeyStore) error {
-	setChainId := modules.ContractChainId
-	index := 0
-	tempDag, err := p.dag.NewTemp()
-	//log.Debug("create a new tempDag for generate unit AddContractLoop")
-	if err != nil {
-		log.Errorf("Init temp dag error:%s", err.Error())
-		return err
-	}
-	txIndex := 0
-	tx4Sort := make(map[common.Hash]*modules.Transaction)
-	for _, ctx := range p.mtx {
-		if ctx.reqTx.IsSystemContract() && modules.APP_CONTRACT_TPL_REQUEST != ctx.reqTx.GetContractTxType() {
-			//系统合约的调用走普通打包流程
-			continue
-		}
-		tx4Sort[ctx.reqTx.Hash()] = ctx.reqTx
-	}
-
-	sortedRequests, orphanTxs, _ := modules.SortTxs(tx4Sort, p.dag.GetUtxoEntry)
-	if len(orphanTxs) > 0 {
-		oreq := ""
-		for _, or := range orphanTxs {
-			oreq += or.Hash().String() + ";"
-		}
-		log.Warnf("Find orphan requests:%s", oreq)
-	}
-	sortedContractTx := []*contractTx{}
-	for _, sr := range sortedRequests {
-		sortedContractTx = append(sortedContractTx, p.mtx[sr.Hash()])
-	}
-	for _, ctx := range sortedContractTx {
-		if !ctx.valid || ctx.reqTx == nil {
-			continue
-		}
-		reqId := ctx.reqTx.RequestHash()
-		if !ctx.reqTx.IsSystemContract() {
-			defer rwM.CloseTxSimulator(setChainId)
-		}
-		if ctx.reqTx.IsSystemContract() && p.contractEventExecutable(CONTRACT_EVENT_EXEC, ctx.reqTx, nil) {
-			if cType, err := getContractTxType(ctx.reqTx); err == nil && cType != modules.APP_CONTRACT_TPL_REQUEST {
-				ctx.valid = false
-				log.Debugf("[%s]AddContractLoop, A enter mtx, addr[%s]", shortId(reqId.String()), addr.String())
-				if p.checkTxReqIdIsExist(reqId) {
-					log.Debugf("[%s]AddContractLoop ,ReqId is exist ", shortId(reqId.String()))
-					continue
-				}
-				if p.runContractReq(reqId, nil, rwM, tempDag) != nil {
-					continue
-				}
-			}
-		}
-		if ctx.rstTx == nil {
-			continue
-		}
-		ctx.valid = false
-
-		tx := ctx.rstTx
-		reqId = tx.RequestHash()
-		if p.checkTxReqIdIsExist(reqId) {
-			log.Debugf("[%s]AddContractLoop ,ReqId is exist, rst reqId[%s]", shortId(reqId.String()), reqId.String())
-			continue
-		}
-		if p.checkTxIsExist(tx) {
-			log.Debugf("[%s]AddContractLoop ,tx is exist, rst reqId[%s]", shortId(reqId.String()), reqId.String())
-			continue
-		}
-		log.Debugf("[%s]AddContractLoop, B enter mtx, addr[%s]", shortId(reqId.String()), addr.String())
-		if tx.IsSystemContract() {
-			sigTx, err := p.GenContractSigTransaction(addr, "", tx, ks, tempDag.GetUtxoEntry)
-			if err != nil {
-				log.Error("AddContractLoop GenContractSigTransctions", "error", err.Error())
-				continue
-			}
-			tx = sigTx
-		}
-		if err := txpool.AddSequenTx(tx); err != nil {
-			log.Errorf("[%s]AddContractLoop, error:%s", shortId(reqId.String()), err.Error())
-			continue
-		}
-		txIndex++
-		log.Debugf("executed req[%s] save result tx[%s] index:%d into tempdag",
-			reqId.String(), tx.Hash().String(), txIndex)
-		err = tempDag.SaveTransaction(tx, txIndex)
-		log.Debugf("save tx[%s] into tempdag done", tx.Hash().String())
-		if err != nil {
-			log.Errorf("save tx[%s] error:%s", tx.Hash().String(), err.Error())
-			continue
-		}
-		log.Debugf("[%s]AddContractLoop, OK, index[%d], Tx hash[%s], txSize[%f]", shortId(reqId.String()),
-			index, tx.Hash().String(), tx.Size().Float64())
-		index++
-	}
-	return nil
 }
 
 func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transaction, execute bool) bool {
@@ -726,12 +641,12 @@ func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transa
 //验证一个系统合约的执行结果是否正确
 func CheckContractTxResult(tx *modules.Transaction, rwM rwset.TxManager, dag dboperation.IContractDag) bool {
 	if tx == nil {
-		log.Error("ContractTxCheckForValidator, param is nil")
+		log.Error("CheckContractTxResult, param is nil")
 		return false
 	}
 	reqTx := tx.GetRequestTx()
 	reqId := reqTx.Hash()
-	log.Debugf("ContractTxCheckForValidator enter reqId: [%s]", shortId(reqId.String()))
+	log.Debugf("CheckContractTxResult enter reqId: [%s]", shortId(reqId.String()))
 	//只检查系统合约
 	if !tx.IsSystemContract() {
 		return true
@@ -744,7 +659,7 @@ func CheckContractTxResult(tx *modules.Transaction, rwM rwset.TxManager, dag dbo
 	}
 	_, m, _ := getContractTxContractInfo(tx, modules.APP_CONTRACT_INVOKE)
 	if m == nil {
-		log.Debugf("[%s]ContractTxCheckForValidator, msg not include invoke payload", shortId(reqId.String()))
+		log.Debugf("[%s]CheckContractTxResult, msg not include invoke payload", shortId(reqId.String()))
 		return true
 	}
 
@@ -758,7 +673,7 @@ func CheckContractTxResult(tx *modules.Transaction, rwM rwset.TxManager, dag dbo
 	}
 	msgs, err := runContractCmd(ctx, tx) // long time ...
 	if err != nil {
-		log.Errorf("[%s]ContractTxCheckForValidator, runContractCmd,error:%s", shortId(reqId.String()), err.Error())
+		log.Errorf("[%s]CheckContractTxResult, runContractCmd,error:%s", shortId(reqId.String()), err.Error())
 		return false
 	}
 	resultMsgs := []*modules.Message{}
@@ -772,7 +687,7 @@ func CheckContractTxResult(tx *modules.Transaction, rwM rwset.TxManager, dag dbo
 		}
 	}
 	isMsgSame := msgsCompareInvoke(msgs, resultMsgs)
-	log.Debugf("compare request[%s] and execute result:%t", reqId.String(), isMsgSame)
+	log.Debugf("CheckContractTxResult, compare request[%s] and execute result:%t", reqId.String(), isMsgSame)
 	return isMsgSame
 }
 
@@ -781,11 +696,18 @@ func CheckContractTxResult(tx *modules.Transaction, rwM rwset.TxManager, dag dbo
 //}
 
 func (p *Processor) isValidateElection(tx *modules.Transaction, ele *modules.ElectionNode, checkExit bool) bool {
-	if tx == nil || ele == nil {
-		log.Error("isValidateElection, param is nil")
+	if tx == nil {
+		log.Error("isValidateElection, param tx is nil")
 		return false
 	}
+	if tx.GetContractTxType() == modules.APP_CONTRACT_TPL_REQUEST {
+		return true
+	}
 	reqId := tx.RequestHash()
+	if ele == nil {
+		log.Errorf("[%s]isValidateElection, param ele is nil", shortId(reqId.String()))
+		return false
+	}
 	cfgEleNum := getSysCfgContractElectionNum(p.dag)
 	if len(ele.EleList) < cfgEleNum {
 		log.Infof("[%s]isValidateElection, ElectionInf number not enough ,len(ele)[%d], set electionNum[%d]",
@@ -919,7 +841,7 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 
 func (p *Processor) createContractTxReqToken(contractId, from, to common.Address, token *modules.Asset,
 	daoAmountToken, daoFee uint64, msg *modules.Message) (common.Hash, *modules.Transaction, error) {
-	tx, _, err := p.dag.CreateTokenTransaction(from, to, token, daoAmountToken, daoFee, msg, p.ptn.TxPool())
+	tx, _, err := p.dag.CreateTokenTransaction(from, to, token, daoAmountToken, daoFee, msg)
 	if err != nil {
 		return common.Hash{}, nil, err
 	}
@@ -930,7 +852,7 @@ func (p *Processor) createContractTxReqToken(contractId, from, to common.Address
 
 func (p *Processor) createContractTxReq(contractId, from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
 	msg *modules.Message) (common.Hash, *modules.Transaction, error) {
-	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, certID, msg, p.ptn.TxPool())
+	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, certID, msg)
 	if err != nil {
 		return common.Hash{}, nil, err
 	}
@@ -1060,10 +982,141 @@ func (p *Processor) getContractAssignElectionList(tx *modules.Transaction) ([]mo
 	}
 	return eels, nil
 }
+func (p *Processor) BuildUnitTxs(rwM *rwset.RwSetTxMgr, mDag dboperation.IContractDag, sortedTxs []*modules.Transaction, addr common.Address) ([]*modules.Transaction, error) {
+	txs := []*modules.Transaction{}
+	for i, tx := range sortedTxs {
+		//var saveTx *modules.Transaction
+		saveTx := tx
+		log.Debugf("buildUnitTxs, idx[%d] txReqId[%s]:IsContractTx[%v]",
+			i, tx.RequestHash().String(), tx.IsContractTx())
+		if tx.IsContractTx() && tx.IsOnlyContractRequest() { //只处理请求合约
+			if tx.IsSystemContract() { //执行系统合约
+				signedTx, err := p.RunAndSignTx(tx, rwM, mDag, addr)
+				if err != nil {
+					log.Errorf("BuildUnitTxs,run contract request[%s] fail:%s", tx.Hash(), err.Error())
+					continue
+				}
+				saveTx = signedTx
+			} else { //用户合约,需要从交易池中获取交易请求,根据请求Id再从Processor中获取最终执行后的交易
 
-//func CheckTxContract(rwM rwset.TxManager, dag dboperation.IContractDag, tx *modules.Transaction) bool {
-//	if instanceProcessor != nil {
-//		return instanceProcessor.ContractTxCheckForValidator(rwM, tx, dag)
-//	}
-//	return true //todo false
-//}
+				//用户合约请求不打包到Unit中
+				continue
+				//if mtx, ok := p.mtx[tx.RequestHash()]; ok {
+				//	log.Debugf("[%s]BuildUnitTxs, get tx from mtx", shortId(tx.RequestHash().String()))
+				//
+				//	if mtx.rstTx != nil {
+				//		saveTx = mtx.rstTx
+				//		mtx.valid = false
+				//		log.Debugf("[%s]BuildUnitTxs, mtx include tx", shortId(tx.RequestHash().String()))
+				//	}
+				//}
+			}
+		} // else { //直接保存交易
+		//saveTx = tx
+		//}
+
+		if saveTx == nil {
+			log.Debugf("buildUnitTxs,  saveTx is nil, idx[%d]tx[%s]", i, tx.RequestHash().String())
+			continue
+		}
+
+		err := mDag.SaveTransaction(saveTx, i+1) //第0条是Coinbase
+		if err != nil {
+			log.Errorf("buildUnitTxs, idx[%d] txReqId[%s]-hash[%s]:",
+				i, saveTx.RequestHash().String(), saveTx.Hash().String())
+		}
+		txs = append(txs, saveTx)
+		log.Debugf("buildUnitTxs, add idx[%d] txReqId[%s]-hash[%s]:",
+			i, saveTx.RequestHash().String(), saveTx.Hash().String())
+	}
+
+	return txs, nil
+}
+
+func (p *Processor) AddLocalTx(tx *modules.Transaction) error {
+	if tx == nil {
+		return errors.New("AddLocalTx, tx is nil")
+	}
+	reqId := tx.RequestHash()
+	txHash := tx.Hash()
+	poolTx, _ := p.ptn.TxPool().GetTx(txHash)
+	if poolTx == nil { //tx not in txpool
+		err := p.ptn.TxPool().AddLocal(tx)
+		if err != nil {
+			log.Errorf("[%s]AddLocalTx, AddLocal err:%s", shortId(reqId.String()), err.Error())
+			return err
+		}
+	}
+	isExist, _ := p.dag.IsTransactionExist(txHash)
+	if isExist {
+		log.Debugf("[%s]AddLocalTx,tx already exist dag", shortId(reqId.String()))
+		return nil
+	}
+	err := p.dag.SaveLocalTx(tx)
+	if err != nil {
+		log.Errorf("[%s]AddLocalTx, SaveLocalTx err:%s", shortId(reqId.String()), err.Error())
+		return err
+	}
+	//先将状态改为交易池中
+	err = p.dag.SaveLocalTxStatus(tx.Hash(), modules.TxStatus_InPool)
+	if err != nil {
+		log.Warnf("[%s]AddLocalTx, SaveLocalTxStatus err:%s", shortId(reqId.String()), err.Error())
+		return err
+	}
+	//更新Tx的状态到LocalDB
+	go func(txHash common.Hash) {
+		saveUnitCh := make(chan modules.SaveUnitEvent, 10)
+		defer close(saveUnitCh)
+		saveUnitSub := p.dag.SubscribeSaveUnitEvent(saveUnitCh)
+		headCh := make(chan modules.SaveUnitEvent, 10)
+		defer close(headCh)
+		headSub := p.dag.SubscribeSaveStableUnitEvent(headCh)
+		defer saveUnitSub.Unsubscribe()
+		defer headSub.Unsubscribe()
+		timeout := time.NewTimer(100 * time.Second)
+		for {
+			select {
+			case u := <-saveUnitCh:
+				log.Infof("AddLocalTx, SubscribeSaveUnitEvent received unit:%s", u.Unit.DisplayId())
+				for _, utx := range u.Unit.Transactions() {
+					if utx.Hash() == txHash || utx.RequestHash() == txHash {
+						log.Infof("[%s]AddLocalTx, Change local tx[%s] status to unstable",
+							shortId(reqId.String()), txHash.String())
+						err = p.dag.SaveLocalTxStatus(txHash, modules.TxStatus_Unstable)
+						if err != nil {
+							log.Warnf("[%s]AddLocalTx, Save tx[%s] status to local err:%s",
+								shortId(reqId.String()), txHash.String(), err.Error())
+						}
+					}
+				}
+			case u := <-headCh:
+				log.Infof("AddLocalTx, SubscribeSaveStableUnitEvent received unit:%s", u.Unit.DisplayId())
+				for _, utx := range u.Unit.Transactions() {
+					if utx.Hash() == txHash || utx.RequestHash() == txHash {
+						log.Debugf("[%s]AddLocalTx, Change local tx[%s] status to stable",
+							shortId(reqId.String()), txHash.String())
+						err = p.dag.SaveLocalTxStatus(txHash, modules.TxStatus_Stable)
+						if err != nil {
+							log.Warnf("[%s]AddLocalTx, Save tx[%s] status to local err:%s",
+								shortId(reqId.String()), txHash.String(), err.Error())
+						}
+						return
+					}
+				}
+			case <-timeout.C:
+				log.Warnf("[%s]AddLocalTx, SubscribeSaveStableUnitEvent timeout for tx[%s]",
+					shortId(reqId.String()), txHash.String())
+				return
+			case e := <-headSub.Err():
+				log.Warnf("AddLocalTx, SubscribeSaveStableUnitEvent err:%v", e)
+				//log.Warnf("AddLocalTx, SubscribeSaveStableUnitEvent err:%s", e.Error())
+				return
+			case e := <-saveUnitSub.Err():
+				log.Warnf("AddLocalTx, SubscribeSaveUnitEvent err:%s", e.Error())
+				return
+			}
+		}
+	}(tx.Hash())
+
+	return nil
+}

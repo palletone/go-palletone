@@ -4,12 +4,12 @@ source ./modifyconfig.sh
 
 function ExecInit()
 {
-    
-    count=1  
-    while [ $count -le $1 ] ;  
-    do  
+
+    count=1
+    while [ $count -le $1 ] ;
+    do
     #echo $count;
-    #ExecDeploy $count 
+    #ExecDeploy $count
     if [ $count -eq 1 ] ;then
     cd node$count
     cp ../init.sh .
@@ -40,12 +40,12 @@ function ExecInit()
         rm -rf log
         cd ../
     fi
-    let ++count;  
-    sleep 1;  
-    done 
+    let ++count;
+    sleep 1;
+    done
     echo "====================init ok====================="
-    return 0;  
-    
+    return 0;
+
 }
 
 
@@ -74,13 +74,13 @@ function replacejson()
     add=`cat $1 | jq ".initialParameters.active_mediator_count = $length"`
 
 : << !
-    add=`cat $1 | 
-      jq "to_entries | 
-      map(if .key == \"initialActiveMediators\" 
-          then . + {\"value\":$length} 
-          else . 
+    add=`cat $1 |
+      jq "to_entries |
+      map(if .key == \"initialActiveMediators\"
+          then . + {\"value\":$length}
+          else .
           end
-         ) | 
+         ) |
       from_entries"`
 !
 
@@ -112,22 +112,24 @@ function ExecDeploy()
 
 
 
-function LoopDeploy()  
-{  
-    count=1;  
-    while [ $count -le $1 ] ;  
-    do  
+function LoopDeploy()
+{
+    count=1;
+    while [ $count -le $1 ] ;
+    do
     #echo $count;
-    ExecDeploy $count 
-    let ++count;  
-    sleep 1;  
-    done  
-    return 0;  
+    ExecDeploy $count
+    let ++count;
+    sleep 1;
+    done
+    return 0;
 }
-path=`echo $GOPATH`
-src=/src/github.com/palletone/go-palletone/build/bin/gptn
-fullpath=$path$src
-cp $fullpath .
+#path=`echo $GOPATH`
+#src=/src/github.com/palletone/go-palletone/build/bin/gptn
+#fullpath=$path$src
+#cp $fullpath .
+
+cp ../../gptn .
 
 #cp ../node/gptn .
 killall gptn
@@ -141,7 +143,7 @@ n=3
 LoopDeploy $n;
 
 json="node1/ptn-genesis.json"
-replacejson $json 
+replacejson $json
 
 ModifyP2PConfig $n
 

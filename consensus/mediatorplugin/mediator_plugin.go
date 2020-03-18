@@ -30,6 +30,7 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
+	"github.com/palletone/go-palletone/txspool"
 )
 
 func (mp *MediatorPlugin) newChainBanner() {
@@ -94,12 +95,15 @@ const (
 func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 	//log.Debugf("launch unitProductionLoop")
 	mp.wg.Add(1)
+
+	// 继续循环生产计划
+	defer mp.scheduleProductionLoop()
 	defer mp.wg.Done()
 
-	// 1. 尝试生产unit
+	// 尝试生产unit
 	result, detail := mp.maybeProduceUnit()
 
-	// 2. 打印尝试结果
+	// 打印尝试结果
 	switch result {
 	case Produced:
 		log.Infof("Generated unit(%v) #%v parent(%v) @%v signed by %v", detail["Hash"], detail["Num"],
@@ -130,9 +134,6 @@ func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 		log.Infof("Unknown condition when producing unit!")
 	}
 
-	// 3. 继续循环生产计划
-	go mp.scheduleProductionLoop()
-
 	return result
 }
 
@@ -145,7 +146,7 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	nowFine := time.Now()
 	now := time.Unix(nowFine.Add(500*time.Millisecond).Unix(), 0)
 
-	// 1. 判断是否满足生产的各个条件
+	// 判断是否满足生产的各个条件
 	nextSlotTime := dag.GetSlotTime(1)
 	// If the next Unit production opportunity is in the present or future, we're synced.
 	if !mp.productionEnabled {
@@ -221,6 +222,7 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 		detail["Now"] = now.Format("2006-01-02 15:04:05")
 		return Lag, detail
 	}
+
 	unitNumber := dag.HeadUnitNum() + 1
 	unitId := fmt.Sprintf("%d", unitNumber)
 
@@ -230,85 +232,43 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 		return ExceptionProducing, detail
 	}
 	defer rwM.Close()
-	if err := mp.ptn.ContractProcessor().AddContractLoop(rwM, mp.ptn.TxPool(), scheduledMediator, ks); err != nil {
-		log.Debugf("MaybeProduceUnit RunContractLoop err: %v", err.Error())
-	}
-	// close tx simulator (系统合约)
 
 	//广播节点选取签名请求事件
 	go mp.ptn.ContractProcessor().BroadcastElectionSigRequestEvent()
 
-	// 2. 生产单元
-	var groupPubKey []byte = nil
-	if mp.groupSigningEnabled {
-		groupPubKey = mp.localMediatorPubKey(scheduledMediator)
-		if len(groupPubKey) == 0 {
-			log.Debugf("the groupPubKey is nil")
-		}
-	}
-	// 3.从TxPool抓取排序后的Tx，如果是系统合约请求，则执行
 	txpool := mp.ptn.TxPool()
 	p := mp.ptn.ContractProcessor()
-	poolTxs, _ := txpool.GetSortedTxs(common.Hash{}, unitNumber)
-	log.DebugDynamic(func() string {
-		txHash := ""
-		for i, tx := range poolTxs {
-			txHash += fmt.Sprintf("\nindex:%d hash:%s ;", i, tx.Tx.Hash().String())
-		}
-		return "txpool GetSortedTxs return:" + txHash
-	})
-	////TODO Jay 这里的txpool.GetSortedTxs返回顺序有问题，所以再次排序
-	//poolTxMap := make(map[common.Hash]*modules.Transaction)
-	//for _, ptx := range poolTxs {
-	//	poolTxMap[ptx.Tx.Hash()] = ptx.Tx
-	//}
-	//sortedTxs, orphanTxs, dsTxs := modules.SortTxs(poolTxMap, mp.dag.GetUtxoEntry)
-	//log.DebugDynamic(func() string {
-	//	txHash := ""
-	//	for _, tx := range sortedTxs {
-	//		txHash += tx.Hash().String() + ";"
-	//	}
-	//	return "modules.SortTxs return:" + txHash
-	//})
-	//if len(orphanTxs) > 0 {
-	//	log.InfoDynamic(func() string {
-	//		otxHash := ""
-	//		for _, tx := range orphanTxs {
-	//			otxHash += tx.Hash().String() + ";"
-	//		}
-	//		return "modules.SortTxs find orphan txs:" + otxHash
-	//	})
-	//}
-	//if len(dsTxs) > 0 {
-	//	otxHash := ""
-	//	for _, tx := range dsTxs {
-	//		otxHash += tx.Hash().String() + ";"
-	//	}
-	//	log.Warnf("modules.SortTxs find double spend txs:%s", otxHash)
-	//}
-	sortedTxs := make([]*modules.Transaction, 0)
-	for _, tx := range poolTxs {
-		sortedTxs = append(sortedTxs, tx.Tx)
-	}
+	txHashStr := ""
+	startTime := time.Now() //计算打包花费的时间，以决定是否停止继续添加Tx
+	costSecond := mp.dag.GetChainParameters().MediatorInterval * 2 / 3
+	endTime := startTime.Add(time.Duration(costSecond) * time.Second)
+	log.Debugf("expect max end time:%s", endTime.String())
+	//unitSize:=0 //计算Unit大小，以决定是否停止继续添加Tx
 	//创建TempDAG，用于临时存储Tx执行的结果
 	tempDag, err := mp.dag.NewTemp()
 	log.Debug("create a new tempDag for generate unit")
 	if err != nil {
 		log.Errorf("Init temp dag error:%s", err.Error())
 	}
+
 	tx4Pack := []*modules.Transaction{}
-	for i, tx := range sortedTxs {
+	i := 0
+	err = txpool.GetSortedTxs(func(ptx *txspool.TxPoolTransaction) (getNext bool, err error) {
+		txHashStr += ptx.Tx.Hash().String() + ";"
+		tx := ptx.Tx
+		i++ //第0条是Coinbase
 		log.Debugf("pack tx[%s] into unit[#%d]", tx.RequestHash().String(), unitNumber)
-		if tx.IsSystemContract() && tx.IsNewContractInvokeRequest() { //是未执行的系统合约
-			signedTx, err := p.RunAndSignTx(tx, rwM, tempDag, scheduledMediator, ks)
+		if tx.IsSystemContract() && tx.IsOnlyContractRequest() { //是未执行的系统合约
+			signedTx, err := p.RunAndSignTx(tx, rwM, tempDag, scheduledMediator)
 			if err != nil {
 				log.Errorf("run contract request[%s] fail:%s", tx.Hash().String(), err.Error())
-				continue
+				return false, err
 			}
-			err = tempDag.SaveTransaction(signedTx, i+1) //第0条是Coinbase
+			err = tempDag.SaveTransaction(signedTx, i) //第0条是Coinbase
 			if err != nil {
 				log.Errorf("save tx[%s] req[%s] get error:%s", signedTx.Hash().String(),
 					signedTx.RequestHash().String(), err.Error())
+				return false, err
 			}
 			tx4Pack = append(tx4Pack, signedTx)
 		} else { //不需要执行，直接打包
@@ -316,11 +276,36 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 			if err != nil {
 				log.Errorf("save tx[%s] req[%s] get error:%s", tx.Hash().String(),
 					tx.RequestHash().String(), err.Error())
+				return false, err
 			}
 			tx4Pack = append(tx4Pack, tx)
 		}
+		//TODO 判断时间和Unit大小，决定是否继续增加Tx
+		if time.Now().Unix() > endTime.Unix() {
+			log.Infof("only have %d second to pack unit", costSecond)
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		log.Errorf("pickup tx from txpool fail:%s", err.Error())
 	}
-	newUnit, err := dag.GenerateUnit(scheduledTime, scheduledMediator, groupPubKey, ks, tx4Pack, txpool)
+
+	log.DebugDynamic(func() string {
+		return fmt.Sprintf("txpool GetSortedTxs cost:%s,count:%d,txs[%s]", time.Since(startTime).String(),
+			len(tx4Pack), txHashStr)
+	})
+
+	// 生产单元
+	var groupPubKey []byte = nil
+	if mp.groupSigningEnabled {
+		groupPubKey = mp.localMediatorPubKey(scheduledMediator)
+		if len(groupPubKey) == 0 {
+			log.Debugf("the groupPubKey is nil")
+		}
+	}
+
+	newUnit, err := dag.GenerateUnit(scheduledTime, scheduledMediator, groupPubKey, ks, tx4Pack)
 	if err != nil {
 		detail["Msg"] = fmt.Sprintf("GenerateUnit err: %v", err.Error())
 		return ExceptionProducing, detail
@@ -334,12 +319,11 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	detail["Hash"] = unitHash.TerminalString()
 	detail["ParentHash"] = newUnit.ParentHash()[0].TerminalString()
 
-	// 3. 对 unit 进行群签名
+	// 对 unit 进行群签名
 	go mp.groupSignUnit(scheduledMediator, unitHash)
 
-	// 4. 异步向区块链网络广播新unit
+	// 异步向区块链网络广播新unit
 	go mp.newProducedUnitFeed.Send(NewProducedUnitEvent{Unit: newUnit})
-	log.Debugf("send NewProducedUnitEvent")
 
 	return Produced, detail
 }

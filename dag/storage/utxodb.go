@@ -193,10 +193,7 @@ func (utxodb *UtxoDb) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, e
 
 	utxo := new(modules.Utxo)
 	key := outpoint.ToKey(utxodb.UTXO_PREFIX)
-	if stxo, err := utxodb.GetStxoEntry(outpoint); err == nil && stxo != nil {
-		return nil, fmt.Errorf("DB[%s,%p,req=%t] utxo[%s] is spent by[%s].", reflect.TypeOf(utxodb.db).String(),
-			utxodb.db, utxodb.isRequest, outpoint.String(), stxo.SpentByTxId.String())
-	}
+
 	err := RetrieveFromRlpBytes(utxodb.db, key, utxo)
 	if err != nil {
 		log.DebugDynamic(func() string {
@@ -247,9 +244,6 @@ func (db *UtxoDb) GetAddrUtxos(addr common.Address, asset *modules.Asset) (
 		item.TxHash = out.TxHash
 		item.MessageIndex = out.MessageIndex
 		item.OutIndex = out.OutIndex
-		if spent, _ := db.IsUtxoSpent(item); spent {
-			continue
-		}
 		if utxo, err := db.GetUtxoEntry(item); err == nil {
 			if asset == nil || asset.IsSimilar(utxo.Asset) {
 				allutxos[out] = utxo

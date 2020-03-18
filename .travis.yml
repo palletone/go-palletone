@@ -197,8 +197,8 @@ matrix:
       go: 1.12.9
       env: multiple_nodes_bdd
       script:
-        # - go build -mod=vendor ./cmd/gptn
-        - make gptn
+        - go build -mod=vendor ./cmd/gptn
+        #- make gptn
         #- cp bdd/light/testcases/!(preset.sh) bdd/node
         # - cp ./gptn bdd/node
         - cd bdd/node
@@ -336,8 +336,8 @@ matrix:
       services: docker
       script:
         - ip addr
-        - make gptn
-        - gptnVersion=`./build/bin/gptn version|grep ^Version|awk '{print $2}'|awk -F '-' '{print $1}'`
+        - go build -mod=vendor ./cmd/gptn
+        - gptnVersion=`./gptn version|grep ^Version|awk '{print $2}'|awk -F '-' '{print $1}'`
         - docker images
         - cat /proc/sys/net/ipv4/ip_forward
         - sudo ./jurySec.sh

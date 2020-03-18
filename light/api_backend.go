@@ -118,11 +118,18 @@ func (b *LesApiBackend) GetChainParameters() *core.ChainParameters {
 	return nil
 }
 
-func (b *LesApiBackend) SendTx(ctx context.Context, signedTx *modules.Transaction) error {
-	return b.ptn.txPool.AddLocal(signedTx)
+func (b *LesApiBackend) SendTx(ctx context.Context, tx *modules.Transaction) error {
+	return b.ptn.txPool.AddLocal(tx)
 }
 func (b *LesApiBackend) SendTxs(ctx context.Context, signedTxs []*modules.Transaction) []error {
-	return b.ptn.txPool.AddLocals(signedTxs)
+	errs := []error{}
+	for _, tx := range signedTxs {
+		err := b.ptn.txPool.AddLocal(tx)
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return errs
 }
 
 func (b *LesApiBackend) RemoveTx(txHash common.Hash) {
@@ -144,7 +151,7 @@ func (b *LesApiBackend) GetPoolNonce(ctx context.Context, addr common.Address) (
 	return uint64(0), nil
 }
 
-func (b *LesApiBackend) Stats() (pending int, queued int, reserve int) {
+func (b *LesApiBackend) Status() (pending int, queued int, reserve int) {
 	//return b.ptn.txPool.Stats(), 0, 0
 	return 0, 0, 0
 }

@@ -31,7 +31,6 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/dboperation"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/txspool"
 )
 
 type IDag interface {
@@ -51,7 +50,7 @@ type IDag interface {
 	//GetCurrentMemUnit(assetId modules.AssetId, index uint64) *modules.Unit
 	GetCurrentMemUnit(assetId modules.AssetId) *modules.Unit
 
-	InsertDag(units modules.Units, txpool txspool.ITxPool, is_stable bool) (int, error)
+	InsertDag(units modules.Units, is_stable bool) (int, error)
 	GetUnitByHash(hash common.Hash) (*modules.Unit, error)
 	HasHeader(common.Hash, uint64) bool
 	GetHeaderByNumber(number *modules.ChainIndex) (*modules.Header, error)
@@ -77,7 +76,7 @@ type IDag interface {
 	//UnitIsConfirmedByHash(hash common.Hash) bool
 	ParentsIsConfirmByHash(hash common.Hash) bool
 	IsHeaderExist(hash common.Hash) bool
-	SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error
+	SaveUnit(unit *modules.Unit, isGenesis bool) error
 	SaveTransaction(tx *modules.Transaction, txIndex int) error
 	InsertUnit(unit *modules.Unit) error
 
@@ -92,12 +91,8 @@ type IDag interface {
 	GetContractJury(contractId []byte) (*modules.ElectionNode, error)
 	GetUnitNumber(hash common.Hash) (*modules.ChainIndex, error)
 
-	GetUtxoView(tx *modules.Transaction) (*txspool.UtxoViewpoint, error)
+	//GetUtxoView(tx *modules.Transaction) (*txpool2.UtxoViewpoint, error)
 	IsUtxoSpent(outpoint *modules.OutPoint) (bool, error)
-	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
-	SubscribeChainEvent(ch chan<- modules.ChainEvent) event.Subscription
-	SubscribeSaveStableUnitEvent(ch chan<- modules.SaveUnitEvent) event.Subscription
-
 	PostChainEvents(events []interface{})
 
 	GetTrieSyncProgress() (uint64, error)
@@ -133,17 +128,15 @@ type IDag interface {
 
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
 	//GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
-	SetUnitGroupSign(unitHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error
-	SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent) event.Subscription
+	SetUnitGroupSign(unitHash common.Hash, groupSign []byte) error
 
 	IsSynced(toStrictly bool) bool
-	SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription
 	GetPrecedingMediatorNodes() map[string]*discover.Node
 	//UnitIrreversibleTime() time.Duration
 	LastMaintenanceTime() int64
 	IsIrreversibleUnit(hash common.Hash) (bool, error)
-	GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string,
-		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
+	//GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string,
+	//	txPool txpool2.ITxPool) (*modules.Transaction, uint64, error)
 
 	QueryDbByKey(key []byte) ([]byte, error)
 	QueryDbByPrefix(prefix []byte) ([]*modules.DbRow, error)
@@ -177,8 +170,7 @@ type IDag interface {
 
 	RefreshAddrTxIndex() error
 
-	GenVoteMediatorTx(voter common.Address, mediators map[string]bool,
-		txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
+	GenVoteMediatorTx(voter common.Address, mediators map[string]bool) (*modules.Transaction, uint64, error)
 	GetDynGlobalProp() *modules.DynamicGlobalProperty
 	GetGlobalProp() *modules.GlobalProperty
 	GetMediatorSchl() *modules.MediatorSchedule
@@ -215,9 +207,9 @@ type IDag interface {
 	IsContractDeveloper(addr common.Address) bool
 	//GetActiveJuries() []common.Address
 	CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
-		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
+		msg *modules.Message) (*modules.Transaction, uint64, error)
 	CreateTokenTransaction(from, to common.Address, token *modules.Asset, daoAmountToken, daoFee uint64,
-		msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error)
+		msg *modules.Message) (*modules.Transaction, uint64, error)
 	ChainThreshold() int
 
 	CheckHeaderCorrect(number int) error
@@ -226,8 +218,6 @@ type IDag interface {
 	RebuildAddrTxIndex() error
 	GetJurorByAddrHash(hash common.Hash) (*modules.JurorDeposit, error)
 	GetJurorReward(jurorAdd common.Address) common.Address
-	SubscribeSaveUnitEvent(ch chan<- modules.SaveUnitEvent) event.Subscription
-	SubscribeUnstableRepositoryUpdatedEvent(ch chan<- modules.UnstableRepositoryUpdatedEvent) event.Subscription
 	GetContractsWithJuryAddr(addr common.Hash) []*modules.Contract
 	GetAddressCount() int
 	NewTemp() (dboperation.IContractDag, error)
@@ -236,4 +226,15 @@ type IDag interface {
 	SaveLocalTx(tx *modules.Transaction) error
 	GetLocalTx(txId common.Hash) (*modules.Transaction, modules.TxStatus, error)
 	SaveLocalTxStatus(txId common.Hash, status modules.TxStatus) error
+
+	//event
+	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
+	SubscribeChainEvent(ch chan<- modules.ChainEvent) event.Subscription
+	//订阅将Unit设置为稳定单元的事件
+	SubscribeSaveStableUnitEvent(ch chan<- modules.SaveUnitEvent) event.Subscription
+	SubscribeRollbackUnitEvent(ch chan<- modules.RollbackUnitEvent) event.Subscription
+	SubscribeSaveUnitEvent(ch chan<- modules.SaveUnitEvent) event.Subscription
+	SubscribeUnstableRepositoryUpdatedEvent(ch chan<- modules.UnstableRepositoryUpdatedEvent) event.Subscription
+	SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent) event.Subscription
+	SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription
 }
