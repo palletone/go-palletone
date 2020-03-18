@@ -131,75 +131,10 @@ func (b *PtnApiBackend) SendConsensus(ctx context.Context) error {
 	return nil
 }
 
-func (b *PtnApiBackend) SendTx(ctx context.Context, signedTx *modules.Transaction) error {
-	err := b.ptn.txPool.AddLocal(signedTx)
-	if err != nil {
-		return err
-	}
-	err = b.Dag().SaveLocalTx(signedTx)
-	if err != nil {
-		log.Errorf("Try to send tx[%s] get an error:%s", signedTx.Hash().String(), err.Error())
-	}
-	//先将状态改为交易池中
-	err = b.Dag().SaveLocalTxStatus(signedTx.Hash(), modules.TxStatus_InPool)
-	if err != nil {
-		log.Warnf("Save tx[%s] status to local err:%s", signedTx.Hash().String(), err.Error())
-	}
-	//更新Tx的状态到LocalDB
-	go func(txHash common.Hash) {
-		saveUnitCh := make(chan modules.SaveUnitEvent, 10)
-		defer close(saveUnitCh)
-		saveUnitSub := b.Dag().SubscribeSaveUnitEvent(saveUnitCh)
-		headCh := make(chan modules.SaveUnitEvent, 10)
-		defer close(headCh)
-		headSub := b.Dag().SubscribeSaveStableUnitEvent(headCh)
-		defer saveUnitSub.Unsubscribe()
-		defer headSub.Unsubscribe()
-		timeout := time.NewTimer(100 * time.Second)
-		for {
-			select {
-			case u := <-saveUnitCh:
-				log.Infof("SubscribeSaveUnitEvent received unit:%s", u.Unit.DisplayId())
-				for _, utx := range u.Unit.Transactions() {
-					if utx.Hash() == txHash || utx.RequestHash() == txHash {
-						log.Debugf("Change local tx[%s] status to unstable", txHash.String())
-						err = b.Dag().SaveLocalTxStatus(txHash, modules.TxStatus_Unstable)
-						if err != nil {
-							log.Warnf("Save tx[%s] status to local err:%s", txHash.String(), err.Error())
-						}
-					}
-				}
-			case u := <-headCh:
-				log.Infof("SubscribeSaveStableUnitEvent received unit:%s", u.Unit.DisplayId())
-				for _, utx := range u.Unit.Transactions() {
-					if utx.Hash() == txHash || utx.RequestHash() == txHash {
-						log.Debugf("Change local tx[%s] status to stable", txHash.String())
-						err = b.Dag().SaveLocalTxStatus(txHash, modules.TxStatus_Stable)
-						if err != nil {
-							log.Warnf("Save tx[%s] status to local err:%s", txHash.String(), err.Error())
-						}
-						return
-					}
-				}
-			case <-timeout.C:
-				log.Warnf("SubscribeSaveStableUnitEvent timeout for tx[%s]", txHash.String())
-				return
-			// Err() channel will be closed when unsubscribing.
-			//case err0 := <-headSub.Err():
-			//	log.Warnf("SubscribeSaveStableUnitEvent err:%s", err0.Error())
-			case e := <-headSub.Err():
-				log.Warnf("SubscribeSaveStableUnitEvent err:%s", e.Error())
-				return
-			//case err1 := <-saveUnitSub.Err():
-			//	log.Warnf("SubscribeSaveUnitEvent err:%s", err1.Error())
-			case e := <-saveUnitSub.Err():
-				log.Warnf("SubscribeSaveUnitEvent err:%s", e.Error())
-				return
-			}
-		}
-	}(signedTx.Hash())
+func (b *PtnApiBackend) SendTx(ctx context.Context, tx *modules.Transaction) error {
+	return b.ptn.contractPorcessor.AddLocalTx(tx)
 
-	return nil
+
 }
 
 func (b *PtnApiBackend) SendTxs(ctx context.Context, signedTxs []*modules.Transaction) []error {
@@ -780,7 +715,7 @@ func (b *PtnApiBackend) GetContractInvokeHistory(addr string) ([]*ptnjson.Contra
 	return txjs, nil
 }
 func (b *PtnApiBackend) ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi,
-	ccLanguage string) ([]byte, error) {
+ccLanguage string) ([]byte, error) {
 	//channelId := "palletone"
 	payload, err := b.ptn.contract.Install(channelId, ccName, ccPath, ccVersion, ccDescription, ccAbi, ccLanguage)
 	if err != nil {
@@ -825,7 +760,7 @@ func (b *PtnApiBackend) SignAndSendRequest(addr common.Address, tx *modules.Tran
 
 //
 func (b *PtnApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName,
-	path, version string, description, abi, language string, addrs []common.Address) (reqId common.Hash,
+path, version string, description, abi, language string, addrs []common.Address) (reqId common.Hash,
 	tplId []byte, err error) {
 	return b.ptn.contractPorcessor.ContractInstallReq(from, to, daoAmount, daoFee, tplName, path,
 		version, description, abi, language, true, addrs)
@@ -865,7 +800,7 @@ func (b *PtnApiBackend) ContractStopReqTx(from, to common.Address, daoAmount, da
 }
 
 func (b *PtnApiBackend) ContractInstallReqTxFee(from, to common.Address, daoAmount, daoFee uint64, tplName,
-	path, version string, description, abi, language string, addrs []common.Address) (fee float64, size float64, tm uint32,
+path, version string, description, abi, language string, addrs []common.Address) (fee float64, size float64, tm uint32,
 	err error) {
 	return b.ptn.contractPorcessor.ContractInstallReqFee(from, to, daoAmount, daoFee, tplName, path,
 		version, description, abi, language, true, addrs)

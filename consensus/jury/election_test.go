@@ -154,7 +154,7 @@ func Test_Election_Optimal(t *testing.T) {
 				if int(tp) <= mixCnt {
 					mixCnt = int(tp)
 					log.Info("Election", "total", total, "weight", w, "mixCnt", mixCnt, "cnt", int(cnt))
-				}else{
+				} else {
 					//log.Info("Election", "total", total, "weight", w, "cnt", int(cnt))
 				}
 			}

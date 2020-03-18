@@ -330,7 +330,6 @@ func TestTransactionAddingTxs(t *testing.T) {
 			return true, nil
 		})
 		log.Debugf(" total size is :%v ,the cout:%d ", total, len(txs))
-
 		//for i, tx := range sortedtxs {
 		//	if i < len(txs)-1 {
 		//		if sortedtxs[i].Priority_lvl < sortedtxs[i+1].Priority_lvl {

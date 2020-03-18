@@ -372,8 +372,8 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 	pm.txCh = make(chan modules.TxPreEvent, txChanSize)
 	// 订阅的回执
 	pm.txSub = pm.txpool.SubscribeTxPreEvent(pm.txCh)
-	// 启动广播的goroutine
-	go pm.txBroadcastLoop()
+	// 交易处理
+	go pm.txProcessLoop()
 
 	// broadcast new unit produced by mediator
 	pm.newProducedUnitCh = make(chan mp.NewProducedUnitEvent)
@@ -790,10 +790,12 @@ func (pm *ProtocolManager) BroadcastTx(hash common.Hash, tx *modules.Transaction
 	log.Trace("Broadcast transaction", "hash", hash, "recipients", len(peers))
 }
 
-func (pm *ProtocolManager) txBroadcastLoop() {
+func (pm *ProtocolManager) txProcessLoop() {
 	for {
 		select {
 		case event := <-pm.txCh:
+			// add user contract request process
+			go pm.contractProc.ProcessUserContractInvokeReqTx(event.Tx)
 			pm.BroadcastTx(event.Tx.Hash(), event.Tx)
 
 			// Err() channel will be closed when unsubscribing.
@@ -877,7 +879,7 @@ func (pm *ProtocolManager) ContractBroadcast(event jury.ContractEvent, local boo
 // NodeInfo represents a short summary of the PalletOne sub-protocol metadata
 // known about the host peer.
 type NodeInfo struct {
-	Network uint64 `json:"network"` // PalletOne network ID (1=Frontier, 2=Morden, Ropsten=3, Rinkeby=4)
+	Network uint64      `json:"network"` // PalletOne network ID (1=Frontier, 2=Morden, Ropsten=3, Rinkeby=4)
 	Index   uint64
 	Genesis common.Hash `json:"genesis"` // SHA3 hash of the host's genesis block
 	Head    common.Hash `json:"head"`    // SHA3 hash of the host's best owned block

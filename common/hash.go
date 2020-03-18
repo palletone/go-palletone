@@ -70,6 +70,11 @@ func (h Hash) TerminalString() string {
 func (h Hash) String() string {
 	return h.Hex()
 }
+
+func (h Hash) ShortStr() string {
+	return h.Hex()[:8]
+}
+
 func (h Hash) IsZero() bool {
 	for _, v := range h {
 		if v != byte(0) {
