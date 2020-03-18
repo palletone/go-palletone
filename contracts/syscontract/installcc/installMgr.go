@@ -119,7 +119,7 @@ func (p *InstallMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 
 func (p *InstallMgr) InstallByteCode(stub shim.ChaincodeStubInterface, name, description string, code []byte,
 	version, abi, language string, addrs []common.Address) error {
-	if !isDeveloperInvoke(stub) {
+	if !isDeveloperInvoke(stub) && !isFoundationInvoke(stub) {
 		return errors.New("only developer address can call this function")
 	}
 	if len(addrs) > 0 {
