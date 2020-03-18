@@ -275,6 +275,8 @@ func isDeveloperInvoke(stub shim.ChaincodeStubInterface, addr common.Address) bo
 	}
 	return false
 }
+
+//  获取其他list
 func getDeveloperList(stub shim.ChaincodeStubInterface) (map[string]bool, error) {
 	byte, err := stub.GetContractState(syscontract.DepositContractAddress, modules.DeveloperList)
 	if err != nil {
@@ -283,11 +285,20 @@ func getDeveloperList(stub shim.ChaincodeStubInterface) (map[string]bool, error)
 	if byte == nil {
 		return nil, nil
 	}
-	log.Debugf("query DeveloperList:%s", string(byte))
+	//  兼容以前的数据
+	listSlice := []string{}
 	list := make(map[string]bool)
-	err = json.Unmarshal(byte, &list)
+	err = json.Unmarshal(byte, &listSlice)
 	if err != nil {
-		return nil, err
+		//  兼容以前的数据
+		err = json.Unmarshal(byte, &list)
+		if err != nil {
+			return nil, err
+		}
+		return list, nil
+	}
+	for _, v := range listSlice {
+		list[v] = true
 	}
 	return list, nil
 }
