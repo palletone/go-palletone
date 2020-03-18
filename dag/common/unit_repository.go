@@ -93,7 +93,8 @@ type IUnitRepository interface {
 	//UpdateHeadByBatch(hash common.Hash, number uint64) error
 
 	//GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue
-	GetFileInfo(filehash []byte) ([]*modules.FileInfo, error)
+	GetFileInfo(filehash []byte) ([]*modules.ProofOfExistencesInfo, error)
+	GetProofOfExistencesByMaindata(maindata []byte) ([]*modules.ProofOfExistencesInfo, error)
 
 	//获得某个分区上的最新不可逆单元
 	//GetLastIrreversibleUnit(assetID modules.AssetId) (*modules.Unit, error)
@@ -1757,29 +1758,46 @@ func (rep *UnitRepository) GetAddrUtxoTxs(addr common.Address) ([]*modules.Trans
 	}
 	return txs, err
 }
-func (rep *UnitRepository) GetFileInfo(filehash []byte) ([]*modules.FileInfo, error) {
+func (rep *UnitRepository) GetFileInfo(filehash []byte) ([]*modules.ProofOfExistencesInfo, error) {
 	rep.lock.RLock()
 	defer rep.lock.RUnlock()
 	hashs, err := rep.idxdb.GetMainDataTxIds(filehash)
 	if err != nil {
 		return nil, err
 	}
-	mds0, err := rep.GetFileInfoByHash(hashs)
+	mds0, err := rep.GetMainDataByHash(hashs)
 	if hashs == nil {
 		hash := common.HexToHash(string(filehash))
 		hashs = append(hashs, hash)
-		mds1, err := rep.GetFileInfoByHash(hashs)
+		mds1, err := rep.GetMainDataByHash(hashs)
 		return mds1, err
 	}
 	return mds0, err
 }
 
-func (rep *UnitRepository) GetFileInfoByHash(hashs []common.Hash) ([]*modules.FileInfo, error) {
+func (rep *UnitRepository) GetProofOfExistencesByMaindata(maindata []byte) ([]*modules.ProofOfExistencesInfo, error) {
 	rep.lock.RLock()
 	defer rep.lock.RUnlock()
-	mds := make([]*modules.FileInfo, 0)
+	hashs, err := rep.idxdb.GetMainDataTxIds(maindata)
+	if err != nil {
+		return nil, err
+	}
+	mds0, err := rep.GetMainDataByHash(hashs)
+	if hashs == nil {
+		hash := common.HexToHash(string(maindata))
+		hashs = append(hashs, hash)
+		mds1, err := rep.GetMainDataByHash(hashs)
+		return mds1, err
+	}
+	return mds0, err
+}
+
+func (rep *UnitRepository) GetMainDataByHash(hashs []common.Hash) ([]*modules.ProofOfExistencesInfo, error) {
+	rep.lock.RLock()
+	defer rep.lock.RUnlock()
+	mds := make([]*modules.ProofOfExistencesInfo, 0)
 	for _, hash := range hashs {
-		var md modules.FileInfo
+		var md modules.ProofOfExistencesInfo
 
 		tx, err := rep.GetTransaction(hash)
 		if err != nil {

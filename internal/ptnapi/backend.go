@@ -186,7 +186,8 @@ type Backend interface {
 	// get tx hash by req id
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 
-	GetFileInfo(filehash string) ([]*modules.FileInfo, error)
+	GetFileInfo(maindata string) ([]*modules.ProofOfExistencesInfo, error)
+	GetProofOfExistencesByMaindata(maindata string) ([]*modules.ProofOfExistencesInfo, error)
 
 	GetAllContractTpl() ([]*ptnjson.ContractTemplateJson, error)
 	GetAllContracts() ([]*ptnjson.ContractJson, error)

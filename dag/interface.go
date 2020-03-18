@@ -147,7 +147,8 @@ type IDag interface {
 	GetTxPackInfo(txHash common.Hash) (*modules.TxPackInfo, error)
 	//GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
 
-	GetFileInfo(filehash []byte) ([]*modules.FileInfo, error)
+	GetFileInfo(maindata []byte) ([]*modules.ProofOfExistencesInfo, error)
+	GetProofOfExistencesByMaindata(maindata []byte) ([]*modules.ProofOfExistencesInfo, error)
 
 	GetLightHeaderByHash(headerHash common.Hash) (*modules.Header, error)
 	GetLightChainHeight(assetId modules.AssetId) uint64
