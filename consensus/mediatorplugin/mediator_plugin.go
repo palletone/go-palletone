@@ -302,7 +302,8 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	}
 
 	log.DebugDynamic(func() string {
-		return "txpool GetSortedTxs cost:" + time.Since(startTime).String() + " return:" + txHashStr
+		return fmt.Sprintf("txpool GetSortedTxs cost:%s,count:%d,txs[%s]", time.Since(startTime).String(),
+			len(tx4Pack), txHashStr)
 	})
 	newUnit, err := dag.GenerateUnit(scheduledTime, scheduledMediator, groupPubKey, ks, tx4Pack)
 	if err != nil {
