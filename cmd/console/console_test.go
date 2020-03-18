@@ -172,7 +172,7 @@ func newTester(t *testing.T, confOverride func(*ptn.Config)) *tester {
 		return nil
 	}
 
-	dag.SaveUnit(unit, nil, true)
+	dag.SaveUnit(unit, true)
 	dv := new(modules.DataVersion)
 	dv.Name = "Gptn"
 	dv.Version = configure.Version

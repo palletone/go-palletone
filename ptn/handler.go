@@ -162,6 +162,12 @@ type ProtocolManager struct {
 	saveStableUnitCh  chan modules.SaveUnitEvent
 	saveStableUnitSub event.Subscription
 
+	saveUnitCh  chan modules.SaveUnitEvent
+	saveUnitSub event.Subscription
+
+	rollbackUnitCh  chan modules.RollbackUnitEvent
+	rollbackUnitSub event.Subscription
+
 	lastMaintenanceTime    int64
 	isConnectedNewMediator bool
 }
@@ -194,7 +200,7 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken mod
 		contract:       contract,
 		pDocker:        pDocker,
 
-		lastMaintenanceTime: 0,
+		lastMaintenanceTime:    0,
 		isConnectedNewMediator: false,
 	}
 	protocolName, _, _, _, _ := gasToken.ParseAssetId()
@@ -310,7 +316,7 @@ func (pm *ProtocolManager) newFetcher() *fetcher.Fetcher {
 			pm.txpool.SetPendingTxs(hash, u.NumberU64(), u.Transactions())
 		}
 
-		account, err := pm.dag.InsertDag(blocks, pm.txpool, false)
+		account, err := pm.dag.InsertDag(blocks, false)
 		if err == nil {
 			go func() {
 				var (
@@ -415,6 +421,14 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 	pm.saveStableUnitCh = make(chan modules.SaveUnitEvent)
 	pm.saveStableUnitSub = pm.dag.SubscribeSaveStableUnitEvent(pm.saveStableUnitCh)
 	go pm.saveStableUnitRecvLoop()
+
+	pm.saveUnitCh = make(chan modules.SaveUnitEvent)
+	pm.saveUnitSub = pm.dag.SubscribeSaveUnitEvent(pm.saveUnitCh)
+	go pm.saveUnitRecvLoop()
+
+	pm.rollbackUnitCh = make(chan modules.RollbackUnitEvent)
+	pm.rollbackUnitSub = pm.dag.SubscribeRollbackUnitEvent(pm.rollbackUnitCh)
+	go pm.rollbackUnitRecvLoop()
 
 	if pm.consEngine != nil {
 		pm.ceCh = make(chan core.ConsensusEvent, txChanSize)

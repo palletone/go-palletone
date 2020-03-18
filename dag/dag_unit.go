@@ -32,13 +32,12 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/txspool"
 )
 
 // GenerateUnit, generate unit
 // @author Albert·Gou
 func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKey []byte, ks *keystore.KeyStore,
-	txs []*modules.Transaction, txpool txspool.ITxPool) (*modules.Unit, error) {
+	txs []*modules.Transaction) (*modules.Unit, error) {
 	t0 := time.Now()
 	defer func(start time.Time) {
 		log.Debugf("GenerateUnit cost time: %v", time.Since(start))
@@ -74,7 +73,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 		sign_unit.UnitHeader.ParentHash()[0].String(), sign_unit.Txs.Len(), time.Since(t0).String())
 
 	//3.将新单元添加到MemDag中
-	a, b, c, d, e, err := dag.Memdag.AddUnit(sign_unit, txpool, true)
+	a, b, c, d, e, err := dag.Memdag.AddUnit(sign_unit, true)
 	if a != nil && err == nil {
 		if dag.unstableUnitProduceRep != e {
 			log.Debugf("send UnstableRepositoryUpdatedEvent")
@@ -102,7 +101,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 			events = make([]interface{}, 0, 2)
 		)
 		events = append(events, modules.ChainHeadEvent{Unit: sign_unit})
-		events = append(events, modules.SaveUnitEvent{Unit: sign_unit})
+		//events = append(events, modules.SaveUnitEvent{Unit: sign_unit})
 		events = append(events, modules.ChainEvent{Unit: sign_unit, Hash: sign_unit.Hash()})
 		dag.PostChainEvents(events)
 	}()
