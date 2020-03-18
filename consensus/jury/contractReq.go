@@ -101,11 +101,10 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 		return common.Hash{}, nil, err
 	}
 	//add local and broadcast
-	go p.AddLocalTx(reqTx)
+	//go p.AddLocalTx(reqTx)
 
 	isLocal := true //todo
 	if isLocal {
-
 		sigTx, err := p.RunAndSignTx(reqTx, rwset.RwM, p.dag, from)
 		if err != nil{
 			log.Errorf("ContractInstallReq, local RunAndSignTx err:%s", err.Error())
@@ -117,7 +116,6 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 			errMsg := fmt.Sprintf("[%s]ContractInstallReq getContractTxContractInfo fail, tpl Name[%s]", shortId(reqId.String()), tplName)
 			return common.Hash{}, nil, errors.New(errMsg)
 		}
-
 		templateId := tpl.Payload.(*modules.ContractTplPayload).TemplateId
 		log.Infof("[%s]ContractInstallReq ok, reqId[%s] templateId[%x]", shortId(reqId.String()), reqId.String(), templateId)
 
