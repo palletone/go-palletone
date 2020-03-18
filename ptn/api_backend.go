@@ -955,10 +955,13 @@ func (b *PtnApiBackend) GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	return b.ptn.dag.GetTxHashByReqId(reqid)
 }
 
-func (b *PtnApiBackend) GetFileInfo(filehash string) ([]*modules.FileInfo, error) {
+func (b *PtnApiBackend) GetFileInfo(filehash string) ([]*modules.ProofOfExistencesInfo, error) {
 	return b.ptn.dag.GetFileInfo([]byte(filehash))
 }
 
+func (b *PtnApiBackend) GetProofOfExistencesByMaindata(maindata string) ([]*modules.ProofOfExistencesInfo, error) {
+	return b.ptn.dag.GetFileInfo([]byte(maindata))
+}
 //SPV
 //`json:"unit_hash"`
 type proofTxInfo struct {

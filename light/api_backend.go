@@ -513,10 +513,13 @@ func (b *LesApiBackend) GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	return common.Hash{}, nil
 }
 
-func (b *LesApiBackend) GetFileInfo(filehash string) ([]*modules.FileInfo, error) {
+func (b *LesApiBackend) GetFileInfo(filehash string) ([]*modules.ProofOfExistencesInfo, error) {
 	return nil, nil
 }
 
+func (b *LesApiBackend) GetProofOfExistencesByMaindata(mainata string) ([]*modules.ProofOfExistencesInfo, error) {
+	return nil, nil
+}
 //SPV
 func (b *LesApiBackend) GetProofTxInfoByHash(txhash string) ([][]byte, error) {
 	return nil, nil

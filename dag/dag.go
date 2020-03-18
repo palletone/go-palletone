@@ -1255,10 +1255,14 @@ func (d *Dag) GetTxHashByReqId(reqid common.Hash) (common.Hash, error) {
 }
 
 // return a file info by the filehash
-func (d *Dag) GetFileInfo(filehash []byte) ([]*modules.FileInfo, error) {
+func (d *Dag) GetFileInfo(filehash []byte) ([]*modules.ProofOfExistencesInfo, error) {
 	return d.unstableUnitRep.GetFileInfo(filehash)
 }
 
+// return ProofOfExistences by the maindata
+func (d *Dag) GetProofOfExistencesByMaindata(maindata []byte) ([]*modules.ProofOfExistencesInfo, error) {
+	return d.unstableUnitRep.GetProofOfExistencesByMaindata(maindata)
+}
 // Light Palletone Subprotocal
 func (d *Dag) GetLightHeaderByHash(headerHash common.Hash) (*modules.Header, error) {
 	return nil, nil

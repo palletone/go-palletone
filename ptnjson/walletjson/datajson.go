@@ -25,7 +25,7 @@ import (
 	"unsafe"
 )
 
-type GetFileInfos struct {
+type ProofOfExistencesInfo struct {
 	UnitHash        string `json:"unit_hash"`
 	UintHeight      uint64 `json:"unit_index"`
 	ParentsHash     string `json:"parents_hash"`
@@ -36,7 +36,7 @@ type GetFileInfos struct {
 	Reference       string `json:"reference"`
 }
 
-func ConvertGetFileInfos2Json(gets []GetFileInfos) string {
+func ConvertGetFileInfos2Json(gets []ProofOfExistencesInfo) string {
 	data, err := json.Marshal(gets)
 	if err != nil {
 		return ""

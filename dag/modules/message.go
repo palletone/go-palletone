@@ -600,7 +600,7 @@ type AccountStateWriteSet struct {
 	Value    []byte `json:"value"`
 }
 
-type FileInfo struct {
+type ProofOfExistencesInfo struct {
 	UnitHash    common.Hash `json:"unit_hash"`
 	UintHeight  uint64      `json:"unit_index"`
 	ParentsHash common.Hash `json:"parents_hash"`

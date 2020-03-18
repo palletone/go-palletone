@@ -5,10 +5,6 @@
 package mock
 
 import (
-	big "math/big"
-	reflect "reflect"
-	time "time"
-
 	event "github.com/ethereum/go-ethereum/event"
 	gomock "github.com/golang/mock/gomock"
 	common "github.com/palletone/go-palletone/common"
@@ -18,6 +14,9 @@ import (
 	dboperation "github.com/palletone/go-palletone/dag/dboperation"
 	modules "github.com/palletone/go-palletone/dag/modules"
 	txspool "github.com/palletone/go-palletone/txspool"
+	big "math/big"
+	reflect "reflect"
+	time "time"
 )
 
 // MockIDag is a mock of IDag interface
@@ -566,20 +565,6 @@ func (mr *MockIDagMockRecorder) IsHeaderExist(hash interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsHeaderExist", reflect.TypeOf((*MockIDag)(nil).IsHeaderExist), hash)
 }
 
-// InsertUnit mocks base method
-func (m *MockIDag) InsertUnit(unit *modules.Unit) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InsertUnit", unit)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// InsertUnit indicates an expected call of InsertUnit
-func (mr *MockIDagMockRecorder) InsertUnit(unit interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertUnit", reflect.TypeOf((*MockIDag)(nil).InsertUnit), unit)
-}
-
 // SaveUnit mocks base method
 func (m *MockIDag) SaveUnit(unit *modules.Unit, txpool txspool.ITxPool, isGenesis bool) error {
 	m.ctrl.T.Helper()
@@ -606,6 +591,20 @@ func (m *MockIDag) SaveTransaction(tx *modules.Transaction, txIndex int) error {
 func (mr *MockIDagMockRecorder) SaveTransaction(tx, txIndex interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveTransaction", reflect.TypeOf((*MockIDag)(nil).SaveTransaction), tx, txIndex)
+}
+
+// InsertUnit mocks base method
+func (m *MockIDag) InsertUnit(unit *modules.Unit) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InsertUnit", unit)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// InsertUnit indicates an expected call of InsertUnit
+func (mr *MockIDagMockRecorder) InsertUnit(unit interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertUnit", reflect.TypeOf((*MockIDag)(nil).InsertUnit), unit)
 }
 
 // FastSyncCommitHead mocks base method
@@ -1285,6 +1284,7 @@ func (mr *MockIDagMockRecorder) GetPrecedingMediatorNodes() *gomock.Call {
 
 // LastMaintenanceTime mocks base method
 func (m *MockIDag) LastMaintenanceTime() int64 {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "LastMaintenanceTime")
 	ret0, _ := ret[0].(int64)
 	return ret0
@@ -1292,6 +1292,7 @@ func (m *MockIDag) LastMaintenanceTime() int64 {
 
 // LastMaintenanceTime indicates an expected call of LastMaintenanceTime
 func (mr *MockIDagMockRecorder) LastMaintenanceTime() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LastMaintenanceTime", reflect.TypeOf((*MockIDag)(nil).LastMaintenanceTime))
 }
 
@@ -1402,18 +1403,33 @@ func (mr *MockIDagMockRecorder) GetTxPackInfo(txHash interface{}) *gomock.Call {
 }
 
 // GetFileInfo mocks base method
-func (m *MockIDag) GetFileInfo(filehash []byte) ([]*modules.FileInfo, error) {
+func (m *MockIDag) GetFileInfo(maindata []byte) ([]*modules.ProofOfExistencesInfo, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFileInfo", filehash)
-	ret0, _ := ret[0].([]*modules.FileInfo)
+	ret := m.ctrl.Call(m, "GetFileInfo", maindata)
+	ret0, _ := ret[0].([]*modules.ProofOfExistencesInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetFileInfo indicates an expected call of GetFileInfo
-func (mr *MockIDagMockRecorder) GetFileInfo(filehash interface{}) *gomock.Call {
+func (mr *MockIDagMockRecorder) GetFileInfo(maindata interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFileInfo", reflect.TypeOf((*MockIDag)(nil).GetFileInfo), filehash)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFileInfo", reflect.TypeOf((*MockIDag)(nil).GetFileInfo), maindata)
+}
+
+// GetProofOfExistencesByMaindata mocks base method
+func (m *MockIDag) GetProofOfExistencesByMaindata(maindata []byte) ([]*modules.ProofOfExistencesInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetProofOfExistencesByMaindata", maindata)
+	ret0, _ := ret[0].([]*modules.ProofOfExistencesInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetProofOfExistencesByMaindata indicates an expected call of GetProofOfExistencesByMaindata
+func (mr *MockIDagMockRecorder) GetProofOfExistencesByMaindata(maindata interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProofOfExistencesByMaindata", reflect.TypeOf((*MockIDag)(nil).GetProofOfExistencesByMaindata), maindata)
 }
 
 // GetLightHeaderByHash mocks base method
@@ -1906,6 +1922,7 @@ func (mr *MockIDagMockRecorder) GetSlotAtTime(when interface{}) *gomock.Call {
 
 // GetSlotTime mocks base method
 func (m *MockIDag) GetSlotTime(slotNum uint32) time.Time {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSlotTime", slotNum)
 	ret0, _ := ret[0].(time.Time)
 	return ret0
@@ -1913,6 +1930,7 @@ func (m *MockIDag) GetSlotTime(slotNum uint32) time.Time {
 
 // GetSlotTime indicates an expected call of GetSlotTime
 func (mr *MockIDagMockRecorder) GetSlotTime(slotNum interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSlotTime", reflect.TypeOf((*MockIDag)(nil).GetSlotTime), slotNum)
 }
 
