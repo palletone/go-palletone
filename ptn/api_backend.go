@@ -131,7 +131,6 @@ func (b *PtnApiBackend) SendConsensus(ctx context.Context) error {
 	return nil
 }
 
-
 func (b *PtnApiBackend) SendTx(ctx context.Context, tx *modules.Transaction) error {
 	return b.ptn.contractPorcessor.AddLocalTx(tx)
 }
@@ -714,7 +713,7 @@ func (b *PtnApiBackend) GetContractInvokeHistory(addr string) ([]*ptnjson.Contra
 	return txjs, nil
 }
 func (b *PtnApiBackend) ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi,
-ccLanguage string) ([]byte, error) {
+	ccLanguage string) ([]byte, error) {
 	//channelId := "palletone"
 	payload, err := b.ptn.contract.Install(channelId, ccName, ccPath, ccVersion, ccDescription, ccAbi, ccLanguage)
 	if err != nil {
@@ -759,7 +758,7 @@ func (b *PtnApiBackend) SignAndSendRequest(addr common.Address, tx *modules.Tran
 
 //
 func (b *PtnApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName,
-path, version string, description, abi, language string, addrs []common.Address) (reqId common.Hash,
+	path, version string, description, abi, language string, addrs []common.Address) (reqId common.Hash,
 	tplId []byte, err error) {
 	return b.ptn.contractPorcessor.ContractInstallReq(from, to, daoAmount, daoFee, tplName, path,
 		version, description, abi, language, true, addrs)
@@ -799,7 +798,7 @@ func (b *PtnApiBackend) ContractStopReqTx(from, to common.Address, daoAmount, da
 }
 
 func (b *PtnApiBackend) ContractInstallReqTxFee(from, to common.Address, daoAmount, daoFee uint64, tplName,
-path, version string, description, abi, language string, addrs []common.Address) (fee float64, size float64, tm uint32,
+	path, version string, description, abi, language string, addrs []common.Address) (fee float64, size float64, tm uint32,
 	err error) {
 	return b.ptn.contractPorcessor.ContractInstallReqFee(from, to, daoAmount, daoFee, tplName, path,
 		version, description, abi, language, true, addrs)
