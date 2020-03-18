@@ -334,10 +334,10 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	detail["Hash"] = unitHash.TerminalString()
 	detail["ParentHash"] = newUnit.ParentHash()[0].TerminalString()
 
-	// 3. 对 unit 进行群签名
+	// 对 unit 进行群签名
 	go mp.groupSignUnit(scheduledMediator, unitHash)
 
-	// 4. 异步向区块链网络广播新unit
+	// 异步向区块链网络广播新unit
 	go mp.newProducedUnitFeed.Send(NewProducedUnitEvent{Unit: newUnit})
 	log.Debugf("send NewProducedUnitEvent")
 
