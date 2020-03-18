@@ -32,6 +32,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -72,12 +73,12 @@ func (p *InstallMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		version := args[3]
 		abi := args[4]
 		language := args[5]
-		addrHashes := []common.Hash{}
-		err = json.Unmarshal([]byte(args[6]), &addrHashes)
+		addrs := []common.Address{}
+		err = json.Unmarshal([]byte(args[6]), &addrs)
 		if err != nil {
-			return shim.Error("Invalid jury address hashed:" + args[6])
+			return shim.Error("Invalid jury address:" + args[6])
 		}
-		err = p.InstallByteCode(stub, name, description, code, version, abi, language, addrHashes)
+		err = p.InstallByteCode(stub, name, description, code, version, abi, language, addrs)
 		if err != nil {
 			return shim.Error("InstallByteCode error:" + err.Error())
 		}
@@ -117,14 +118,18 @@ func (p *InstallMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 }
 
 func (p *InstallMgr) InstallByteCode(stub shim.ChaincodeStubInterface, name, description string, code []byte,
-	version, abi, language string, addrHashes []common.Hash) error {
+	version, abi, language string, addrs []common.Address) error {
 	if !isDeveloperInvoke(stub) {
 		return errors.New("only developer address can call this function")
 	}
-	if len(addrHashes) > 0 {
+	if len(addrs) > 0 {
 		if !isFoundationInvoke(stub) {
 			return errors.New("only foundation can use static jury")
 		}
+	}
+	addrHashes := []common.Hash{}
+	for _, addr := range addrs {
+		addrHashes = append(addrHashes, util.RlpHash(addr))
 	}
 	invokeAddr, _ := stub.GetInvokeAddress()
 	tplId := getTemplateId(name, "", version)

@@ -21,7 +21,9 @@
 package ptnapi
 
 import (
+	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -38,6 +40,7 @@ import (
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/contracts/syscontract/sysconfigcc"
+	"github.com/palletone/go-palletone/contracts/ucc"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/dagconfig"
@@ -169,7 +172,7 @@ func (s *PrivateContractAPI) Ccstop(ctx context.Context, contractAddr string) er
 }
 
 //contract tx
-func (s *PrivateContractAPI) Ccinstalltx(ctx context.Context, from, to string, amount, fee decimal.Decimal,
+func (s *PrivateContractAPI) CcinstalltxOld(ctx context.Context, from, to string, amount, fee decimal.Decimal,
 	tplName, path, version, ccdescription, ccabi, cclanguage string, addr []string) (*ContractInstallRsp, error) {
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
@@ -209,6 +212,83 @@ func (s *PrivateContractAPI) Ccinstalltx(ctx context.Context, from, to string, a
 
 	return rsp, err
 }
+
+//将Install包装成对系统合约的ccinvoke
+func (s *PrivateContractAPI) Ccinstalltx(ctx context.Context, from, to string, amount, fee decimal.Decimal,
+	tplName, path, version, ccdescription, ccabi, cclanguage string, addr []string, password *string, timeout *Int) (*ContractInstallRsp, error) {
+	fromAddr, _ := common.StringToAddress(from)
+	toAddr, _ := common.StringToAddress(to)
+	daoAmount := ptnjson.Ptn2Dao(amount)
+	daoFee := ptnjson.Ptn2Dao(fee)
+
+	log.Info("Ccinstalltx info:")
+	log.Infof("   fromAddr[%s], toAddr[%s]", fromAddr.String(), toAddr.String())
+	log.Infof("   daoAmount[%d], daoFee[%d]", daoAmount, daoFee)
+	log.Infof("   tplName[%s], path[%s],version[%s]", tplName, path, version)
+	log.Infof("   description[%s], abi[%s],language[%s]", ccdescription, ccabi, cclanguage)
+	log.Infof("   addrs len[%d]", len(addr))
+	if strings.ToLower(cclanguage) == "go" {
+		cclanguage = "golang"
+	}
+	language := strings.ToUpper(cclanguage)
+	if _, ok := peer.ChaincodeSpec_Type_value[language]; !ok {
+		return nil, errors.New(cclanguage + " language is not supported")
+	}
+
+	addrs := make([]common.Address, 0)
+	for i, s := range addr {
+		a, _ := common.StringToAddress(s)
+		addrs = append(addrs, a)
+		log.Infof("    index[%d],addr[%s]", i, s)
+	}
+
+	usrcc := &ucc.UserChaincode{
+		Name:     tplName,
+		Path:     path,
+		Version:  version,
+		Language: language,
+		Enabled:  true,
+	}
+	//将合约代码文件打包成 tar 文件
+	byteCode, err := ucc.GetUserCCPayload(usrcc)
+	if err != nil {
+		log.Error("getUserCCPayload err:", "error", err)
+		return nil, err
+	}
+	juryAddr, _ := json.Marshal(addr)
+	contractAddr := syscontract.InstallContractAddress.String()
+	result, err := s.Ccinvoketx(ctx, from, to, amount, fee, contractAddr, []string{
+		"installByteCode",
+		tplName,
+		ccdescription,
+		base64.StdEncoding.EncodeToString(byteCode),
+		version,
+		ccabi,
+		language,
+		string(juryAddr),
+	}, password, timeout)
+	if err != nil {
+		return nil, err
+	}
+	tplId := getTemplateId(tplName, "", version)
+	sTplId := hex.EncodeToString(tplId)
+
+	rsp := &ContractInstallRsp{
+		ReqId: result.ReqId,
+		TplId: sTplId,
+	}
+
+	return rsp, err
+}
+func getTemplateId(ccName, ccPath, ccVersion string) []byte {
+	var buffer bytes.Buffer
+	buffer.Write([]byte(ccName))
+	buffer.Write([]byte(ccPath))
+	buffer.Write([]byte(ccVersion))
+	tpid := crypto.Keccak256Hash(buffer.Bytes())
+	return tpid[:]
+}
+
 func (s *PrivateContractAPI) Ccdeploytx(ctx context.Context, from, to string, amount, fee decimal.Decimal,
 	tplId string, param []string, extData string) (*ContractDeployRsp, error) {
 	fromAddr, _ := common.StringToAddress(from)
