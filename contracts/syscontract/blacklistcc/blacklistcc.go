@@ -24,6 +24,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
+
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -35,7 +37,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/shopspring/decimal"
-	"sort"
 )
 
 type BlacklistMgr struct {
@@ -59,7 +60,7 @@ func (p *BlacklistMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		}
 		err = p.AddBlacklist(stub, addr, args[1])
 		if err != nil {
-			return shim.Error("AddBlacklist error:" + err.Error())
+			return shim.Error("InstallByteCode error:" + err.Error())
 		}
 		return shim.Success(nil)
 	case "getBlacklistRecords": //列出黑名单列表
@@ -141,7 +142,7 @@ func (p *BlacklistMgr) AddBlacklist(stub shim.ChaincodeStubInterface, blackAddr 
 	//  从当前新质押的获取
 	addrAmt, _ := getPledgeRecord(stub, string(constants.PLEDGE_DEPOSIT_PREFIX), blackAddr.String())
 	if addrAmt != nil {
-        depositAmount+=addrAmt.Amount
+		depositAmount += addrAmt.Amount
 	}
 	//  从质押获取
 	list, _ := getLastPledgeList(stub)
@@ -299,7 +300,7 @@ func getLastPledgeList(stub shim.ChaincodeStubInterface) (*modules.PledgeList, e
 	return getPledgeListByDate(stub, date)
 }
 func getPledgeListByDate(stub shim.ChaincodeStubInterface, date string) (*modules.PledgeList, error) {
-	b, err := stub.GetContractStateByPrefix(syscontract.DepositContractAddress,constants.PledgeList + date)
+	b, err := stub.GetContractStateByPrefix(syscontract.DepositContractAddress, constants.PledgeList+date)
 	if err != nil {
 		return nil, err
 	}
@@ -321,9 +322,10 @@ func getPledgeListByDate(stub shim.ChaincodeStubInterface, date string) (*module
 	allM.Date = date
 	return allM, nil
 }
+
 //获得质押列表的最后更新日期yyyyMMdd
 func getLastPledgeListDate(stub shim.ChaincodeStubInterface) (string, error) {
-	date, err := stub.GetContractState(syscontract.DepositContractAddress,constants.PledgeListLastDate)
+	date, err := stub.GetContractState(syscontract.DepositContractAddress, constants.PledgeListLastDate)
 	if err != nil {
 		return "", err
 	}
@@ -332,9 +334,10 @@ func getLastPledgeListDate(stub shim.ChaincodeStubInterface) (string, error) {
 	}
 	return string(date), nil
 }
+
 //  获取当前质押
 func getPledgeRecord(stub shim.ChaincodeStubInterface, prefix string, addr string) (*modules.AddressAmount, error) {
-	b, err := stub.GetContractState(syscontract.DepositContractAddress,prefix + addr)
+	b, err := stub.GetContractState(syscontract.DepositContractAddress, prefix+addr)
 	if err != nil {
 		return nil, err
 	}
