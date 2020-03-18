@@ -96,27 +96,23 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 			Creator:        from.String(),
 		},
 	}
-	reqId, _, err = p.createContractTxReq(common.Address{}, from, to, daoAmount, daoFee, nil, msgReq)
+	reqId, reqTx, err := p.createContractTxReq(common.Address{}, from, to, daoAmount, daoFee, nil, msgReq)
 	if err != nil {
 		return common.Hash{}, nil, err
 	}
+	//add local and broadcast
+	go p.AddLocalTx(reqTx)
+
 	isLocal := true //todo
 	if isLocal {
-		if err = p.runContractReq(reqId, nil, rwset.RwM, p.dag); err != nil {
-			return common.Hash{}, nil, err
+
+		sigTx, err := p.RunAndSignTx(reqTx, rwset.RwM, p.dag, from)
+		if err != nil{
+			log.Errorf("ContractInstallReq, local RunAndSignTx err:%s", err.Error())
+			return reqId, nil, err
 		}
-		ctx := p.mtx[reqId]
-		ctx.rstTx, err = p.GenContractSigTransaction(from, "", ctx.rstTx, p.ptn.GetKeyStore(), p.dag.GetUtxoEntry)
-		if err != nil {
-			return common.Hash{}, nil, err
-		}
-		//err = p.dag.SaveTransaction(ctx.rstTx)
-		//if err != nil {
-		//	log.Errorf("[%s]ContractInstallReq, SaveTransaction err:%s", shortId(reqId.String()), err.Error())
-		//	return common.Hash{}, nil, err
-		//}
-		tx := ctx.rstTx
-		_, tpl, err := getContractTxContractInfo(tx, modules.APP_CONTRACT_TPL)
+
+		_, tpl, err := getContractTxContractInfo(sigTx, modules.APP_CONTRACT_TPL)
 		if err != nil || tpl == nil {
 			errMsg := fmt.Sprintf("[%s]ContractInstallReq getContractTxContractInfo fail, tpl Name[%s]", shortId(reqId.String()), tplName)
 			return common.Hash{}, nil, errors.New(errMsg)
@@ -124,8 +120,10 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 
 		templateId := tpl.Payload.(*modules.ContractTplPayload).TemplateId
 		log.Infof("[%s]ContractInstallReq ok, reqId[%s] templateId[%x]", shortId(reqId.String()), reqId.String(), templateId)
+
 		//broadcast
-		go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_COMMIT, Tx: tx}, false)
+		go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_COMMIT, Tx: sigTx}, false)
+
 		return reqId, templateId, nil
 	}
 	//net mode
@@ -174,6 +172,9 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 	contractId := crypto.RequestIdToContractAddress(reqId)
 	log.Infof("[%s]ContractDeployReq ok, reqId[%s] templateId[%x],contractId[%s] ",
 		shortId(reqId.String()), reqId.String(), templateId, contractId.String())
+
+	//add local and broadcast
+	go p.AddLocalTx(tx)
 
 	//broadcast
 	go p.ptn.ContractBroadcast(ContractEvent{Ele: nil, CType: CONTRACT_EVENT_ELE, Tx: tx}, true)
@@ -304,6 +305,10 @@ func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee u
 	}
 	log.Infof("[%s]ContractStopReq ok, reqId[%s], contractId[%s], txId[%s]",
 		shortId(reqId.String()), reqId.String(), contractId, hex.EncodeToString(randNum))
+
+	//add local and broadcast
+	go p.AddLocalTx(tx)
+
 	//broadcast
 	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_EXEC, Ele: p.mtx[reqId].eleNode, Tx: tx}, true)
 	return reqId, nil
