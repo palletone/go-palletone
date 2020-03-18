@@ -146,7 +146,7 @@ type txPool interface {
 	//SendStoredTxs(hashs []common.Hash) error
 	DiscardTxs(txs []*modules.Transaction) error
 	//DiscardTx(hash common.Hash) error
-	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
+	GetUtxo(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	AddRemote(tx *modules.Transaction) error
 	// Pending should return pending transactions.
 	// The slice should be modifiable by the caller.

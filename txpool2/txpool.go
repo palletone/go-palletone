@@ -49,7 +49,7 @@ type TxPool struct {
 	txValidator          txspool.IValidator
 	dag                  txspool.IDag
 	tokenengine          tokenengine.ITokenEngine
-	sync.Mutex
+	sync.RWMutex
 	txFeed event.Feed
 	scope  event.SubscriptionScope
 }
@@ -204,10 +204,19 @@ func (pool *TxPool) addOrphanTx(tx *txspool.TxPoolTransaction) error {
 	return nil
 }
 func (pool *TxPool) GetSortedTxs(processor func(transaction *txspool.TxPoolTransaction) (getNext bool, err error)) error {
-	pool.Lock()
-	defer pool.Unlock()
+	pool.RLock()
+	defer pool.RUnlock()
 	return pool.normals.GetSortedTxs(processor)
 }
+
+//带锁的对外暴露的查询
+func (pool *TxPool) GetUtxo(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+	pool.RLock()
+	defer pool.RUnlock()
+	return pool.GetUtxoEntry(outpoint)
+}
+
+//主要用于Validator，不带锁
 func (pool *TxPool) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	poolUtxo, err := pool.normals.GetUtxoEntry(outpoint)
 	if err != nil {
@@ -257,10 +266,14 @@ func getUtxoFromTxs(txs map[common.Hash]*txspool.TxPoolTransaction, outpoint *mo
 }
 
 func (pool *TxPool) GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error) {
+	pool.RLock()
+	defer pool.RUnlock()
 	return pool.dag.GetStxoEntry(outpoint)
 }
 
 func (pool *TxPool) DiscardTxs(txs []*modules.Transaction) error {
+	pool.Lock()
+	defer pool.Unlock()
 	log.DebugDynamic(func() string {
 		hashes := ""
 		for _, tx := range txs {
@@ -297,6 +310,8 @@ func (pool *TxPool) DiscardTxs(txs []*modules.Transaction) error {
 }
 
 func (pool *TxPool) GetUnpackedTxsByAddr(addr common.Address) ([]*txspool.TxPoolTransaction, error) {
+	pool.RLock()
+	defer pool.RUnlock()
 	txs, err := pool.normals.GetTxsByStatus(txspool.TxPoolTxStatus_Unpacked)
 	if err != nil {
 		return nil, err
@@ -309,10 +324,13 @@ func (pool *TxPool) GetUnpackedTxsByAddr(addr common.Address) ([]*txspool.TxPool
 	}
 	return result, nil
 }
-func (pool *TxPool) GetUnpackedTxs() (map[common.Hash]*txspool.TxPoolTransaction, error) {
-	return pool.normals.GetTxsByStatus(txspool.TxPoolTxStatus_Unpacked)
-}
+
+//func (pool *TxPool) GetUnpackedTxs() (map[common.Hash]*txspool.TxPoolTransaction, error) {
+//	return pool.normals.GetTxsByStatus(txspool.TxPoolTxStatus_Unpacked)
+//}
 func (pool *TxPool) Pending() (map[common.Hash][]*txspool.TxPoolTransaction, error) {
+	pool.RLock()
+	defer pool.RUnlock()
 	packedTxs, err := pool.normals.GetTxsByStatus(txspool.TxPoolTxStatus_Packed)
 	if err != nil {
 		return nil, err
@@ -328,6 +346,8 @@ func (pool *TxPool) Pending() (map[common.Hash][]*txspool.TxPoolTransaction, err
 	return result, nil
 }
 func (pool *TxPool) Queued() ([]*txspool.TxPoolTransaction, error) {
+	pool.RLock()
+	defer pool.RUnlock()
 	result := []*txspool.TxPoolTransaction{}
 	for _, tx := range pool.orphans {
 		result = append(result, tx)
@@ -336,16 +356,13 @@ func (pool *TxPool) Queued() ([]*txspool.TxPoolTransaction, error) {
 }
 func (pool *TxPool) Stop() {
 	pool.scope.Close()
-	// pool.wg.Wait()
-	//if pool.journal != nil {
-	//	pool.journal.close()
-	//}
-
 	log.Info("Transaction pool stopped")
 }
 
 //基本状态(未打包，已打包，孤儿)
 func (pool *TxPool) Status() (int, int, int) {
+	pool.RLock()
+	defer pool.RUnlock()
 	normals := pool.normals.GetAllTxs()
 	packed := 0
 	unpacked := 0
@@ -360,11 +377,15 @@ func (pool *TxPool) Status() (int, int, int) {
 	return unpacked, packed, len(pool.orphans)
 }
 func (pool *TxPool) Content() (map[common.Hash]*txspool.TxPoolTransaction, map[common.Hash]*txspool.TxPoolTransaction) {
+	pool.RLock()
+	defer pool.RUnlock()
 	return pool.normals.GetAllTxs(), pool.orphans
 }
 
 //将交易状态改为已打包
 func (pool *TxPool) SetPendingTxs(unit_hash common.Hash, num uint64, txs []*modules.Transaction) error {
+	pool.Lock()
+	defer pool.Unlock()
 	log.DebugDynamic(func() string {
 		hashes := ""
 		for _, tx := range txs {
@@ -392,6 +413,8 @@ func (pool *TxPool) SetPendingTxs(unit_hash common.Hash, num uint64, txs []*modu
 
 //将交易状态改为未打包
 func (pool *TxPool) ResetPendingTxs(txs []*modules.Transaction) error {
+	pool.Lock()
+	defer pool.Unlock()
 	log.DebugDynamic(func() string {
 		hashes := ""
 		for _, tx := range txs {
@@ -417,6 +440,8 @@ func (pool *TxPool) ResetPendingTxs(txs []*modules.Transaction) error {
 	return nil
 }
 func (pool *TxPool) GetTx(hash common.Hash) (*txspool.TxPoolTransaction, error) {
+	pool.RLock()
+	defer pool.RUnlock()
 	tx, err := pool.normals.GetTx(hash)
 	if err == ErrNotFound {
 		tx, ok := pool.orphans[hash]

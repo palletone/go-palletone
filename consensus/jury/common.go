@@ -436,7 +436,7 @@ func handleMsg0(tx *modules.Transaction, dag dboperation.IContractDag, txPool tx
 	if lenTxMsgs > 0 {
 		msg0 := msgs[0].Payload.(*modules.PaymentPayload)
 		//invokeAddr, err := dag.GetAddrByOutPoint(msg0.Inputs[0].PreviousOutPoint)
-		preUtxo, err := txPool.GetUtxoEntry(msg0.Inputs[0].PreviousOutPoint)
+		preUtxo, err := txPool.GetUtxo(msg0.Inputs[0].PreviousOutPoint)
 		if err != nil{
 			return nil, err
 		}
@@ -467,7 +467,7 @@ func handleMsg0(tx *modules.Transaction, dag dboperation.IContractDag, txPool tx
 		invokeInfo.InvokeTokens = invokeTokensAll
 		//invokeFees, err := dag.GetTxFee(tx)
 		//invokeFees, err := tx.GetTxFee(dag.GetUtxoEntry)
-		invokeFees, err := tx.GetTxFee(txPool.GetUtxoEntry)
+		invokeFees, err := tx.GetTxFee(txPool.GetUtxo)
 		if err != nil {
 			log.Warnf("handleMsg0, GetTxFee err:%s", err.Error())
 			return nil, err

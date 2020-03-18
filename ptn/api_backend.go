@@ -131,10 +131,9 @@ func (b *PtnApiBackend) SendConsensus(ctx context.Context) error {
 	return nil
 }
 
+
 func (b *PtnApiBackend) SendTx(ctx context.Context, tx *modules.Transaction) error {
 	return b.ptn.contractPorcessor.AddLocalTx(tx)
-
-
 }
 
 func (b *PtnApiBackend) SendTxs(ctx context.Context, signedTxs []*modules.Transaction) []error {
@@ -516,7 +515,7 @@ func (b *PtnApiBackend) GetPrefix(prefix string) map[string][]byte {
 func (b *PtnApiBackend) GetUtxoEntry(outpoint *modules.OutPoint) (*ptnjson.UtxoJson, error) {
 
 	//This function query from txpool first, not exist, then query from leveldb.
-	utxo, err := b.ptn.txPool.GetUtxoEntry(outpoint)
+	utxo, err := b.ptn.txPool.GetUtxo(outpoint)
 	if err != nil {
 		log.Errorf("Utxo not found in txpool and leveldb, key:%s", outpoint.String())
 		return nil, err

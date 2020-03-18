@@ -203,6 +203,9 @@ func (pool *TxPool) startJournal(config TxPoolConfig) {
 }
 
 // return a utxo by the outpoint in txpool
+func (pool *TxPool) GetUtxo(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+	return pool.GetUtxoEntry(outpoint)
+}
 func (pool *TxPool) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	if inter, ok := pool.outputs.Load(*outpoint); ok {
 		utxo := inter.(*modules.Utxo)

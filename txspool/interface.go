@@ -52,7 +52,7 @@ type ITxPool interface {
 	//将一堆交易标记为删除
 	DiscardTxs(txs []*modules.Transaction) error
 	//查询UTXO
-	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
+	GetUtxo(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	//订阅事件
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
 	//GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTransaction, common.StorageSize)
