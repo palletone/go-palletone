@@ -81,7 +81,7 @@ type ProductionCondition uint8
 
 // unit生产的状态枚举
 const (
-	Produced ProductionCondition = iota // 正常生产unit
+	Produced           ProductionCondition = iota // 正常生产unit
 	NotSynced
 	NotMyTurn
 	NotTimeYet
@@ -144,7 +144,7 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 
 	// 整秒调整，四舍五入
 	nowFine := time.Now()
-	now := time.Unix(nowFine.Add(500*time.Millisecond).Unix(), 0)
+	now := time.Unix(nowFine.Add(500 * time.Millisecond).Unix(), 0)
 
 	// 1. 判断是否满足生产的各个条件
 	nextSlotTime := dag.GetSlotTime(1)
@@ -231,10 +231,6 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 		return ExceptionProducing, detail
 	}
 	defer rwM.Close()
-	if err := mp.ptn.ContractProcessor().AddContractLoop(rwM, mp.ptn.TxPool(), scheduledMediator, ks); err != nil {
-		log.Debugf("MaybeProduceUnit RunContractLoop err: %v", err.Error())
-	}
-	// close tx simulator (系统合约)
 
 	//广播节点选取签名请求事件
 	go mp.ptn.ContractProcessor().BroadcastElectionSigRequestEvent()
@@ -261,6 +257,7 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	if err != nil {
 		log.Errorf("Init temp dag error:%s", err.Error())
 	}
+
 	tx4Pack := []*modules.Transaction{}
 	i := 0
 	err = txpool.GetSortedTxs(func(ptx *txspool.TxPoolTransaction) (getNext bool, err error) {
@@ -268,8 +265,8 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 		tx := ptx.Tx
 		i++ //第0条是Coinbase
 		log.Debugf("pack tx[%s] into unit[#%d]", tx.RequestHash().String(), unitNumber)
-		if tx.IsSystemContract() && tx.IsNewContractInvokeRequest() { //是未执行的系统合约
-			signedTx, err := p.RunAndSignTx(tx, rwM, tempDag, scheduledMediator, ks)
+		if tx.IsSystemContract() && tx.IsOnlyContractRequest() { //是未执行的系统合约
+			signedTx, err := p.RunAndSignTx(tx, rwM, tempDag, scheduledMediator)
 			if err != nil {
 				log.Errorf("run contract request[%s] fail:%s", tx.Hash().String(), err.Error())
 				return false, err
@@ -324,7 +321,6 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 
 	// 4. 异步向区块链网络广播新unit
 	go mp.newProducedUnitFeed.Send(NewProducedUnitEvent{Unit: newUnit})
-	log.Debugf("send NewProducedUnitEvent")
 
 	return Produced, detail
 }

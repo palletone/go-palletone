@@ -257,8 +257,8 @@ func (p *testTxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Sub
 	return p.txFeed.Subscribe(ch)
 }
 
-func (p *testTxPool) ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag txspool.Tag) ([]*txspool.TxDesc, error) {
-	return []*txspool.TxDesc{}, nil
+func (p *testTxPool) ProcessTransaction(tx *modules.Transaction) error {
+	return nil
 }
 func (p *testTxPool) AllTxpoolTxs() map[common.Hash]*txspool.TxPoolTransaction {
 	return nil

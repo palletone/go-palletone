@@ -39,7 +39,7 @@ func (validate *Validate) validateContractState(contractID []byte, readSet []mod
 	//if !validate.dagquery.CheckReadSetValid(contractID, readSet) {
 	//	return TxValidationCode_CHAINCODE_VERSION_CONFLICT
 	//}
-	log.Debugf("contractID[%v], read set[%v]write set[%v]", contractID, readSet, writeSet)
+	//log.Debugf("contractID[%v], read set[%v]write set[%v]", contractID, readSet, writeSet)
 	return TxValidationCode_VALID
 }
 
@@ -51,10 +51,14 @@ func (validate *Validate) validateContractTplPayload(contractTplPayload *modules
 	// to check template whether existing or not
 	stateDb := validate.statequery
 	if stateDb != nil {
-		tpl, _ := validate.statequery.GetContractTpl(contractTplPayload.TemplateId)
-		if tpl != nil {
-			log.Debug("validateContractTplPayload", "Contract template already exist!", contractTplPayload.TemplateId)
-			return TxValidationCode_INVALID_CONTRACT_TEMPLATE
+		if len(contractTplPayload.TemplateId) != 0 {
+			tpl, _ := validate.statequery.GetContractTpl(contractTplPayload.TemplateId)
+			if tpl != nil {
+				log.Debug("validateContractTplPayload", "Contract template already exist!!", contractTplPayload.TemplateId)
+				return TxValidationCode_INVALID_CONTRACT_TEMPLATE
+			}
+		} else { //交易错误信息处理时，TemplateId为空
+			log.Debug("validateContractTplPayload", "Contract template len is 0:", contractTplPayload.TemplateId)
 		}
 	}
 	return TxValidationCode_VALID
@@ -67,6 +71,7 @@ func (validate *Validate) validateContractDeploy(tplId []byte) ValidationCode {
 //验证陪审团签名是否有效
 func (validate *Validate) validateContractSignature(signatures []modules.SignatureSet,
 	tx *modules.Transaction, isFullTx bool) ValidationCode {
+
 	//contractId := tx.GetContractId()
 	txHash := tx.Hash().String()
 	needSign := 1
