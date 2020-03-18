@@ -1632,7 +1632,7 @@ func (pool *TxPool) GetSortedTxs(processor func(tx *TxPoolTransaction) (getNext 
 					continue
 				}
 				// add precusorTxs 获取该交易的前驱交易列表
-				_, p_txs := pool.getPrecusorTxs(tx, poolTxs, orphanTxs)
+				_, p_txs := pool.getPrecusorTxs(tx, poolTxs)
 				for _, p_tx := range p_txs {
 					if _, has := map_pretxs[p_tx.Tx.Hash()]; !has {
 						map_pretxs[p_tx.Tx.Hash()] = len(list)
@@ -1740,8 +1740,7 @@ func (pool *TxPool) GetSortedTxs(processor func(tx *TxPoolTransaction) (getNext 
 	return nil
 	//return list, total
 }
-func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs,
-	orphanTxs map[common.Hash]*TxPoolTransaction) (bool, []*TxPoolTransaction) {
+func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs map[common.Hash]*TxPoolTransaction) (bool, []*TxPoolTransaction) {
 	var isNotOriginal bool
 	pretxs := make([]*TxPoolTransaction, 0)
 	for _, op := range tx.Tx.GetSpendOutpoints() {
@@ -1774,38 +1773,35 @@ func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs,
 					}
 				}
 			}
-		orphTxsLOOP:
-			for _, otx := range orphanTxs {
-				if otx.Tx.RequestHash() == op.TxHash {
-					for i, msg := range otx.Tx.Messages() {
-						if msg.App == modules.APP_PAYMENT {
-							payment := msg.Payload.(*modules.PaymentPayload)
-							for j := range payment.Outputs {
-								if op.OutIndex == uint32(j) && op.MessageIndex == uint32(i) {
-									queue_tx = otx
-									break orphTxsLOOP
-								}
-							}
-						}
-					}
-				}
-			}
+			//orphTxsLOOP:
+			//	for _, otx := range orphanTxs {
+			//		if otx.Tx.RequestHash() == op.TxHash {
+			//			for i, msg := range otx.Tx.Messages() {
+			//				if msg.App == modules.APP_PAYMENT {
+			//					payment := msg.Payload.(*modules.PaymentPayload)
+			//					for j := range payment.Outputs {
+			//						if op.OutIndex == uint32(j) && op.MessageIndex == uint32(i) {
+			//							queue_tx = otx
+			//							break orphTxsLOOP
+			//						}
+			//					}
+			//				}
+			//			}
+			//		}
+			//	}
 		}
 		if queue_tx != nil {
 			//if find precusor tx  ,and go on to find its
 			log.Info("find in precusor tx.", "hash", queue_tx.Tx.Hash().String(), "ohash", op.TxHash.String(),
 				"pending", tx.Pending)
 			if !queue_tx.Pending {
-				_, list := pool.getPrecusorTxs(queue_tx, poolTxs, orphanTxs)
+				_, list := pool.getPrecusorTxs(queue_tx, poolTxs)
 				for _, p_tx := range list {
 					pretxs = append(pretxs, p_tx)
 					delete(poolTxs, p_tx.Tx.Hash())
 				}
 			}
 		}
-	}
-	if !isNotOriginal { //返回自己
-		delete(poolTxs, tx.Tx.Hash())
 	}
 	pretxs = append(pretxs, tx)
 	return isNotOriginal, pretxs
