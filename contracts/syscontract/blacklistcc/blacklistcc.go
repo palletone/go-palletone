@@ -60,7 +60,7 @@ func (p *BlacklistMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		}
 		err = p.AddBlacklist(stub, addr, args[1])
 		if err != nil {
-			return shim.Error("InstallByteCode error:" + err.Error())
+			return shim.Error("AddBlacklist error:" + err.Error())
 		}
 		return shim.Success(nil)
 	case "getBlacklistRecords": //列出黑名单列表
