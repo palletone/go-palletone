@@ -40,7 +40,7 @@ jobs:
            chmod +x ./init.sh
            ./init.sh
            sleep 15
-           python -m robot.run -d ../logs .
+           python -m robot.run -d ../logs/mediatorVote .
 
     - name: Upload to Ftp
       if: always()
