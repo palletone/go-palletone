@@ -694,7 +694,16 @@ func CheckContractTxResult(tx *modules.Transaction, rwM rwset.TxManager, dag dbo
 //func (p *Processor) IsSystemContractTx(tx *modules.Transaction) bool {
 //	return tx.IsSystemContract()
 //}
-
+func (p *Processor) getUtxoFromPoolAndDag(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+	utxo, err := p.ptn.TxPool().GetUtxo(outpoint)
+	if err == nil {
+		return utxo, nil
+	}
+	log.DebugDynamic(func() string {
+		return fmt.Sprintf("GetUtxo(%s) not in txpool,try dag query", outpoint.String())
+	})
+	return p.dag.GetUtxoEntry(outpoint)
+}
 func (p *Processor) isValidateElection(tx *modules.Transaction, ele *modules.ElectionNode, checkExit bool) bool {
 	if tx == nil {
 		log.Error("isValidateElection, param tx is nil")
@@ -715,7 +724,7 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele *modules.Ele
 		return false
 	}
 	contractId := tx.GetContractId()
-	reqAddrs, err := tx.GetFromAddrs(p.ptn.TxPool().GetUtxo, tokenengine.Instance.GetAddressFromScript)
+	reqAddrs, err := tx.GetFromAddrs(p.getUtxoFromPoolAndDag, tokenengine.Instance.GetAddressFromScript)
 	//reqAddr, err := p.dag.GetTxRequesterAddress(tx)
 	if err != nil {
 		log.Errorf("[%s]isValidateElection, GetTxRequesterAddress fail, err:%s", shortId(reqId.String()), err)
