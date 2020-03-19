@@ -1,14 +1,17 @@
-name: UT 
+name: UT&Lint
 on: [push]
 jobs:
   job1:
-    name: Build
-    runs-on: ubuntu-latest
+    name: UT
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
     steps:
-      - name: Set up Go 1.12
+      - name: Set up Go 1.13
         uses: actions/setup-go@v1
         with:
-          go-version: 1.12
+          go-version: 1.13
 
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
@@ -24,16 +27,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-      - name: Set up Go 1.12
+      - name: Set up Go 1.13
         uses: actions/setup-go@v1
         with:
-          go-version: 1.12
+          go-version: 1.13
 
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
-
-      - name: Lint Check
-        run: |
-          curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b $(go env GOPATH)/bin v1.19.0
-          golangci-lint --version
-          golangci-lint run ./...
+      - name: Export GOPATH
+        run: echo "::set-env name=GOPATH::$(go env GOPATH)"
+      - name: Append GOPATH onto PATH
+        run: echo "::set-env name=PATH::$PATH:$GOPATH/bin"
+      - run: curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $GOPATH/bin v1.21.0
+      - run: golangci-lint --version
+      - run: golangci-lint run ./...
