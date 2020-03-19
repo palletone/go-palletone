@@ -107,17 +107,21 @@ func (pool *TxPool) AddRemote(tx *modules.Transaction) error {
 }
 func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 	//check duplicate add
-	if _, err := pool.normals.GetTx(tx.Hash()); err == nil { //found tx
-		log.Info("try to add duplicate tx[%s] to tx pool", tx.Hash().String())
+	txHash := tx.Hash()
+	if _, err := pool.normals.GetTx(txHash); err == nil { //found tx
+		log.Infof("try to add duplicate tx[%s] to tx pool", txHash.String())
 		return nil
 	}
-	if _, ok := pool.orphans[tx.Hash()]; ok { //found in orphans
-		log.Info("try to add duplicate tx[%s] to tx pool", tx.Hash().String())
+	if _, ok := pool.orphans[txHash]; ok { //found in orphans
+		log.Infof("try to add duplicate orphan tx[%s] to tx pool", txHash.String())
 		return nil
 	}
-
+	if _, ok := pool.userContractRequests[txHash]; ok { //found in userContractRequests
+		log.Infof("try to add duplicate user contract request[%s] to tx pool", txHash.String())
+		return nil
+	}
 	if tx.IsSystemContract() && !tx.IsOnlyContractRequest() {
-		log.Infof("tx[%s] is a full system contract invoke tx, don't support", tx.Hash().String())
+		log.Infof("tx[%s] is a full system contract invoke tx, don't support", txHash.String())
 		return ErrNotSupport
 	}
 
@@ -125,7 +129,7 @@ func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 	pool.txValidator.SetUtxoQuery(pool)
 	fee, vcode, err := pool.txValidator.ValidateTx(tx, false)
 	if err != nil {
-		log.Warnf("validate tx[%s] get error:%s", tx.Hash().String(), err.Error())
+		log.Warnf("validate tx[%s] get error:%s", txHash.String(), err.Error())
 		return err
 	}
 	tx2 := pool.convertTx(tx, fee)
@@ -135,7 +139,7 @@ func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 	}
 	if tx.IsUserContract() {
 		if tx.IsOnlyContractRequest() {
-			log.Debugf("tx[%s] is an user contract invoke request", tx.Hash().String())
+			log.Debugf("tx[%s] is an user contract invoke request", txHash.String())
 			pool.userContractRequests[tx2.TxHash] = tx2
 		} else { //full user contract tx
 			err = pool.normals.AddTx(tx2)
@@ -293,16 +297,18 @@ func (pool *TxPool) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, err
 
 func getUtxoFromTxs(txs map[common.Hash]*txspool.TxPoolTransaction, outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	newUtxo := make(map[modules.OutPoint]*modules.Utxo)
-	spendUtxo := make(map[modules.OutPoint]bool)
+	spendUtxo := make(map[modules.OutPoint]common.Hash)
 	for _, tx := range txs {
 		for _, o := range tx.Tx.GetSpendOutpoints() {
-			spendUtxo[*o] = true
+			spendUtxo[*o] = tx.TxHash
 		}
 		for o, u := range tx.Tx.GetNewUtxos() {
 			newUtxo[o] = u
 		}
 	}
-	if _, ok := spendUtxo[*outpoint]; ok {
+	if spendBy, ok := spendUtxo[*outpoint]; ok {
+		log.Infof("Double spend error, utxo[%s] already spend by Tx[%s] in txpool",
+			outpoint.String(), spendBy.String())
 		return nil, ErrDoubleSpend
 	}
 	if utxo, ok := newUtxo[*outpoint]; ok {

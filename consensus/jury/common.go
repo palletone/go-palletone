@@ -431,19 +431,28 @@ func contractPayBack(tx *modules.Transaction, addr []byte) []*modules.Message {
 func handleMsg0(tx *modules.Transaction, dag dboperation.IContractDag, txPool txspool.ITxPool, reqArgs [][]byte) ([][]byte, error) {
 	var txArgs [][]byte
 	invokeInfo := modules.InvokeInfo{}
+	utxoQuery := func(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+		preUtxo, err := txPool.GetUtxoFromAll(outpoint)
+		if err == nil {
+			return preUtxo, nil
+		}
+		return dag.GetUtxoEntry(outpoint)
+	}
 	msgs := tx.TxMessages()
 	lenTxMsgs := len(msgs)
 	if lenTxMsgs > 0 {
-		msg0 := msgs[0].Payload.(*modules.PaymentPayload)
+		fromAddrs, err := tx.GetFromAddrs(utxoQuery, tokenengine.Instance.GetAddressFromScript)
+		//msg0 := msgs[0].Payload.(*modules.PaymentPayload)
 		//invokeAddr, err := dag.GetAddrByOutPoint(msg0.Inputs[0].PreviousOutPoint)
-		preUtxo, err := txPool.GetUtxoFromAll(msg0.Inputs[0].PreviousOutPoint)
-		if err != nil {
+		//preUtxo, err := txPool.GetUtxoFromAll(msg0.Inputs[0].PreviousOutPoint)
+		if err != nil || len(fromAddrs) == 0 {
 			return nil, err
 		}
-		invokeAddr, err := tokenengine.Instance.GetAddressFromScript(preUtxo.PkScript)
-		if err != nil {
-			return nil, err
-		}
+		invokeAddr := fromAddrs[0]
+		//invokeAddr, err := tokenengine.Instance.GetAddressFromScript(preUtxo.PkScript)
+		//if err != nil {
+		//	return nil, err
+		//}
 		var invokeTokensAll []*modules.InvokeTokens
 		for i := 0; i < lenTxMsgs; i++ {
 			msg, ok := msgs[i].Payload.(*modules.PaymentPayload)
@@ -467,7 +476,7 @@ func handleMsg0(tx *modules.Transaction, dag dboperation.IContractDag, txPool tx
 		invokeInfo.InvokeTokens = invokeTokensAll
 		//invokeFees, err := dag.GetTxFee(tx)
 		//invokeFees, err := tx.GetTxFee(dag.GetUtxoEntry)
-		invokeFees, err := tx.GetTxFee(txPool.GetUtxoFromAll)
+		invokeFees, err := tx.GetTxFee(utxoQuery)
 		if err != nil {
 			log.Warnf("handleMsg0, GetTxFee err:%s", err.Error())
 			return nil, err

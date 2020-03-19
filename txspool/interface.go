@@ -70,7 +70,4 @@ type ITxPool interface {
 	Status() (int, int, int)
 	//返回交易池中交易的内容
 	Content() (map[common.Hash]*TxPoolTransaction, map[common.Hash]*TxPoolTransaction)
-	//GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error)
-	//OutPointIsSpend(outPoint *modules.OutPoint) (bool, error)
-	//ValidateOrphanTx(tx *modules.Transaction) (bool, error)
 }

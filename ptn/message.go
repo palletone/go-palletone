@@ -382,7 +382,7 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 	//	return err
 	//}
 
-	log.Debugf("ProtocolManager, TxMsg len(txs)[%d]", len(txs))
+	//log.Debugf("ProtocolManager, TxMsg len(txs)[%d]", len(txs))
 	for i, tx := range txs {
 		if tx == nil {
 			return errResp(ErrDecode, "transaction %d is nil", i)
@@ -394,17 +394,17 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 			return nil
 		}
 
-		log.Debugf("ProtocolManager, idx[%d]  tx:%s", i, tx.String())
+		log.Debugf("ProtocolManager, index[%d] txHash[%s] tx:%s", i, tx.Hash().ShortStr(), tx.String())
 		if tx.IsContractTx() && tx.GetContractTxType() == modules.APP_CONTRACT_INVOKE_REQUEST {
 			//系统合约的请求可以P2P广播，但是包含结果的系统合约请求，只能在打包时生成，不能广播
 			if tx.IsSystemContract() {
 				if !tx.IsOnlyContractRequest() {
-					log.Warnf("ProtocolManager, Tx[%s] is a sys contract with result, don't need send by p2p", txHash.String())
+					log.Debugf("ProtocolManager, Tx[%s] is a sys contract with result, don't need send by p2p", txHash.String())
 					continue
 				}
 			}
 		}
-			//else {
+		//else {
 		//		if tx.IsOnlyContractRequest() {
 		//			_, err := pm.contractProc.ProcessUserContractTxMsg(tx, rwM, mDag)
 		//			if err != nil {
