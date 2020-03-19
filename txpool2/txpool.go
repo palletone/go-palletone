@@ -478,7 +478,3 @@ func (pool *TxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subs
 	//return pool.txFeed.Subscribe(ch)
 	return pool.scope.Track(pool.txFeed.Subscribe(ch))
 }
-
-func (pool *TxPool) GetAddressFromScript(lockScript []byte) (common.Address, error){
-	return pool.tokenengine.GetAddressFromScript(lockScript)
-}
