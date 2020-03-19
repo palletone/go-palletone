@@ -340,25 +340,11 @@ func (validate *Validate) ValidateTxFeeEnough(tx *modules.Transaction, extSize f
 		log.Warnf("[%s]ValidateTxFeeEnough, Cannot validate tx fee, your validate utxoquery or propquery not set", shortId(reqId.String()))
 		return TxValidationCode_VALID //todo ?
 	}
-	//check orphan
-	//for _,msg:=range tx.Messages(){
-	//	if msg.App==modules.APP_PAYMENT{
-	//		payment:=msg.Payload.(*modules.PaymentPayload)
-	//		for _,input:=range payment.Inputs{
-	//			 u,err:=validate.utxoquery.GetUtxoEntry(input.PreviousOutPoint)
-	//			 if err!=nil{ //not found in utxo
-	//			 	s,err2:=validate.utxoquery.GetStxoEntry(input.PreviousOutPoint)
-	//			 	if err2!=nil{ //also not found in stxo
-	//			 		return TxValidationCode_ORPHAN
-	//				}
-	//			 }
-	//		}
-	//	}
-	//}
+
 	fees, err := tx.GetTxFee(validate.utxoquery.GetUtxoEntry) //validate.dagquery.GetTxFee(tx)
 	if err != nil {
-		log.Errorf("[%s]validateTxFeeEnough, GetTxFee err:%s", shortId(reqId.String()), err.Error())
-		return TxValidationCode_ORPHAN //todo ?
+		log.Warnf("[%s]validateTxFeeEnough return ORPHAN since GetTxFee err:%s", shortId(reqId.String()), err.Error())
+		return TxValidationCode_ORPHAN
 	}
 
 	cp := validate.propquery.GetChainParameters()
