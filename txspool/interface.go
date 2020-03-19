@@ -71,4 +71,7 @@ type ITxPool interface {
 	//GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error)
 	//OutPointIsSpend(outPoint *modules.OutPoint) (bool, error)
 	//ValidateOrphanTx(tx *modules.Transaction) (bool, error)
+
+	//根据锁定脚本，得出对应的地址
+	GetAddressFromScript(lockScript []byte) (common.Address, error)
 }
