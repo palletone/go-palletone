@@ -160,7 +160,7 @@ type txPool interface {
 	//GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error)
 	//OutPointIsSpend(outPoint *modules.OutPoint) (bool, error)
 	//ValidateOrphanTx(tx *modules.Transaction) (bool, error)
-	GetAddressFromScript(lockScript []byte) (common.Address, error)
+	//GetAddressFromScript(lockScript []byte) (common.Address, error)
 }
 
 // statusData is the network packet for the status message.

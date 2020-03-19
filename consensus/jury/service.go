@@ -715,7 +715,7 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele *modules.Ele
 		return false
 	}
 	contractId := tx.GetContractId()
-	reqAddrs, err := tx.GetFromAddrs(p.ptn.TxPool().GetUtxo, p.ptn.TxPool().GetAddressFromScript)
+	reqAddrs, err := tx.GetFromAddrs(p.ptn.TxPool().GetUtxo, tokenengine.Instance.GetAddressFromScript)
 	//reqAddr, err := p.dag.GetTxRequesterAddress(tx)
 	if err != nil {
 		log.Errorf("[%s]isValidateElection, GetTxRequesterAddress fail, err:%s", shortId(reqId.String()), err)
