@@ -22,6 +22,7 @@ jobs:
             sudo -H pip install demjson
             sudo -H pip install pexpect
             sudo -H apt-get install expect
+            sudo -H apt-get install lftp
 
       - name: Build gptn 
         run: |
@@ -29,6 +30,8 @@ jobs:
 
       - name: Run gptn
         run: |
+            mkdir bdd/GasToken/node
+            cp gptn bdd/GasToken/node
             cp gptn bdd/node
             cd bdd/node
             chmod +x gptn
@@ -92,6 +95,17 @@ jobs:
             ./init_gas_token.sh
             sleep 15
             python -m robot.run -d ./logs/testcases ./testcases
+
+      - name: Upload to Ftp
+        if: always()
+        run: |
+            killall -9 gptn
+            zip -j bdd/logs/oneNode_log.zip bdd/node/log/*
+            zip -j bdd/logs/gasToken_log.zip bdd/GasToken/node/log/*
+            cd bdd
+            chmod +x ./upload2Ftp.sh ./targz_node.sh
+            ./targz_node.sh oneNode
+            ./upload2Ftp.sh ${{secrets.FTP_PWD}} "Actions-"${GITHUB_REF##*/} ${GITHUB_SHA} $PWD/logs 
             
       - name: Upload artifact
         if: always()
@@ -121,6 +135,7 @@ jobs:
             sudo -H pip install demjson
             sudo -H pip install pexpect
             sudo -H apt-get install expect
+            sudo -H apt-get install lftp
 
       - name: Build gptn 
         run: |
@@ -139,6 +154,16 @@ jobs:
       - name: Run packet bdd
         run: |
             python -m robot.run -d ./bdd/logs/packet ./bdd/packet
+
+      - name: Upload to Ftp
+        if: always()
+        run: |
+            killall -9 gptn
+            zip -j bdd/logs/oneNodePacket_log.zip bdd/node/log/*
+            cd bdd
+            chmod +x ./upload2Ftp.sh ./targz_node.sh
+            ./targz_node.sh oneNodePacket
+            ./upload2Ftp.sh ${{secrets.FTP_PWD}} "Actions-"${GITHUB_REF##*/} ${GITHUB_SHA} $PWD/logs
 
       - name: Upload artifact
         if: always()
@@ -168,6 +193,7 @@ jobs:
             sudo -H pip install demjson
             sudo -H pip install pexpect
             sudo -H apt-get install expect
+            sudo -H apt-get install lftp
 
       - name: Build gptn 
         run: |
@@ -187,6 +213,16 @@ jobs:
         run: |
             cd bdd/dct
             ./deposit_test.sh 13
+
+      - name: Upload to Ftp
+        if: always()
+        run: |
+            killall -9 gptn
+            zip -j bdd/logs/oneNodeDeposit_log.zip bdd/node/log/*
+            cd bdd
+            chmod +x ./upload2Ftp.sh ./targz_node.sh
+            ./targz_node.sh oneNodeDeposit
+            ./upload2Ftp.sh ${{secrets.FTP_PWD}} "Actions-"${GITHUB_REF##*/} ${GITHUB_SHA} $PWD/logs
 
       - name: Upload artifact
         if: always()
