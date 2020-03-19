@@ -116,7 +116,7 @@ func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 		return nil
 	}
 
-	if tx.IsSystemContract() && !tx.IsOnlyContractRequest() && tx.GetContractTxType() != modules.APP_CONTRACT_TPL_REQUEST {
+	if tx.IsSystemContract() && !tx.IsOnlyContractRequest() {
 		log.Infof("tx[%s] is a full system contract invoke tx, don't support", tx.Hash().String())
 		return ErrNotSupport
 	}
@@ -133,9 +133,21 @@ func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 	if vcode == validator.TxValidationCode_ORPHAN {
 		return pool.addOrphanTx(tx2)
 	}
-	if tx.IsUserContract() && tx.IsOnlyContractRequest() {
-		log.Debugf("tx[%s] is an user contract invoke request", tx.Hash().String())
-		pool.userContractRequests[tx2.TxHash] = tx2
+	if tx.IsUserContract() {
+		if tx.IsOnlyContractRequest() {
+			log.Debugf("tx[%s] is an user contract invoke request", tx.Hash().String())
+			pool.userContractRequests[tx2.TxHash] = tx2
+		} else { //full user contract tx
+			err = pool.normals.AddTx(tx2)
+			if err != nil {
+				log.Errorf("add tx[%s] to normal pool error:%s", tx2.TxHash.String(), err.Error())
+				return err
+			}
+			//delete request
+			reqHash := tx2.ReqHash
+			delete(pool.userContractRequests, reqHash)
+			log.Debugf("delete user contract request by hash:%s", reqHash.String())
+		}
 	} else {
 		//3. process normal tx
 		err = pool.normals.AddTx(tx2)
