@@ -2046,3 +2046,9 @@ func (pool *TxPool) reflashOrphanTxs(tx *modules.Transaction, orphans map[common
 		}
 	}
 }
+
+func (pool *TxPool) GetAddressFromScript(lockScript []byte) (common.Address, error){
+	return common.Address{}, nil
+	//return pool.tokenengine.GetAddressFromScript(lockScript)
+}
+
