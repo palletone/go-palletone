@@ -867,12 +867,14 @@ func (pm *ProtocolManager) dockerLoop(n <-chan struct{}) {
 	<-n
 	log.Debug("start docker loop")
 	defer log.Debug("end docker loop")
+	duration := 30*time.Second
+	timer := time.NewTimer(duration)
 	for {
 		select {
 		case <-pm.dockerQuitSync:
 			log.Debug("quit from docker loop")
 			return
-		case <-time.After(time.Duration(30) * time.Second):
+		case <-timer.C:
 			log.Debug("each 30 second to get all containers")
 			//  获取所有容器
 			cons, err := pm.pDocker.GetAllContainers()
@@ -884,6 +886,7 @@ func (pm *ProtocolManager) dockerLoop(n <-chan struct{}) {
 			pm.pDocker.RestartExitedAndUnExpiredContainers(cons)
 			//  删除过期容器
 			//pm.pDocker.RemoveExpiredContainers(cons)
+			timer.Reset(duration)
 		}
 	}
 }
