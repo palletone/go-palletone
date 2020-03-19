@@ -18,6 +18,8 @@ jobs:
 
     - name: Build Gptn
       run: |
+          echo ${GITHUB_RUN_ID}
+          echo ${GITHUB_RUN_NUMBER}
           cd $HOME
           mkdir gopath
           cd gopath

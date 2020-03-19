@@ -29,6 +29,8 @@ jobs:
 
     - name: Build Gptn
       run: |
+           echo ${GITHUB_RUN_ID}
+           echo ${GITHUB_RUN_NUMBER}
            go build -mod=vendor ./cmd/gptn
 
     - name: Run Application bdd
