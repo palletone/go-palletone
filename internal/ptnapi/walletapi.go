@@ -1501,22 +1501,22 @@ func (s *PrivateWalletAPI) CreateTraceability(ctx context.Context, addr, uid, sy
 
 //
 //根据maindata信息 查询存证结果  filehash  --> maindata
-func (s *PublicWalletAPI) getFileInfo(filehash string) ([]*ptnjson.ProofOfExistenceJson, error) {
-	files, err := s.b.GetFileInfo(filehash)
-	if err != nil {
-		return nil, err
-	}
-	result := []*ptnjson.ProofOfExistenceJson{}
-	for _, file := range files {
-		tx, err := s.b.GetTxByHash(file.Txid)
-		if err != nil {
-			return nil, err
-		}
-		poe := ptnjson.ConvertTx2ProofOfExistence(tx)
-		result = append(result, poe)
-	}
-	return result, nil
-}
+//func (s *PublicWalletAPI) getFileInfo(filehash string) ([]*ptnjson.ProofOfExistenceJson, error) {
+//	files, err := s.b.GetFileInfo(filehash)
+//	if err != nil {
+//		return nil, err
+//	}
+//	result := []*ptnjson.ProofOfExistenceJson{}
+//	for _, file := range files {
+//		tx, err := s.b.GetTxByHash(file.Txid)
+//		if err != nil {
+//			return nil, err
+//		}
+//		poe := ptnjson.ConvertTx2ProofOfExistence(tx)
+//		result = append(result, poe)
+//	}
+//	return result, nil
+//}
 
 func (s *PublicWalletAPI) getProofOfExistencesByMaindata(maindata string) ([]*ptnjson.ProofOfExistenceJson, error) {
 	files, err := s.b.GetFileInfo(maindata)

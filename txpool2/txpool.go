@@ -50,8 +50,8 @@ type TxPool struct {
 	dag                  txspool.IDag
 	tokenengine          tokenengine.ITokenEngine
 	sync.RWMutex
-	txFeed event.Feed
-	scope  event.SubscriptionScope
+	txFeed               event.Feed
+	scope                event.SubscriptionScope
 }
 
 // NewTxPool creates a new transaction pool to gather, sort and filter inbound
@@ -136,13 +136,13 @@ func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 	if tx.IsUserContract() && tx.IsOnlyContractRequest() {
 		log.Debugf("tx[%s] is an user contract invoke request", tx.Hash().String())
 		pool.userContractRequests[tx2.TxHash] = tx2
-		return nil
-	}
-	//3. process normal tx
-	err = pool.normals.AddTx(tx2)
-	if err != nil {
-		log.Errorf("add tx[%s] to normal pool error:%s", tx2.TxHash.String(), err.Error())
-		return err
+	} else {
+		//3. process normal tx
+		err = pool.normals.AddTx(tx2)
+		if err != nil {
+			log.Errorf("add tx[%s] to normal pool error:%s", tx2.TxHash.String(), err.Error())
+			return err
+		}
 	}
 	pool.txFeed.Send(modules.TxPreEvent{Tx: tx})
 	//4. check orphan txpool
