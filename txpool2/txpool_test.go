@@ -21,11 +21,13 @@ import (
 	"encoding/hex"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/coocood/freecache"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/golang/mock/gomock"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/mock"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -271,4 +273,49 @@ func TestTxPool_GetUnpackedTxsByAddr(t *testing.T) {
 		t.Log(tx.TxHash.String())
 	}
 	assert.Equal(t, 2, len(txs))
+}
+func TestTxPool_SubscribeTxPreEvent(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mdag := mock.NewMockIDag(mockCtrl)
+	mdag.EXPECT().GetUtxoEntry(gomock.Any()).DoAndReturn(func(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+		if outpoint.TxHash == Hash("Dag") {
+			return &modules.Utxo{Amount: 123}, nil
+		}
+		return nil, ErrNotFound
+	}).AnyTimes()
+	pool := mockTxPool(mdag)
+	txpoolAddTxCh := make(chan modules.TxPreEvent, 50)
+	txpoolAddTxSub := pool.SubscribeTxPreEvent(txpoolAddTxCh)
+	eventResult := ""
+	go func() {
+		for {
+			select {
+			case tx := <-txpoolAddTxCh:
+				log.Debugf("Subscribe TxPool add tx event received Tx:%s", tx.Tx.Hash().String())
+				eventResult += tx.Tx.Hash().String() + ","
+			case err := <-txpoolAddTxSub.Err():
+				if err != nil {
+					log.Error(err.Error())
+				}
+				return
+			}
+
+		}
+
+	}()
+	txA := mockPaymentTx(Hash("Dag"), 0, 0)
+	t.Logf("Tx A:%s", txA.Hash().String())
+	txB := mockPaymentTx(txA.Hash(), 0, 0)
+	t.Logf("Tx B:%s", txB.Hash().String())
+	txC := mockPaymentTx(txB.Hash(), 0, 0)
+	t.Logf("Tx C:%s", txC.Hash().String())
+	pool.AddLocal(txB)
+	pool.AddLocal(txC)
+	pool.AddLocal(txA)
+	time.Sleep(time.Second)
+	t.Log("Event result:", eventResult)
+	pool.Stop()
+	expectHashes := txA.Hash().String() + "," + txB.Hash().String() + "," + txC.Hash().String() + ","
+	assert.Equal(t, expectHashes, eventResult)
 }
