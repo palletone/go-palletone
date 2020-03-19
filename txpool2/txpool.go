@@ -50,8 +50,8 @@ type TxPool struct {
 	dag                  txspool.IDag
 	tokenengine          tokenengine.ITokenEngine
 	sync.RWMutex
-	txFeed               event.Feed
-	scope                event.SubscriptionScope
+	txFeed event.Feed
+	scope  event.SubscriptionScope
 }
 
 // NewTxPool creates a new transaction pool to gather, sort and filter inbound
@@ -315,6 +315,9 @@ func (pool *TxPool) GetUnpackedTxsByAddr(addr common.Address) ([]*txspool.TxPool
 	txs, err := pool.normals.GetTxsByStatus(txspool.TxPoolTxStatus_Unpacked)
 	if err != nil {
 		return nil, err
+	}
+	for h, tx := range pool.userContractRequests {
+		txs[h] = tx
 	}
 	result := []*txspool.TxPoolTransaction{}
 	for _, tx := range txs {
