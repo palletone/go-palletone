@@ -222,7 +222,7 @@ func (pool *TxPool) GetSortedTxs(processor func(transaction *txspool.TxPoolTrans
 }
 
 //带锁的对外暴露的查询
-func (pool *TxPool) GetUtxo(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+func (pool *TxPool) GetUtxoFromAll(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	pool.RLock()
 	defer pool.RUnlock()
 	//return pool.GetUtxoEntry(outpoint)
@@ -246,6 +246,20 @@ func getAllNewUtxo(txs map[common.Hash]*txspool.TxPoolTransaction) map[modules.O
 		}
 	}
 	return newUtxo
+}
+func (pool *TxPool) GetUtxoFromFree(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+	pool.RLock()
+	defer pool.RUnlock()
+	poolUtxo, err := pool.normals.GetUtxoEntry(outpoint)
+	if err != nil {
+		if len(pool.userContractRequests) > 0 {
+			reqUtxo, err := getUtxoFromTxs(pool.userContractRequests, outpoint)
+			if err == nil {
+				return reqUtxo, nil
+			}
+		}
+	}
+	return poolUtxo, nil
 }
 
 //主要用于Validator，不带锁

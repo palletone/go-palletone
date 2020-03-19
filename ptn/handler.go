@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/contracts"
+	"github.com/palletone/go-palletone/txspool"
 
 	"github.com/coocood/freecache"
 	"github.com/ethereum/go-ethereum/event"
@@ -84,7 +85,7 @@ type ProtocolManager struct {
 
 	lightSync uint32 //Flag whether light sync is enabled
 
-	txpool   txPool
+	txpool   txspool.ITxPool
 	maxPeers int
 
 	downloader *downloader.Downloader
@@ -174,7 +175,7 @@ type ProtocolManager struct {
 
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
 // with the PalletOne network.
-func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken modules.AssetId, txpool txPool,
+func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken modules.AssetId, txpool txspool.ITxPool,
 	dag dag.IDag, mux *event.TypeMux, producer producer, genesis *modules.Unit,
 	contractProc consensus.ContractInf, engine core.ConsensusEngine, contract *contracts.Contract, pDocker *utils.PalletOneDocker) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
@@ -879,7 +880,7 @@ func (pm *ProtocolManager) ContractBroadcast(event jury.ContractEvent, local boo
 // NodeInfo represents a short summary of the PalletOne sub-protocol metadata
 // known about the host peer.
 type NodeInfo struct {
-	Network uint64      `json:"network"` // PalletOne network ID (1=Frontier, 2=Morden, Ropsten=3, Rinkeby=4)
+	Network uint64 `json:"network"` // PalletOne network ID (1=Frontier, 2=Morden, Ropsten=3, Rinkeby=4)
 	Index   uint64
 	Genesis common.Hash `json:"genesis"` // SHA3 hash of the host's genesis block
 	Head    common.Hash `json:"head"`    // SHA3 hash of the host's best owned block

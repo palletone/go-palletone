@@ -35,11 +35,11 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/dboperation"
 
+	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/txspool"
 )
 
@@ -436,8 +436,8 @@ func handleMsg0(tx *modules.Transaction, dag dboperation.IContractDag, txPool tx
 	if lenTxMsgs > 0 {
 		msg0 := msgs[0].Payload.(*modules.PaymentPayload)
 		//invokeAddr, err := dag.GetAddrByOutPoint(msg0.Inputs[0].PreviousOutPoint)
-		preUtxo, err := txPool.GetUtxo(msg0.Inputs[0].PreviousOutPoint)
-		if err != nil{
+		preUtxo, err := txPool.GetUtxoFromAll(msg0.Inputs[0].PreviousOutPoint)
+		if err != nil {
 			return nil, err
 		}
 		invokeAddr, err := tokenengine.Instance.GetAddressFromScript(preUtxo.PkScript)
@@ -467,7 +467,7 @@ func handleMsg0(tx *modules.Transaction, dag dboperation.IContractDag, txPool tx
 		invokeInfo.InvokeTokens = invokeTokensAll
 		//invokeFees, err := dag.GetTxFee(tx)
 		//invokeFees, err := tx.GetTxFee(dag.GetUtxoEntry)
-		invokeFees, err := tx.GetTxFee(txPool.GetUtxo)
+		invokeFees, err := tx.GetTxFee(txPool.GetUtxoFromAll)
 		if err != nil {
 			log.Warnf("handleMsg0, GetTxFee err:%s", err.Error())
 			return nil, err

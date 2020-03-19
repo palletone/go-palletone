@@ -514,11 +514,15 @@ func (b *PtnApiBackend) GetPrefix(prefix string) map[string][]byte {
 func (b *PtnApiBackend) GetUtxoEntry(outpoint *modules.OutPoint) (*ptnjson.UtxoJson, error) {
 
 	//This function query from txpool first, not exist, then query from leveldb.
-	utxo, err := b.ptn.txPool.GetUtxo(outpoint)
+	utxo, err := b.ptn.txPool.GetUtxoFromFree(outpoint)
 	if err != nil {
-		log.Errorf("Utxo not found in txpool and leveldb, key:%s", outpoint.String())
-		return nil, err
+		utxo, err = b.Dag().GetUtxoEntry(outpoint)
+		if err != nil {
+			log.Errorf("Utxo not found in txpool and leveldb, key:%s", outpoint.String())
+			return nil, err
+		}
 	}
+
 	ujson := ptnjson.ConvertUtxo2Json(outpoint, utxo)
 	return ujson, nil
 }
@@ -902,6 +906,7 @@ func (b *PtnApiBackend) GetFileInfo(filehash string) ([]*modules.ProofOfExistenc
 func (b *PtnApiBackend) GetProofOfExistencesByMaindata(maindata string) ([]*modules.ProofOfExistencesInfo, error) {
 	return b.ptn.dag.GetFileInfo([]byte(maindata))
 }
+
 //SPV
 //`json:"unit_hash"`
 type proofTxInfo struct {
