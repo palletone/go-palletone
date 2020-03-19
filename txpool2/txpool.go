@@ -133,11 +133,12 @@ func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 	if vcode == validator.TxValidationCode_ORPHAN {
 		return pool.addOrphanTx(tx2)
 	}
-	if tx.IsUserContract() && tx.IsOnlyContractRequest() {
-		log.Debugf("tx[%s] is an user contract invoke request", tx.Hash().String())
-		pool.userContractRequests[tx2.TxHash] = tx2
-		return nil
-	}
+	//if tx.IsUserContract() && tx.IsOnlyContractRequest() {
+	//	log.Debugf("tx[%s] is an user contract invoke request", tx.Hash().String())
+	//	pool.userContractRequests[tx2.TxHash] = tx2
+	//	return nil
+	//}
+
 	//3. process normal tx
 	err = pool.normals.AddTx(tx2)
 	if err != nil {
