@@ -127,8 +127,9 @@ func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 
 	//1.validate tx
 	pool.txValidator.SetUtxoQuery(pool)
-	fee, vcode, err := pool.txValidator.ValidateTx(tx, false)
-	if err != nil {
+	fee, vcode, err := pool.txValidator.ValidateTx(tx, !tx.IsOnlyContractRequest())
+	if err != nil && vcode != validator.TxValidationCode_ORPHAN {
+		//验证不通过，而且也不是孤儿
 		log.Warnf("validate tx[%s] get error:%s", txHash.String(), err.Error())
 		return err
 	}
