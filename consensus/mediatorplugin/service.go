@@ -71,7 +71,7 @@ type iDag interface {
 	IsActiveMediator(add common.Address) bool
 
 	GenerateUnit(when time.Time, producer common.Address, groupPubKey []byte, ks *keystore.KeyStore,
-		txs []*modules.Transaction, txpool txspool.ITxPool) (*modules.Unit, error)
+		txp txspool.ITxPool, cp *jury.Processor) (*modules.Unit, error)
 
 	IsPrecedingMediator(add common.Address) bool
 	IsIrreversibleUnit(hash common.Hash) (bool, error)
