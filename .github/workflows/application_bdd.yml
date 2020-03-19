@@ -26,11 +26,10 @@ jobs:
             sudo -H pip install demjson
             sudo -H pip install pexpect
             sudo -H apt-get install expect
+            sudo -H apt-get install lftp
 
     - name: Build Gptn
       run: |
-           echo ${GITHUB_RUN_ID}
-           echo ${GITHUB_RUN_NUMBER}
            go build -mod=vendor ./cmd/gptn
 
     - name: Run Application bdd
@@ -42,6 +41,16 @@ jobs:
            ./init.sh
            sleep 15
            python -m robot.run -d ../logs .
+
+    - name: Upload to Ftp
+      if: always()
+      run: |
+          killall -9 gptn
+          zip -j bdd/logs/application_log.zip bdd/application/node/log/*
+          cd bdd
+          chmod +x ./upload2Ftp.sh ./targz_node.sh
+          ./targz_node.sh application
+          ./upload2Ftp.sh ${{secrets.FTP_PWD}} "Actions-"${GITHUB_REF##*/} ${GITHUB_SHA} $PWD/logs
 
     - name: Upload artifact
       if: always()

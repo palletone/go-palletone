@@ -15,11 +15,10 @@ jobs:
         sudo -H pip install demjson
         sudo -H pip install pexpect
         sudo -H apt-get install expect
+        sudo -H apt-get install lftp
 
     - name: Build Gptn
       run: |
-          echo ${GITHUB_RUN_ID}
-          echo ${GITHUB_RUN_NUMBER}
           cd $HOME
           mkdir gopath
           cd gopath
@@ -52,6 +51,17 @@ jobs:
           cd ../../
           python -m robot.run -d ./bdd/logs -i contractpay ./bdd/UserContract/Testcases
 
+    - name: Upload to Ftp
+      if: always()
+      run: |
+          killall -9 gptn
+          cd $HOME/gopath/src/github.com/palletone/go-palletone 
+          zip -j bdd/logs/uc3-3_reports_contractpay.zip bdd/logs/*
+          zip -r -l -o bdd/logs/uc3-3_logs_contractpay.zip cmd/deployment/node1/log cmd/deployment/node1/nohup.out cmd/deployment/node2/log cmd/deployment/node2/nohup.out cmd/deployment/node3/log cmd/deployment/node3/nohup.out
+          cd bdd
+          chmod +x ./upload2Ftp.sh 
+          ./upload2Ftp.sh ${{secrets.FTP_PWD}} "Actions-"${GITHUB_REF##*/} ${GITHUB_SHA} $PWD/logs
+
     - name: Upload
       if: always()
       uses: actions/upload-artifact@v1
@@ -73,6 +83,7 @@ jobs:
         sudo -H pip install demjson
         sudo -H pip install pexpect
         sudo -H apt-get install expect
+        sudo -H apt-get install lftp
 
     - name: Build Gptn
       run: |
@@ -108,6 +119,17 @@ jobs:
           cd ../../
           python -m robot.run -d ./bdd/logs -i testshimuc1 ./bdd/UserContract/Testcases
 
+    - name: Upload to Ftp
+      if: always()
+      run: |
+          killall -9 gptn
+          cd $HOME/gopath/src/github.com/palletone/go-palletone
+          zip -j bdd/logs/uc3-3_reports_testshimuc1.zip bdd/logs/*
+          zip -r -l -o bdd/logs/uc3-3_logs_testshimuc1.zip cmd/deployment/node1/log cmd/deployment/node1/nohup.out cmd/deployment/node2/log cmd/deployment/node2/nohup.out cmd/deployment/node3/log cmd/deployment/node3/nohup.out
+          cd bdd
+          chmod +x ./upload2Ftp.sh 
+          ./upload2Ftp.sh ${{secrets.FTP_PWD}} "Actions-"${GITHUB_REF##*/} ${GITHUB_SHA} $PWD/logs
+
     - name: Upload
       if: always()
       uses: actions/upload-artifact@v1
@@ -129,6 +151,7 @@ jobs:
         sudo -H pip install demjson
         sudo -H pip install pexpect
         sudo -H apt-get install expect
+        sudo -H apt-get install lftp
 
     - name: Build Gptn
       run: |
@@ -163,6 +186,17 @@ jobs:
           sleep 30
           cd ../../
           python -m robot.run -d ./bdd/logs -i trace ./bdd/UserContract/Testcases
+
+    - name: Upload to Ftp
+      if: always()
+      run: |
+          killall -9 gptn
+          cd $HOME/gopath/src/github.com/palletone/go-palletone
+          zip -j bdd/logs/uc3-3_reports_tract.zip bdd/logs/*
+          zip -r -l -o bdd/logs/uc3-3_logs_trace.zip cmd/deployment/node1/log cmd/deployment/node1/nohup.out cmd/deployment/node2/log cmd/deployment/node2/nohup.out cmd/deployment/node3/log cmd/deployment/node3/nohup.out
+          cd bdd
+          chmod +x ./upload2Ftp.sh 
+          ./upload2Ftp.sh ${{secrets.FTP_PWD}} "Actions-"${GITHUB_REF##*/} ${GITHUB_SHA} $PWD/logs
 
     - name: Upload
       if: always()
