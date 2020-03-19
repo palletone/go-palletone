@@ -25,6 +25,7 @@ import (
 	"github.com/coocood/freecache"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/golang/mock/gomock"
+	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/mock"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -230,4 +231,44 @@ func TestAddContractInstallTx(t *testing.T) {
 	err := pool.AddLocal(installTx)
 	t.Log(err)
 	assert.Nil(t, err)
+}
+func TestTxPool_GetUnpackedTxsByAddr(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	addr, _ := common.StringToAddress("P1HXNZReTByQHgWQNGMXotMyTkMG9XeEQfX")
+	lockScript := tokenengine.Instance.GenerateLockScript(addr)
+
+	mdag := mock.NewMockIDag(mockCtrl)
+	mdag.EXPECT().GetUtxoEntry(gomock.Any()).DoAndReturn(
+		func(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+			if outpoint.TxHash == Hash("dag") {
+				return &modules.Utxo{Amount: 123, PkScript: lockScript}, nil
+			}
+			return nil, ErrNotFound
+		}).AnyTimes()
+	pool := mockTxPool(mdag)
+	pay1 := mockPaymentTx(Hash("dag"), 0, 0)
+	pool.AddLocal(pay1)
+	t.Log("TxA:", pay1.Hash().String())
+	req := mockContractInvokeRequest(pay1.Hash(), 0, 0, []byte("user contract"))
+	err := pool.AddLocal(req)
+	t.Log("ReqB:", req.Hash().String())
+	assert.Nil(t, err)
+	fullTx := mockContractInvokeFullTx(pay1.Hash(), 0, 0, []byte("user contract"))
+	err = pool.AddLocal(fullTx)
+	assert.Nil(t, err)
+	t.Log("FullTxB:", fullTx.Hash().String())
+	req1 := mockContractInvokeRequest(Hash("new one"), 0, 0, []byte("user contract"))
+	err = pool.AddLocal(req1)
+	t.Log("ReqX:", req1.Hash().String())
+	assert.Nil(t, err)
+	fullTx1 := mockContractInvokeFullTx(Hash("new one"), 0, 0, []byte("user contract"))
+	err = pool.AddLocal(fullTx1)
+	assert.Nil(t, err)
+	txs, err := pool.GetUnpackedTxsByAddr(addr)
+	assert.Nil(t, err)
+	for _, tx := range txs {
+		t.Log(tx.TxHash.String())
+	}
+	assert.Equal(t, 2, len(txs))
 }
