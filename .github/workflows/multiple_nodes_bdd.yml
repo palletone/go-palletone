@@ -22,6 +22,7 @@ jobs:
           sudo -H pip install demjson
           sudo -H pip install pexpect
           sudo -H apt-get install expect
+          sudo -H apt-get install lftp
 
     - name: Build Gptn
       run: |
@@ -49,6 +50,17 @@ jobs:
         chmod +x ./bddstart.sh
         ./bddstart.sh
         
+    - name: Upload to Ftp
+      if: always()
+      run: |
+          killall -9 gptn
+          zip -j bdd/logs/zMulti-node_log.zip bdd/logs/zMulti-node/*
+          zip -j bdd/logs/light.zip bdd/logs/light/*
+          cd bdd
+          chmod +x ./upload2Ftp.sh ./targz_node.sh
+          ./targz_node.sh multiNode
+          ./upload2Ftp.sh ${{secrets.FTP_PWD}} "Actions-"${GITHUB_REF##*/} ${GITHUB_SHA} $PWD/logs
+
     - name: Upload artifact
       if: always()
       uses: actions/upload-artifact@v1
