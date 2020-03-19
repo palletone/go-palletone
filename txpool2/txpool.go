@@ -109,15 +109,15 @@ func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 	//check duplicate add
 	txHash := tx.Hash()
 	if _, err := pool.normals.GetTx(txHash); err == nil { //found tx
-		log.Info("try to add duplicate tx[%s] to tx pool", txHash.String())
+		log.Infof("try to add duplicate tx[%s] to tx pool", txHash.String())
 		return nil
 	}
 	if _, ok := pool.orphans[txHash]; ok { //found in orphans
-		log.Info("try to add duplicate orphan tx[%s] to tx pool", txHash.String())
+		log.Infof("try to add duplicate orphan tx[%s] to tx pool", txHash.String())
 		return nil
 	}
 	if _, ok := pool.userContractRequests[txHash]; ok { //found in userContractRequests
-		log.Info("try to add duplicate user contract request[%s] to tx pool", txHash.String())
+		log.Infof("try to add duplicate user contract request[%s] to tx pool", txHash.String())
 		return nil
 	}
 	if tx.IsSystemContract() && !tx.IsOnlyContractRequest() {
@@ -263,16 +263,18 @@ func (pool *TxPool) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, err
 
 func getUtxoFromTxs(txs map[common.Hash]*txspool.TxPoolTransaction, outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	newUtxo := make(map[modules.OutPoint]*modules.Utxo)
-	spendUtxo := make(map[modules.OutPoint]bool)
+	spendUtxo := make(map[modules.OutPoint]common.Hash)
 	for _, tx := range txs {
 		for _, o := range tx.Tx.GetSpendOutpoints() {
-			spendUtxo[*o] = true
+			spendUtxo[*o] = tx.TxHash
 		}
 		for o, u := range tx.Tx.GetNewUtxos() {
 			newUtxo[o] = u
 		}
 	}
-	if _, ok := spendUtxo[*outpoint]; ok {
+	if spendBy, ok := spendUtxo[*outpoint]; ok {
+		log.Infof("Double spend error, utxo[%s] already spend by Tx[%s] in txpool",
+			outpoint.String(), spendBy.String())
 		return nil, ErrDoubleSpend
 	}
 	if utxo, ok := newUtxo[*outpoint]; ok {
