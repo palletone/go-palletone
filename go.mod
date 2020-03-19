@@ -31,7 +31,6 @@ require (
 	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/martinlindhe/base36 v0.0.0-20180729042928-5cda0030da17
 	github.com/mattn/go-colorable v0.0.9
-	github.com/mitchellh/mapstructure v1.2.0 // indirect
 	github.com/naoina/toml v0.0.0-20170410220130-ac014c6b6502
 	github.com/palletone/adaptor v1.0.1-0.20191204100220-740fe858e09b
 	github.com/palletone/btc-adaptor v1.0.1-0.20191224041536-3348ea137f6e
