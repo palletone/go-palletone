@@ -171,6 +171,9 @@ func (s *PrivateContractAPI) Ccstop(ctx context.Context, contractAddr string) er
 	return err
 }
 
+const GOLANG = "golang"
+const GO = "go"
+
 //contract tx
 func (s *PrivateContractAPI) CcinstalltxOld(ctx context.Context, from, to string, amount, fee decimal.Decimal,
 	tplName, path, version, ccdescription, ccabi, cclanguage string, addr []string) (*ContractInstallRsp, error) {
@@ -185,8 +188,8 @@ func (s *PrivateContractAPI) CcinstalltxOld(ctx context.Context, from, to string
 	log.Infof("   tplName[%s], path[%s],version[%s]", tplName, path, version)
 	log.Infof("   description[%s], abi[%s],language[%s]", ccdescription, ccabi, cclanguage)
 	log.Infof("   addrs len[%d]", len(addr))
-	if strings.ToLower(cclanguage) == "go" {
-		cclanguage = "golang"
+	if strings.ToLower(cclanguage) == GO {
+		cclanguage = GOLANG
 	}
 	language := strings.ToUpper(cclanguage)
 	if _, ok := peer.ChaincodeSpec_Type_value[language]; !ok {
@@ -227,18 +230,21 @@ func (s *PrivateContractAPI) Ccinstalltx(ctx context.Context, from, to string, a
 	log.Infof("   tplName[%s], path[%s],version[%s]", tplName, path, version)
 	log.Infof("   description[%s], abi[%s],language[%s]", ccdescription, ccabi, cclanguage)
 	log.Infof("   addrs len[%d]", len(addr))
-	if strings.ToLower(cclanguage) == "go" {
-		cclanguage = "golang"
+	if strings.ToLower(cclanguage) == GO {
+		cclanguage = GOLANG
 	}
 	language := strings.ToUpper(cclanguage)
 	if _, ok := peer.ChaincodeSpec_Type_value[language]; !ok {
 		return nil, errors.New(cclanguage + " language is not supported")
 	}
 
-	addrs := make([]common.Address, 0)
+	//addrs := make([]common.Address, 0)
 	for i, s := range addr {
-		a, _ := common.StringToAddress(s)
-		addrs = append(addrs, a)
+		_, err := common.StringToAddress(s)
+		if err != nil {
+			return nil, err
+		}
+		//addrs = append(addrs, a)
 		log.Infof("    index[%d],addr[%s]", i, s)
 	}
 
@@ -419,8 +425,8 @@ func (s *PrivateContractAPI) Ccinstalltxfee(ctx context.Context, from, to string
 	log.Infof("   tplName[%s], path[%s],version[%s]", tplName, path, version)
 	log.Infof("   description[%s], abi[%s],language[%s]", ccdescription, ccabi, cclanguage)
 	log.Infof("   addrs len[%d]", len(addr))
-	if strings.ToLower(cclanguage) == "go" {
-		cclanguage = "golang"
+	if strings.ToLower(cclanguage) == GO {
+		cclanguage = GOLANG
 	}
 	language := strings.ToUpper(cclanguage)
 	if _, ok := peer.ChaincodeSpec_Type_value[language]; !ok {
