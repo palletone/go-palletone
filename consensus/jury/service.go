@@ -695,7 +695,7 @@ func CheckContractTxResult(tx *modules.Transaction, rwM rwset.TxManager, dag dbo
 //	return tx.IsSystemContract()
 //}
 func (p *Processor) getUtxoFromPoolAndDag(outpoint *modules.OutPoint) (*modules.Utxo, error) {
-	utxo, err := p.ptn.TxPool().GetUtxo(outpoint)
+	utxo, err := p.ptn.TxPool().GetUtxoFromAll(outpoint)
 	if err == nil {
 		return utxo, nil
 	}

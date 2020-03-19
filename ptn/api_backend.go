@@ -510,11 +510,16 @@ func (b *PtnApiBackend) GetHeaderByNumber(number *modules.ChainIndex) (*modules.
 func (b *PtnApiBackend) GetPrefix(prefix string) map[string][]byte {
 	return b.ptn.dag.GetCommonByPrefix([]byte(prefix), false)
 } //getprefix
-
+func (b *PtnApiBackend) utxoQuery(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+	preUtxo, err := b.ptn.txPool.GetUtxoFromAll(outpoint)
+	if err == nil {
+		return preUtxo, nil
+	}
+	return b.ptn.dag.GetUtxoEntry(outpoint)
+}
 func (b *PtnApiBackend) GetUtxoEntry(outpoint *modules.OutPoint) (*ptnjson.UtxoJson, error) {
-
 	//This function query from txpool first, not exist, then query from leveldb.
-	utxo, err := b.ptn.txPool.GetUtxo(outpoint)
+	utxo, err := b.utxoQuery(outpoint)
 	if err != nil {
 		log.Errorf("Utxo not found in txpool and leveldb, key:%s", outpoint.String())
 		return nil, err
@@ -902,6 +907,7 @@ func (b *PtnApiBackend) GetFileInfo(filehash string) ([]*modules.ProofOfExistenc
 func (b *PtnApiBackend) GetProofOfExistencesByMaindata(maindata string) ([]*modules.ProofOfExistencesInfo, error) {
 	return b.ptn.dag.GetFileInfo([]byte(maindata))
 }
+
 //SPV
 //`json:"unit_hash"`
 type proofTxInfo struct {

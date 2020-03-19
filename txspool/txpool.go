@@ -203,7 +203,10 @@ func (pool *TxPool) startJournal(config TxPoolConfig) {
 }
 
 // return a utxo by the outpoint in txpool
-func (pool *TxPool) GetUtxo(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+func (pool *TxPool) GetUtxoFromAll(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+	return pool.GetUtxoEntry(outpoint)
+}
+func (pool *TxPool) GetUtxoFromFree(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	return pool.GetUtxoEntry(outpoint)
 }
 func (pool *TxPool) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {

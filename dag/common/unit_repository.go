@@ -1374,7 +1374,7 @@ func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, t
 	}
 	v := ""
 	if len(templateId) != 0 {
-		temC, err := rep.statedb.GetContractTpl(templateId)
+		temC, err := rep.getContractTpl(templateId)
 		if err != nil {
 			log.Errorf("get contract template with id = %x, error:%s", templateId, err.Error())
 			return false
@@ -1404,6 +1404,13 @@ func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, t
 		}
 	}
 	return true
+}
+func (rep *UnitRepository) getContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
+	tpl, err := rep.statedb.GetContractTpl(tplId)
+	if err != nil {
+		return rep.statedb.GetContractTplFromSysContract(tplId)
+	}
+	return tpl, nil
 }
 
 /**
