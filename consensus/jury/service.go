@@ -715,7 +715,8 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele *modules.Ele
 		return false
 	}
 	contractId := tx.GetContractId()
-	reqAddr, err := p.dag.GetTxRequesterAddress(tx)
+	reqAddrs, err := tx.GetFromAddrs(p.ptn.TxPool().GetUtxo, p.ptn.TxPool().GetAddressFromScript)
+	//reqAddr, err := p.dag.GetTxRequesterAddress(tx)
 	if err != nil {
 		log.Errorf("[%s]isValidateElection, GetTxRequesterAddress fail, err:%s", shortId(reqId.String()), err)
 		return false
@@ -743,12 +744,19 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele *modules.Ele
 			if cType == modules.APP_CONTRACT_INVOKE_REQUEST {
 				continue
 			} else {
-				if jjhAd == reqAddr.Str() { //true
-					log.Debugf("[%s]isValidateElection, e.EType == 1, ok", shortId(reqId.String()))
+				isJjh := false
+				for _, reqAddr := range reqAddrs {
+					if jjhAd == reqAddr.Str() { //true
+						log.Debugf("[%s]isValidateElection, e.EType == 1,jjh request addr, ok", shortId(reqId.String()))
+						isJjh = true
+						break
+					}
+				}
+				if isJjh {
 					continue
 				} else {
 					log.Debugf("[%s]isValidateElection, e.EType == 1, but not jjh request addr", shortId(reqId.String()))
-					log.Debugf("[%s]isValidateElection, reqAddr[%s], jjh[%s]", shortId(reqId.String()), reqAddr.Str(), jjhAd)
+					//log.Debugf("[%s]isValidateElection, reqAddr[%s], jjh[%s]", shortId(reqId.String()), reqAddr.Str(), jjhAd)
 					return false
 				}
 			}
