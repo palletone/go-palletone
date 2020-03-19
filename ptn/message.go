@@ -394,7 +394,7 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 			return nil
 		}
 
-		log.Debugf("ProtocolManager, index[%d] txHash[%s] tx:%s", i, tx.Hash().Str(), tx.String())
+		log.Debugf("ProtocolManager, index[%d] txHash[%s] tx:%s", i, tx.Hash().ShortStr(), tx.String())
 		if tx.IsContractTx() && tx.GetContractTxType() == modules.APP_CONTRACT_INVOKE_REQUEST {
 			//系统合约的请求可以P2P广播，但是包含结果的系统合约请求，只能在打包时生成，不能广播
 			if tx.IsSystemContract() {
