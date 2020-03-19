@@ -213,13 +213,15 @@ func (pool *TxPool) convertTx(tx *modules.Transaction, fee []*modules.Addition) 
 		IsUserContractFullTx: tx.IsUserContract() && !tx.IsOnlyContractRequest(),
 	}
 }
+
 func (pool *TxPool) addOrphanTx(tx *txspool.TxPoolTransaction) error {
 	log.Debugf("add tx[%s] to orphan pool", tx.TxHash.String())
 	tx.Status = txspool.TxPoolTxStatus_Orphan
 	pool.orphans[tx.TxHash] = tx
 	return nil
 }
-func (pool *TxPool) GetSortedTxs(processor func(transaction *txspool.TxPoolTransaction) (getNext bool, err error)) error {
+
+func (pool *TxPool) GetSortedTxs(processor txspool.ProcessorFunc) error {
 	pool.RLock()
 	defer pool.RUnlock()
 	return pool.normals.GetSortedTxs(processor)
