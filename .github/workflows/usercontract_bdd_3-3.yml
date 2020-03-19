@@ -49,7 +49,7 @@ jobs:
           ./start.sh 3
           sleep 30
           cd ../../
-          python -m robot.run -d ./bdd/logs -i contractpay ./bdd/UserContract/Testcases
+          python -m robot.run -d ./bdd/logs/contractpay -i contractpay ./bdd/UserContract/Testcases
 
     - name: Upload to Ftp
       if: always()
@@ -117,7 +117,7 @@ jobs:
           ./start.sh 3
           sleep 30
           cd ../../
-          python -m robot.run -d ./bdd/logs -i testshimuc1 ./bdd/UserContract/Testcases
+          python -m robot.run -d ./bdd/logs/testshimuc1 -i testshimuc1 ./bdd/UserContract/Testcases
 
     - name: Upload to Ftp
       if: always()
@@ -185,7 +185,7 @@ jobs:
           ./start.sh 3
           sleep 30
           cd ../../
-          python -m robot.run -d ./bdd/logs -i trace ./bdd/UserContract/Testcases
+          python -m robot.run -d ./bdd/logs/trace -i trace ./bdd/UserContract/Testcases
 
     - name: Upload to Ftp
       if: always()
