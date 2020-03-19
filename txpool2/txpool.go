@@ -225,7 +225,27 @@ func (pool *TxPool) GetSortedTxs(processor func(transaction *txspool.TxPoolTrans
 func (pool *TxPool) GetUtxo(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	pool.RLock()
 	defer pool.RUnlock()
-	return pool.GetUtxoEntry(outpoint)
+	//return pool.GetUtxoEntry(outpoint)
+	utxo, ok := pool.normals.newUtxo[*outpoint]
+	if ok {
+		return utxo, nil
+	}
+	reqUtxos := getAllNewUtxo(pool.userContractRequests)
+	utxo, ok = reqUtxos[*outpoint]
+	if ok {
+		return utxo, nil
+	}
+	return nil, ErrNotFound
+
+}
+func getAllNewUtxo(txs map[common.Hash]*txspool.TxPoolTransaction) map[modules.OutPoint]*modules.Utxo {
+	newUtxo := make(map[modules.OutPoint]*modules.Utxo)
+	for _, tx := range txs {
+		for o, u := range tx.Tx.GetNewUtxos() {
+			newUtxo[o] = u
+		}
+	}
+	return newUtxo
 }
 
 //主要用于Validator，不带锁
