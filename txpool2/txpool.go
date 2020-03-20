@@ -180,7 +180,7 @@ func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 		}
 
 	}
-	pool.txFeed.Send(modules.TxPreEvent{Tx: tx})
+	pool.txFeed.Send(modules.TxPreEvent{Tx: tx, IsOrphan: false})
 	//4. check orphan txpool
 	return pool.checkOrphanTxToNormal(tx2.TxHash)
 }
@@ -238,6 +238,7 @@ func (pool *TxPool) addOrphanTx(tx *txspool.TxPoolTransaction) error {
 	log.Debugf("add tx[%s] to orphan pool", tx.TxHash.String())
 	tx.Status = txspool.TxPoolTxStatus_Orphan
 	pool.orphans[tx.TxHash] = tx
+	pool.txFeed.Send(modules.TxPreEvent{Tx: tx.Tx, IsOrphan: true})
 	return nil
 }
 
