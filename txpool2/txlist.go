@@ -233,7 +233,7 @@ func (l *txList) GetSortedTxs() ([]*txspool.TxPoolTransaction, error) {
 }
 
 //广度优先遍历这个图
-func (l *txList) getSortedTxs(nodes []*linkTx, processor func(tx *txspool.TxPoolTransaction) (getNext bool, err error)) error {
+func (l *txList) getSortedTxs(nodes []*linkTx, processor txspool.ProcessorFunc) error {
 	if len(nodes) == 0 {
 		return nil
 	}
