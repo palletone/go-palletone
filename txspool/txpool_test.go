@@ -322,13 +322,11 @@ func TestTransactionAddingTxs(t *testing.T) {
 	//  test GetSortedTxs{}
 	//unit_hash := common.HexToHash("0x0e7e7e3bd7c1e9ce440089712d61de38f925eb039f152ae03c6688ed714af729")
 	defer func(p *TxPool) {
-		sortedtxs := []*TxPoolTransaction{}
+		sortedtxs, _ := p.GetSortedTxs()
 		total := 0
-		err := p.GetSortedTxs(func(tx *TxPoolTransaction) (getNext bool, err error) {
-			sortedtxs = append(sortedtxs, tx)
+		for _, tx := range sortedtxs {
 			total += tx.Tx.SerializeSize()
-			return true, nil
-		})
+		}
 		log.Debugf(" total size is :%v ,the cout:%d ", total, len(txs))
 		//for i, tx := range sortedtxs {
 		//	if i < len(txs)-1 {
@@ -340,7 +338,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 		//all = len(sortedtxs)
 
 		all = len(sortedtxs)
-		for i:=0; i< all-1; i++{
+		for i := 0; i < all-1; i++ {
 			txpl := sortedtxs[i].Priority_lvl
 			if txpl < sortedtxs[i+1].Priority_lvl {
 				t.Error("sorted failed.", i, txpl)
@@ -356,7 +354,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 			}
 		}
 		//  add tx : failed , and discared the tx.
-		err = p.addTx(pool_tx, !pool.config.NoLocals)
+		err := p.addTx(pool_tx, !pool.config.NoLocals)
 		assert.NotNil(t, err)
 		err1 := p.DeleteTxByHash(pool_tx.Tx.Hash())
 		if err1 != nil {
@@ -477,11 +475,7 @@ func TestGetProscerTx(t *testing.T) {
 
 		count := p.Count()
 		assert.Equal(t, 4, count)
-		sortedTxs := []*TxPoolTransaction{}
-		pool.GetSortedTxs(func(tx *TxPoolTransaction) (getNext bool, err error) {
-			sortedTxs = append(sortedTxs, tx)
-			return true, nil
-		})
+		sortedTxs, _ := pool.GetSortedTxs()
 		for index, tx := range sortedTxs {
 			t.Logf("index:%d, hash:%s", index, tx.Tx.Hash().String())
 		}
