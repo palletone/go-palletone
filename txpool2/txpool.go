@@ -147,6 +147,7 @@ func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 	//1.validate tx
 	pool.txValidator.SetUtxoQuery(pool)
 	fee, vcode, err := pool.txValidator.ValidateTx(tx, !tx.IsOnlyContractRequest())
+	log.Debugf("validate tx[%s] get result:%v", txHash.String(), vcode)
 	if err != nil && vcode != validator.TxValidationCode_ORPHAN {
 		//验证不通过，而且也不是孤儿
 		log.Warnf("validate tx[%s] get error:%s", txHash.String(), err.Error())
@@ -421,12 +422,10 @@ func (pool *TxPool) DiscardTxs(txs []*modules.Transaction) error {
 	for _, tx := range txs {
 		requestHash := tx.RequestHash()
 		if tx.IsContractTx() {
-			err := pool.normals.DiscardTx(requestHash)
-			if err != nil {
-				if err == ErrNotFound {
-					continue
-				} else {
-					return err
+			if tx.IsSystemContract() {
+				err := pool.normals.DiscardTx(requestHash)
+				if err != nil && err != ErrNotFound {
+					log.Warnf("Req[%s] discard error:%s", requestHash.String(), err.Error())
 				}
 			}
 			delete(pool.orphans, requestHash)
@@ -438,12 +437,8 @@ func (pool *TxPool) DiscardTxs(txs []*modules.Transaction) error {
 			}
 		}
 		err := pool.normals.DiscardTx(tx.Hash())
-		if err != nil {
-			if err == ErrNotFound {
-				continue
-			} else {
-				return err
-			}
+		if err != nil && err != ErrNotFound {
+			log.Warnf("Tx[%s] discard error:%s", tx.Hash().String(), err.Error())
 		}
 		delete(pool.orphans, tx.Hash())
 	}
