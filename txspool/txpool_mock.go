@@ -192,7 +192,7 @@ func (mr *MockITxPoolMockRecorder) SubscribeTxPreEvent(arg0 interface{}) *gomock
 }
 
 // GetSortedTxs mocks base method
-func (m *MockITxPool) GetSortedTxs(processor func(tx *TxPoolTransaction) (getNext bool, err error)) error {
+func (m *MockITxPool) GetSortedTxs(processor ProcessorFunc) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSortedTxs", processor)
 	ret0, _ := ret[0].(error)

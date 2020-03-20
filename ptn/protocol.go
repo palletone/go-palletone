@@ -140,7 +140,7 @@ type TxDesc struct {
 //	//GetPoolTxsByAddr(addr string) ([]*txspool.TxPoolTransaction, error)
 //	GetUnpackedTxsByAddr(addr common.Address) ([]*txspool.TxPoolTransaction, error)
 //	Status() (int, int, int)
-//	GetSortedTxs(processor func(tx *txspool.TxPoolTransaction) (getNext bool, err error)) error
+//	GetSortedTxs(processor txspool.ProcessorFunc) error
 //	//SendStoredTxs(hashs []common.Hash) error
 //	DiscardTxs(txs []*modules.Transaction) error
 //	//DiscardTx(hash common.Hash) error
