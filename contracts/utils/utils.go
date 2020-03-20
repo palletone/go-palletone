@@ -56,7 +56,7 @@ func (pD *PalletOneDocker) CreateDefaultUserContractNetWork() {
 	log.Debugf("network name = %s had already existed", network.Name)
 }
 
-func (pD *PalletOneDocker) PullUserContractImages(n chan struct{}) {
+func (pD *PalletOneDocker) PullUserContractImages(n chan<- struct{}) {
 	defer close(n)
 	log.Debug("start PullUserContractImages")
 	defer log.Debug("end PullUserContractImages")
@@ -75,7 +75,7 @@ func (pD *PalletOneDocker) PullUserContractImages(n chan struct{}) {
 	log.Debugf("go image name = %s had already existed", goimgNameTag)
 }
 
-func (pD *PalletOneDocker) RestartUserContractsWhenStartGptn(n1 chan struct{}, n2 chan struct{}) {
+func (pD *PalletOneDocker) RestartUserContractsWhenStartGptn(n1 <-chan struct{}, n2 chan<- struct{}) {
 	log.Debug("waiting pull image")
 	<-n1
 	log.Debug("start RestartUserContractsWhenStartGptn")

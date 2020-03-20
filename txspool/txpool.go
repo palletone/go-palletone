@@ -1565,7 +1565,7 @@ func (pool *TxPool) resetPendingTx(tx *modules.Transaction) error {
 
 /******  end utxoSet  *****/
 // GetSortedTxs returns 根据优先级返回list
-func (pool *TxPool) GetSortedTxs(processor ProcessorFunc) error {
+func (pool *TxPool) GetSortedTxs(processor func(tx *TxPoolTransaction) (getNext bool, err error)) error {
 	//GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTransaction, common.StorageSize) {
 	t0 := time.Now()
 	canbe_packaged := false

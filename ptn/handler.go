@@ -452,76 +452,6 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 		//
 		go pm.dockerLoop(next2)
 	}
-
-	//  是否为linux系統
-	//if runtime.GOOS == "linux" {
-	//	log.Debug("entering docker service...")
-	//	dockerBool := true
-	//	//创建 docker client
-	//	client, err := util.NewDockerClient()
-	//	if err != nil {
-	//		log.Debug("util.NewDockerClient", "error", err)
-	//		dockerBool = false
-	//	}
-	//	if client == nil {
-	//		log.Debug("client is nil")
-	//		dockerBool = false
-	//	} else {
-	//		_, err = client.Info()
-	//		if err != nil {
-	//			log.Debug("client.Info", "error", err)
-	//			dockerBool = false
-	//		}
-	//	}
-	//	if dockerBool {
-	//		log.Debug("starting docker service...")
-	//		//创建gptn程序默认网络
-	//		utils.CreateGptnNet(client)
-	//		//拉取gptn发布版本对应的goimg基础镜像，防止卡住
-	//		go func() {
-	//			log.Debug("downloading palletone base image...")
-	//			goimg := contractcfg.Goimg + ":" + contractcfg.GptnVersion
-	//			_, err = client.InspectImage(goimg)
-	//			if err != nil {
-	//				log.Debugf("Image %s does not exist locally, attempt pull", goimg)
-	//				err = client.PullImage(docker.PullImageOptions{Repository: contractcfg.Goimg, Tag: contractcfg.GptnVersion}, docker.AuthConfiguration{})
-	//				if err != nil {
-	//					log.Debugf("Failed to pull %s: %s", goimg, err)
-	//				}
-	//			}
-	//			//  获取本地用户合约列表
-	//			log.Debug("get local user contracts")
-	//			ccs, err := manger.GetChaincodes(pm.dag)
-	//			if err != nil {
-	//				log.Debugf("get chaincodes error %s", err.Error())
-	//				return
-	//			}
-	//			//启动退出的容器，包括本地有的和本地没有的
-	//			for _, c := range ccs {
-	//				//  判断是否是担任jury地址
-	//				juryAddrs := pm.contract.GetLocalJuryAddrs()
-	//				juryAddr := ""
-	//				if len(juryAddrs) != 0 {
-	//					juryAddr = juryAddrs[0].String()
-	//				}
-	//				if juryAddr != c.Address {
-	//					log.Debugf("the local jury address %s was not equal address %s in the dag", juryAddr, c.Address)
-	//					continue
-	//				}
-	//				//conName := c.Name+c.Version+":"+contractcfg.GetConfig().ContractAddress
-	//				rd, _ := crypto.GetRandomBytes(32)
-	//				txid := util2.RlpHash(rd)
-	//				//  启动gptn时启动Jury对应的没有过期的用户合约容器
-	//				if !c.IsExpired {
-	//					log.Debugf("restart container %s with jury address %s", c.Name, c.Address)
-	//					address := common.NewAddress(c.Id, common.ContractHash)
-	//					manger.RestartContainer(pm.dag, "palletone", address, txid.String())
-	//				}
-	//			}
-	//		}()
-	//		go pm.dockerLoop(client)
-	//	}
-	//}
 }
 
 func (pm *ProtocolManager) Stop() {
@@ -933,17 +863,19 @@ func (pm *ProtocolManager) ceBroadcastLoop() {
 	}
 }
 
-func (pm *ProtocolManager) dockerLoop(n chan struct{}) {
+func (pm *ProtocolManager) dockerLoop(n <-chan struct{}) {
 	log.Debug("waiting RestartUserContractsWhenStartGptn func")
 	<-n
 	log.Debug("start docker loop")
 	defer log.Debug("end docker loop")
+	duration := 30*time.Second
+	timer := time.NewTimer(duration)
 	for {
 		select {
 		case <-pm.dockerQuitSync:
 			log.Debug("quit from docker loop")
 			return
-		case <-time.After(time.Duration(30) * time.Second):
+		case <-timer.C:
 			log.Debug("each 30 second to get all containers")
 			//  获取所有容器
 			cons, err := pm.pDocker.GetAllContainers()
@@ -955,6 +887,7 @@ func (pm *ProtocolManager) dockerLoop(n chan struct{}) {
 			pm.pDocker.RestartExitedAndUnExpiredContainers(cons)
 			//  删除过期容器
 			//pm.pDocker.RemoveExpiredContainers(cons)
+			timer.Reset(duration)
 		}
 	}
 }
