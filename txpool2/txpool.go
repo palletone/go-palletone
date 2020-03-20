@@ -153,6 +153,7 @@ func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 	tx2 := pool.convertTx(tx, fee)
 	//2. process orphan
 	if vcode == validator.TxValidationCode_ORPHAN {
+		reverseDeleteReq()
 		return pool.addOrphanTx(tx2)
 	}
 	//有可能是连续的用户合约请求R1,R2，但是R2先被执行完，这个时候R1还在RequestPool里面，没办法被打包，所以R2应该被扔到OrphanPool
@@ -160,6 +161,7 @@ func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 		if _, ok := pool.userContractRequests[h]; ok {
 			//父交易还是Request，所以本Tx是Orphan
 			log.Debugf("Tx[%s]'s parent %s is a request, not a full tx", tx2.TxHash.String(), h.String())
+			reverseDeleteReq()
 			return pool.addOrphanTx(tx2)
 		}
 	}
