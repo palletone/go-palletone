@@ -139,6 +139,7 @@ func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 	reverseDeleteReq := func() {
 		if deletedReq != nil {
 			pool.userContractRequests[deletedReq.TxHash] = deletedReq
+			log.Debugf("reverse delete request %s", deletedReq.TxHash.String())
 		}
 	}
 	//1.validate tx
@@ -365,8 +366,9 @@ func (pool *TxPool) DiscardTxs(txs []*modules.Transaction) error {
 		return nil
 	}
 	for _, tx := range txs {
+		requestHash := tx.RequestHash()
 		if tx.IsContractTx() {
-			err := pool.normals.DiscardTx(tx.RequestHash())
+			err := pool.normals.DiscardTx(requestHash)
 			if err != nil {
 				if err == ErrNotFound {
 					continue
@@ -374,7 +376,13 @@ func (pool *TxPool) DiscardTxs(txs []*modules.Transaction) error {
 					return err
 				}
 			}
-			delete(pool.orphans, tx.RequestHash())
+			delete(pool.orphans, requestHash)
+			//删除对应的Request,可能有后续Tx在孤儿池，添加回来
+			if _, ok := pool.userContractRequests[requestHash]; ok {
+				log.Debugf("Request[%s] already packed into unit, delete it from request pool", requestHash.String())
+				delete(pool.userContractRequests, requestHash)
+				pool.checkOrphanTxToNormal(tx.RequestHash())
+			}
 		}
 		err := pool.normals.DiscardTx(tx.Hash())
 		if err != nil {
@@ -480,15 +488,27 @@ func (pool *TxPool) SetPendingTxs(unit_hash common.Hash, num uint64, txs []*modu
 		return nil
 	}
 	for _, tx := range txs {
-		if tx.IsContractTx() {
+		//将用户合约状态改为已打包，那么如果有Request,那么将Tx加入，Request自然会被删除
+		if tx.IsUserContract() {
+			requestHash := tx.RequestHash()
+			if _, ok := pool.userContractRequests[requestHash]; ok {
+				err := pool.addLocal(tx)
+				if err != nil {
+					return err
+				}
+			}
+		}
+		//如果是系统合约，那么需要按RequestHash去查找并改变状态
+		if tx.IsSystemContract() {
 			err := pool.normals.UpdateTxStatusPacked(tx.RequestHash(), unit_hash, num)
 			if err != nil && err != ErrNotFound {
 				return err
 			}
-		}
-		err := pool.normals.UpdateTxStatusPacked(tx.Hash(), unit_hash, num)
-		if err != nil && err != ErrNotFound {
-			return err
+		} else {
+			err := pool.normals.UpdateTxStatusPacked(tx.Hash(), unit_hash, num)
+			if err != nil && err != ErrNotFound {
+				return err
+			}
 		}
 	}
 	return nil
@@ -509,15 +529,16 @@ func (pool *TxPool) ResetPendingTxs(txs []*modules.Transaction) error {
 		return nil
 	}
 	for _, tx := range txs {
-		if tx.IsContractTx() {
+		if tx.IsSystemContract() {
 			err := pool.normals.UpdateTxStatusUnpacked(tx.RequestHash())
 			if err != nil && err != ErrNotFound {
 				return err
 			}
-		}
-		err := pool.normals.UpdateTxStatusUnpacked(tx.Hash())
-		if err != nil && err != ErrNotFound {
-			return err
+		} else {
+			err := pool.normals.UpdateTxStatusUnpacked(tx.Hash())
+			if err != nil && err != ErrNotFound {
+				return err
+			}
 		}
 	}
 	return nil
