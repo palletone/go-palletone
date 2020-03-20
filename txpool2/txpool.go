@@ -239,7 +239,7 @@ func (pool *TxPool) addOrphanTx(tx *txspool.TxPoolTransaction) error {
 	return nil
 }
 
-func (pool *TxPool) GetSortedTxs(processor txspool.ProcessorFunc) error {
+func (pool *TxPool) GetSortedTxs(processor func(tx *txspool.TxPoolTransaction) (getNext bool, err error)) error {
 	pool.RLock()
 	defer pool.RUnlock()
 	return pool.normals.GetSortedTxs(processor)
