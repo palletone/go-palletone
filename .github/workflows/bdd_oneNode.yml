@@ -46,48 +46,58 @@ jobs:
             ./blacklist_test.sh 2 
 
       - name: Run exchange bdd
+        if: always()
         run: |
             cd bdd/exchange
             chmod +x ./exchange_test.sh
             ./exchange_test.sh BYC LYC
 
       - name: Run contract testcases bdd
+        if: always()
         run: | 
             cd bdd/contract/testcases
             chmod +x ./test_start.sh
             ./test_start.sh
 
       - name: Run contract transfercases bdd
+        if: always()
         run: |
             cd bdd/contract/transfercases
             chmod +x ./test_start.sh
             ./test_start.sh
 
       - name: Run testcase createTrans bdd
+        if: always()
         run: |
             python -m robot.run -d ./bdd/logs/createTrans -i normal ./bdd/testcase/createTrans
 
       - name: Run testcase crt20Contract bdd
+        if: always()
         run: |
             python -m robot.run -d ./bdd/logs/crt20Contract -i normal ./bdd/testcase/crt20Contract
 
       - name: Run testcase crt721Seqence bdd
+        if: always()
         run: |
             python -m robot.run -d ./bdd/logs/crt721Seqence -i normal ./bdd/testcase/crt721Seqence
 
       - name: Run testcase crt721UDID bdd
+        if: always()
         run: |
             python -m robot.run -d ./bdd/logs/crt721UDID -i normal ./bdd/testcase/crt721UDID
 
       - name: Run testcase voteContract bdd
+        if: always()
         run: |
             python -m robot.run -d ./bdd/logs/voteContract -i normal ./bdd/testcase/voteContract
 
       - name: Run hdWallet bdd
+        if: always()
         run: |
             python -m robot.run -d ./bdd/logs/hdWallet ./bdd/hdWallet
 
       - name: Run testcases bdd
+        if: always()
         run: |
             killall -9 gptn
             cd bdd/GasToken
