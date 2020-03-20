@@ -725,8 +725,10 @@ func (pm *ProtocolManager) txProcessLoop() {
 	for {
 		select {
 		case event := <-pm.txCh:
-			// add user contract request process
-			go pm.contractProc.ProcessUserContractInvokeReqTx(event.Tx)
+			if !event.IsOrphan { //孤儿请求无法进行处理
+				// add user contract request process
+				go pm.contractProc.ProcessUserContractInvokeReqTx(event.Tx)
+			}
 			pm.BroadcastTx(event.Tx.Hash(), event.Tx)
 
 			// Err() channel will be closed when unsubscribing.
@@ -868,7 +870,7 @@ func (pm *ProtocolManager) dockerLoop(n <-chan struct{}) {
 	<-n
 	log.Debug("start docker loop")
 	defer log.Debug("end docker loop")
-	duration := 30*time.Second
+	duration := 30 * time.Second
 	timer := time.NewTimer(duration)
 	for {
 		select {
