@@ -162,21 +162,6 @@ func (mr *MockITxPoolMockRecorder) GetUtxoFromAll(outpoint interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUtxoFromAll", reflect.TypeOf((*MockITxPool)(nil).GetUtxoFromAll), outpoint)
 }
 
-// GetUtxoFromFree mocks base method
-func (m *MockITxPool) GetUtxoFromFree(outpoint *modules.OutPoint) (*modules.Utxo, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUtxoFromFree", outpoint)
-	ret0, _ := ret[0].(*modules.Utxo)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetUtxoFromFree indicates an expected call of GetUtxoFromFree
-func (mr *MockITxPoolMockRecorder) GetUtxoFromFree(outpoint interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUtxoFromFree", reflect.TypeOf((*MockITxPool)(nil).GetUtxoFromFree), outpoint)
-}
-
 // SubscribeTxPreEvent mocks base method
 func (m *MockITxPool) SubscribeTxPreEvent(arg0 chan<- modules.TxPreEvent) event.Subscription {
 	m.ctrl.T.Helper()
