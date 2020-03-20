@@ -35,6 +35,8 @@ import (
 
 type TxPoolTxStatus byte
 
+type ProcessorFunc func(tx *TxPoolTransaction) (getNext bool, err error)
+
 const (
 	//未打包
 	TxPoolTxStatus_Unpacked TxPoolTxStatus = iota
