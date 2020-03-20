@@ -1015,7 +1015,6 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 	unitHash := unit.Hash()
 	unitTime := unit.Timestamp()
 	unitHeight := unit.NumberU64()
-	unitNum := unit.Number()
 
 	templateId := make([]byte, 0)
 	// traverse messages
@@ -1047,11 +1046,11 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 			}
 		case modules.APP_CONTRACT_DEPLOY:
 			deploy := msg.Payload.(*modules.ContractDeployPayload)
-			if ok := rep.saveContractInitPayload(unitNum, uint32(txIndex), templateId, deploy, requester, unitTime); !ok {
+			if ok := rep.saveContractInitPayload(unit.Number(), uint32(txIndex), templateId, deploy, requester, unitTime); !ok {
 				return fmt.Errorf("Save contract init payload error.")
 			}
 		case modules.APP_CONTRACT_INVOKE:
-			if ok := rep.saveContractInvokePayload(tx, unitNum, uint32(txIndex), msg, reqIndex, unitTime); !ok {
+			if ok := rep.saveContractInvokePayload(tx, unit.Number(), uint32(txIndex), msg, reqIndex, unitTime); !ok {
 				return fmt.Errorf("save contract invode payload error")
 			}
 		case modules.APP_CONTRACT_STOP:
@@ -1059,7 +1058,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 				return fmt.Errorf("save contract stop payload failed.")
 			}
 		case modules.APP_ACCOUNT_UPDATE:
-			if err := rep.updateAccountInfo(msg, requester, unitNum, uint32(txIndex)); err != nil {
+			if err := rep.updateAccountInfo(msg, requester, unit.Number(), uint32(txIndex)); err != nil {
 				return fmt.Errorf("apply Account Updating Operation error")
 			}
 		case modules.APP_CONTRACT_TPL_REQUEST:
@@ -1412,6 +1411,7 @@ func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, t
 	}
 	return true
 }
+
 func (rep *UnitRepository) getContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
 	tpl, err := rep.statedb.GetContractTpl(tplId)
 	if err != nil {
