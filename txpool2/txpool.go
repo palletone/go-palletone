@@ -156,21 +156,26 @@ func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 		reverseDeleteReq()
 		return pool.addOrphanTx(tx2)
 	}
-	//有可能是连续的用户合约请求R1,R2，但是R2先被执行完，这个时候R1还在RequestPool里面，没办法被打包，所以R2应该被扔到OrphanPool
-	for h := range tx2.DependOnTxs {
-		if _, ok := pool.userContractRequests[h]; ok {
-			//父交易还是Request，所以本Tx是Orphan
-			log.Debugf("Tx[%s]'s parent %s is a request, not a full tx", tx2.TxHash.String(), h.String())
-			reverseDeleteReq()
-			return pool.addOrphanTx(tx2)
-		}
-	}
+	//如果是用户合约请求，则直接添加到RequestPool
+	//如果是用户合约FullTx，那么需要判断依赖交易是否还是Request，是则认为是孤儿Tx
+	//否则，增加到正常交易池。
 	if tx.IsUserContract() && tx.IsOnlyContractRequest() {
 		//user contract request
 		log.Debugf("tx[%s] is an user contract invoke request", txHash.String())
 		pool.userContractRequests[tx2.TxHash] = tx2
 	} else {
 		//full user contract tx
+		if tx.IsUserContract() {
+			//有可能是连续的用户合约请求R1,R2，但是R2先被执行完，这个时候R1还在RequestPool里面，没办法被打包，所以R2应该被扔到OrphanPool
+			for h := range tx2.DependOnTxs {
+				if _, ok := pool.userContractRequests[h]; ok {
+					//父交易还是Request，所以本Tx是Orphan
+					log.Debugf("Tx[%s]'s parent %s is a request, not a full tx", tx2.TxHash.String(), h.String())
+					reverseDeleteReq()
+					return pool.addOrphanTx(tx2)
+				}
+			}
+		}
 		//3. process normal tx
 		err = pool.normals.AddTx(tx2)
 		if err != nil {
@@ -180,7 +185,7 @@ func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 		}
 
 	}
-	pool.txFeed.Send(modules.TxPreEvent{Tx: tx})
+	pool.txFeed.Send(modules.TxPreEvent{Tx: tx, IsOrphan: false})
 	//4. check orphan txpool
 	return pool.checkOrphanTxToNormal(tx2.TxHash)
 }
@@ -238,6 +243,7 @@ func (pool *TxPool) addOrphanTx(tx *txspool.TxPoolTransaction) error {
 	log.Debugf("add tx[%s] to orphan pool", tx.TxHash.String())
 	tx.Status = txspool.TxPoolTxStatus_Orphan
 	pool.orphans[tx.TxHash] = tx
+	pool.txFeed.Send(modules.TxPreEvent{Tx: tx.Tx, IsOrphan: true})
 	return nil
 }
 
