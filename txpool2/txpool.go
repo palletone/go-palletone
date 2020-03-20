@@ -124,13 +124,30 @@ func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 		log.Infof("tx[%s] is a full system contract invoke tx, don't support", txHash.String())
 		return ErrNotSupport
 	}
-
+	//0. if tx is a full user contract tx, delete request from pool first
+	var deletedReq *txspool.TxPoolTransaction
+	if tx.IsUserContract() && !tx.IsOnlyContractRequest() {
+		//delete request
+		reqHash := tx.RequestHash()
+		var ok bool
+		deletedReq, ok = pool.userContractRequests[reqHash]
+		if ok {
+			delete(pool.userContractRequests, reqHash)
+			log.Debugf("delete user contract request by hash:%s", reqHash.String())
+		}
+	}
+	reverseDeleteReq := func() {
+		if deletedReq != nil {
+			pool.userContractRequests[deletedReq.TxHash] = deletedReq
+		}
+	}
 	//1.validate tx
 	pool.txValidator.SetUtxoQuery(pool)
 	fee, vcode, err := pool.txValidator.ValidateTx(tx, !tx.IsOnlyContractRequest())
 	if err != nil && vcode != validator.TxValidationCode_ORPHAN {
 		//验证不通过，而且也不是孤儿
 		log.Warnf("validate tx[%s] get error:%s", txHash.String(), err.Error())
+		reverseDeleteReq()
 		return err
 	}
 	tx2 := pool.convertTx(tx, fee)
@@ -138,28 +155,20 @@ func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 	if vcode == validator.TxValidationCode_ORPHAN {
 		return pool.addOrphanTx(tx2)
 	}
-	if tx.IsUserContract() {
-		if tx.IsOnlyContractRequest() {
-			log.Debugf("tx[%s] is an user contract invoke request", txHash.String())
-			pool.userContractRequests[tx2.TxHash] = tx2
-		} else { //full user contract tx
-			err = pool.normals.AddTx(tx2)
-			if err != nil {
-				log.Errorf("add tx[%s] to normal pool error:%s", tx2.TxHash.String(), err.Error())
-				return err
-			}
-			//delete request
-			reqHash := tx2.ReqHash
-			delete(pool.userContractRequests, reqHash)
-			log.Debugf("delete user contract request by hash:%s", reqHash.String())
-		}
+	if tx.IsUserContract() && tx.IsOnlyContractRequest() {
+		//user contract request
+		log.Debugf("tx[%s] is an user contract invoke request", txHash.String())
+		pool.userContractRequests[tx2.TxHash] = tx2
 	} else {
+		//full user contract tx
 		//3. process normal tx
 		err = pool.normals.AddTx(tx2)
 		if err != nil {
 			log.Errorf("add tx[%s] to normal pool error:%s", tx2.TxHash.String(), err.Error())
+			reverseDeleteReq()
 			return err
 		}
+
 	}
 	pool.txFeed.Send(modules.TxPreEvent{Tx: tx})
 	//4. check orphan txpool
