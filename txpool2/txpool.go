@@ -107,25 +107,47 @@ func (pool *TxPool) AddRemote(tx *modules.Transaction) error {
 }
 func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 	//check duplicate add
-	if _, err := pool.normals.GetTx(tx.Hash()); err == nil { //found tx
-		log.Info("try to add duplicate tx[%s] to tx pool", tx.Hash().String())
+	txHash := tx.Hash()
+	if _, err := pool.normals.GetTx(txHash); err == nil { //found tx
+		log.Infof("try to add duplicate tx[%s] to tx pool", txHash.String())
 		return nil
 	}
-	if _, ok := pool.orphans[tx.Hash()]; ok { //found in orphans
-		log.Info("try to add duplicate tx[%s] to tx pool", tx.Hash().String())
+	if _, ok := pool.orphans[txHash]; ok { //found in orphans
+		log.Infof("try to add duplicate orphan tx[%s] to tx pool", txHash.String())
 		return nil
 	}
-
+	if _, ok := pool.userContractRequests[txHash]; ok { //found in userContractRequests
+		log.Infof("try to add duplicate user contract request[%s] to tx pool", txHash.String())
+		return nil
+	}
 	if tx.IsSystemContract() && !tx.IsOnlyContractRequest() {
-		log.Infof("tx[%s] is a full system contract invoke tx, don't support", tx.Hash().String())
+		log.Infof("tx[%s] is a full system contract invoke tx, don't support", txHash.String())
 		return ErrNotSupport
 	}
-
+	//0. if tx is a full user contract tx, delete request from pool first
+	var deletedReq *txspool.TxPoolTransaction
+	if tx.IsUserContract() && !tx.IsOnlyContractRequest() {
+		//delete request
+		reqHash := tx.RequestHash()
+		var ok bool
+		deletedReq, ok = pool.userContractRequests[reqHash]
+		if ok {
+			delete(pool.userContractRequests, reqHash)
+			log.Debugf("delete user contract request by hash:%s", reqHash.String())
+		}
+	}
+	reverseDeleteReq := func() {
+		if deletedReq != nil {
+			pool.userContractRequests[deletedReq.TxHash] = deletedReq
+		}
+	}
 	//1.validate tx
 	pool.txValidator.SetUtxoQuery(pool)
-	fee, vcode, err := pool.txValidator.ValidateTx(tx, false)
-	if err != nil {
-		log.Warnf("validate tx[%s] get error:%s", tx.Hash().String(), err.Error())
+	fee, vcode, err := pool.txValidator.ValidateTx(tx, !tx.IsOnlyContractRequest())
+	if err != nil && vcode != validator.TxValidationCode_ORPHAN {
+		//验证不通过，而且也不是孤儿
+		log.Warnf("validate tx[%s] get error:%s", txHash.String(), err.Error())
+		reverseDeleteReq()
 		return err
 	}
 	tx2 := pool.convertTx(tx, fee)
@@ -133,28 +155,20 @@ func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 	if vcode == validator.TxValidationCode_ORPHAN {
 		return pool.addOrphanTx(tx2)
 	}
-	if tx.IsUserContract() {
-		if tx.IsOnlyContractRequest() {
-			log.Debugf("tx[%s] is an user contract invoke request", tx.Hash().String())
-			pool.userContractRequests[tx2.TxHash] = tx2
-		} else { //full user contract tx
-			err = pool.normals.AddTx(tx2)
-			if err != nil {
-				log.Errorf("add tx[%s] to normal pool error:%s", tx2.TxHash.String(), err.Error())
-				return err
-			}
-			//delete request
-			reqHash := tx2.ReqHash
-			delete(pool.userContractRequests, reqHash)
-			log.Debugf("delete user contract request by hash:%s", reqHash.String())
-		}
+	if tx.IsUserContract() && tx.IsOnlyContractRequest() {
+		//user contract request
+		log.Debugf("tx[%s] is an user contract invoke request", txHash.String())
+		pool.userContractRequests[tx2.TxHash] = tx2
 	} else {
+		//full user contract tx
 		//3. process normal tx
 		err = pool.normals.AddTx(tx2)
 		if err != nil {
 			log.Errorf("add tx[%s] to normal pool error:%s", tx2.TxHash.String(), err.Error())
+			reverseDeleteReq()
 			return err
 		}
+
 	}
 	pool.txFeed.Send(modules.TxPreEvent{Tx: tx})
 	//4. check orphan txpool
@@ -209,23 +223,59 @@ func (pool *TxPool) convertTx(tx *modules.Transaction, fee []*modules.Addition) 
 		IsUserContractFullTx: tx.IsUserContract() && !tx.IsOnlyContractRequest(),
 	}
 }
+
 func (pool *TxPool) addOrphanTx(tx *txspool.TxPoolTransaction) error {
 	log.Debugf("add tx[%s] to orphan pool", tx.TxHash.String())
 	tx.Status = txspool.TxPoolTxStatus_Orphan
 	pool.orphans[tx.TxHash] = tx
 	return nil
 }
-func (pool *TxPool) GetSortedTxs(processor func(transaction *txspool.TxPoolTransaction) (getNext bool, err error)) error {
+
+func (pool *TxPool) GetSortedTxs(processor txspool.ProcessorFunc) error {
 	pool.RLock()
 	defer pool.RUnlock()
 	return pool.normals.GetSortedTxs(processor)
 }
 
 //带锁的对外暴露的查询
-func (pool *TxPool) GetUtxo(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+func (pool *TxPool) GetUtxoFromAll(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	pool.RLock()
 	defer pool.RUnlock()
-	return pool.GetUtxoEntry(outpoint)
+	//return pool.GetUtxoEntry(outpoint)
+	utxo, ok := pool.normals.newUtxo[*outpoint]
+	if ok {
+		return utxo, nil
+	}
+	reqUtxos := getAllNewUtxo(pool.userContractRequests)
+	utxo, ok = reqUtxos[*outpoint]
+	if ok {
+		return utxo, nil
+	}
+	return nil, ErrNotFound
+
+}
+func getAllNewUtxo(txs map[common.Hash]*txspool.TxPoolTransaction) map[modules.OutPoint]*modules.Utxo {
+	newUtxo := make(map[modules.OutPoint]*modules.Utxo)
+	for _, tx := range txs {
+		for o, u := range tx.Tx.GetNewUtxos() {
+			newUtxo[o] = u
+		}
+	}
+	return newUtxo
+}
+func (pool *TxPool) GetUtxoFromFree(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+	pool.RLock()
+	defer pool.RUnlock()
+	poolUtxo, err := pool.normals.GetUtxoEntry(outpoint)
+	if err != nil {
+		if len(pool.userContractRequests) > 0 {
+			reqUtxo, err := getUtxoFromTxs(pool.userContractRequests, outpoint)
+			if err == nil {
+				return reqUtxo, nil
+			}
+		}
+	}
+	return poolUtxo, nil
 }
 
 //主要用于Validator，不带锁
@@ -259,16 +309,18 @@ func (pool *TxPool) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, err
 
 func getUtxoFromTxs(txs map[common.Hash]*txspool.TxPoolTransaction, outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	newUtxo := make(map[modules.OutPoint]*modules.Utxo)
-	spendUtxo := make(map[modules.OutPoint]bool)
+	spendUtxo := make(map[modules.OutPoint]common.Hash)
 	for _, tx := range txs {
 		for _, o := range tx.Tx.GetSpendOutpoints() {
-			spendUtxo[*o] = true
+			spendUtxo[*o] = tx.TxHash
 		}
 		for o, u := range tx.Tx.GetNewUtxos() {
 			newUtxo[o] = u
 		}
 	}
-	if _, ok := spendUtxo[*outpoint]; ok {
+	if spendBy, ok := spendUtxo[*outpoint]; ok {
+		log.Infof("Double spend error, utxo[%s] already spend by Tx[%s] in txpool",
+			outpoint.String(), spendBy.String())
 		return nil, ErrDoubleSpend
 	}
 	if utxo, ok := newUtxo[*outpoint]; ok {

@@ -694,7 +694,16 @@ func CheckContractTxResult(tx *modules.Transaction, rwM rwset.TxManager, dag dbo
 //func (p *Processor) IsSystemContractTx(tx *modules.Transaction) bool {
 //	return tx.IsSystemContract()
 //}
-
+func (p *Processor) getUtxoFromPoolAndDag(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+	utxo, err := p.ptn.TxPool().GetUtxoFromAll(outpoint)
+	if err == nil {
+		return utxo, nil
+	}
+	log.DebugDynamic(func() string {
+		return fmt.Sprintf("GetUtxo(%s) not in txpool,try dag query", outpoint.String())
+	})
+	return p.dag.GetUtxoEntry(outpoint)
+}
 func (p *Processor) isValidateElection(tx *modules.Transaction, ele *modules.ElectionNode, checkExit bool) bool {
 	if tx == nil {
 		log.Error("isValidateElection, param tx is nil")
@@ -715,7 +724,8 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele *modules.Ele
 		return false
 	}
 	contractId := tx.GetContractId()
-	reqAddr, err := p.dag.GetTxRequesterAddress(tx)
+	reqAddrs, err := tx.GetFromAddrs(p.getUtxoFromPoolAndDag, tokenengine.Instance.GetAddressFromScript)
+	//reqAddr, err := p.dag.GetTxRequesterAddress(tx)
 	if err != nil {
 		log.Errorf("[%s]isValidateElection, GetTxRequesterAddress fail, err:%s", shortId(reqId.String()), err)
 		return false
@@ -743,12 +753,19 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele *modules.Ele
 			if cType == modules.APP_CONTRACT_INVOKE_REQUEST {
 				continue
 			} else {
-				if jjhAd == reqAddr.Str() { //true
-					log.Debugf("[%s]isValidateElection, e.EType == 1, ok", shortId(reqId.String()))
+				isJjh := false
+				for _, reqAddr := range reqAddrs {
+					if jjhAd == reqAddr.Str() { //true
+						log.Debugf("[%s]isValidateElection, e.EType == 1,jjh request addr, ok", shortId(reqId.String()))
+						isJjh = true
+						break
+					}
+				}
+				if isJjh {
 					continue
 				} else {
 					log.Debugf("[%s]isValidateElection, e.EType == 1, but not jjh request addr", shortId(reqId.String()))
-					log.Debugf("[%s]isValidateElection, reqAddr[%s], jjh[%s]", shortId(reqId.String()), reqAddr.Str(), jjhAd)
+					//log.Debugf("[%s]isValidateElection, reqAddr[%s], jjh[%s]", shortId(reqId.String()), reqAddr.Str(), jjhAd)
 					return false
 				}
 			}
@@ -1037,6 +1054,7 @@ func (p *Processor) AddLocalTx(tx *modules.Transaction) error {
 	if tx == nil {
 		return errors.New("AddLocalTx, tx is nil")
 	}
+
 	reqId := tx.RequestHash()
 	txHash := tx.Hash()
 	poolTx, _ := p.ptn.TxPool().GetTx(txHash)
@@ -1047,22 +1065,26 @@ func (p *Processor) AddLocalTx(tx *modules.Transaction) error {
 			return err
 		}
 	}
+
 	isExist, _ := p.dag.IsTransactionExist(txHash)
 	if isExist {
 		log.Debugf("[%s]AddLocalTx,tx already exist dag", shortId(reqId.String()))
 		return nil
 	}
+
 	err := p.dag.SaveLocalTx(tx)
 	if err != nil {
 		log.Errorf("[%s]AddLocalTx, SaveLocalTx err:%s", shortId(reqId.String()), err.Error())
 		return err
 	}
+
 	//先将状态改为交易池中
 	err = p.dag.SaveLocalTxStatus(tx.Hash(), modules.TxStatus_InPool)
 	if err != nil {
 		log.Warnf("[%s]AddLocalTx, SaveLocalTxStatus err:%s", shortId(reqId.String()), err.Error())
 		return err
 	}
+
 	//更新Tx的状态到LocalDB
 	go func(txHash common.Hash) {
 		saveUnitCh := make(chan modules.SaveUnitEvent, 10)
@@ -1107,12 +1129,12 @@ func (p *Processor) AddLocalTx(tx *modules.Transaction) error {
 				log.Warnf("[%s]AddLocalTx, SubscribeSaveStableUnitEvent timeout for tx[%s]",
 					shortId(reqId.String()), txHash.String())
 				return
-			case e := <-headSub.Err():
-				log.Warnf("AddLocalTx, SubscribeSaveStableUnitEvent err:%v", e)
-				//log.Warnf("AddLocalTx, SubscribeSaveStableUnitEvent err:%s", e.Error())
+			// Err() channel will be closed when unsubscribing.
+			case <-headSub.Err():
+				log.Debugf("SubscribeSaveStableUnitEvent err")
 				return
-			case e := <-saveUnitSub.Err():
-				log.Warnf("AddLocalTx, SubscribeSaveUnitEvent err:%s", e.Error())
+			case <-saveUnitSub.Err():
+				log.Debugf("SubscribeSaveUnitEvent err")
 				return
 			}
 		}

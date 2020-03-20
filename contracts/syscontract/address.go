@@ -64,6 +64,9 @@ var (
 	//11 红包合约
 	//PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99
 	PacketContractAddress = common.HexToAddress("0x000000000000000000000000000000000000000B1C")
+	//12 安装模板合约
+	//PCGTta3M4t3yXu8uRgkKvaWd2d8DSHHyWEW
+	InstallContractAddress = common.HexToAddress("0x000000000000000000000000000000000000000C1C")
 
 	//15测试调试用
 	//PCGTta3M4t3yXu8uRgkKvaWd2d8DSfQdUHf

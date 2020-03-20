@@ -1008,6 +1008,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 			return err
 		}
 	}
+
 	txHash := tx.Hash()
 	reqHash := tx.RequestHash()
 	reqId := reqHash.Bytes()
@@ -1089,16 +1090,19 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 			return fmt.Errorf("Message type is not supported now: %v", msg.App)
 		}
 	}
+
 	// step6. save transaction
 	if err := rep.dagdb.SaveTransaction(tx); err != nil {
 		log.Info("Save transaction:", "error", err.Error())
 		return err
 	}
+
 	// step7. save tx lookup
 	if err := rep.dagdb.SaveTxLookupEntry(unitHash, unitHeight, uint64(unitTime), txIndex, tx); err != nil {
 		log.Errorf("save tx lookup failed,error: %s", err.Error())
 		return err
 	}
+
 	//Index
 	if dagconfig.DagConfig.AddrTxsIndex {
 		err = rep.saveAddrTxIndex(txHash, tx)
@@ -1106,8 +1110,10 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 			return err
 		}
 	}
+
 	return nil
 }
+
 func (rep *UnitRepository) saveAddrTxIndex(txHash common.Hash, tx *modules.Transaction) error {
 
 	//Index TxId for to address
@@ -1374,7 +1380,7 @@ func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, t
 	}
 	v := ""
 	if len(templateId) != 0 {
-		temC, err := rep.statedb.GetContractTpl(templateId)
+		temC, err := rep.getContractTpl(templateId)
 		if err != nil {
 			log.Errorf("get contract template with id = %x, error:%s", templateId, err.Error())
 			return false
@@ -1404,6 +1410,14 @@ func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, t
 		}
 	}
 	return true
+}
+
+func (rep *UnitRepository) getContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
+	tpl, err := rep.statedb.GetContractTpl(tplId)
+	if err != nil {
+		return rep.statedb.GetContractTplFromSysContract(tplId)
+	}
+	return tpl, nil
 }
 
 /**

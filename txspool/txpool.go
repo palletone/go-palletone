@@ -203,7 +203,10 @@ func (pool *TxPool) startJournal(config TxPoolConfig) {
 }
 
 // return a utxo by the outpoint in txpool
-func (pool *TxPool) GetUtxo(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+func (pool *TxPool) GetUtxoFromAll(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+	return pool.GetUtxoEntry(outpoint)
+}
+func (pool *TxPool) GetUtxoFromFree(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	return pool.GetUtxoEntry(outpoint)
 }
 func (pool *TxPool) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
@@ -1562,7 +1565,7 @@ func (pool *TxPool) resetPendingTx(tx *modules.Transaction) error {
 
 /******  end utxoSet  *****/
 // GetSortedTxs returns 根据优先级返回list
-func (pool *TxPool) GetSortedTxs(processor func(tx *TxPoolTransaction) (getNext bool, err error)) error {
+func (pool *TxPool) GetSortedTxs(processor ProcessorFunc) error {
 	//GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTransaction, common.StorageSize) {
 	t0 := time.Now()
 	canbe_packaged := false
