@@ -213,18 +213,27 @@ func deleteSliceItem(array []*linkTx, tx *linkTx) []*linkTx {
 //用来标记已遍历的
 var nodeHashAll map[common.Hash]bool
 
-func (l *txList) GetSortedTxs(processor func(tx *txspool.TxPoolTransaction) (getNext bool, err error)) error {
+func (l *txList) GetSortedTxs() ([]*txspool.TxPoolTransaction, error) {
 	log.Debug("start GetSortedTxs...")
 	nodeHashAll = make(map[common.Hash]bool)
 	roots := []*linkTx{}
 	for _, tx := range l.linkTxRoots {
 		roots = append(roots, tx)
 	}
-	return l.getSortedTxs(roots, processor)
+	result := []*txspool.TxPoolTransaction{}
+	processor := func(tx *txspool.TxPoolTransaction) (getNext bool, err error) {
+		result = append(result, tx)
+		return true, nil
+	}
+	err := l.getSortedTxs(roots, processor)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 //广度优先遍历这个图
-func (l *txList) getSortedTxs(nodes []*linkTx, processor func(tx *txspool.TxPoolTransaction) (getNext bool, err error)) error {
+func (l *txList) getSortedTxs(nodes []*linkTx, processor txspool.ProcessorFunc) error {
 	if len(nodes) == 0 {
 		return nil
 	}

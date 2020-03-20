@@ -58,8 +58,8 @@ func (dag *Dag) getBePackedTxs(txp txspool.ITxPool, cp *jury.Processor,
 	costSecond := dag.GetChainParameters().MediatorInterval * 2 / 3
 	endTime := startTime.Add(time.Duration(costSecond) * time.Second)
 	log.Debugf("expect max end time:%s", endTime.String())
-	//unitSize:=0 //计算Unit大小，以决定是否停止继续添加Tx
-
+	unitSize := 1024 //计算Unit大小，以决定是否停止继续添加Tx,假设Header是1024 Bytes
+	unitMaxSize := int(dag.GetChainParameters().UnitMaxSize)
 	//创建TempDAG，用于临时存储Tx执行的结果
 	tempDag, err := dag.NewTemp()
 	log.Debug("create a new tempDag for generate unit")
@@ -69,46 +69,41 @@ func (dag *Dag) getBePackedTxs(txp txspool.ITxPool, cp *jury.Processor,
 
 	tx4Pack := []*modules.Transaction{}
 	i := 0
-
-	err = txp.GetSortedTxs(func(ptx *txspool.TxPoolTransaction) (getNext bool, err error) {
+	list, err := txp.GetSortedTxs()
+	if err != nil {
+		return nil, err
+	}
+	for _, ptx := range list {
 		txHashStr += ptx.Tx.Hash().String() + ";"
 		tx := ptx.Tx
 		i++ //第0条是Coinbase
 		log.Debugf("pack tx[%s] into unit[#%d]", tx.RequestHash().String(), unitNumber)
-
+		signedTx := tx
 		if tx.IsSystemContract() && tx.IsOnlyContractRequest() { //是未执行的系统合约
-			signedTx, err := cp.RunAndSignTx(tx, rwM, tempDag, producer)
+			signedTx, err = cp.RunAndSignTx(tx, rwM, tempDag, producer)
 			if err != nil {
 				log.Errorf("run contract request[%s] fail:%s", tx.Hash().String(), err.Error())
-				return false, err
+				return nil, err
 			}
-
-			err = tempDag.SaveTransaction(signedTx, i) //第0条是Coinbase
-			if err != nil {
-				log.Errorf("save tx[%s] req[%s] get error:%s", signedTx.Hash().String(),
-					signedTx.RequestHash().String(), err.Error())
-				return false, err
-			}
-			tx4Pack = append(tx4Pack, signedTx)
-		} else { //不需要执行，直接打包
-			err = tempDag.SaveTransaction(tx, i+1)
-			if err != nil {
-				log.Errorf("save tx[%s] req[%s] get error:%s", tx.Hash().String(),
-					tx.RequestHash().String(), err.Error())
-				return false, err
-			}
-			tx4Pack = append(tx4Pack, tx)
 		}
-
-		//TODO 判断时间和Unit大小，决定是否继续增加Tx
+		unitSize += signedTx.SerializeSize()
+		if unitSize > unitMaxSize { // 判断Unit大小，决定是否继续增加Tx
+			log.Infof("Unit size is %d, stop add new tx to unit", unitSize)
+			break
+		}
+		err = tempDag.SaveTransaction(signedTx, i)
+		if err != nil {
+			log.Errorf("save tx[%s] req[%s] get error:%s", signedTx.Hash().String(),
+				signedTx.RequestHash().String(), err.Error())
+			return nil, err
+		}
+		tx4Pack = append(tx4Pack, signedTx)
+		// 判断时间，决定是否继续增加Tx
 		if time.Now().Unix() > endTime.Unix() {
 			log.Infof("only have %d second to pack unit", costSecond)
-			return false, nil
+			break
 		}
-		return true, nil
-	})
-	if err != nil {
-		log.Errorf("pickup tx from txpool fail:%s", err.Error())
+
 	}
 
 	log.DebugDynamic(func() string {

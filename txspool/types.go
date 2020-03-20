@@ -35,7 +35,7 @@ import (
 
 type TxPoolTxStatus byte
 
-//type ProcessorFunc func(tx *TxPoolTransaction) (getNext bool, err error)
+type ProcessorFunc func(tx *TxPoolTransaction) (getNext bool, err error)
 
 const (
 	//未打包

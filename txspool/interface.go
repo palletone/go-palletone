@@ -1,22 +1,21 @@
 /*
- *
- *    This file is part of go-palletone.
- *    go-palletone is free software: you can redistribute it and/or modify
- *    it under the terms of the GNU General Public License as published by
- *    the Free Software Foundation, either version 3 of the License, or
- *    (at your option) any later version.
- *    go-palletone is distributed in the hope that it will be useful,
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *    GNU General Public License for more details.
- *    You should have received a copy of the GNU General Public License
+  *    This file is part of go-palletone.
+  *    go-palletone is free software: you can redistribute it and/or modify
+  *    it under the terms of the GNU General Public License as published by
+  *    the Free Software Foundation, either version 3 of the License, or
+  *    (at your option) any later version.
+  *    go-palletone is distributed in the hope that it will be useful,
+  *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+  *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  *    GNU General Public License for more details.
+  *    You should have received a copy of the GNU General Public License
  *    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
  * /
  *
  *  * @author PalletOne core developer <dev@pallet.one>
  *  * @date 2018
  *
- */
+*/
 
 package txspool
 
@@ -59,7 +58,8 @@ type ITxPool interface {
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
 	//GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTransaction, common.StorageSize)
 	//迭代获取未打包的排序好的Tx，迭代执行函数时，如果返回true就继续迭代，如果false停止迭代
-	GetSortedTxs(processor func(tx *TxPoolTransaction) (getNext bool, err error)) error
+	//GetSortedTxs(processor func(tx *TxPoolTransaction) (getNext bool, err error)) error
+	GetSortedTxs() ([]*TxPoolTransaction, error)
 	//从交易池获取某个交易
 	GetTx(hash common.Hash) (*TxPoolTransaction, error)
 	//获取交易池中某个地址的所有交易

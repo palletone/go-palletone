@@ -321,7 +321,7 @@ func runContractCmd(ctx *contracts.ContractProcessContext, tx *modules.Transacti
 					txid:     tx.RequestHash().String(),
 					timeout:  time.Duration(reqPay.Timeout) * time.Second,
 				}
-
+				log.Debugf("process message 0 and arg1 for req[%s]", tx.Hash().String())
 				fullArgs, err := handleMsg0(tx, ctx.Dag, ctx.TxPool, req.args)
 				if err != nil {
 					return nil, err
@@ -332,6 +332,7 @@ func runContractCmd(ctx *contracts.ContractProcessContext, tx *modules.Transacti
 					return nil, err
 				}
 				req.args = newFullArgs
+				log.Debug("start ContractProcess")
 				invokeResult, err := ContractProcess(ctx, req)
 				if err != nil {
 					return genContractErrorMsg(tx, err, ctx.ErrMsgEnable)

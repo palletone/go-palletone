@@ -76,10 +76,10 @@ func mockTxPool(mdag txspool.IDag) *TxPool {
 }
 func printTxPoolSortTxs(pool *TxPool) string {
 	sortedTx := ""
-	pool.GetSortedTxs(func(tx *txspool.TxPoolTransaction) (getNext bool, err error) {
-		sortedTx += tx.TxHash.String() + ";"
-		return true, nil
-	})
+	list, _ := pool.GetSortedTxs()
+	for _, tx := range list {
+		sortedTx += string(tx.TxHash.String()) + ";"
+	}
 	return sortedTx
 }
 

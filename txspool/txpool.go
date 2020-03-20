@@ -1565,7 +1565,7 @@ func (pool *TxPool) resetPendingTx(tx *modules.Transaction) error {
 
 /******  end utxoSet  *****/
 // GetSortedTxs returns 根据优先级返回list
-func (pool *TxPool) GetSortedTxs(processor func(tx *TxPoolTransaction) (getNext bool, err error)) error {
+func (pool *TxPool) GetSortedTxs() ([]*TxPoolTransaction, error) {
 	//GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTransaction, common.StorageSize) {
 	t0 := time.Now()
 	canbe_packaged := false
@@ -1575,7 +1575,7 @@ func (pool *TxPool) GetSortedTxs(processor func(tx *TxPoolTransaction) (getNext 
 	gasAsset := dagconfig.DagConfig.GetGasToken()
 	_, chainindex, err := pool.unit.GetNewestUnit(gasAsset)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	unithigh := int64(chainindex.Index)
 	map_pretxs := make(map[common.Hash]int)
@@ -1703,16 +1703,16 @@ func (pool *TxPool) GetSortedTxs(processor func(tx *TxPoolTransaction) (getNext 
 	}
 	log.Debugf("get sorted and rm Orphan txs spent times: %s , count: %d ,t2: %s , txs_size %s,  "+
 		"total_size %s", time.Since(t0), len(list), time.Since(t2), total.String(), unit_size.String())
-	for _, t := range list {
-		getnext, err := processor(t)
-		if err != nil {
-			log.Error(err.Error())
-		}
-		if !getnext {
-			return err
-		}
-	}
-	return nil
+	//for _, t := range list {
+	//	getnext, err := processor(t)
+	//	if err != nil {
+	//		log.Error(err.Error())
+	//	}
+	//	if !getnext {
+	//		return err
+	//	}
+	//}
+	return list, nil
 	//return list, total
 }
 func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs,

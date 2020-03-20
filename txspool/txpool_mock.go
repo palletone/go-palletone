@@ -192,17 +192,18 @@ func (mr *MockITxPoolMockRecorder) SubscribeTxPreEvent(arg0 interface{}) *gomock
 }
 
 // GetSortedTxs mocks base method
-func (m *MockITxPool) GetSortedTxs(processor func(tx *TxPoolTransaction) (getNext bool, err error)) error {
+func (m *MockITxPool) GetSortedTxs() ([]*TxPoolTransaction, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetSortedTxs", processor)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret := m.ctrl.Call(m, "GetSortedTxs")
+	ret0, _ := ret[0].([]*TxPoolTransaction)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // GetSortedTxs indicates an expected call of GetSortedTxs
-func (mr *MockITxPoolMockRecorder) GetSortedTxs(processor interface{}) *gomock.Call {
+func (mr *MockITxPoolMockRecorder) GetSortedTxs() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSortedTxs", reflect.TypeOf((*MockITxPool)(nil).GetSortedTxs), processor)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSortedTxs", reflect.TypeOf((*MockITxPool)(nil).GetSortedTxs))
 }
 
 // GetTx mocks base method
