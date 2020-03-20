@@ -534,6 +534,7 @@ func (p *Processor) RunAndSignTx(reqTx *modules.Transaction, txMgr rwset.TxManag
 		TxPool:       p.ptn.TxPool(),
 	}
 	reqId := reqTx.Hash()
+	log.Debugf("run contract request[%s]", reqId.String())
 	msgs, err := runContractCmd(cctx, reqTx) //contract exec long time...
 	if err != nil {
 		log.Errorf("[%s]runContractReq, runContractCmd reqTx, err：%s", shortId(reqId.String()), err.Error())
@@ -552,6 +553,7 @@ func (p *Processor) RunAndSignTx(reqTx *modules.Transaction, txMgr rwset.TxManag
 		log.Error("GenContractSigTransctions", "error", err.Error())
 		return nil, err
 	}
+	log.Debugf("processed req[%s], result tx[%s]", reqId.String(), sigTx.Hash().String())
 	return sigTx, nil
 }
 
