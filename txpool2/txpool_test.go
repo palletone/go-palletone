@@ -293,7 +293,9 @@ func TestTxPool_SubscribeTxPreEvent(t *testing.T) {
 			select {
 			case tx := <-txpoolAddTxCh:
 				log.Debugf("Subscribe TxPool add tx event received Tx:%s", tx.Tx.Hash().String())
-				eventResult += tx.Tx.Hash().String() + ","
+				if !tx.IsOrphan {
+					eventResult += tx.Tx.Hash().String() + ","
+				}
 			case err := <-txpoolAddTxSub.Err():
 				if err != nil {
 					log.Error(err.Error())
