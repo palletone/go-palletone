@@ -69,17 +69,20 @@ func (dag *Dag) getBePackedTxs(txp txspool.ITxPool, cp *jury.Processor,
 
 	tx4Pack := []*modules.Transaction{}
 	i := 0
+
 	err = txp.GetSortedTxs(func(ptx *txspool.TxPoolTransaction) (getNext bool, err error) {
 		txHashStr += ptx.Tx.Hash().String() + ";"
 		tx := ptx.Tx
 		i++ //第0条是Coinbase
 		log.Debugf("pack tx[%s] into unit[#%d]", tx.RequestHash().String(), unitNumber)
+
 		if tx.IsSystemContract() && tx.IsOnlyContractRequest() { //是未执行的系统合约
 			signedTx, err := cp.RunAndSignTx(tx, rwM, tempDag, producer)
 			if err != nil {
 				log.Errorf("run contract request[%s] fail:%s", tx.Hash().String(), err.Error())
 				return false, err
 			}
+
 			err = tempDag.SaveTransaction(signedTx, i) //第0条是Coinbase
 			if err != nil {
 				log.Errorf("save tx[%s] req[%s] get error:%s", signedTx.Hash().String(),
@@ -96,6 +99,7 @@ func (dag *Dag) getBePackedTxs(txp txspool.ITxPool, cp *jury.Processor,
 			}
 			tx4Pack = append(tx4Pack, tx)
 		}
+
 		//TODO 判断时间和Unit大小，决定是否继续增加Tx
 		if time.Now().Unix() > endTime.Unix() {
 			log.Infof("only have %d second to pack unit", costSecond)
