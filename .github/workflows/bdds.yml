@@ -112,7 +112,7 @@ jobs:
             cd bdd
             chmod +x ./upload2Ftp.sh ./targz_node.sh
             ./targz_node.sh oneNode
-            ./upload2Ftp.sh ${{secrets.FTP_PWD}} "Actions-"${GITHUB_REF##*/} ${GITHUB_SHA} $PWD/logs 
+            ./upload2Ftp.sh ${{secrets.FTP_PWD}} "Actions-"${GITHUB_REF##*/} ${GITHUB_RUN_NUMBER} $PWD/logs 
             
       - name: Upload artifact
         if: always()
@@ -167,7 +167,7 @@ jobs:
             cd bdd
             chmod +x ./upload2Ftp.sh ./targz_node.sh
             ./targz_node.sh oneNodePacket
-            ./upload2Ftp.sh ${{secrets.FTP_PWD}} "Actions-"${GITHUB_REF##*/} ${GITHUB_SHA} $PWD/logs
+            ./upload2Ftp.sh ${{secrets.FTP_PWD}} "Actions-"${GITHUB_REF##*/} ${GITHUB_RUN_NUMBER} $PWD/logs
 
       - name: Upload artifact
         if: always()
@@ -223,7 +223,7 @@ jobs:
             cd bdd
             chmod +x ./upload2Ftp.sh ./targz_node.sh
             ./targz_node.sh oneNodeDeposit
-            ./upload2Ftp.sh ${{secrets.FTP_PWD}} "Actions-"${GITHUB_REF##*/} ${GITHUB_SHA} $PWD/logs
+            ./upload2Ftp.sh ${{secrets.FTP_PWD}} "Actions-"${GITHUB_REF##*/} ${GITHUB_RUN_NUMBER} $PWD/logs
 
       - name: Upload artifact
         if: always()
@@ -279,7 +279,7 @@ jobs:
           cd bdd
           chmod +x ./upload2Ftp.sh ./targz_node.sh
           ./targz_node.sh application
-          ./upload2Ftp.sh ${{secrets.FTP_PWD}} "Actions-"${GITHUB_REF##*/} ${GITHUB_SHA} $PWD/logs
+          ./upload2Ftp.sh ${{secrets.FTP_PWD}} "Actions-"${GITHUB_REF##*/} ${GITHUB_RUN_NUMBER} $PWD/logs
 
     - name: Upload artifact
       if: always()
@@ -335,7 +335,7 @@ jobs:
           cd bdd
           chmod +x ./upload2Ftp.sh ./targz_node.sh
           ./targz_node.sh mediatorVote
-          ./upload2Ftp.sh ${{secrets.FTP_PWD}} "Actions-"${GITHUB_REF##*/} ${GITHUB_SHA} $PWD/logs
+          ./upload2Ftp.sh ${{secrets.FTP_PWD}} "Actions-"${GITHUB_REF##*/} ${GITHUB_RUN_NUMBER} $PWD/logs
 
     - name: Upload artifact
       if: always()
@@ -400,7 +400,7 @@ jobs:
           cd bdd
           chmod +x ./upload2Ftp.sh ./targz_node.sh
           ./targz_node.sh multiNode
-          ./upload2Ftp.sh ${{secrets.FTP_PWD}} "Actions-"${GITHUB_REF##*/} ${GITHUB_SHA} $PWD/logs
+          ./upload2Ftp.sh ${{secrets.FTP_PWD}} "Actions-"${GITHUB_REF##*/} ${GITHUB_RUN_NUMBER} $PWD/logs
 
     - name: Upload artifact
       if: always()
@@ -458,6 +458,7 @@ jobs:
           sleep 30
     - name: Run contractpay bdd
       run: |
+          cd $HOME/gopath/src/github.com/palletone/go-palletone
           python -m robot.run -d ./bdd/logs/contractpay -i contractpay ./bdd/UserContract/Testcases
 
     - name: Upload to ftp
@@ -469,7 +470,7 @@ jobs:
           zip -r -l -o bdd/logs/uc3-3_logs_contractpay.zip cmd/deployment/node1/log cmd/deployment/node1/nohup.out cmd/deployment/node2/log cmd/deployment/node2/nohup.out cmd/deployment/node3/log cmd/deployment/node3/nohup.out
           cd bdd
           chmod +x ./upload2Ftp.sh 
-          ./upload2Ftp.sh ${{secrets.FTP_PWD}} "Actions-"${GITHUB_REF##*/} ${GITHUB_SHA} $PWD/logs
+          ./upload2Ftp.sh ${{secrets.FTP_PWD}} "Actions-"${GITHUB_REF##*/} ${GITHUB_RUN_NUMBER} $PWD/logs
 
     - name: Upload artifact
       if: always()
@@ -527,6 +528,7 @@ jobs:
           sleep 30
     - name: Run testshimuc1 bdd
       run: |
+          cd $HOME/gopath/src/github.com/palletone/go-palletone
           python -m robot.run -d ./bdd/logs/testshimuc1 -i testshimuc1 ./bdd/UserContract/Testcases
 
     - name: Upload to ftp
@@ -538,7 +540,7 @@ jobs:
           zip -r -l -o bdd/logs/uc3-3_logs_testshimuc1.zip cmd/deployment/node1/log cmd/deployment/node1/nohup.out cmd/deployment/node2/log cmd/deployment/node2/nohup.out cmd/deployment/node3/log cmd/deployment/node3/nohup.out
           cd bdd
           chmod +x ./upload2Ftp.sh 
-          ./upload2Ftp.sh ${{secrets.FTP_PWD}} "Actions-"${GITHUB_REF##*/} ${GITHUB_SHA} $PWD/logs
+          ./upload2Ftp.sh ${{secrets.FTP_PWD}} "Actions-"${GITHUB_REF##*/} ${GITHUB_RUN_NUMBER} $PWD/logs
 
     - name: Upload artifact
       if: always()
@@ -594,8 +596,9 @@ jobs:
           ./editConfig.sh 3 3
           ./start.sh 3
           sleep 30
-    - name: Build and run gptn
+    - name: Run trace contract bdd
       run: |
+          cd $HOME/gopath/src/github.com/palletone/go-palletone
           python -m robot.run -d ./bdd/logs/trace -i trace ./bdd/UserContract/Testcases
 
     - name: Upload to ftp
@@ -607,7 +610,7 @@ jobs:
           zip -r -l -o bdd/logs/uc3-3_logs_trace.zip cmd/deployment/node1/log cmd/deployment/node1/nohup.out cmd/deployment/node2/log cmd/deployment/node2/nohup.out cmd/deployment/node3/log cmd/deployment/node3/nohup.out
           cd bdd
           chmod +x ./upload2Ftp.sh 
-          ./upload2Ftp.sh ${{secrets.FTP_PWD}} "Actions-"${GITHUB_REF##*/} ${GITHUB_SHA} $PWD/logs
+          ./upload2Ftp.sh ${{secrets.FTP_PWD}} "Actions-"${GITHUB_REF##*/} ${GITHUB_RUN_NUMBER} $PWD/logs
 
     - name: Upload artifact
       if: always()
