@@ -43,12 +43,13 @@ var (
 var Instance txspool.ITxPool
 
 type TxPool struct {
-	normals              *txList                                    //普通交易池
-	orphans              map[common.Hash]*txspool.TxPoolTransaction //孤儿交易池
-	userContractRequests map[common.Hash]*txspool.TxPoolTransaction //用户合约请求，只参与utxo运算，不会被打包
-	txValidator          txspool.IValidator
-	dag                  txspool.IDag
-	tokenengine          tokenengine.ITokenEngine
+	normals               *txList                                    //普通交易池
+	orphans               map[common.Hash]*txspool.TxPoolTransaction //孤儿交易池
+	userContractRequests  map[common.Hash]*txspool.TxPoolTransaction //用户合约请求，只参与utxo运算，不会被打包
+	basedOnRequestOrphans map[common.Hash]*txspool.TxPoolTransaction //依赖于userContractRequests的孤儿交易池
+	txValidator           txspool.IValidator
+	dag                   txspool.IDag
+	tokenengine           tokenengine.ITokenEngine
 	sync.RWMutex
 	txFeed event.Feed
 	scope  event.SubscriptionScope
@@ -67,12 +68,13 @@ func NewTxPool(config txspool.TxPoolConfig, cachedb palletcache.ICache, unit txs
 func NewTxPool4DI(config txspool.TxPoolConfig, cachedb palletcache.ICache, dag txspool.IDag,
 	tokenEngine tokenengine.ITokenEngine, txValidator txspool.IValidator) *TxPool {
 	return &TxPool{
-		normals:              newTxList(),
-		orphans:              make(map[common.Hash]*txspool.TxPoolTransaction),
-		userContractRequests: make(map[common.Hash]*txspool.TxPoolTransaction),
-		txValidator:          txValidator,
-		dag:                  dag,
-		tokenengine:          tokenEngine,
+		normals:               newTxList(),
+		orphans:               make(map[common.Hash]*txspool.TxPoolTransaction),
+		basedOnRequestOrphans: make(map[common.Hash]*txspool.TxPoolTransaction),
+		userContractRequests:  make(map[common.Hash]*txspool.TxPoolTransaction),
+		txValidator:           txValidator,
+		dag:                   dag,
+		tokenengine:           tokenEngine,
 	}
 }
 
@@ -151,33 +153,29 @@ func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 		reverseDeleteReq()
 		return err
 	}
-	tx2 := pool.convertTx(tx, fee)
 	//2. process orphan
 	if vcode == validator.TxValidationCode_ORPHAN {
 		reverseDeleteReq()
-		return pool.addOrphanTx(tx2)
+		return pool.addOrphanTx(pool.convertBaseTx(tx))
 	}
+
+	tx2 := pool.convertTx(tx, fee)
 	//如果是用户合约请求，则直接添加到RequestPool
 	//如果是用户合约FullTx，那么需要判断依赖交易是否还是Request，是则认为是孤儿Tx
 	//否则，增加到正常交易池。
 	if tx.IsUserContract() && tx.IsOnlyContractRequest() {
 		//user contract request
-		log.Debugf("tx[%s] is an user contract invoke request", txHash.String())
+		log.Debugf("add tx[%s] to user contract request pool", txHash.String())
 		pool.userContractRequests[tx2.TxHash] = tx2
 	} else {
-		//full user contract tx
-		if tx.IsUserContract() {
-			//有可能是连续的用户合约请求R1,R2，但是R2先被执行完，这个时候R1还在RequestPool里面，没办法被打包，所以R2应该被扔到OrphanPool
-			for h := range tx2.DependOnTxs {
-				if _, ok := pool.userContractRequests[h]; ok {
-					//父交易还是Request，所以本Tx是Orphan
-					log.Debugf("Tx[%s]'s parent %s is a request, not a full tx", tx2.TxHash.String(), h.String())
-					reverseDeleteReq()
-					return pool.addOrphanTx(tx2)
-				}
-			}
+		//有可能是连续的用户合约请求R1,R2，但是R2先被执行完，这个时候R1还在RequestPool里面，没办法被打包，所以R2应该被扔到basedOnReqOrphanPool
+		//父交易还是Request，所以本Tx是Orphan
+		if pool.isBasedOnRequestPool(tx2) {
+			log.Debugf("Tx[%s]'s parent is a request, not a full tx", tx2.TxHash.String())
+			return pool.addBasedOnReqOrphanTx(tx2)
 		}
 		//3. process normal tx
+		log.Debugf("add tx[%s] to normal pool", tx2.TxHash.String())
 		err = pool.normals.AddTx(tx2)
 		if err != nil {
 			log.Errorf("add tx[%s] to normal pool error:%s", tx2.TxHash.String(), err.Error())
@@ -188,7 +186,22 @@ func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 	}
 	pool.txFeed.Send(modules.TxPreEvent{Tx: tx, IsOrphan: false})
 	//4. check orphan txpool
+	err = pool.checkBasedOnReqOrphanTxToNormal()
+	if err != nil {
+		return err
+	}
 	return pool.checkOrphanTxToNormal(tx2.TxHash)
+}
+func (pool *TxPool) isBasedOnRequestPool(tx *txspool.TxPoolTransaction) bool {
+	for h := range tx.DependOnTxs {
+		if _, ok := pool.userContractRequests[h]; ok {
+			return true
+		}
+		if _, ok := pool.basedOnRequestOrphans[h]; ok {
+			return true
+		}
+	}
+	return false
 }
 
 //检查如果将一个Tx加入Normal后，有没有后续的孤儿Tx需要连带加入
@@ -199,13 +212,23 @@ func (pool *TxPool) checkOrphanTxToNormal(txHash common.Hash) error {
 			log.Debugf("move tx[%s] from orphans to normals", otx.TxHash.String())
 			delete(pool.orphans, hash) //从孤儿池删除
 			readyTx = append(readyTx, otx.Tx)
-			//otx.Status= TxPoolTxStatus_Unpacked
-			//err := pool.normals.AddTx(otx)
-			//if err != nil {
-			//	log.Errorf("add tx[%s] to normal pool error:%s", otx.TxHash.String(), err.Error())
-			//	return err
-			//}
-			//return pool.checkOrphanTxToNormal(otx.TxHash)
+		}
+	}
+	for _, tx := range readyTx {
+		err := pool.addLocal(tx) //因为之前孤儿交易没有手续费，UTXO等，所以需要重新计算
+		if err != nil {
+			log.Warnf("add tx[%s] to pool fail:%s", tx.Hash().String(), err.Error())
+		}
+	}
+	return nil
+}
+func (pool *TxPool) checkBasedOnReqOrphanTxToNormal() error {
+	readyTx := []*modules.Transaction{}
+	for hash, otx := range pool.basedOnRequestOrphans {
+		if !pool.isBasedOnRequestPool(otx) { //满足Normal的条件了
+			log.Debugf("move tx[%s] from orphans to normals", otx.TxHash.String())
+			delete(pool.basedOnRequestOrphans, hash) //从孤儿池删除
+			readyTx = append(readyTx, otx.Tx)
 		}
 	}
 	for _, tx := range readyTx {
@@ -217,27 +240,32 @@ func (pool *TxPool) checkOrphanTxToNormal(txHash common.Hash) error {
 	return nil
 }
 
-func (pool *TxPool) convertTx(tx *modules.Transaction, fee []*modules.Addition) *txspool.TxPoolTransaction {
-	fromAddr, _ := tx.GetFromAddrs(pool.GetUtxoEntry, pool.tokenengine.GetAddressFromScript)
+func (pool *TxPool) convertBaseTx(tx *modules.Transaction) *txspool.TxPoolTransaction {
 	dependOnTxs := make(map[common.Hash]bool)
 	for _, o := range tx.GetSpendOutpoints() {
 		dependOnTxs[o.TxHash] = false
 	}
 	txAddr, _ := tx.GetToAddrs(pool.tokenengine.GetAddressFromScript)
-
 	return &txspool.TxPoolTransaction{
-		Tx:                   tx,
-		TxHash:               tx.Hash(),
-		ReqHash:              tx.RequestHash(),
-		TxFee:                fee,
-		CreationDate:         time.Now(),
-		FromAddr:             fromAddr,
+		Tx:      tx,
+		TxHash:  tx.Hash(),
+		ReqHash: tx.RequestHash(),
+		//TxFee:                fee,
+		CreationDate: time.Now(),
+		//FromAddr:             fromAddr,
 		DependOnTxs:          dependOnTxs,
 		From:                 tx.GetSpendOutpoints(),
 		ToAddr:               txAddr,
 		IsSysContractRequest: tx.IsOnlyContractRequest() && tx.IsSystemContract(),
 		IsUserContractFullTx: tx.IsUserContract() && !tx.IsOnlyContractRequest(),
 	}
+}
+func (pool *TxPool) convertTx(tx *modules.Transaction, fee []*modules.Addition) *txspool.TxPoolTransaction {
+	fromAddr, _ := tx.GetFromAddrs(pool.GetUtxoEntry, pool.tokenengine.GetAddressFromScript)
+	tx2 := pool.convertBaseTx(tx)
+	tx2.TxFee = fee
+	tx2.FromAddr = fromAddr
+	return tx2
 }
 
 func (pool *TxPool) addOrphanTx(tx *txspool.TxPoolTransaction) error {
@@ -247,7 +275,13 @@ func (pool *TxPool) addOrphanTx(tx *txspool.TxPoolTransaction) error {
 	pool.txFeed.Send(modules.TxPreEvent{Tx: tx.Tx, IsOrphan: true})
 	return nil
 }
-
+func (pool *TxPool) addBasedOnReqOrphanTx(tx *txspool.TxPoolTransaction) error {
+	log.Debugf("add tx[%s] to based on request orphan pool", tx.TxHash.String())
+	tx.Status = txspool.TxPoolTxStatus_Orphan
+	pool.basedOnRequestOrphans[tx.TxHash] = tx
+	pool.txFeed.Send(modules.TxPreEvent{Tx: tx.Tx, IsOrphan: false})
+	return nil
+}
 func (pool *TxPool) GetSortedTxs() ([]*txspool.TxPoolTransaction, error) {
 	pool.RLock()
 	defer pool.RUnlock()
@@ -268,6 +302,11 @@ func (pool *TxPool) GetUtxoFromAll(outpoint *modules.OutPoint) (*modules.Utxo, e
 	if ok {
 		return utxo, nil
 	}
+	reqUtxos = getAllNewUtxo(pool.basedOnRequestOrphans)
+	utxo, ok = reqUtxos[*outpoint]
+	if ok {
+		return utxo, nil
+	}
 	return nil, ErrNotFound
 
 }
@@ -280,9 +319,30 @@ func getAllNewUtxo(txs map[common.Hash]*txspool.TxPoolTransaction) map[modules.O
 	}
 	return newUtxo
 }
-func (pool *TxPool) GetUtxoFromFree(outpoint *modules.OutPoint) (*modules.Utxo, error) {
-	pool.RLock()
-	defer pool.RUnlock()
+
+//func (pool *TxPool) GetUtxoFromFree(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+//	pool.RLock()
+//	defer pool.RUnlock()
+//	poolUtxo, err := pool.normals.GetUtxoEntry(outpoint)
+//	if err != nil {
+//		if len(pool.userContractRequests) > 0 {
+//			reqUtxo, err := getUtxoFromTxs(pool.userContractRequests, outpoint)
+//			if err == nil {
+//				return reqUtxo, nil
+//			}
+//		}
+//		if len(pool.basedOnRequestOrphans) > 0 {
+//			reqUtxo, err := getUtxoFromTxs(pool.basedOnRequestOrphans, outpoint)
+//			if err == nil {
+//				return reqUtxo, nil
+//			}
+//		}
+//	}
+//	return poolUtxo, nil
+//}
+
+//主要用于Validator，不带锁
+func (pool *TxPool) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	poolUtxo, err := pool.normals.GetUtxoEntry(outpoint)
 	if err != nil {
 		if len(pool.userContractRequests) > 0 {
@@ -291,16 +351,8 @@ func (pool *TxPool) GetUtxoFromFree(outpoint *modules.OutPoint) (*modules.Utxo, 
 				return reqUtxo, nil
 			}
 		}
-	}
-	return poolUtxo, nil
-}
-
-//主要用于Validator，不带锁
-func (pool *TxPool) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
-	poolUtxo, err := pool.normals.GetUtxoEntry(outpoint)
-	if err != nil {
-		if len(pool.userContractRequests) > 0 {
-			reqUtxo, err := getUtxoFromTxs(pool.userContractRequests, outpoint)
+		if len(pool.basedOnRequestOrphans) > 0 {
+			reqUtxo, err := getUtxoFromTxs(pool.basedOnRequestOrphans, outpoint)
 			if err == nil {
 				return reqUtxo, nil
 			}
@@ -352,6 +404,7 @@ func (pool *TxPool) GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, err
 	return pool.dag.GetStxoEntry(outpoint)
 }
 
+//从交易池删除指定的交易
 func (pool *TxPool) DiscardTxs(txs []*modules.Transaction) error {
 	pool.Lock()
 	defer pool.Unlock()
@@ -381,7 +434,7 @@ func (pool *TxPool) DiscardTxs(txs []*modules.Transaction) error {
 			if _, ok := pool.userContractRequests[requestHash]; ok {
 				log.Debugf("Request[%s] already packed into unit, delete it from request pool", requestHash.String())
 				delete(pool.userContractRequests, requestHash)
-				pool.checkOrphanTxToNormal(tx.RequestHash())
+				pool.checkBasedOnReqOrphanTxToNormal()
 			}
 		}
 		err := pool.normals.DiscardTx(tx.Hash())
@@ -405,6 +458,9 @@ func (pool *TxPool) GetUnpackedTxsByAddr(addr common.Address) ([]*txspool.TxPool
 		return nil, err
 	}
 	for h, tx := range pool.userContractRequests {
+		txs[h] = tx
+	}
+	for h, tx := range pool.basedOnRequestOrphans {
 		txs[h] = tx
 	}
 	result := []*txspool.TxPoolTransaction{}

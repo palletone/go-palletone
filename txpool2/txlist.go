@@ -21,7 +21,6 @@ import (
 	"fmt"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/txspool"
 )
@@ -34,7 +33,7 @@ type linkTx struct {
 	Number   int
 }
 
-//维护了一个有序的Tx DAG
+//维护了一个有序的Tx DAG,所有能够被打包的Tx才会进入这个对象
 type txList struct {
 	txs         map[common.Hash]*linkTx
 	linkTxRoots map[common.Hash]*linkTx
@@ -214,7 +213,6 @@ func deleteSliceItem(array []*linkTx, tx *linkTx) []*linkTx {
 var nodeHashAll map[common.Hash]bool
 
 func (l *txList) GetSortedTxs() ([]*txspool.TxPoolTransaction, error) {
-	log.Debug("start GetSortedTxs...")
 	nodeHashAll = make(map[common.Hash]bool)
 	roots := []*linkTx{}
 	for _, tx := range l.linkTxRoots {
