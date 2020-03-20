@@ -153,7 +153,17 @@ func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 	tx2 := pool.convertTx(tx, fee)
 	//2. process orphan
 	if vcode == validator.TxValidationCode_ORPHAN {
+		reverseDeleteReq()
 		return pool.addOrphanTx(tx2)
+	}
+	//有可能是连续的用户合约请求R1,R2，但是R2先被执行完，这个时候R1还在RequestPool里面，没办法被打包，所以R2应该被扔到OrphanPool
+	for h := range tx2.DependOnTxs {
+		if _, ok := pool.userContractRequests[h]; ok {
+			//父交易还是Request，所以本Tx是Orphan
+			log.Debugf("Tx[%s]'s parent %s is a request, not a full tx", tx2.TxHash.String(), h.String())
+			reverseDeleteReq()
+			return pool.addOrphanTx(tx2)
+		}
 	}
 	if tx.IsUserContract() && tx.IsOnlyContractRequest() {
 		//user contract request
@@ -231,7 +241,7 @@ func (pool *TxPool) addOrphanTx(tx *txspool.TxPoolTransaction) error {
 	return nil
 }
 
-func (pool *TxPool) GetSortedTxs(processor txspool.ProcessorFunc) error {
+func (pool *TxPool) GetSortedTxs(processor func(tx *txspool.TxPoolTransaction) (getNext bool, err error)) error {
 	pool.RLock()
 	defer pool.RUnlock()
 	return pool.normals.GetSortedTxs(processor)

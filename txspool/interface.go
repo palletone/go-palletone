@@ -1,4 +1,3 @@
-/*
  *
  *    This file is part of go-palletone.
  *    go-palletone is free software: you can redistribute it and/or modify
@@ -59,7 +58,7 @@ type ITxPool interface {
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
 	//GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTransaction, common.StorageSize)
 	//迭代获取未打包的排序好的Tx，迭代执行函数时，如果返回true就继续迭代，如果false停止迭代
-	GetSortedTxs(processor ProcessorFunc) error
+	GetSortedTxs(processor func(tx *TxPoolTransaction) (getNext bool, err error)) error
 	//从交易池获取某个交易
 	GetTx(hash common.Hash) (*TxPoolTransaction, error)
 	//获取交易池中某个地址的所有交易
