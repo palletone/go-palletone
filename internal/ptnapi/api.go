@@ -603,11 +603,9 @@ func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, reqTxMa
 	allUtxo := make(map[modules.OutPoint]*modules.Utxo)
 	for k, v := range dbUtxo {
 		if v.Asset.Equal(tokenAsset) &&!v.IsSpent(){
-			//log.Debugf("--------606-----db---Payment output %+v\n",k.String())
-			//log.Debugf("--------607-------db-utxo is  %+v\n",v)
+			
 			v.Spend()
 			allUtxo[k] = v
-			//log.Debugf("--------609-------db-utxo is  %+v\n",v)
 		}
 	}
 
