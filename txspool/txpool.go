@@ -486,7 +486,6 @@ func (pool *TxPool) local() map[common.Hash]*TxPoolTransaction {
 // rules and adheres to some heuristic limits of the local node (price and size).
 func (pool *TxPool) validateTx(tx *TxPoolTransaction, local bool) ([]*modules.Addition,
 	validator.ValidationCode, error) {
-	// 交易池不需要验证交易存不存在。
 
 	// todo 以后备用
 	//if local {
@@ -578,8 +577,8 @@ func (pool *TxPool) add(tx *TxPoolTransaction, local bool) (bool, error) {
 		txCoinbasePrometheus.Add(1)
 		return true, nil
 	}
-	// Don't accept the transaction if it already in the pool .
 
+	// Don't accept the transaction if it already in the pool .
 	if _, has := pool.all.Load(hash); has {
 		txAlreadyPrometheus.Add(1)
 		log.Trace("Discarding already known transaction", "hash", hash.String())
@@ -589,28 +588,27 @@ func (pool *TxPool) add(tx *TxPoolTransaction, local bool) (bool, error) {
 		txOrphanKnownPrometheus.Add(1)
 		return false, fmt.Errorf("know orphanTx: %s", hash.String())
 	}
-	if has, _ := pool.unit.IsTransactionExist(hash); has {
-		return false, fmt.Errorf("the transactionx: %s has been packaged.", hash.String())
-	}
+
 	// If the transaction fails basic validation, discard it
-	if addition, code, err := pool.validateTx(tx, local); err != nil {
-		if code == validator.TxValidationCode_ORPHAN {
-			if ok, _ := pool.ValidateOrphanTx(tx.Tx); ok {
-				txOrphanValidPrometheus.Add(1)
-				log.Debug("validated the orphanTx", "hash", hash.String())
-				pool.addOrphan(tx, 0)
-				return true, nil
-			}
+	if addition, code, err := pool.validateTx(tx, local); code == validator.TxValidationCode_ORPHAN {
+		if ok, _ := pool.ValidateOrphanTx(tx.Tx); ok {
+			txOrphanValidPrometheus.Add(1)
+			log.Debug("validated the orphanTx", "hash", hash.String())
+			pool.addOrphan(tx, 0)
+			return true, nil
 		}
 		txInvalidPrometheus.Add(1)
 		log.Trace("Discarding invalid transaction", "hash", hash.String(), "err", err.Error())
 		return false, err
+	} else if code != validator.TxValidationCode_VALID {
+		return false, validator.NewValidateError(code)
 	} else {
 		if tx.TxFee != nil {
 			tx.TxFee = make([]*modules.Addition, 0)
 		}
 		tx.TxFee = append(tx.TxFee, addition...)
 	}
+
 	// 计算优先级
 	pool.setPriorityLvl(tx)
 

@@ -331,17 +331,8 @@ func TestTransactionAddingTxs(t *testing.T) {
 		})
 		log.Debugf(" total size is :%v ,the cout:%d ", total, len(txs))
 
-		//for i, tx := range sortedtxs {
-		//	if i < len(txs)-1 {
-		//		if sortedtxs[i].Priority_lvl < sortedtxs[i+1].Priority_lvl {
-		//			t.Error("sorted failed.", i, tx.Priority_lvl)
-		//		}
-		//	}
-		//}
-		//all = len(sortedtxs)
-
 		all = len(sortedtxs)
-		for i:=0; i< all-1; i++{
+		for i := 0; i < all-1; i++ {
 			txpl := sortedtxs[i].Priority_lvl
 			if txpl < sortedtxs[i+1].Priority_lvl {
 				t.Error("sorted failed.", i, txpl)

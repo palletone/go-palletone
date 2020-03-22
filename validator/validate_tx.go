@@ -60,7 +60,6 @@ func (validate *Validate) validateTx(rwM rwset.TxManager, tx *modules.Transactio
 		return TxValidationCode_VALID, nil
 	}
 
-	//ptn := modules.NewPTNAsset()
 	ptn := dagconfig.DagConfig.GetGasToken()
 	_, chainindex, err := validate.propquery.GetNewestUnit(ptn)
 	if err != nil {
@@ -360,7 +359,6 @@ func (validate *Validate) ValidateTxFeeEnough(tx *modules.Transaction, extSize f
 		log.Errorf("[%s]validateTxFeeEnough, GetTxFee err:%s", shortId(reqId.String()), err.Error())
 		return TxValidationCode_ORPHAN //todo ?
 	}
-
 	cp := validate.propquery.GetChainParameters()
 	timeUnitFee := float64(cp.ContractTxTimeoutUnitFee)
 	sizeUnitFee := float64(cp.ContractTxSizeUnitFee)
