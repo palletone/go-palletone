@@ -179,6 +179,7 @@ func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 		//user contract request
 		log.Debugf("add tx[%s] to user contract request pool", txHash.String())
 		pool.userContractRequests[tx2.TxHash] = tx2
+		pool.txFeed.Send(modules.TxPreEvent{Tx: tx, IsOrphan: false})
 	} else { //不是用户合约请求
 		//有可能是连续的用户合约请求R1,R2，但是R2先被执行完，这个时候R1还在RequestPool里面，没办法被打包，所以R2应该被扔到basedOnReqOrphanPool
 		//父交易还是Request，所以本Tx是Orphan

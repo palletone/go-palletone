@@ -98,7 +98,7 @@ func (pm *ProtocolManager) saveStableUnitRecvLoop() {
 					return fmt.Sprintf("discard txs %#x from txpool by stable unit[%s]",
 						event.Unit.TxHashes(), event.Unit.DisplayId())
 				})
-				err := pm.txpool.DiscardTxs(event.Unit.Txs)
+				err := pm.txpool.DiscardTxs(event.Unit.TransactionsWithoutCoinbase())
 				if err != nil {
 					log.Error(err.Error())
 				}
@@ -118,7 +118,7 @@ func (pm *ProtocolManager) saveUnitRecvLoop() {
 		case u := <-pm.saveUnitCh:
 			log.Debugf("SubscribeSaveUnitEvent received unit:%s", u.Unit.DisplayId())
 			if len(u.Unit.Txs) > 1 {
-				err := pm.txpool.SetPendingTxs(u.Unit.Hash(), u.Unit.NumberU64(), u.Unit.Transactions()) //UpdateTxStatusPacked
+				err := pm.txpool.SetPendingTxs(u.Unit.Hash(), u.Unit.NumberU64(), u.Unit.TransactionsWithoutCoinbase()) //UpdateTxStatusPacked
 				if err != nil {
 					log.Error(err.Error())
 				}
@@ -141,7 +141,7 @@ func (pm *ProtocolManager) rollbackUnitRecvLoop() {
 		case u := <-pm.rollbackUnitCh:
 			log.Infof("SubscribeRollbackUnitEvent received unit:%s", u.Unit.DisplayId())
 			if len(u.Unit.Txs) > 1 {
-				err := pm.txpool.ResetPendingTxs(u.Unit.Transactions()) //UpdateTxStatusUnpacked
+				err := pm.txpool.ResetPendingTxs(u.Unit.TransactionsWithoutCoinbase()) //UpdateTxStatusUnpacked
 				if err != nil {
 					log.Error(err.Error())
 				}
