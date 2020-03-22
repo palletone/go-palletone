@@ -93,7 +93,8 @@ type IUnitRepository interface {
 	//UpdateHeadByBatch(hash common.Hash, number uint64) error
 
 	//GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue
-	GetFileInfo(filehash []byte) ([]*modules.FileInfo, error)
+	GetFileInfo(filehash []byte) ([]*modules.ProofOfExistencesInfo, error)
+	GetProofOfExistencesByMaindata(maindata []byte) ([]*modules.ProofOfExistencesInfo, error)
 
 	//获得某个分区上的最新不可逆单元
 	//GetLastIrreversibleUnit(assetID modules.AssetId) (*modules.Unit, error)
@@ -1007,12 +1008,14 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 			return err
 		}
 	}
+
 	txHash := tx.Hash()
 	reqHash := tx.RequestHash()
 	reqId := reqHash.Bytes()
 	unitHash := unit.Hash()
 	unitTime := unit.Timestamp()
 	unitHeight := unit.NumberU64()
+	unitNum := unit.Number()
 
 	templateId := make([]byte, 0)
 	// traverse messages
@@ -1026,7 +1029,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 		switch msg.App {
 		case modules.APP_PAYMENT:
 			myTxHash := txHash
-			if tx.IsNewContractInvokeRequest() { //只是一个请求，TxHash还无法计算
+			if tx.IsOnlyContractRequest() { //只是一个请求，TxHash还无法计算
 				myTxHash = common.Hash{}
 			}
 			myReqHash := reqHash
@@ -1044,11 +1047,11 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 			}
 		case modules.APP_CONTRACT_DEPLOY:
 			deploy := msg.Payload.(*modules.ContractDeployPayload)
-			if ok := rep.saveContractInitPayload(unit.Number(), uint32(txIndex), templateId, deploy, requester, unitTime); !ok {
+			if ok := rep.saveContractInitPayload(unitNum, uint32(txIndex), templateId, deploy, requester, unitTime); !ok {
 				return fmt.Errorf("Save contract init payload error.")
 			}
 		case modules.APP_CONTRACT_INVOKE:
-			if ok := rep.saveContractInvokePayload(tx, unit.Number(), uint32(txIndex), msg, reqIndex, unitTime); !ok {
+			if ok := rep.saveContractInvokePayload(tx, unitNum, uint32(txIndex), msg, reqIndex, unitTime); !ok {
 				return fmt.Errorf("save contract invode payload error")
 			}
 		case modules.APP_CONTRACT_STOP:
@@ -1056,7 +1059,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 				return fmt.Errorf("save contract stop payload failed.")
 			}
 		case modules.APP_ACCOUNT_UPDATE:
-			if err := rep.updateAccountInfo(msg, requester, unit.Number(), uint32(txIndex)); err != nil {
+			if err := rep.updateAccountInfo(msg, requester, unitNum, uint32(txIndex)); err != nil {
 				return fmt.Errorf("apply Account Updating Operation error")
 			}
 		case modules.APP_CONTRACT_TPL_REQUEST:
@@ -1088,16 +1091,19 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 			return fmt.Errorf("Message type is not supported now: %v", msg.App)
 		}
 	}
+
 	// step6. save transaction
 	if err := rep.dagdb.SaveTransaction(tx); err != nil {
 		log.Info("Save transaction:", "error", err.Error())
 		return err
 	}
+
 	// step7. save tx lookup
 	if err := rep.dagdb.SaveTxLookupEntry(unitHash, unitHeight, uint64(unitTime), txIndex, tx); err != nil {
 		log.Errorf("save tx lookup failed,error: %s", err.Error())
 		return err
 	}
+
 	//Index
 	if dagconfig.DagConfig.AddrTxsIndex {
 		err = rep.saveAddrTxIndex(txHash, tx)
@@ -1105,8 +1111,10 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 			return err
 		}
 	}
+
 	return nil
 }
+
 func (rep *UnitRepository) saveAddrTxIndex(txHash common.Hash, tx *modules.Transaction) error {
 
 	//Index TxId for to address
@@ -1373,7 +1381,7 @@ func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, t
 	}
 	v := ""
 	if len(templateId) != 0 {
-		temC, err := rep.statedb.GetContractTpl(templateId)
+		temC, err := rep.getContractTpl(templateId)
 		if err != nil {
 			log.Errorf("get contract template with id = %x, error:%s", templateId, err.Error())
 			return false
@@ -1403,6 +1411,14 @@ func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, t
 		}
 	}
 	return true
+}
+
+func (rep *UnitRepository) getContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
+	tpl, err := rep.statedb.GetContractTpl(tplId)
+	if err != nil {
+		return rep.statedb.GetContractTplFromSysContract(tplId)
+	}
+	return tpl, nil
 }
 
 /**
@@ -1757,29 +1773,46 @@ func (rep *UnitRepository) GetAddrUtxoTxs(addr common.Address) ([]*modules.Trans
 	}
 	return txs, err
 }
-func (rep *UnitRepository) GetFileInfo(filehash []byte) ([]*modules.FileInfo, error) {
+func (rep *UnitRepository) GetFileInfo(filehash []byte) ([]*modules.ProofOfExistencesInfo, error) {
 	rep.lock.RLock()
 	defer rep.lock.RUnlock()
 	hashs, err := rep.idxdb.GetMainDataTxIds(filehash)
 	if err != nil {
 		return nil, err
 	}
-	mds0, err := rep.GetFileInfoByHash(hashs)
+	mds0, err := rep.GetMainDataByHash(hashs)
 	if hashs == nil {
 		hash := common.HexToHash(string(filehash))
 		hashs = append(hashs, hash)
-		mds1, err := rep.GetFileInfoByHash(hashs)
+		mds1, err := rep.GetMainDataByHash(hashs)
 		return mds1, err
 	}
 	return mds0, err
 }
 
-func (rep *UnitRepository) GetFileInfoByHash(hashs []common.Hash) ([]*modules.FileInfo, error) {
+func (rep *UnitRepository) GetProofOfExistencesByMaindata(maindata []byte) ([]*modules.ProofOfExistencesInfo, error) {
 	rep.lock.RLock()
 	defer rep.lock.RUnlock()
-	mds := make([]*modules.FileInfo, 0)
+	hashs, err := rep.idxdb.GetMainDataTxIds(maindata)
+	if err != nil {
+		return nil, err
+	}
+	mds0, err := rep.GetMainDataByHash(hashs)
+	if hashs == nil {
+		hash := common.HexToHash(string(maindata))
+		hashs = append(hashs, hash)
+		mds1, err := rep.GetMainDataByHash(hashs)
+		return mds1, err
+	}
+	return mds0, err
+}
+
+func (rep *UnitRepository) GetMainDataByHash(hashs []common.Hash) ([]*modules.ProofOfExistencesInfo, error) {
+	rep.lock.RLock()
+	defer rep.lock.RUnlock()
+	mds := make([]*modules.ProofOfExistencesInfo, 0)
 	for _, hash := range hashs {
-		var md modules.FileInfo
+		var md modules.ProofOfExistencesInfo
 
 		tx, err := rep.GetTransaction(hash)
 		if err != nil {

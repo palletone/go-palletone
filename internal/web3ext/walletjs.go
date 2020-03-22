@@ -170,6 +170,12 @@ const Wallet_JS = `
 			params: 1,
 			inputFormatter: [null]
 		}),	
+        new web3._extend.Method({
+			name: 'getProofOfExistencesByMaindata',
+			call: 'wallet_getProofOfExistencesByMaindata',
+			params: 1,
+			inputFormatter: [null]
+		}),	
 		new web3._extend.Method({
 			name: 'getOneTokenInfo',
 			call: 'wallet_getOneTokenInfo',

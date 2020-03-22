@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/palletone/go-palletone/contracts"
+	"github.com/palletone/go-palletone/txspool"
 
 	"github.com/coocood/freecache"
 	"github.com/ethereum/go-ethereum/event"
@@ -84,7 +85,7 @@ type ProtocolManager struct {
 
 	lightSync uint32 //Flag whether light sync is enabled
 
-	txpool   txPool
+	txpool   txspool.ITxPool
 	maxPeers int
 
 	downloader *downloader.Downloader
@@ -174,7 +175,7 @@ type ProtocolManager struct {
 
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
 // with the PalletOne network.
-func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken modules.AssetId, txpool txPool,
+func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken modules.AssetId, txpool txspool.ITxPool,
 	dag dag.IDag, mux *event.TypeMux, producer producer, genesis *modules.Unit,
 	contractProc consensus.ContractInf, engine core.ConsensusEngine, contract *contracts.Contract, pDocker *utils.PalletOneDocker) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
@@ -372,8 +373,8 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 	pm.txCh = make(chan modules.TxPreEvent, txChanSize)
 	// 订阅的回执
 	pm.txSub = pm.txpool.SubscribeTxPreEvent(pm.txCh)
-	// 启动广播的goroutine
-	go pm.txBroadcastLoop()
+	// 交易处理
+	go pm.txProcessLoop()
 
 	// broadcast new unit produced by mediator
 	pm.newProducedUnitCh = make(chan mp.NewProducedUnitEvent)
@@ -451,76 +452,6 @@ func (pm *ProtocolManager) Start(srvr *p2p.Server, maxPeers int, syncCh chan boo
 		//
 		go pm.dockerLoop(next2)
 	}
-
-	//  是否为linux系統
-	//if runtime.GOOS == "linux" {
-	//	log.Debug("entering docker service...")
-	//	dockerBool := true
-	//	//创建 docker client
-	//	client, err := util.NewDockerClient()
-	//	if err != nil {
-	//		log.Debug("util.NewDockerClient", "error", err)
-	//		dockerBool = false
-	//	}
-	//	if client == nil {
-	//		log.Debug("client is nil")
-	//		dockerBool = false
-	//	} else {
-	//		_, err = client.Info()
-	//		if err != nil {
-	//			log.Debug("client.Info", "error", err)
-	//			dockerBool = false
-	//		}
-	//	}
-	//	if dockerBool {
-	//		log.Debug("starting docker service...")
-	//		//创建gptn程序默认网络
-	//		utils.CreateGptnNet(client)
-	//		//拉取gptn发布版本对应的goimg基础镜像，防止卡住
-	//		go func() {
-	//			log.Debug("downloading palletone base image...")
-	//			goimg := contractcfg.Goimg + ":" + contractcfg.GptnVersion
-	//			_, err = client.InspectImage(goimg)
-	//			if err != nil {
-	//				log.Debugf("Image %s does not exist locally, attempt pull", goimg)
-	//				err = client.PullImage(docker.PullImageOptions{Repository: contractcfg.Goimg, Tag: contractcfg.GptnVersion}, docker.AuthConfiguration{})
-	//				if err != nil {
-	//					log.Debugf("Failed to pull %s: %s", goimg, err)
-	//				}
-	//			}
-	//			//  获取本地用户合约列表
-	//			log.Debug("get local user contracts")
-	//			ccs, err := manger.GetChaincodes(pm.dag)
-	//			if err != nil {
-	//				log.Debugf("get chaincodes error %s", err.Error())
-	//				return
-	//			}
-	//			//启动退出的容器，包括本地有的和本地没有的
-	//			for _, c := range ccs {
-	//				//  判断是否是担任jury地址
-	//				juryAddrs := pm.contract.GetLocalJuryAddrs()
-	//				juryAddr := ""
-	//				if len(juryAddrs) != 0 {
-	//					juryAddr = juryAddrs[0].String()
-	//				}
-	//				if juryAddr != c.Address {
-	//					log.Debugf("the local jury address %s was not equal address %s in the dag", juryAddr, c.Address)
-	//					continue
-	//				}
-	//				//conName := c.Name+c.Version+":"+contractcfg.GetConfig().ContractAddress
-	//				rd, _ := crypto.GetRandomBytes(32)
-	//				txid := util2.RlpHash(rd)
-	//				//  启动gptn时启动Jury对应的没有过期的用户合约容器
-	//				if !c.IsExpired {
-	//					log.Debugf("restart container %s with jury address %s", c.Name, c.Address)
-	//					address := common.NewAddress(c.Id, common.ContractHash)
-	//					manger.RestartContainer(pm.dag, "palletone", address, txid.String())
-	//				}
-	//			}
-	//		}()
-	//		go pm.dockerLoop(client)
-	//	}
-	//}
 }
 
 func (pm *ProtocolManager) Stop() {
@@ -790,10 +721,14 @@ func (pm *ProtocolManager) BroadcastTx(hash common.Hash, tx *modules.Transaction
 	log.Trace("Broadcast transaction", "hash", hash, "recipients", len(peers))
 }
 
-func (pm *ProtocolManager) txBroadcastLoop() {
+func (pm *ProtocolManager) txProcessLoop() {
 	for {
 		select {
 		case event := <-pm.txCh:
+			if !event.IsOrphan { //孤儿请求无法进行处理
+				// add user contract request process
+				go pm.contractProc.ProcessUserContractInvokeReqTx(event.Tx)
+			}
 			pm.BroadcastTx(event.Tx.Hash(), event.Tx)
 
 			// Err() channel will be closed when unsubscribing.
@@ -930,17 +865,19 @@ func (pm *ProtocolManager) ceBroadcastLoop() {
 	}
 }
 
-func (pm *ProtocolManager) dockerLoop(n chan struct{}) {
+func (pm *ProtocolManager) dockerLoop(n <-chan struct{}) {
 	log.Debug("waiting RestartUserContractsWhenStartGptn func")
 	<-n
 	log.Debug("start docker loop")
 	defer log.Debug("end docker loop")
+	duration := 30 * time.Second
+	timer := time.NewTimer(duration)
 	for {
 		select {
 		case <-pm.dockerQuitSync:
 			log.Debug("quit from docker loop")
 			return
-		case <-time.After(time.Duration(30) * time.Second):
+		case <-timer.C:
 			log.Debug("each 30 second to get all containers")
 			//  获取所有容器
 			cons, err := pm.pDocker.GetAllContainers()
@@ -952,6 +889,7 @@ func (pm *ProtocolManager) dockerLoop(n chan struct{}) {
 			pm.pDocker.RestartExitedAndUnExpiredContainers(cons)
 			//  删除过期容器
 			//pm.pDocker.RemoveExpiredContainers(cons)
+			timer.Reset(duration)
 		}
 	}
 }

@@ -44,11 +44,10 @@ func TestTxList_GetSortTxs(t *testing.T) {
 	txlist.AddTx(mockTxpoolTx([]common.Hash{Hash("Y2"), Hash("Y3")}, Hash("Z2")))
 
 	sortedTx := ""
-	txlist.GetSortedTxs(func(tx *txspool.TxPoolTransaction) (getNext bool, err error) {
-		//t.Logf("tx[%s]",string(tx.TxHash[:]))
+	list, _ := txlist.GetSortedTxs()
+	for _, tx := range list {
 		sortedTx += string(tx.TxHash[:]) + ";"
-		return true, nil
-	})
+	}
 	t.Log(sortedTx)
 	match, _ := regexp.MatchString("A.*B.*C.*D.*", sortedTx)
 	assert.True(t, match)
@@ -60,7 +59,12 @@ func Hash(s string) common.Hash {
 	return common.BytesToHash([]byte(s))
 }
 func mockTxpoolTx(parentTxHash []common.Hash, txHash common.Hash) *txspool.TxPoolTransaction {
-	tx := &txspool.TxPoolTransaction{DependOnTxs: map[common.Hash]bool{}, Tx: modules.NewTransaction(nil)}
+	pHash := Hash("p")
+	if len(parentTxHash) > 0 {
+		pHash = parentTxHash[0]
+	}
+	pay := mockPaymentTx(pHash, 0, 0)
+	tx := &txspool.TxPoolTransaction{DependOnTxs: map[common.Hash]bool{}, Tx: pay}
 	for _, p := range parentTxHash {
 		tx.DependOnTxs[p] = true
 	}
@@ -92,17 +96,14 @@ func TestTxList_GetSortTxs_Long(t *testing.T) {
 		result += "A" + strconv.Itoa(i) + ";"
 	}
 	sortedTx := ""
-	txlist.GetSortedTxs(func(tx *txspool.TxPoolTransaction) (getNext bool, err error) {
+	list, _ := txlist.GetSortedTxs()
+	for _, tx := range list {
 		sortedTx += string(tx.TxHash[:]) + ";"
-		if tx.TxHash == Hash("A10") {
-			return false, nil
-		}
-		return true, nil
-	})
+	}
 	t.Log(sortedTx)
 	t.Log(result)
 	sortedTx = strings.Replace(sortedTx, "\x00", "", -1)
-	assert.EqualValues(t, "A;A0;A1;A2;A3;A4;A5;A6;A7;A8;A9;A10;", sortedTx)
+	assert.True(t, strings.HasPrefix(sortedTx, "A;A0;A1;A2;A3;A4;A5;A6;A7;A8;A9;A10;"))
 }
 func TestTxList_DiscardTxs(t *testing.T) {
 	txlist := initTxlist()
@@ -136,10 +137,10 @@ func initTxlist() *txList {
 }
 func printTxList(txlist *txList) string {
 	sortedTx := ""
-	txlist.GetSortedTxs(func(tx *txspool.TxPoolTransaction) (getNext bool, err error) {
+	list, _ := txlist.GetSortedTxs()
+	for _, tx := range list {
 		sortedTx += string(tx.TxHash[:]) + ";"
-		return true, nil
-	})
+	}
 	return sortedTx
 }
 func TestTxList_GetUnpackedTxs(t *testing.T) {

@@ -219,9 +219,11 @@ func (p *testTxPool) GetNonce(hash common.Hash) uint64 {
 func (p *testTxPool) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	return nil, nil
 }
-func (p *testTxPool) GetSortedTxs(processor func(tx *txspool.TxPoolTransaction) (getNext bool, err error)) error {
+
+func (p *testTxPool) GetSortedTxs(processor txspool.ProcessorFunc) error {
 	return nil
 }
+
 func (p *testTxPool) SendStoredTxs(hashs []common.Hash) error {
 	return nil
 }
@@ -257,8 +259,8 @@ func (p *testTxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Sub
 	return p.txFeed.Subscribe(ch)
 }
 
-func (p *testTxPool) ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag txspool.Tag) ([]*txspool.TxDesc, error) {
-	return []*txspool.TxDesc{}, nil
+func (p *testTxPool) ProcessTransaction(tx *modules.Transaction) error {
+	return nil
 }
 func (p *testTxPool) AllTxpoolTxs() map[common.Hash]*txspool.TxPoolTransaction {
 	return nil

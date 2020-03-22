@@ -160,7 +160,12 @@ func (a *PrivateMediatorAPI) StopProduce() bool {
 	if a.producingEnabled {
 		a.producingEnabled = false
 		go func() {
-			a.stopProduce <- struct{}{}
+			select {
+			case <- a.quit:
+				return
+			default:
+				a.stopProduce <- struct{}{}
+			}
 		}()
 
 		return true

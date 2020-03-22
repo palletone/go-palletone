@@ -1,22 +1,21 @@
 /*
- *
- *    This file is part of go-palletone.
- *    go-palletone is free software: you can redistribute it and/or modify
- *    it under the terms of the GNU General Public License as published by
- *    the Free Software Foundation, either version 3 of the License, or
- *    (at your option) any later version.
- *    go-palletone is distributed in the hope that it will be useful,
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *    GNU General Public License for more details.
- *    You should have received a copy of the GNU General Public License
+  *    This file is part of go-palletone.
+  *    go-palletone is free software: you can redistribute it and/or modify
+  *    it under the terms of the GNU General Public License as published by
+  *    the Free Software Foundation, either version 3 of the License, or
+  *    (at your option) any later version.
+  *    go-palletone is distributed in the hope that it will be useful,
+  *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+  *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  *    GNU General Public License for more details.
+  *    You should have received a copy of the GNU General Public License
  *    along with go-palletone.  If not, see <http://www.gnu.org/licenses/>.
  * /
  *
  *  * @author PalletOne core developer <dev@pallet.one>
  *  * @date 2018
  *
- */
+*/
 
 package txspool
 
@@ -51,13 +50,16 @@ type ITxPool interface {
 	//SendStoredTxs(hashs []common.Hash) error
 	//将一堆交易标记为删除
 	DiscardTxs(txs []*modules.Transaction) error
-	//查询UTXO
-	GetUtxo(outpoint *modules.OutPoint) (*modules.Utxo, error)
+	//查询交易池所有的UTXO，比如有A，B，C连续交易，那么ABC的UTXO都会被查询
+	GetUtxoFromAll(outpoint *modules.OutPoint) (*modules.Utxo, error)
+	//查询交易池中未被使用的UTXO，比如有ABC连续交易，那么只有C的UTXO会被查询，而AB的已经被使用了
+	//GetUtxoFromFree(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	//订阅事件
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
 	//GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTransaction, common.StorageSize)
 	//迭代获取未打包的排序好的Tx，迭代执行函数时，如果返回true就继续迭代，如果false停止迭代
-	GetSortedTxs(processor func(tx *TxPoolTransaction) (getNext bool, err error)) error
+	//GetSortedTxs(processor func(tx *TxPoolTransaction) (getNext bool, err error)) error
+	GetSortedTxs() ([]*TxPoolTransaction, error)
 	//从交易池获取某个交易
 	GetTx(hash common.Hash) (*TxPoolTransaction, error)
 	//获取交易池中某个地址的所有交易
@@ -68,7 +70,4 @@ type ITxPool interface {
 	Status() (int, int, int)
 	//返回交易池中交易的内容
 	Content() (map[common.Hash]*TxPoolTransaction, map[common.Hash]*TxPoolTransaction)
-	//GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error)
-	//OutPointIsSpend(outPoint *modules.OutPoint) (bool, error)
-	//ValidateOrphanTx(tx *modules.Transaction) (bool, error)
 }

@@ -343,6 +343,14 @@ func (pm *ProtocolManager) NewBlockHashesMsg(msg p2p.Msg, p *peer) error {
 	return nil
 }
 
+//func includeContractTx(txs []*modules.Transaction) bool { //todo  sort
+//	for _, tx := range txs {
+//		if tx.IsContractTx() && tx.IsOnlyContractRequest() {
+//			return true
+//		}
+//	}
+//	return false
+//}
 func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 	log.Debug("Enter ProtocolManager TxMsg")
 	defer log.Debug("End ProtocolManager TxMsg")
@@ -357,26 +365,67 @@ func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
 		log.Debug("ProtocolManager handlmsg TxMsg", "Decode err:", err, "msg:", msg)
 		return errResp(ErrDecode, "msg %v: %v", msg, err)
 	}
+
+	log.Debugf("ProtocolManager, tx num[%d]", len(txs))
+
+	//unitNumber := pm.dag.HeadUnitNum() + 1
+	//unitId := fmt.Sprintf("%d", unitNumber)
+	//rwM, err := rwset.NewRwSetMgr(unitId)
+	//if err != nil {
+	//	log.Errorf("ProtocolManager NewRwSetMgr err: %s", err.Error())
+	//	return err
+	//}
+	//defer rwM.Close()
+	//mDag, err := pm.dag.NewTemp()
+	//if err != nil {
+	//	log.Errorf("ProtocolManager NewTemp err: %s", err.Error())
+	//	return err
+	//}
+
+	//log.Debugf("ProtocolManager, TxMsg len(txs)[%d]", len(txs))
 	for i, tx := range txs {
-		// Validate and mark the remote transaction
 		if tx == nil {
 			return errResp(ErrDecode, "transaction %d is nil", i)
 		}
 
 		txHash := tx.Hash()
 		p.MarkTransaction(txHash)
-
 		if pm.IsExistInCache(txHash.Bytes()) {
 			return nil
 		}
-		//系统合约的请求可以P2P广播，但是包含结果的系统合约请求，只能在打包时生成，不能广播
-		if tx.IsSystemContract() && !tx.IsNewContractInvokeRequest() {
-			log.Warnf("Tx[%s] is a sys contract with result, don't need send by p2p", txHash.String())
-			continue
+
+		log.Debugf("ProtocolManager, index[%d] txHash[%s] tx:%s", i, tx.Hash().ShortStr(), tx.String())
+		if tx.IsContractTx() && tx.GetContractTxType() == modules.APP_CONTRACT_INVOKE_REQUEST {
+			//系统合约的请求可以P2P广播，但是包含结果的系统合约请求，只能在打包时生成，不能广播
+			if tx.IsSystemContract() {
+				if !tx.IsOnlyContractRequest() {
+					log.Debugf("ProtocolManager, Tx[%s] is a sys contract with result, don't need send by p2p", txHash.String())
+					continue
+				}
+			}
 		}
-		err := pm.txpool.AddRemote(tx)
+		//else {
+		//		if tx.IsOnlyContractRequest() {
+		//			_, err := pm.contractProc.ProcessUserContractTxMsg(tx, rwM, mDag)
+		//			if err != nil {
+		//				log.Errorf("ProtocolManager, Tx[%s] ProcessContractTxMsg err:%s", tx.RequestHash().String(), err.Error())
+		//			}
+		//		}
+		//	}
+		//}
+		//
+		//if tx != nil {
+		//	mDag.SaveTransaction(tx, i)
+		//}
+		//添加到本地交易
+		err := pm.contractProc.AddLocalTx(tx)
 		if err != nil {
-			log.Infof("the transaction %s not accepteable, err:%s", tx.Hash().String(), err.Error())
+			log.Warnf("ProtocolManager, AddLocalTx[%s]-[%s] err:%s",
+				tx.RequestHash().String(), tx.Hash().String(), err.Error())
+		}
+		err = pm.txpool.AddRemote(tx)
+		if err != nil {
+			log.Infof("ProtocolManager,the transaction %s not accepteable, err:%s", tx.Hash().String(), err.Error())
 		}
 	}
 
@@ -433,32 +482,7 @@ func (pm *ProtocolManager) NewBlockMsg(msg p2p.Msg, p *peer) error {
 		}
 		return fmt.Sprintf("NewBlockMsg, received unit hash %s, txs:[%x]", unit.Hash().String(), txids)
 	})
-	//Devin:收到新Unit后这里不需要进行合约验证，在Dag模块会验证的。
-	//rwM, err := rwset.NewRwSetMgr(unit.NumberString())
-	//if err != nil {
-	//	return fmt.Errorf("NewBlockMsg, received unit hash %s, NewRwSetMgr err:%s ", unit.Hash().String(), err.Error())
-	//}
 
-	//var temptxs modules.Transactions
-	//index := 0
-	//for i, tx := range unit.Txs {
-	//	if i == 0 {
-	//		temptxs = append(temptxs, tx)
-	//		continue //coinbase
-	//	}
-	//	if tx.IsContractTx() {
-	//		reqId := tx.RequestHash()
-	//		log.Debugf("[%s]NewBlockMsg, index[%x],txHash[%s]", reqId.String()[0:8], index, tx.Hash().String())
-	//		index++
-	//		if !pm.contractProc.CheckContractTxValid(rwM, tx, true) {
-	//			log.Debugf("[%s]NewBlockMsg, CheckContractTxValid is false.", reqId.String()[0:8])
-	//			continue
-	//		}
-	//	}
-	//	temptxs = append(temptxs, tx)
-	//}
-	//rwM.Close()
-	//unit.Txs = temptxs
 	unit.ReceivedAt = msg.ReceivedAt
 	unit.ReceivedFrom = p
 
@@ -641,11 +665,11 @@ func (pm *ProtocolManager) ContractMsg(msg p2p.Msg, p *peer) error {
 	}
 
 	// 判断是否同步, 如果没同步完成，接收到的 ContractMsg 对当前节点来说是超前的
-	if !pm.dag.IsSynced(false) {
-		log.Debugf(errStr)
-		//return fmt.Errorf(errStr)
-		return nil
-	}
+	//if !pm.dag.IsSynced(false) {
+	//	log.Debugf(errStr)
+	//	//return fmt.Errorf(errStr)
+	//	return nil
+	//}
 
 	reqId := event.Tx.RequestHash()
 	log.Debugf("[%s] ProtocolManager ContractMsg, event type[%v]", reqId.String()[0:8], event.CType)
@@ -687,9 +711,10 @@ func (pm *ProtocolManager) ElectionMsg(msg p2p.Msg, p *peer) error {
 		log.Debug("ElectionMsg, ToElectionEvent fail")
 		return nil
 	}
+	log.Debugf("ElectionMsg, event type[%v]", event.EType)
 	err = pm.contractProc.ProcessElectionEvent(event)
 	if err != nil {
-		log.Debug("ElectionMsg", "ProcessElectionEvent error:", err)
+		log.Warn("ElectionMsg", "ProcessElectionEvent error:", err)
 	}
 	if pm.peers != nil {
 		peers := pm.peers.GetPeers()

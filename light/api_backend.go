@@ -118,8 +118,8 @@ func (b *LesApiBackend) GetChainParameters() *core.ChainParameters {
 	return nil
 }
 
-func (b *LesApiBackend) SendTx(ctx context.Context, signedTx *modules.Transaction) error {
-	return b.ptn.txPool.AddLocal(signedTx)
+func (b *LesApiBackend) SendTx(ctx context.Context, tx *modules.Transaction) error {
+	return b.ptn.txPool.AddLocal(tx)
 }
 func (b *LesApiBackend) SendTxs(ctx context.Context, signedTxs []*modules.Transaction) []error {
 	errs := []error{}
@@ -520,10 +520,13 @@ func (b *LesApiBackend) GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	return common.Hash{}, nil
 }
 
-func (b *LesApiBackend) GetFileInfo(filehash string) ([]*modules.FileInfo, error) {
+func (b *LesApiBackend) GetFileInfo(filehash string) ([]*modules.ProofOfExistencesInfo, error) {
 	return nil, nil
 }
 
+func (b *LesApiBackend) GetProofOfExistencesByMaindata(mainata string) ([]*modules.ProofOfExistencesInfo, error) {
+	return nil, nil
+}
 //SPV
 func (b *LesApiBackend) GetProofTxInfoByHash(txhash string) ([][]byte, error) {
 	return nil, nil
