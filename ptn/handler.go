@@ -309,13 +309,13 @@ func (pm *ProtocolManager) newFetcher() *fetcher.Fetcher {
 		atomic.StoreUint32(&pm.acceptTxs, 1) // Mark initial sync done on any fetcher import
 
 		// setPending txs in txpool
-		for _, u := range blocks {
-			hash := u.Hash()
-			if pm.dag.IsHeaderExist(hash) {
-				continue
-			}
-			pm.txpool.SetPendingTxs(hash, u.NumberU64(), u.Transactions())
-		}
+		//for _, u := range blocks {
+		//	hash := u.Hash()
+		//	if pm.dag.IsHeaderExist(hash) {
+		//		continue
+		//	}
+		//	pm.txpool.SetPendingTxs(hash, u.NumberU64(), u.TransactionsWithoutCoinbase())
+		//}
 
 		account, err := pm.dag.InsertDag(blocks, false)
 		if err == nil {
