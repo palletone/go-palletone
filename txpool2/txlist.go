@@ -38,7 +38,7 @@ type txList struct {
 	txs         map[common.Hash]*linkTx
 	linkTxRoots map[common.Hash]*linkTx
 	newUtxo     map[modules.OutPoint]*modules.Utxo
-	spendUtxo   map[modules.OutPoint]bool
+	spendUtxo   map[modules.OutPoint]common.Hash
 	reqTxMap    map[common.Hash]common.Hash // RequestHash:FullTxHash
 }
 
@@ -47,7 +47,7 @@ func newTxList() *txList {
 		txs:         make(map[common.Hash]*linkTx),
 		linkTxRoots: make(map[common.Hash]*linkTx),
 		newUtxo:     make(map[modules.OutPoint]*modules.Utxo),
-		spendUtxo:   make(map[modules.OutPoint]bool),
+		spendUtxo:   make(map[modules.OutPoint]common.Hash),
 		reqTxMap:    make(map[common.Hash]common.Hash),
 	}
 }
@@ -57,6 +57,7 @@ func (l *txList) Count() int {
 
 //插入一个Tx,只支持系统合约Request，FullTx，不支持UserContractRequest
 func (l *txList) AddTx(tx *txspool.TxPoolTransaction) error {
+	//log.Debugf("add normal tx[%s]",tx.TxHash.String())
 	//如果是用户合约FullTx，先检查Request是否存在，存在则替换
 	if tx.IsUserContractFullTx {
 		l.reqTxMap[tx.ReqHash] = tx.TxHash
@@ -92,7 +93,7 @@ func (l *txList) AddTx(tx *txspool.TxPoolTransaction) error {
 	}
 	//更新new UTXO好Spend
 	for _, o := range tx.Tx.GetSpendOutpoints() {
-		l.spendUtxo[*o] = true
+		l.spendUtxo[*o] = tx.TxHash
 	}
 	for op, utxo := range tx.Tx.GetNewTxUtxoAndReqUtxos() {
 		l.newUtxo[op] = utxo
