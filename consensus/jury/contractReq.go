@@ -106,7 +106,7 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 	isLocal := true //todo
 	if isLocal {
 		sigTx, err := p.RunAndSignTx(reqTx, rwset.RwM, p.dag, from)
-		if err != nil{
+		if err != nil {
 			log.Errorf("ContractInstallReq, local RunAndSignTx err:%s", err.Error())
 			return reqId, nil, err
 		}
@@ -302,7 +302,7 @@ func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee u
 		return common.Hash{}, err
 	}
 	log.Infof("[%s]ContractStopReq ok, reqId[%s], contractId[%s], txId[%s]",
-		shortId(reqId.String()), reqId.String(), contractId, hex.EncodeToString(randNum))
+		shortId(reqId.String()), reqId.String(), contractId.String(), hex.EncodeToString(randNum))
 
 	//add local and broadcast
 	go p.AddLocalTx(tx)
