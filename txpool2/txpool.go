@@ -110,19 +110,19 @@ func (pool *TxPool) AddRemote(tx *modules.Transaction) error {
 }
 func (pool *TxPool) checkDuplicateAdd(txHash common.Hash) error {
 	if _, err := pool.normals.GetTx(txHash); err == nil { //found tx
-		log.Infof("try to add duplicate tx[%s] to tx pool", txHash.String())
+		log.Infof("ignore add duplicate tx[%s] to tx pool", txHash.String())
 		return ErrDuplicate
 	}
 	if _, ok := pool.orphans[txHash]; ok { //found in orphans
-		log.Infof("try to add duplicate orphan tx[%s] to tx pool", txHash.String())
+		log.Infof("ignore add duplicate orphan tx[%s] to tx pool", txHash.String())
 		return ErrDuplicate
 	}
 	if _, ok := pool.userContractRequests[txHash]; ok { //found in userContractRequests
-		log.Infof("try to add duplicate user contract request[%s] to tx pool", txHash.String())
+		log.Infof("ignore add duplicate user contract request[%s] to tx pool", txHash.String())
 		return ErrDuplicate
 	}
 	if _, ok := pool.basedOnRequestOrphans[txHash]; ok { //found in basedOnRequestOrphans
-		log.Infof("try to add duplicate Tx[%s] to tx pool", txHash.String())
+		log.Infof("ignore add duplicate Tx[%s] to tx pool", txHash.String())
 		return ErrDuplicate
 	}
 	return nil

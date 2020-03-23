@@ -639,6 +639,9 @@ func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, reqTxMa
 					if addr.String() == from {
 						allUtxo[op] = modules.NewUtxo(output, pay.LockTime, time.Now().Unix())
 					}
+					if tx.ReqHash != tx.TxHash {
+						reqTxMapping[tx.ReqHash] = tx.TxHash
+					}
 
 				}
 				for _, input := range pay.Inputs {
