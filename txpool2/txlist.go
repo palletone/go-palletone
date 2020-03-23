@@ -21,7 +21,6 @@ import (
 	"fmt"
 
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/txspool"
 )
@@ -34,12 +33,12 @@ type linkTx struct {
 	Number   int
 }
 
-//维护了一个有序的Tx DAG
+//维护了一个有序的Tx DAG,所有能够被打包的Tx才会进入这个对象
 type txList struct {
 	txs         map[common.Hash]*linkTx
 	linkTxRoots map[common.Hash]*linkTx
 	newUtxo     map[modules.OutPoint]*modules.Utxo
-	spendUtxo   map[modules.OutPoint]bool
+	spendUtxo   map[modules.OutPoint]common.Hash
 	reqTxMap    map[common.Hash]common.Hash // RequestHash:FullTxHash
 }
 
@@ -48,7 +47,7 @@ func newTxList() *txList {
 		txs:         make(map[common.Hash]*linkTx),
 		linkTxRoots: make(map[common.Hash]*linkTx),
 		newUtxo:     make(map[modules.OutPoint]*modules.Utxo),
-		spendUtxo:   make(map[modules.OutPoint]bool),
+		spendUtxo:   make(map[modules.OutPoint]common.Hash),
 		reqTxMap:    make(map[common.Hash]common.Hash),
 	}
 }
@@ -58,6 +57,7 @@ func (l *txList) Count() int {
 
 //插入一个Tx,只支持系统合约Request，FullTx，不支持UserContractRequest
 func (l *txList) AddTx(tx *txspool.TxPoolTransaction) error {
+	//log.Debugf("add normal tx[%s]",tx.TxHash.String())
 	//如果是用户合约FullTx，先检查Request是否存在，存在则替换
 	if tx.IsUserContractFullTx {
 		l.reqTxMap[tx.ReqHash] = tx.TxHash
@@ -93,7 +93,7 @@ func (l *txList) AddTx(tx *txspool.TxPoolTransaction) error {
 	}
 	//更新new UTXO好Spend
 	for _, o := range tx.Tx.GetSpendOutpoints() {
-		l.spendUtxo[*o] = true
+		l.spendUtxo[*o] = tx.TxHash
 	}
 	for op, utxo := range tx.Tx.GetNewTxUtxoAndReqUtxos() {
 		l.newUtxo[op] = utxo
@@ -214,7 +214,6 @@ func deleteSliceItem(array []*linkTx, tx *linkTx) []*linkTx {
 var nodeHashAll map[common.Hash]bool
 
 func (l *txList) GetSortedTxs() ([]*txspool.TxPoolTransaction, error) {
-	log.Debug("start GetSortedTxs...")
 	nodeHashAll = make(map[common.Hash]bool)
 	roots := []*linkTx{}
 	for _, tx := range l.linkTxRoots {

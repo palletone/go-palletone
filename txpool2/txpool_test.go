@@ -330,3 +330,58 @@ func TestReal(t *testing.T) {
 	t.Log(tx.RequestHash().String())
 	t.Log(tx.Hash().String())
 }
+
+//先添加用户合约Request，然后是连续交易的转账，然后又是用户合约Request
+func TestTxPool_AddUserContractAndTransferTx(t *testing.T) {
+	addr, _ := common.StringToAddress("P1HXNZReTByQHgWQNGMXotMyTkMG9XeEQfX")
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mdag := mock.NewMockIDag(mockCtrl)
+	mdag.EXPECT().GetUtxoEntry(gomock.Any()).DoAndReturn(
+		func(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+			if outpoint.TxHash == Hash("dag") {
+				return &modules.Utxo{Amount: 123}, nil
+			}
+			return nil, ErrNotFound
+		}).AnyTimes()
+	pool := mockTxPool(mdag)
+
+	reqA := mockContractInvokeRequest(Hash("dag"), 0, 0, []byte("user contract"))
+	err := pool.AddLocal(reqA)
+	assert.Nil(t, err)
+	txB := mockPaymentTx(reqA.Hash(), 0, 0)
+	err = pool.AddLocal(txB)
+	assert.Nil(t, err)
+	reqC := mockContractInvokeRequest(txB.Hash(), 0, 0, []byte("user contract"))
+	err = pool.AddLocal(reqC)
+	assert.Nil(t, err)
+	sortedTx, err := pool.GetSortedTxs()
+	assert.Equal(t, 0, len(sortedTx))
+	txs, _ := pool.GetUnpackedTxsByAddr(addr)
+	assert.Equal(t, 3, len(txs))
+	fullTxA := mockContractInvokeFullTx(Hash("dag"), 0, 0, []byte("user contract"))
+	err = pool.AddLocal(fullTxA)
+	assert.Nil(t, err)
+	sortedTx, err = pool.GetSortedTxs()
+	assert.Equal(t, 2, len(sortedTx))
+	txs, _ = pool.GetUnpackedTxsByAddr(addr)
+	assert.Equal(t, 3, len(txs))
+	//第二种情形，ReqA，B，B先完成FullTx
+	log.Debug("-------------------")
+	pool = mockTxPool(mdag)
+	pool.AddLocal(reqA)
+	reqB := mockContractInvokeRequest(reqA.Hash(), 0, 0, []byte("user contract"))
+	pool.AddLocal(reqB)
+	fullTxB := mockContractInvokeFullTx(reqA.Hash(), 0, 0, []byte("user contract"))
+	err = pool.AddLocal(fullTxB)
+	assert.Nil(t, err)
+	sortedTx, _ = pool.GetSortedTxs()
+	assert.Equal(t, 0, len(sortedTx))
+	txs, _ = pool.GetUnpackedTxsByAddr(addr)
+	assert.Equal(t, 2, len(txs))
+	pool.AddLocal(fullTxA)
+	sortedTx, err = pool.GetSortedTxs()
+	assert.Equal(t, 2, len(sortedTx))
+	txs, _ = pool.GetUnpackedTxsByAddr(addr)
+	assert.Equal(t, 2, len(txs))
+}
