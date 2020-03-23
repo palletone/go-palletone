@@ -630,7 +630,10 @@ func (d *Dag) initDataForPartition(partition *modules.PartitionChain) {
 	if !exist {
 		log.Debugf("Init partition[%s] genesis header:%s",
 			pHeader.ChainIndex().AssetID.String(), pHeader.Hash().String())
-		d.stableUnitRep.SaveNewestHeader(pHeader)
+		err := d.stableUnitRep.InitNewestHeader(pHeader)
+		if err != nil {
+			log.Warn(err.Error())
+		}
 	}
 }
 
@@ -641,7 +644,10 @@ func (d *Dag) initDataForMainChainHeader(mainChain *modules.MainChain) {
 	if !exist {
 		log.Debugf("Init main chain[%s] genesis header:%s",
 			pHeader.ChainIndex().AssetID.String(), pHeader.Hash().String())
-		d.stableUnitRep.SaveNewestHeader(pHeader)
+		err := d.stableUnitRep.InitNewestHeader(pHeader)
+		if err != nil {
+			log.Warn(err.Error())
+		}
 	}
 }
 
@@ -1265,6 +1271,7 @@ func (d *Dag) GetFileInfo(filehash []byte) ([]*modules.ProofOfExistencesInfo, er
 func (d *Dag) GetProofOfExistencesByMaindata(maindata []byte) ([]*modules.ProofOfExistencesInfo, error) {
 	return d.unstableUnitRep.GetProofOfExistencesByMaindata(maindata)
 }
+
 // Light Palletone Subprotocal
 func (d *Dag) GetLightHeaderByHash(headerHash common.Hash) (*modules.Header, error) {
 	return nil, nil
@@ -1304,7 +1311,7 @@ func (d *Dag) GetAllLeafNodes() ([]*modules.Header, error) {
 			unit := pMemdag.GetLastMainChainUnit()
 			leafs = append(leafs, unit.UnitHeader)
 		} else {
-			log.Warnf("Token[%s] is a patition, but not in dag.PartitionMemDag", tokenId.String())
+			log.Warnf("Token[%s] is a partition, but not in dag.PartitionMemDag", tokenId.String())
 		}
 	}
 	return leafs, nil
