@@ -7,7 +7,11 @@ TxPool是个单例模式，在其中缓存了正常交易和孤儿交易。
 #### 正常交易池
 里面是有序的Tx，是一个队列和一个堆，所有交易要进入则必须排序。在打包时也是从链表中依次获得Tx。
 #### 孤儿交易池
-是一个堆。
+是一个堆。从DAG和TxPool初OrhpanPool外的其他池查找UTXO，如果找不到，则认为是一个孤儿Tx。
+#### 用户合约请求池
+对用户合约的请求，只支持Request ，不支持FullTx，如果FullTx到来，那么Request会从该池删除，并将FullTx添加到Normal池。
+#### 依赖了用户合约请求的交易池
+如果一个用户合约请求ReqA添加到了交易池，然后TxB依赖于ReqA，那么在FullTxA还没有到达交易池之前，TxB就存储在这个池
 ### Tx进入交易池的逻辑
 AddLocal是添加Tx到交易池的主要函数。Tx在进入交易池后会被封装成TxPoolTx，在其中缓存了：Fee、Status等字段。
 1. 调用Validator检查Tx的状态，如果非法，抛弃；如果是孤儿，直接进入孤儿池。
@@ -37,3 +41,7 @@ TxPool有定时清理任务，会将状态标记为Discard的，从物理上进�
 ### 关于Request和FullTx
 Txpool同时支持Request和FullTx的Add，对于用户合约调用，先是将Request添加到交易池，Jury根据Request产生Tx，Tx再次添加到Pool时，原来对于的Request应该被替换。
 按理来说系统合约的FullTx不会进入交易池，只有Request进入交易池。
+
+### 更新交易状态为已打包
+如果有ABCDE连续交易，本节点只收到了BCE，现在来了一个Unit包含AB交易，那么在更新状态时，
+应该把BC从孤儿池删除，ABC交易放入Normal，然后更新状态Packed，E保持不变。
