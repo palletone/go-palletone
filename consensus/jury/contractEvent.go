@@ -28,7 +28,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/validator"
-	"github.com/palletone/go-palletone/dag/dboperation"
 )
 
 func (p *Processor) SubscribeContractEvent(ch chan<- ContractEvent) event.Subscription {
@@ -175,92 +174,6 @@ func (p *Processor) contractEleEvent(tx *modules.Transaction) error {
 		go p.ptn.ElectionBroadcast(ElectionEvent{EType: ELECTION_EVENT_VRF_REQUEST, Event: reqEvent}, true) //todo true
 	}
 	return nil
-}
-
-//处理TxMsg中的Tx
-//install:接收请求交易，由commit事件进行处理
-//deploy:接收请求交易，需要进行election
-//invoke:执行请求交易，异步执行，将结果记录到rst
-//stop:执行请求交易，异步执行，将结果记录rst ???
-func (p *Processor) contractTxExec(tx *modules.Transaction, rw rwset.TxManager, dag dboperation.IContractDag, ele *modules.ElectionNode) (*modules.Transaction, error) {
-	if tx == nil {
-		return nil, errors.New("contractTxExec, tx is nil")
-	}
-	reqId := tx.RequestHash()
-	p.locker.Lock()
-	if p.mtx[reqId] == nil {
-		p.mtx[reqId] = &contractTx{
-			rstTx:  nil,
-			tm:     time.Now(),
-			valid:  true,
-			adaInf: make(map[uint32]*AdapterInf),
-		}
-	} else {
-		if p.mtx[reqId].reqRcvEd {
-			p.locker.Unlock()
-			return nil, nil
-		}
-	}
-	p.mtx[reqId].reqTx = tx.GetRequestTx()
-	p.mtx[reqId].eleNode = ele
-	p.mtx[reqId].reqRcvEd = true
-
-	mtx := p.mtx[reqId]
-	//关闭mel
-	if e, ok := p.mel[reqId]; ok {
-		e.invalid = true
-	}
-	p.locker.Unlock()
-
-	log.Debugf("[%s]contractTxExec, add tx reqId:%s", reqId.ShortStr(), reqId.String())
-	if tx.GetContractTxType() != modules.APP_CONTRACT_INVOKE_REQUEST {
-		return tx, nil
-	}
-
-	//if !tx.IsSystemContract() { //系统合约在UNIT构建前执行
-	//	go p.runContractReq(reqId, ele, rwset.RwM, p.dag)
-	//}
-
-	account := p.getLocalJuryAccount()
-	if account == nil {
-		return nil, fmt.Errorf("[%s]contractTxExec, getLocalJuryAccount is nil", reqId.ShortStr())
-	}
-	sigTx, err := p.RunAndSignTx(tx, rw, dag, account.Address) //long time ...
-	if err != nil {
-		log.Errorf("[%s]contractTxExec, RunAndSignTx err:%s", reqId.ShortStr(), err.Error())
-		return nil, err
-	}
-
-	mtx.sigTx = sigTx
-	if len(mtx.rcvTx) > 0 {
-		for _, rtx := range mtx.rcvTx {
-			ok, err := checkAndAddTxSigMsgData(mtx.sigTx, rtx)
-			if err != nil {
-				log.Debugf("[%s]contractTxExec, checkAndAddTxSigMsgData error:%s", reqId.ShortStr(), err.Error())
-			} else if ok {
-				log.Debugf("[%s]contractTxExec, checkAndAddTxSigMsgData ok, tx[%s]", reqId.ShortStr(), rtx.Hash().String())
-			} else {
-				log.Debugf("[%s]contractTxExec, checkAndAddTxSigMsgData fail", reqId.ShortStr())
-			}
-		}
-	}
-
-	sigNum := getTxSigNum(mtx.sigTx)
-	cfgSigNum := getSysCfgContractSignatureNum(p.dag)
-	log.Debugf("[%s]contractTxExec sigNum %d, p.contractSigNum %d", reqId.ShortStr(), sigNum, cfgSigNum)
-	if sigNum >= cfgSigNum {
-		if localIsMinSignature(mtx.sigTx) {
-			//签名数量足够，而且当前节点是签名最新的节点，那么合并签名并广播完整交易
-			log.Infof("[%s]contractTxExec, localIsMinSignature Ok!", reqId.ShortStr())
-			p.processContractPayout(mtx.sigTx, ele)
-			go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_COMMIT, Ele: ele, Tx: mtx.sigTx}, true)
-			return sigTx, nil
-		}
-	}
-	//广播
-	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_SIG, Ele: ele, Tx: sigTx}, false)
-
-	return sigTx, nil
 }
 
 func (p *Processor) contractExecEvent(tx *modules.Transaction, ele *modules.ElectionNode) (broadcast bool, err error) {
