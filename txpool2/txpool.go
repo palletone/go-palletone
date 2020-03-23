@@ -69,7 +69,7 @@ func NewTxPool(config txspool.TxPoolConfig, cachedb palletcache.ICache, unit txs
 func NewTxPool4DI(config txspool.TxPoolConfig, cachedb palletcache.ICache, dag txspool.IDag,
 	tokenEngine tokenengine.ITokenEngine, txValidator txspool.IValidator) *TxPool {
 	return &TxPool{
-		normals:               newTxList(),
+		normals:               NewTxList(),
 		orphans:               make(map[common.Hash]*txspool.TxPoolTransaction),
 		basedOnRequestOrphans: make(map[common.Hash]*txspool.TxPoolTransaction),
 		userContractRequests:  make(map[common.Hash]*txspool.TxPoolTransaction),

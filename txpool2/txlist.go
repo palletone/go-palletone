@@ -42,7 +42,12 @@ type txList struct {
 	reqTxMap    map[common.Hash]common.Hash // RequestHash:FullTxHash
 }
 
-func newTxList() *txList {
+// for test
+type TxListForTest struct {
+	TxList *txList
+}
+
+func NewTxList() *txList {
 	return &txList{
 		txs:         make(map[common.Hash]*linkTx),
 		linkTxRoots: make(map[common.Hash]*linkTx),

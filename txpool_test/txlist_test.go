@@ -15,7 +15,7 @@
  *  @date 2018-2020
  */
 
-package txpool2
+package txpool_test
 
 import (
 	"regexp"
@@ -26,12 +26,13 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/tokenengine"
+	tp2 "github.com/palletone/go-palletone/txpool2"
 	"github.com/palletone/go-palletone/txspool"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestTxList_GetSortTxs(t *testing.T) {
-	txlist := NewTxList()
+	txlist := tp2.NewTxList()
 	txlist.AddTx(mockTxpoolTx(nil, Hash("A")))
 	txlist.AddTx(mockTxpoolTx([]common.Hash{Hash("A")}, Hash("B")))
 	txlist.AddTx(mockTxpoolTx([]common.Hash{Hash("B")}, Hash("C")))
@@ -73,7 +74,7 @@ func mockTxpoolTx(parentTxHash []common.Hash, txHash common.Hash) *txspool.TxPoo
 }
 
 func TestTxList_GetAllTxs(t *testing.T) {
-	txlist := NewTxList()
+	txlist := tp2.NewTxList()
 	txlist.AddTx(mockTxpoolTx(nil, Hash("A")))
 	txlist.AddTx(mockTxpoolTx([]common.Hash{Hash("A")}, Hash("B")))
 	txlist.AddTx(mockTxpoolTx([]common.Hash{Hash("B")}, Hash("C")))
@@ -86,7 +87,7 @@ func TestTxList_GetAllTxs(t *testing.T) {
 }
 
 func TestTxList_GetSortTxs_Long(t *testing.T) {
-	txlist := NewTxList()
+	txlist := tp2.NewTxList()
 	tx := mockTxpoolTx(nil, Hash("A"))
 	txlist.AddTx(tx)
 	result := "A;"
@@ -107,8 +108,8 @@ func TestTxList_GetSortTxs_Long(t *testing.T) {
 }
 func TestTxList_DiscardTxs(t *testing.T) {
 	txlist := initTxlist()
-	txlist.DiscardTx(Hash("A"))
-	txlist.DiscardTx(Hash("B"))
+	txlist.TxList.DiscardTx(Hash("A"))
+	txlist.TxList.DiscardTx(Hash("B"))
 	result := printTxList(txlist)
 	t.Log(result)
 	match, _ := regexp.MatchString("A.*B.*", result)
@@ -121,8 +122,8 @@ func TestTxList_DiscardTxs(t *testing.T) {
 	assert.True(t, match)
 }
 
-func initTxlist() *txList {
-	txlist := NewTxList()
+func initTxlist() *tp2.TxListForTest {
+	txlist := tp2.NewTxList()
 	txlist.AddTx(mockTxpoolTx(nil, Hash("A")))
 	txlist.AddTx(mockTxpoolTx([]common.Hash{Hash("A")}, Hash("B")))
 	txlist.AddTx(mockTxpoolTx([]common.Hash{Hash("B")}, Hash("C")))
@@ -133,11 +134,11 @@ func initTxlist() *txList {
 	txlist.AddTx(mockTxpoolTx([]common.Hash{Hash("X")}, Hash("Y3")))
 	txlist.AddTx(mockTxpoolTx([]common.Hash{Hash("Y1")}, Hash("Z1")))
 	txlist.AddTx(mockTxpoolTx([]common.Hash{Hash("Y2"), Hash("Y3")}, Hash("Z2")))
-	return txlist
+	return &tp2.TxListForTest{TxList: txlist}
 }
-func printTxList(txlist *txList) string {
+func printTxList(txlist *tp2.TxListForTest) string {
 	sortedTx := ""
-	list, _ := txlist.GetSortedTxs()
+	list, _ := txlist.TxList.GetSortedTxs()
 	for _, tx := range list {
 		sortedTx += string(tx.TxHash[:]) + ";"
 	}
@@ -145,11 +146,11 @@ func printTxList(txlist *txList) string {
 }
 func TestTxList_GetUnpackedTxs(t *testing.T) {
 	txlist := initTxlist()
-	txlist.DiscardTx(Hash("A"))
-	txlist.DiscardTx(Hash("X"))
-	txlist.UpdateTxStatusPacked(Hash("B"), Hash("U1"), 123)
-	txlist.UpdateTxStatusPacked(Hash("C"), Hash("U1"), 123)
-	result, err := txlist.GetTxsByStatus(txspool.TxPoolTxStatus_Unpacked)
+	txlist.TxList.DiscardTx(Hash("A"))
+	txlist.TxList.DiscardTx(Hash("X"))
+	txlist.TxList.UpdateTxStatusPacked(Hash("B"), Hash("U1"), 123)
+	txlist.TxList.UpdateTxStatusPacked(Hash("C"), Hash("U1"), 123)
+	result, err := txlist.TxList.GetTxsByStatus(txspool.TxPoolTxStatus_Unpacked)
 	assert.Nil(t, err)
 	txStr := ""
 	for _, tx := range result {
@@ -163,7 +164,7 @@ func TestTxList_GetUtxoEntry(t *testing.T) {
 	txA := mockPaymentTx(Hash("0"), 0, 0)
 	txB := mockPaymentTx(txA.Hash(), 0, 0)
 	//txC:=mockPaymentTx(txB.Hash(),0,0)
-	txlist := NewTxList()
+	txlist := tp2.NewTxList()
 	txlist.AddTx(Tx2PoolTx(txA))
 	for o := range txA.GetNewUtxos() {
 		_, err := txlist.GetUtxoEntry(&o)
@@ -227,10 +228,10 @@ func mockContractInvokeFullTx(preTxHash common.Hash, msgIdx, outIdx uint32, cont
 
 func TestTxList_GetTx(t *testing.T) {
 	txlist := initTxlist()
-	txA, err := txlist.GetTx(Hash("A"))
+	txA, err := txlist.TxList.GetTx(Hash("A"))
 	assert.Nil(t, err)
 	assert.Equal(t, txA.TxHash, Hash("A"))
-	txM, err := txlist.GetTx(Hash("M"))
+	txM, err := txlist.TxList.GetTx(Hash("M"))
 	assert.Nil(t, txM)
 	assert.NotNil(t, err)
 }

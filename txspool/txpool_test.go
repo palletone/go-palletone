@@ -31,7 +31,6 @@ import (
 	"github.com/coocood/freecache"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	palletdb "github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/core"
@@ -57,32 +56,6 @@ type UnitDag4Test struct {
 	gasLimit      uint64
 	chainHeadFeed *event.Feed
 	outpoints     map[string]map[modules.OutPoint]*modules.Utxo
-}
-
-// NewTxPool4Test return TxPool structure for testing.
-//func NewTxPool4Test() *TxPool {
-//	//l := log.NewTestLog()
-//	testDag := NewUnitDag4Test()
-//	//validat:=&validator.ValidatorAllPass{}
-//	return NewTxPool(testTxPoolConfig,
-//		freecache.NewCache(1*1024*1024),
-//		testDag, tokenengine.Instance)
-//}
-
-func NewUnitDag4Test() *UnitDag4Test {
-	db, _ := palletdb.NewMemDatabase()
-	utxodb := storage.NewUtxoDb(db, tokenengine.Instance, false)
-
-	propdb := storage.NewPropertyDb(db)
-	hash := common.HexToHash("0x0e7e7e3bd7c1e9ce440089712d61de38f925eb039f152ae03c6688ed714af729")
-	b := []byte("hello")
-	h := modules.NewHeader([]common.Hash{hash}, common.Hash{}, b, b, b, b, []uint16{},
-		modules.PTNCOIN, 0, int64(1598766666))
-	propdb.SetNewestUnit(h)
-	mutex := new(sync.RWMutex)
-
-	ud := &UnitDag4Test{db, utxodb, *mutex, nil, 10000, new(event.Feed), make(map[string]map[modules.OutPoint]*modules.Utxo)}
-	return ud
 }
 
 func (ud *UnitDag4Test) CurrentUnit(token modules.AssetId) *modules.Unit {
@@ -238,248 +211,7 @@ func (ud *UnitDag4Test) IsContractDeveloper(addr common.Address) bool {
 	return true
 }
 
-// create txs
-func createTxs() []*modules.Transaction {
-	txs := make([]*modules.Transaction, 0)
-	hash0 := common.BytesToHash([]byte("0"))
-	hash1 := common.BytesToHash([]byte("1"))
-	txA := newTestPaymentTx(hash0)
-	txB := newTestPaymentTx(txA.Hash())
-	txC := newTestPaymentTx(txB.Hash())
-	txD := newTestPaymentTx(txC.Hash())
-	txX := newTestPaymentTx(hash1)
-	txY := newTestPaymentTx(txX.Hash())
-	txs = append(txs, txA, txB, txC, txD, txX, txY)
-
-	return txs
-}
-func mockPtnUtxos() map[*modules.OutPoint]*modules.Utxo {
-	result := map[*modules.OutPoint]*modules.Utxo{}
-	p1 := modules.NewOutPoint(common.NewSelfHash(), 0, 0)
-	asset1 := &modules.Asset{AssetId: modules.PTNCOIN}
-	utxo1 := &modules.Utxo{Asset: asset1, Amount: 100, LockTime: 0}
-	utxo2 := &modules.Utxo{Asset: asset1, Amount: 200, LockTime: 0}
-
-	result[p1] = utxo1
-	p2 := modules.NewOutPoint(common.NewSelfHash(), 1, 0)
-	result[p2] = utxo2
-
-	p3 := modules.NewOutPoint(common.BytesToHash([]byte("0")), 0, 0)
-	t := time.Now().AddDate(0, 0, -1).Unix()
-	utxo3 := &modules.Utxo{Amount: Ptn2Dao(10), Timestamp: uint64(t), Asset: modules.NewPTNAsset()}
-	result[p3] = utxo3
-	return result
-}
-
-// Tests that if the transaction count belonging to multiple accounts go above
-// some hard threshold, if they are under the minimum guaranteed slot count then
-// the transactions are still kept.
-func TestTransactionAddingTxs(t *testing.T) {
-	t0 := time.Now()
-	fmt.Println("TestTransactionAddingTxs start.... ", t0)
-	t.Parallel()
-
-	// Create the pool to test the limit enforcement with
-	db, _ := palletdb.NewMemDatabase()
-	utxodb := storage.NewUtxoDb(db, tokenengine.Instance, false)
-	mutex := new(sync.RWMutex)
-	unitchain := &UnitDag4Test{db, utxodb, *mutex, nil, 10000, new(event.Feed), nil}
-	config := DefaultTxPoolConfig
-	config.GlobalSlots = 4096
-	config.NoLocals = true
-
-	utxos := mockPtnUtxos()
-	for outpoint, utxo := range utxos {
-		utxodb.SaveUtxoEntity(outpoint, utxo)
-	}
-	pool := NewTxPool4DI(config, freecache.NewCache(1*1024*1024), unitchain,
-		tokenengine.Instance, &validator.ValidatorAllPass{})
-	defer pool.Stop()
-	pool.startJournal(config)
-	var pending_cache, queue_cache, all, origin int
-	txs := createTxs()
-	origin = len(txs)
-	pool_tx := new(TxPoolTransaction)
-
-	for i, tx := range txs {
-		p_tx := TxtoTxpoolTx(tx)
-		if i == len(txs)-1 {
-			pool_tx = p_tx
-		}
-	}
-	pool.AddLocals(txs)
-	pendingTxs, _ := pool.pending()
-	pending := 0
-	p_txs := make([]*TxPoolTransaction, 0)
-	for _, txs := range pendingTxs {
-		for _, tx := range txs {
-			pending++
-			p_txs = append(p_txs, tx)
-		}
-	}
-	assert.Equal(t, 0, 0)
-	fmt.Println("addlocals over.... ", time.Now().Unix()-t0.Unix())
-	//  test GetSortedTxs{}
-	//unit_hash := common.HexToHash("0x0e7e7e3bd7c1e9ce440089712d61de38f925eb039f152ae03c6688ed714af729")
-	defer func(p *TxPool) {
-		sortedtxs, _ := p.GetSortedTxs()
-		total := 0
-		for _, tx := range sortedtxs {
-			total += tx.Tx.SerializeSize()
-		}
-		log.Debugf(" total size is :%v ,the cout:%d ", total, len(txs))
-
-		all = len(sortedtxs)
-		for i := 0; i < all-1; i++ {
-			txpl := sortedtxs[i].Priority_lvl
-			if txpl < sortedtxs[i+1].Priority_lvl {
-				t.Error("sorted failed.", i, txpl)
-			}
-		}
-
-		poolTxs := pool.AllTxpoolTxs()
-		for _, tx := range poolTxs {
-			if tx.Pending {
-				pending_cache++ //4
-			} else {
-				queue_cache++ // 2
-			}
-		}
-		//  add tx : failed , and discared the tx.
-		err := p.addTx(pool_tx, !pool.config.NoLocals)
-		assert.NotNil(t, err)
-		err1 := p.DeleteTxByHash(pool_tx.Tx.Hash())
-		if err1 != nil {
-			log.Debug("DeleteTxByHash failed ", "error", err1)
-		}
-		err2 := p.addTx(pool_tx, !pool.config.NoLocals)
-		if err2 == nil {
-			log.Debug("addtx again info success")
-		} else {
-			log.Error("test added tx failed.", "error", err2)
-		}
-		log.Debugf("data:%d,%d,%d,%d,%d", origin, all, pool.AllLength(), pending_cache, queue_cache)
-	}(pool)
-}
-
-func TestUtxoViewPoint(t *testing.T) {
-	view := NewUtxoViewpoint()
-	outpoint := new(modules.OutPoint)
-	utxo := new(modules.Utxo)
-	outpoint.MessageIndex = 1
-	outpoint.OutIndex = 2
-	view.entries[*outpoint] = utxo
-	utxo.Amount = 9999
-	utxo.Spend()
-	fmt.Println("enteris modified", outpoint, view.entries[*outpoint])
-	if view.entries[*outpoint].Amount != 9999 {
-		t.Error("failed", view.entries)
-	}
-	delete(view.entries, *outpoint)
-}
-
-func TestPriorityHeap(t *testing.T) {
-	txs := createTxs()
-	p_txs := make([]*TxPoolTransaction, 0)
-	list := new(priorityHeap)
-	for _, tx := range txs {
-		priority := rand.Float64()
-		str := strconv.FormatFloat(priority, 'f', -1, 64)
-		ptx := &TxPoolTransaction{Tx: tx, Priority_lvl: str}
-		p_txs = append(p_txs, ptx)
-		list.Push(ptx)
-	}
-	count := 0
-	biger := new(TxPoolTransaction)
-	bad := new(TxPoolTransaction)
-	for list.Len() > 0 {
-		inter := list.Pop()
-		if inter != nil {
-			ptx, ok := inter.(*TxPoolTransaction)
-			if ok {
-				if count == 0 {
-					biger.Priority_lvl = ptx.Priority_lvl
-				}
-				if count > 1 {
-					bp, _ := strconv.ParseFloat(biger.Priority_lvl, 64)
-					pp, _ := strconv.ParseFloat(ptx.Priority_lvl, 64)
-					if bp < pp {
-						biger = ptx
-						t.Fatal(fmt.Sprintf("sort.Sort.priorityHeap is failed.biger:  %s ,ptx: %s  , index: %d ", biger.Priority_lvl, ptx.Priority_lvl, ptx.Index))
-					} else {
-						bad = ptx
-					}
-				}
-				count++
-
-			}
-		} else {
-			log.Debug("pop error: the interTx is nil ", "count", count)
-			break
-		}
-	}
-	log.Debug("all pop end. ", "count", count)
-	log.Debug("best priority  tx: ", "info", biger)
-	log.Debug("bad priority  tx: ", "info", bad)
-}
-func TestGetProscerTx(t *testing.T) {
-	db, _ := palletdb.NewMemDatabase()
-	utxodb := storage.NewUtxoDb(db, tokenengine.Instance, false)
-	mutex := new(sync.RWMutex)
-	unitchain := &UnitDag4Test{db, utxodb, *mutex, nil, 10000, new(event.Feed), nil}
-	config := DefaultTxPoolConfig
-	config.GlobalSlots = 4096
-	config.NoLocals = true
-
-	utxos := mockPtnUtxos1()
-	for outpoint, utxo := range utxos {
-		utxodb.SaveUtxoEntity(outpoint, utxo)
-	}
-	pool := NewTxPool4DI(config, freecache.NewCache(1*1024*1024), unitchain,
-		tokenengine.Instance, &validator.ValidatorAllPass{})
-	defer pool.Stop()
-	pool.startJournal(config)
-
-	hash0 := common.BytesToHash([]byte("0"))
-	txA := newTestPaymentTx(hash0)
-	t.Logf("Tx A:%s", txA.Hash().String())
-	txB := newCcInvokeRequest(txA.Hash())
-	t.Logf("Tx B:%s", txB.Hash().String())
-	txC := newCcInvokeFullTx(txB.Hash())
-	t.Logf("Tx C:%s", txC.Hash().String())
-	t.Logf("Tx C req:%s", txC.RequestHash().String())
-
-	data, _ := json.Marshal(txC)
-	t.Logf("Tx hash:%s,  C:%s, ", txC.Hash().String(), string(data))
-
-	txD := newTestPaymentTx(txC.RequestHash()) //交易D是基于TxC在Request的时候的UTXO产生的
-	t.Logf("Tx D:%s", txD.Hash().String())
-	data1, _ := json.Marshal(txD)
-	t.Logf("Tx hash:%s,  D:%s, ", txD.Hash().String(), string(data1))
-
-	txs := make([]*modules.Transaction, 0)
-	txs = append(txs, txD, txB, txA, txC)
-	errs := pool.AddLocals(txs)
-	for _, err := range errs {
-		t.Logf("addLocals error:%s", err.Error())
-	}
-	defer func(p *TxPool) {
-
-		count := p.Count()
-		assert.Equal(t, 4, count)
-		sortedTxs, _ := pool.GetSortedTxs()
-		for index, tx := range sortedTxs {
-			t.Logf("index:%d, hash:%s", index, tx.Tx.Hash().String())
-		}
-		if len(sortedTxs) == 4 {
-			assert.Equal(t, txA.Hash().String(), sortedTxs[0].Tx.Hash().String())
-			assert.Equal(t, txB.Hash().String(), sortedTxs[1].Tx.Hash().String())
-			assert.Equal(t, txC.Hash().String(), sortedTxs[2].Tx.Hash().String())
-			assert.Equal(t, txD.Hash().String(), sortedTxs[3].Tx.Hash().String())
-		}
-	}(pool)
-}
-
+// build test case.
 func newTestPaymentTx(preTxHash common.Hash) *modules.Transaction {
 	pay1s := &modules.PaymentPayload{
 		LockTime: 0,
@@ -536,4 +268,218 @@ func mockPtnUtxos1() map[*modules.OutPoint]*modules.Utxo {
 	utxo := &modules.Utxo{Amount: Ptn2Dao(10), Timestamp: uint64(t), Asset: modules.NewPTNAsset()}
 	result[p] = utxo
 	return result
+}
+
+// create txs
+func createTxs() []*modules.Transaction {
+	txs := make([]*modules.Transaction, 0)
+	hash0 := common.BytesToHash([]byte("0"))
+	hash1 := common.BytesToHash([]byte("1"))
+	txA := newTestPaymentTx(hash0)
+	txB := newTestPaymentTx(txA.Hash())
+	txC := newTestPaymentTx(txB.Hash())
+	txD := newTestPaymentTx(txC.Hash())
+	txX := newTestPaymentTx(hash1)
+	txY := newTestPaymentTx(txX.Hash())
+	txs = append(txs, txA, txB, txC, txD, txX, txY)
+
+	return txs
+}
+func mockPtnUtxos() map[*modules.OutPoint]*modules.Utxo {
+	result := map[*modules.OutPoint]*modules.Utxo{}
+	p1 := modules.NewOutPoint(common.NewSelfHash(), 0, 0)
+	asset1 := &modules.Asset{AssetId: modules.PTNCOIN}
+	utxo1 := &modules.Utxo{Asset: asset1, Amount: 100, LockTime: 0}
+	utxo2 := &modules.Utxo{Asset: asset1, Amount: 200, LockTime: 0}
+
+	result[p1] = utxo1
+	p2 := modules.NewOutPoint(common.NewSelfHash(), 1, 0)
+	result[p2] = utxo2
+
+	p3 := modules.NewOutPoint(common.BytesToHash([]byte("0")), 0, 0)
+	t := time.Now().AddDate(0, 0, -1).Unix()
+	utxo3 := &modules.Utxo{Amount: Ptn2Dao(10), Timestamp: uint64(t), Asset: modules.NewPTNAsset()}
+	result[p3] = utxo3
+	return result
+}
+
+// Tests that if the transaction count belonging to multiple accounts go above
+// some hard threshold, if they are under the minimum guaranteed slot count then
+// the transactions are still kept.
+func TestTransactionAddingTxs(t *testing.T) {
+	t.Parallel()
+
+	// Create the pool to test the limit enforcement with
+	db, _ := palletdb.NewMemDatabase()
+	utxodb := storage.NewUtxoDb(db, tokenengine.Instance, false)
+	mutex := new(sync.RWMutex)
+	unitchain := &UnitDag4Test{db, utxodb, *mutex, nil, 10000, new(event.Feed), nil}
+	config := DefaultTxPoolConfig
+	config.GlobalSlots = 4096
+	config.NoLocals = true
+
+	utxos := mockPtnUtxos()
+	for outpoint, utxo := range utxos {
+		utxodb.SaveUtxoEntity(outpoint, utxo)
+	}
+	pool := NewTxPool4DI(config, freecache.NewCache(1*1024*1024), unitchain,
+		tokenengine.Instance, &validator.ValidatorAllPass{})
+	defer pool.Stop()
+	pool.startJournal(config)
+	var pending_cache, queue_cache, all, origin int
+	txs := createTxs()
+	origin = len(txs)
+	pool_tx := new(TxPoolTransaction)
+
+	for i, tx := range txs {
+		p_tx := TxtoTxpoolTx(tx)
+		if i == len(txs)-1 {
+			pool_tx = p_tx
+		}
+	}
+	pool.AddLocals(txs)
+	pendingTxs, _ := pool.pending()
+	pending := 0
+	p_txs := make([]*TxPoolTransaction, 0)
+	for _, txs := range pendingTxs {
+		for _, tx := range txs {
+			pending++
+			p_txs = append(p_txs, tx)
+		}
+	}
+	assert.Equal(t, 0, 0)
+	//  test GetSortedTxs{}
+	defer func(p *TxPool) {
+		sortedtxs, _ := p.GetSortedTxs()
+		total := 0
+		for _, tx := range sortedtxs {
+			total += tx.Tx.SerializeSize()
+		}
+
+		all = len(sortedtxs)
+		for i := 0; i < all-1; i++ {
+			txpl := sortedtxs[i].Priority_lvl
+			if txpl < sortedtxs[i+1].Priority_lvl {
+				t.Error("sorted failed.", i, txpl)
+			}
+		}
+
+		poolTxs := pool.AllTxpoolTxs()
+		for _, tx := range poolTxs {
+			if tx.Pending {
+				pending_cache++ //4
+			} else {
+				queue_cache++ // 2
+			}
+		}
+		//  add tx : failed , and discared the tx.
+		err := p.addTx(pool_tx, !pool.config.NoLocals)
+		assert.NotNil(t, err)
+		err1 := p.DeleteTxByHash(pool_tx.Tx.Hash())
+		if err1 != nil {
+			t.Error("DeleteTxByHash failed ", "error", err1)
+		}
+		err2 := p.addTx(pool_tx, !pool.config.NoLocals)
+		if err2 == nil {
+			t.Log("addtx again info success")
+		} else {
+			t.Error("test added tx failed.", "error", err2)
+		}
+		t.Logf("data:%d,%d,%d,%d,%d", origin, all, pool.AllLength(), pending_cache, queue_cache)
+	}(pool)
+}
+
+func TestPriorityHeap(t *testing.T) {
+	txs := createTxs()
+	p_txs := make([]*TxPoolTransaction, 0)
+	list := new(priorityHeap)
+	for _, tx := range txs {
+		priority := rand.Float64()
+		str := strconv.FormatFloat(priority, 'f', -1, 64)
+		ptx := &TxPoolTransaction{Tx: tx, Priority_lvl: str}
+		p_txs = append(p_txs, ptx)
+		list.Push(ptx)
+	}
+	count := 0
+	biger := new(TxPoolTransaction)
+	for list.Len() > 0 {
+		inter := list.Pop()
+		if inter != nil {
+			ptx, ok := inter.(*TxPoolTransaction)
+			if ok {
+				if count == 0 {
+					biger.Priority_lvl = ptx.Priority_lvl
+				}
+				if count > 1 {
+					bp, _ := strconv.ParseFloat(biger.Priority_lvl, 64)
+					pp, _ := strconv.ParseFloat(ptx.Priority_lvl, 64)
+					if bp < pp {
+						t.Fatal(fmt.Sprintf("sort.Sort.priorityHeap is failed.biger:  %s ,ptx: %s  , index: %d ", biger.Priority_lvl, ptx.Priority_lvl, ptx.Index))
+					} else {
+						biger = ptx
+					}
+				}
+				count++
+			}
+		} else {
+			t.Log("pop error: the interTx is nil ", "count", count)
+			break
+		}
+	}
+	assert.Equal(t, len(txs), count)
+}
+func TestGetProscerTx(t *testing.T) {
+	db, _ := palletdb.NewMemDatabase()
+	utxodb := storage.NewUtxoDb(db, tokenengine.Instance, false)
+	mutex := new(sync.RWMutex)
+	unitchain := &UnitDag4Test{db, utxodb, *mutex, nil, 10000, new(event.Feed), nil}
+	config := DefaultTxPoolConfig
+	config.GlobalSlots = 4096
+	config.NoLocals = true
+
+	utxos := mockPtnUtxos1()
+	for outpoint, utxo := range utxos {
+		utxodb.SaveUtxoEntity(outpoint, utxo)
+	}
+	pool := NewTxPool4DI(config, freecache.NewCache(1*1024*1024), unitchain,
+		tokenengine.Instance, &validator.ValidatorAllPass{})
+	defer pool.Stop()
+
+	hash0 := common.BytesToHash([]byte("0"))
+	txA := newTestPaymentTx(hash0)
+	t.Logf("Tx A:%s", txA.Hash().String())
+	txB := newCcInvokeRequest(txA.Hash())
+	t.Logf("Tx B:%s", txB.Hash().String())
+	txC := newCcInvokeFullTx(txB.Hash())
+	t.Logf("Tx C:%s", txC.Hash().String())
+	t.Logf("Tx C req:%s", txC.RequestHash().String())
+
+	data, _ := json.Marshal(txC)
+	t.Logf("Tx hash:%s,  C:%s, ", txC.Hash().String(), string(data))
+
+	txD := newTestPaymentTx(txC.RequestHash()) //交易D是基于TxC在Request的时候的UTXO产生的
+	t.Logf("Tx D:%s", txD.Hash().String())
+	data1, _ := json.Marshal(txD)
+	t.Logf("Tx hash:%s,  D:%s, ", txD.Hash().String(), string(data1))
+
+	txs := make([]*modules.Transaction, 0)
+	txs = append(txs, txD, txB, txA, txC)
+	errs := pool.AddLocals(txs)
+	for _, err := range errs {
+		t.Logf("addLocals error:%s", err.Error())
+	}
+	defer func(p *TxPool) {
+		count := p.Count()
+		assert.Equal(t, 4, count)
+		sortedTxs, _ := pool.GetSortedTxs()
+		for index, tx := range sortedTxs {
+			t.Logf("index:%d, hash:%s", index, tx.Tx.Hash().String())
+		}
+		if len(sortedTxs) == 4 {
+			assert.Equal(t, txA.Hash().String(), sortedTxs[0].Tx.Hash().String())
+			assert.Equal(t, txB.Hash().String(), sortedTxs[1].Tx.Hash().String())
+			assert.Equal(t, txC.Hash().String(), sortedTxs[2].Tx.Hash().String())
+			assert.Equal(t, txD.Hash().String(), sortedTxs[3].Tx.Hash().String())
+		}
+	}(pool)
 }

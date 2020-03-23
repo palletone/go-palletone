@@ -181,7 +181,7 @@ func NewTxPool4DI(config TxPoolConfig, cachedb palletcache.ICache, unit IDag,
 	pool.mu = sync.RWMutex{}
 	pool.priority_sorted = newTxPrioritiedList(&pool.all)
 	pool.txValidator = validator
-
+	pool.startJournal(config)
 	return pool
 }
 func (pool *TxPool) startJournal(config TxPoolConfig) {
@@ -565,23 +565,22 @@ func (pool *TxPool) add(tx *TxPoolTransaction, local bool) (bool, error) {
 		return false, fmt.Errorf("know orphanTx: %s", hash.String())
 	}
 	// If the transaction fails basic validation, discard it
-	if addition, code, err := pool.validateTx(tx, local); code == validator.TxValidationCode_ORPHAN {
-		if ok, _ := pool.ValidateOrphanTx(tx.Tx); ok {
-			txOrphanValidPrometheus.Add(1)
-			log.Debug("validated the orphanTx", "hash", hash.String())
-			pool.addOrphan(tx, 0)
-			return true, nil
-		}
-		txInvalidPrometheus.Add(1)
-		log.Trace("Discarding invalid transaction", "hash", hash.String(), "err", err.Error())
-		return false, err
-	} else if code != validator.TxValidationCode_VALID {
-		return false, validator.NewValidateError(code)
-	} else {
+	if addition, code, err := pool.validateTx(tx, local); err == nil && code == validator.TxValidationCode_VALID {
 		if tx.TxFee != nil {
 			tx.TxFee = make([]*modules.Addition, 0)
 		}
 		tx.TxFee = append(tx.TxFee, addition...)
+	} else if code == validator.TxValidationCode_ORPHAN {
+		if ok, err := pool.ValidateOrphanTx(tx.Tx); ok {
+			txOrphanValidPrometheus.Add(1)
+			log.Debug("validated the orphanTx", "hash", hash.String())
+			pool.addOrphan(tx, 0)
+			return true, nil
+		} else if err != nil {
+			return false, err
+		}
+	} else {
+		return false, validator.NewValidateError(code)
 	}
 
 	// 计算优先级
@@ -605,8 +604,6 @@ func (pool *TxPool) add(tx *TxPoolTransaction, local bool) (bool, error) {
 			}
 		}
 	}
-	// Add the transaction to the pool  and mark the referenced outpoints as spent by the pool.
-	//if !(tx.Tx.RequestHash() == hash) {
 	go pool.priority_sorted.Put(tx)
 	go pool.journalTx(tx)
 
@@ -917,42 +914,6 @@ func (pool *TxPool) addTxsLocked(txs []*TxPoolTransaction, local bool) []error {
 
 type TxStatus uint
 
-const (
-	TxStatusNotIncluded TxStatus = iota
-	TxStatusIncluded
-	TxStatusQueued
-	TxStatusPending
-	TxStatusConfirmed
-	TxStatusUnKnow
-)
-
-// Status returns the status (unknown/pending/queued) of a batch of transactions
-// identified by their hashes.
-//func (pool *TxPool) Status(hashes []common.Hash) []TxStatus {
-//	status := make([]TxStatus, len(hashes))
-//	poolTxs := pool.AllTxpoolTxs()
-//	for i, hash := range hashes {
-//		if tx, has := poolTxs[hash]; has {
-//			if tx != nil {
-//				if tx.Pending {
-//					status[i] = TxStatusPending
-//				} else if tx.Confirmed {
-//					status[i] = TxStatusConfirmed
-//				} else if !tx.Discarded {
-//					status[i] = TxStatusQueued
-//				} else {
-//					status[i] = TxStatusIncluded
-//				}
-//			} else {
-//				status[i] = TxStatusUnKnow
-//			}
-//		} else {
-//			status[i] = TxStatusNotIncluded
-//		}
-//	}
-//	return status
-//}
-
 // GetUnpackedTxsByAddr returns all tx by addr.
 func (pool *TxPool) GetPoolTxsByAddr(addr common.Address) ([]*TxPoolTransaction, error) {
 	pool.mu.RLock()
@@ -1113,7 +1074,9 @@ func (pool *TxPool) DeleteTx() error {
 func (pool *TxPool) DeleteTxByHash(hash common.Hash) error {
 	inter, has := pool.all.Load(hash)
 	if !has {
-		return errors.New(fmt.Sprintf("the tx(%s) isn't exist in pool.", hash.String()))
+		if inter, has = pool.orphans.Load(hash); !has {
+			return errors.New(fmt.Sprintf("the tx(%s) isn't exist in pool.", hash.String()))
+		}
 	}
 	tx := inter.(*TxPoolTransaction)
 	pool.all.Delete(hash)
@@ -1699,17 +1662,8 @@ func (pool *TxPool) GetSortedTxs() ([]*TxPoolTransaction, error) {
 	}
 	log.Debugf("get sorted and rm Orphan txs spent times: %s , count: %d ,t2: %s , txs_size %s,  "+
 		"total_size %s", time.Since(t0), len(list), time.Since(t2), total.String(), unit_size.String())
-	//for _, t := range list {
-	//	getnext, err := processor(t)
-	//	if err != nil {
-	//		log.Error(err.Error())
-	//	}
-	//	if !getnext {
-	//		return err
-	//	}
-	//}
+
 	return list, nil
-	//return list, total
 }
 func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs map[common.Hash]*TxPoolTransaction) []*TxPoolTransaction {
 	pretxs := make([]*TxPoolTransaction, 0)
@@ -1741,27 +1695,10 @@ func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs map[common.Has
 					}
 				}
 			}
-			//orphTxsLOOP:
-			//	for _, otx := range orphanTxs {
-			//		if otx.Tx.RequestHash() == op.TxHash {
-			//			for i, msg := range otx.Tx.Messages() {
-			//				if msg.App == modules.APP_PAYMENT {
-			//					payment := msg.Payload.(*modules.PaymentPayload)
-			//					for j := range payment.Outputs {
-			//						if op.OutIndex == uint32(j) && op.MessageIndex == uint32(i) {
-			//							queue_tx = otx
-			//							break orphTxsLOOP
-			//						}
-			//					}
-			//				}
-			//			}
-			//		}
-			//	}
 		}
 		if queue_tx != nil {
 			//if find precusor tx  ,and go on to find its
-			log.Info("find in precusor tx.", "hash", queue_tx.Tx.Hash().String(), "ohash", op.TxHash.String(),
-				"pending", tx.Pending)
+			log.Info("find in precusor tx.", "hash", queue_tx.Tx.Hash().String(), "pending", tx.Pending)
 			if !queue_tx.Pending {
 				list := pool.getPrecusorTxs(queue_tx, poolTxs)
 				for _, p_tx := range list {
@@ -1858,24 +1795,6 @@ func (pool *TxPool) addOrphan(otx *TxPoolTransaction, tag uint64) {
 	otx.IsOrphan = true
 	pool.orphans.Store(otx.Tx.Hash(), otx)
 	log.Debugf("Stored orphan tx's hash:[%s] (total: %d)", otx.Tx.Hash().String(), len(pool.AllOrphanTxs()))
-	//for i, msg := range otx.Tx.TxMessages() {
-	//	if msg.App == modules.APP_PAYMENT {
-	//		payment, ok := msg.Payload.(*modules.PaymentPayload)
-	//		if ok {
-	//			// add utxo in outputs
-	//			preout := modules.OutPoint{TxHash: otx.Tx.Hash()}
-	//			for j, out := range payment.Outputs {
-	//				preout.MessageIndex = uint32(i)
-	//				preout.OutIndex = uint32(j)
-	//				utxo := &modules.Utxo{Amount: out.Value, Asset: &modules.Asset{
-	//					AssetId: out.Asset.AssetId, UniqueId: out.Asset.UniqueId},
-	//					PkScript: out.PkScript[:]}
-	//				pool.outputs.Store(preout, utxo)
-	//			}
-	//
-	//		}
-	//	}
-	//}
 }
 
 func (pool *TxPool) removeOrphan(tx *TxPoolTransaction, reRedeemers bool) {
@@ -1980,22 +1899,18 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 					break
 				}
 				for _, in := range payment.Inputs {
-					_, err1 := pool.GetUtxoEntry(in.PreviousOutPoint)
-					if err1 != nil {
-						_, has := pool.outputs.Load(*in.PreviousOutPoint)
-						if !has {
-							err = err1
-							isOrphan = true
-							break
+					if _, err := pool.unit.GetUtxoEntry(in.PreviousOutPoint); err != nil {
+						_, err = pool.GetUtxoEntry(in.PreviousOutPoint)
+						if err != nil {
+							return true, err
 						}
-
 					}
 				}
 			}
 		}
 	}
 
-	return isOrphan, err
+	return isOrphan, nil
 }
 
 func (pool *TxPool) deleteOrphanTxOutputs(outpoint modules.OutPoint) {
@@ -2019,6 +1934,8 @@ func (pool *TxPool) deletePoolUtxos(tx *modules.Transaction) {
 }
 
 func (pool *TxPool) reflashOrphanTxs(tx *modules.Transaction, orphans map[common.Hash]*TxPoolTransaction) {
+	log.Debugf("reflash tx:%s", tx.Hash().String())
+	readyTxs := make([]*TxPoolTransaction, 0)
 	for hash, otx := range orphans {
 		isOrphan := false
 		for _, op := range otx.Tx.GetSpendOutpoints() {
@@ -2030,11 +1947,15 @@ func (pool *TxPool) reflashOrphanTxs(tx *modules.Transaction, orphans map[common
 			}
 		}
 		if !isOrphan { //该交易不再是孤儿交易，使之变为有效交易。
-			log.Infof("reflash orphan tx[%s] goto packaged.", hash.String())
-			pool.priority_sorted.Put(otx)
+			readyTxs = append(readyTxs, otx)
 			pool.orphans.Delete(hash)
-			pool.all.Store(hash, otx)
-			pool.addCache(otx)
+		}
+	}
+
+	for _, tx := range readyTxs {
+		log.Infof("reflash orphan tx[%s] goto packaged.", tx.Tx.Hash().String())
+		if err := pool.addLocal(tx); err != nil {
+			break
 		}
 	}
 }
