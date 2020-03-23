@@ -106,18 +106,18 @@ func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFe
 	isLocal := true //todo
 	if isLocal {
 		sigTx, err := p.RunAndSignTx(reqTx, rwset.RwM, p.dag, from)
-		if err != nil {
+		if err != nil{
 			log.Errorf("ContractInstallReq, local RunAndSignTx err:%s", err.Error())
 			return reqId, nil, err
 		}
 
 		_, tpl, err := getContractTxContractInfo(sigTx, modules.APP_CONTRACT_TPL)
 		if err != nil || tpl == nil {
-			errMsg := fmt.Sprintf("[%s]ContractInstallReq getContractTxContractInfo fail, tpl Name[%s]", shortId(reqId.String()), tplName)
+			errMsg := fmt.Sprintf("[%s]ContractInstallReq getContractTxContractInfo fail, tpl Name[%s]", reqId.ShortStr(), tplName)
 			return common.Hash{}, nil, errors.New(errMsg)
 		}
 		templateId := tpl.Payload.(*modules.ContractTplPayload).TemplateId
-		log.Infof("[%s]ContractInstallReq ok, reqId[%s] templateId[%x]", shortId(reqId.String()), reqId.String(), templateId)
+		log.Infof("[%s]ContractInstallReq ok, reqId[%s] templateId[%x]", reqId.ShortStr(), reqId.String(), templateId)
 
 		//broadcast
 		go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_COMMIT, Tx: sigTx}, false)
@@ -169,7 +169,7 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 	}
 	contractId := crypto.RequestIdToContractAddress(reqId)
 	log.Infof("[%s]ContractDeployReq ok, reqId[%s] templateId[%x],contractId[%s] ",
-		shortId(reqId.String()), reqId.String(), templateId, contractId.String())
+		reqId.ShortStr(), reqId.String(), templateId, contractId.String())
 
 	//add local and broadcast
 	go p.AddLocalTx(tx)
@@ -216,7 +216,7 @@ func (p *Processor) ContractInvokeReq(from, to common.Address, daoAmount, daoFee
 		return common.Hash{}, err
 	}
 	log.Infof("[%s]ContractInvokeReq ok, reqId[%s], contractId[%s]",
-		shortId(reqId.String()), reqId.String(), contractId.String())
+		reqId.ShortStr(), reqId.String(), contractId.String())
 	log.DebugDynamic(func() string {
 		rjson, _ := json.Marshal(tx)
 		rdata, _ := rlp.EncodeToBytes(tx)
@@ -265,7 +265,7 @@ func (p *Processor) ContractInvokeReqToken(from, to common.Address, token *modul
 		return common.Hash{}, err
 	}
 	log.Infof("[%s]ContractInvokeReqToken ok, reqId[%s] contractId[%s]",
-		shortId(reqId.String()), reqId.String(), contractAddress.Bytes())
+		reqId.ShortStr(), reqId.String(), contractAddress.Bytes())
 	//broadcast
 	go p.ptn.ContractBroadcast(ContractEvent{CType: CONTRACT_EVENT_EXEC, Ele: p.mtx[reqId].eleNode, Tx: tx}, true)
 	return reqId, nil
@@ -302,7 +302,7 @@ func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee u
 		return common.Hash{}, err
 	}
 	log.Infof("[%s]ContractStopReq ok, reqId[%s], contractId[%s], txId[%s]",
-		shortId(reqId.String()), reqId.String(), contractId.String(), hex.EncodeToString(randNum))
+		reqId.ShortStr(), reqId.String(), contractId, hex.EncodeToString(randNum))
 
 	//add local and broadcast
 	go p.AddLocalTx(tx)
@@ -465,7 +465,7 @@ func (p *Processor) CheckTxValid(tx *modules.Transaction) bool {
 	_, _, err := p.validator.ValidateTx(tx, false)
 	if err != nil {
 		log.Debugf("[%s]checkTxValid, Validate fail, txHash[%s], err:%s",
-			shortId(tx.RequestHash().String()), tx.Hash().String(), err.Error())
+			tx.RequestHash().ShortStr(), tx.Hash().String(), err.Error())
 	}
 	return err == nil
 }
