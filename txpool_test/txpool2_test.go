@@ -38,35 +38,37 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTxPool_GetSortTxs(t *testing.T) {
-	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
+func mockdag1(t *testing.T, mockCtrl *gomock.Controller, hash common.Hash) tp1.IDag {
 	mdag := mock.NewMockIDag(mockCtrl)
 	mdag.EXPECT().GetUtxoEntry(gomock.Any()).DoAndReturn(func(outpoint *modules.OutPoint) (*modules.Utxo, error) {
-		if outpoint.TxHash == Hash("Dag") {
+		if outpoint.TxHash == hash {
 			return &modules.Utxo{Amount: 123}, nil
 		}
 		return nil, tp2.ErrNotFound
 	}).AnyTimes()
-	pool := mockTxPool2(mdag)
 
-	txA := mockPaymentTx(Hash("Dag"), 0, 0)
-	t.Logf("Tx A:%s", txA.Hash().String())
-	txB := mockPaymentTx(txA.Hash(), 0, 0)
-	t.Logf("Tx B:%s", txB.Hash().String())
-	txC := mockPaymentTx(txB.Hash(), 0, 0)
-	t.Logf("Tx C:%s", txC.Hash().String())
-	pool.AddLocal(txA)
-	result := printTxPoolSortTxs(pool)
-	t.Log("Add TxA", result)
-	pool.AddLocal(txC)
-	result = printTxPoolSortTxs(pool)
-	t.Log("Add Tx A,C", result)
-
-	pool.AddLocal(txB)
-	result = printTxPoolSortTxs(pool)
-	t.Log("Add Tx A,C,B", result)
+	mdag.EXPECT().GetNewestUnit(gomock.Any()).DoAndReturn(func(asset modules.AssetId) (common.Hash, *modules.ChainIndex, error) {
+		return Hash("hash"), &modules.ChainIndex{asset, 0}, nil
+	}).AnyTimes()
+	mdag.EXPECT().IsTransactionExist(gomock.Any()).DoAndReturn(func(hash common.Hash) (bool, error) {
+		return false, nil
+	}).AnyTimes()
+	mdag.EXPECT().GetTxHashByReqId(gomock.Any()).DoAndReturn(func(hash common.Hash) (common.Hash, error) {
+		return common.Hash{}, tp2.ErrNotFound
+	}).AnyTimes()
+	return mdag
 }
+func mockdag2(t *testing.T, mockCtrl *gomock.Controller, hash common.Hash) tp1.IDag {
+	mdag := mock.NewMockIDag(mockCtrl)
+	mdag.EXPECT().GetUtxoEntry(gomock.Any()).DoAndReturn(func(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+		if outpoint.TxHash == hash {
+			return &modules.Utxo{Amount: 123}, nil
+		}
+		return nil, tp2.ErrNotFound
+	}).AnyTimes()
+	return mdag
+}
+
 func mockTxPool1(mdag tp1.IDag) *tp1.TxPool {
 	val := &mockValidator{query: mdag.GetUtxoEntry}
 	tp1.DefaultTxPoolConfig.NoLocals = true
@@ -74,16 +76,37 @@ func mockTxPool1(mdag tp1.IDag) *tp1.TxPool {
 }
 func mockTxPool2(mdag tp1.IDag) *tp2.TxPool {
 	val := &mockValidator{query: mdag.GetUtxoEntry}
+	tp1.DefaultTxPoolConfig.NoLocals = true
 	return tp2.NewTxPool4DI(tp1.DefaultTxPoolConfig, freecache.NewCache(10000), mdag, tokenengine.Instance, val)
 }
 
-func printTxPoolSortTxs(pool *tp2.TxPool) string {
+func printTxPoolSortTxs(pool tp1.ITxPool) string {
 	sortedTx := ""
 	list, _ := pool.GetSortedTxs()
 	for _, tx := range list {
-		sortedTx += string(tx.TxHash.String()) + ";"
+		sortedTx += string(tx.Tx.Hash().String()) + `;`
 	}
 	return sortedTx
+}
+
+func TestTxPool_GetSortTxs(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mdag1 := mockdag1(t, mockCtrl, Hash("Dag"))
+	mdag2 := mockdag2(t, mockCtrl, Hash("Dag"))
+	p1 := mockTxPool1(mdag1)
+	p2 := mockTxPool2(mdag2)
+
+	txA := mockPaymentTx(Hash("Dag"), 0, 0)
+	t.Logf("Tx A:%s", txA.Hash().String())
+	txB := mockPaymentTx(txA.Hash(), 0, 0)
+	t.Logf("Tx B:%s", txB.Hash().String())
+	txC := mockPaymentTx(txB.Hash(), 0, 0)
+	t.Logf("Tx C:%s", txC.Hash().String())
+
+	txs := make([]*modules.Transaction, 0)
+	txs = append(txs, txA, txC, txB)
+	testGetSortTxs(t, txs, p1, p2)
 }
 
 type mockValidator struct {
@@ -100,7 +123,7 @@ func (v *mockValidator) ValidateTx(tx *modules.Transaction, isFullTx bool) ([]*m
 func (v *mockValidator) SetUtxoQuery(query validator.IUtxoQuery) {
 	v.query = query.GetUtxoEntry
 }
-func BenchmarkTxPool_AddLocal(b *testing.B) {
+func BenchmarkTxPool2_AddLocal(b *testing.B) {
 	mockCtrl := gomock.NewController(b)
 	defer mockCtrl.Finish()
 	mdag := mock.NewMockIDag(mockCtrl)
@@ -113,11 +136,9 @@ func BenchmarkTxPool_AddLocal(b *testing.B) {
 	pool := mockTxPool2(mdag)
 
 	txA := mockPaymentTx(Hash("Dag"), 0, 0)
-	//b.Logf("Tx A:%s", txA.Hash().String())
 	pool.AddLocal(txA)
 	for i := 0; i < b.N; i++ {
 		txA = mockPaymentTx(txA.Hash(), 0, 0)
-		//b.Logf("Tx %d:%s",i, txA.Hash().String())
 		pool.AddLocal(txA)
 	}
 
@@ -387,4 +408,26 @@ func TestTxPool_AddUserContractAndTransferTx(t *testing.T) {
 	assert.Equal(t, 2, len(sortedTx))
 	txs, _ = pool.GetUnpackedTxsByAddr(addr)
 	assert.Equal(t, 2, len(txs))
+}
+
+func testGetSortTxs(t *testing.T, txs []*modules.Transaction, p1 *tp1.TxPool, p2 *tp2.TxPool) {
+	for i, tx := range txs {
+		err0 := p1.AddLocal(tx)
+		assert.Equal(t, nil, err0)
+		err1 := p2.AddLocal(tx)
+		assert.Equal(t, nil, err1)
+		if i == 1 {
+			result1 := printTxPoolSortTxs(p1)
+			t.Log("p1 Add Tx A,C", result1)
+			assert.Equal(t, txs[0].Hash().String()+`;`, result1)
+			result2 := printTxPoolSortTxs(p2)
+			t.Log("p2 Add Tx A,C", result2)
+			assert.Equal(t, txs[0].Hash().String()+`;`, result2)
+		}
+	}
+	result1 := printTxPoolSortTxs(p1)
+	t.Log("p1 Add Tx A,C,B", result1)
+	result2 := printTxPoolSortTxs(p2)
+	t.Log("p2 Add Tx A,C,B", result2)
+	assert.Equal(t, txs[0].Hash().String()+`;`+txs[2].Hash().String()+`;`+txs[1].Hash().String()+`;`, result2)
 }
