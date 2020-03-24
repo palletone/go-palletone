@@ -93,12 +93,16 @@ func (pm *ProtocolManager) saveStableUnitRecvLoop() {
 		select {
 		case event := <-pm.saveStableUnitCh:
 			log.Debugf("receive saveStableUnitEvent[%s]", event.Unit.DisplayId())
-			if len(event.Unit.Txs) > 1 {
+			txs := event.Unit.Transactions()
+			if pm.enableGasFee {
+				txs = event.Unit.TransactionsWithoutCoinbase()
+			}
+			if len(txs) > 0 {
 				log.DebugDynamic(func() string {
 					return fmt.Sprintf("discard txs %#x from txpool by stable unit[%s]",
 						event.Unit.TxHashes(), event.Unit.DisplayId())
 				})
-				err := pm.txpool.DiscardTxs(event.Unit.TransactionsWithoutCoinbase())
+				err := pm.txpool.DiscardTxs(txs)
 				if err != nil {
 					log.Error(err.Error())
 				}
@@ -117,8 +121,12 @@ func (pm *ProtocolManager) saveUnitRecvLoop() {
 		select {
 		case u := <-pm.saveUnitCh:
 			log.Debugf("SubscribeSaveUnitEvent received unit:%s", u.Unit.DisplayId())
-			if len(u.Unit.Txs) > 1 {
-				err := pm.txpool.SetPendingTxs(u.Unit.Hash(), u.Unit.NumberU64(), u.Unit.TransactionsWithoutCoinbase()) //UpdateTxStatusPacked
+			txs := u.Unit.Transactions()
+			if pm.enableGasFee {
+				txs = u.Unit.TransactionsWithoutCoinbase()
+			}
+			if len(txs) > 0 {
+				err := pm.txpool.SetPendingTxs(u.Unit.Hash(), u.Unit.NumberU64(), txs) //UpdateTxStatusPacked
 				if err != nil {
 					log.Error(err.Error())
 				}
@@ -136,12 +144,17 @@ func (pm *ProtocolManager) saveUnitRecvLoop() {
 }
 
 func (pm *ProtocolManager) rollbackUnitRecvLoop() {
+
 	for {
 		select {
 		case u := <-pm.rollbackUnitCh:
 			log.Infof("SubscribeRollbackUnitEvent received unit:%s", u.Unit.DisplayId())
-			if len(u.Unit.Txs) > 1 {
-				err := pm.txpool.ResetPendingTxs(u.Unit.TransactionsWithoutCoinbase()) //UpdateTxStatusUnpacked
+			txs := u.Unit.Transactions()
+			if pm.enableGasFee {
+				txs = u.Unit.TransactionsWithoutCoinbase()
+			}
+			if len(txs) > 0 {
+				err := pm.txpool.ResetPendingTxs(txs) //UpdateTxStatusUnpacked
 				if err != nil {
 					log.Error(err.Error())
 				}
