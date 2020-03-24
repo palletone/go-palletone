@@ -69,6 +69,7 @@ func TestTxPool_GetSortTxs(t *testing.T) {
 }
 func mockTxPool1(mdag tp1.IDag) *tp1.TxPool {
 	val := &mockValidator{query: mdag.GetUtxoEntry}
+	tp1.DefaultTxPoolConfig.NoLocals = true
 	return tp1.NewTxPool4DI(tp1.DefaultTxPoolConfig, freecache.NewCache(10000), mdag, tokenengine.Instance, val)
 }
 func mockTxPool2(mdag tp1.IDag) *tp2.TxPool {

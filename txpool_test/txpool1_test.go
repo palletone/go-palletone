@@ -21,14 +21,13 @@ package txpool_test
 
 import (
 	"encoding/json"
+	"log"
 	"testing"
 
-	"github.com/coocood/freecache"
 	"github.com/golang/mock/gomock"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/mock"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/tokenengine"
 	tp2 "github.com/palletone/go-palletone/txpool2"
 	tp1 "github.com/palletone/go-palletone/txspool"
 	"github.com/stretchr/testify/assert"
@@ -91,11 +90,17 @@ func createTxs() []*modules.Transaction {
 	hash0 := common.BytesToHash([]byte("0"))
 	hash1 := common.BytesToHash([]byte("1"))
 	txA := newTestPaymentTx(hash0)
+	log.Printf("txA:%s\n", txA.Hash().String())
 	txB := newTestPaymentTx(txA.Hash())
+	log.Printf("txB:%s\n", txB.Hash().String())
 	txC := newTestPaymentTx(txB.Hash())
+	log.Printf("txC:%s\n", txC.Hash().String())
 	txD := newTestPaymentTx(txC.Hash())
+	log.Printf("txD:%s\n", txD.Hash().String())
 	txX := newTestPaymentTx(hash1)
+	log.Printf("txX:%s\n", txX.Hash().String())
 	txY := newTestPaymentTx(txX.Hash())
+	log.Printf("txY:%s\n", txY.Hash().String())
 	txs = append(txs, txA, txB, txC, txD, txX, txY)
 
 	return txs
@@ -107,9 +112,6 @@ func createTxs() []*modules.Transaction {
 func TestTransactionAddingTxs(t *testing.T) {
 	t.Parallel()
 
-	config := tp1.DefaultTxPoolConfig
-	config.GlobalSlots = 4096
-	config.NoLocals = true
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mdag := mock.NewMockIDag(mockCtrl)
@@ -118,9 +120,6 @@ func TestTransactionAddingTxs(t *testing.T) {
 	}).AnyTimes()
 	mdag.EXPECT().GetUtxoEntry(gomock.Any()).DoAndReturn(func(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 		if outpoint.TxHash == common.BytesToHash([]byte("0")) {
-			return &modules.Utxo{Amount: 123}, nil
-		}
-		if outpoint.TxHash == common.NewSelfHash() {
 			return &modules.Utxo{Amount: 123}, nil
 		}
 		return nil, tp2.ErrNotFound
@@ -202,11 +201,7 @@ func TestGetProscerTx(t *testing.T) {
 	mdag.EXPECT().GetTxHashByReqId(gomock.Any()).DoAndReturn(func(hash common.Hash) (common.Hash, error) {
 		return common.Hash{}, tp2.ErrNotFound
 	}).AnyTimes()
-	config := tp1.DefaultTxPoolConfig
-	config.GlobalSlots = 4096
-	config.NoLocals = true
-	pool := tp1.NewTxPool4DI(config, freecache.NewCache(1*1024*1024), mdag,
-		tokenengine.Instance, &mockValidator{query: mdag.GetUtxoEntry})
+	pool := mockTxPool1(mdag)
 	defer pool.Stop()
 
 	hash0 := common.BytesToHash([]byte("0"))
@@ -214,6 +209,8 @@ func TestGetProscerTx(t *testing.T) {
 	t.Logf("Tx A:%s", txA.Hash().String())
 	txB := newCcInvokeRequest(txA.Hash())
 	t.Logf("Tx B:%s", txB.Hash().String())
+	data0, _ := json.Marshal(txB)
+	t.Logf("Tx hash:%s,  B:%s, ", txB.Hash().String(), string(data0))
 	txC := newCcInvokeFullTx(txB.Hash())
 	t.Logf("Tx C:%s", txC.Hash().String())
 	t.Logf("Tx C req:%s", txC.RequestHash().String())

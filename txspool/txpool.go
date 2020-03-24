@@ -565,12 +565,11 @@ func (pool *TxPool) add(tx *TxPoolTransaction, local bool) (bool, error) {
 		return false, fmt.Errorf("know orphanTx: %s", hash.String())
 	}
 	// If the transaction fails basic validation, discard it
-	if addition, code, err := pool.validateTx(tx, local); err == nil && code == validator.TxValidationCode_VALID {
-		if tx.TxFee != nil {
-			tx.TxFee = make([]*modules.Addition, 0)
-		}
-		tx.TxFee = append(tx.TxFee, addition...)
-	} else if code == validator.TxValidationCode_ORPHAN {
+	addition, code, err := pool.validateTx(tx, local)
+	if err != nil && code != validator.TxValidationCode_ORPHAN {
+		return false, validator.NewValidateError(code)
+	}
+	if code == validator.TxValidationCode_ORPHAN {
 		if ok, err := pool.ValidateOrphanTx(tx.Tx); ok {
 			txOrphanValidPrometheus.Add(1)
 			log.Debug("validated the orphanTx", "hash", hash.String())
@@ -578,10 +577,17 @@ func (pool *TxPool) add(tx *TxPoolTransaction, local bool) (bool, error) {
 			return true, nil
 		} else if err != nil {
 			return false, err
-		}
-	} else {
+		} // 孤儿单元验证通过了，将其添加到待打包交易池。
+		code = validator.TxValidationCode_VALID
+	}
+	if code != validator.TxValidationCode_VALID {
 		return false, validator.NewValidateError(code)
 	}
+
+	if tx.TxFee != nil {
+		tx.TxFee = make([]*modules.Addition, 0)
+	}
+	tx.TxFee = append(tx.TxFee, addition...)
 
 	// 计算优先级
 	pool.setPriorityLvl(tx)
@@ -609,14 +615,11 @@ func (pool *TxPool) add(tx *TxPoolTransaction, local bool) (bool, error) {
 
 	pool.all.Store(hash, tx)
 	pool.addCache(tx)
-
-	// 更新一次孤儿交易池数据。
-	pool.reflashOrphanTxs(tx.Tx, pool.AllOrphanTxs())
-	go pool.journalTx(tx)
-
 	txValidPrometheus.Add(1)
 	// We've directly injected a replacement transaction, notify subsystems
 	go pool.txFeed.Send(modules.TxPreEvent{Tx: tx.Tx})
+	// 更新一次孤儿交易池数据。
+	pool.reflashOrphanTxs(tx.Tx, pool.AllOrphanTxs())
 	return true, nil
 }
 
@@ -1088,12 +1091,6 @@ func (pool *TxPool) DeleteTxByHash(hash common.Hash) error {
 			if msg.App == modules.APP_PAYMENT {
 				payment, ok := msg.Payload.(*modules.PaymentPayload)
 				if ok {
-					for _, input := range payment.Inputs {
-						if input.PreviousOutPoint == nil {
-							continue
-						}
-						pool.outpoints.Delete(*input.PreviousOutPoint)
-					}
 					// delete outputs's utxo
 					preout := modules.OutPoint{TxHash: hash}
 					for j := range payment.Outputs {
@@ -1686,8 +1683,6 @@ func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs map[common.Has
 						payment := msg.Payload.(*modules.PaymentPayload)
 						for j := range payment.Outputs {
 							if op.OutIndex == uint32(j) && op.MessageIndex == uint32(i) {
-
-								log.Debugf("found  in pool")
 								queue_tx = otx
 								break poolloop
 							}
@@ -1698,7 +1693,6 @@ func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs map[common.Has
 		}
 		if queue_tx != nil {
 			//if find precusor tx  ,and go on to find its
-			log.Info("find in precusor tx.", "hash", queue_tx.Tx.Hash().String(), "pending", tx.Pending)
 			if !queue_tx.Pending {
 				list := pool.getPrecusorTxs(queue_tx, poolTxs)
 				for _, p_tx := range list {
@@ -1810,9 +1804,7 @@ func (pool *TxPool) removeOrphan(tx *TxPoolTransaction, reRedeemers bool) {
 			payment, ok := msg.Payload.(*modules.PaymentPayload)
 			if ok {
 				for _, in := range payment.Inputs {
-					if _, ok := pool.outputs.Load(*in.PreviousOutPoint); ok {
-						pool.deleteOrphanTxOutputs(*in.PreviousOutPoint)
-					}
+					pool.deleteOrphanTxOutputs(*in.PreviousOutPoint)
 				}
 			}
 		}
@@ -1902,6 +1894,7 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 					if _, err := pool.unit.GetUtxoEntry(in.PreviousOutPoint); err != nil {
 						_, err = pool.GetUtxoEntry(in.PreviousOutPoint)
 						if err != nil {
+							log.Debugf("get utxo failed,%s", in.PreviousOutPoint.String())
 							return true, err
 						}
 					}
@@ -1934,8 +1927,6 @@ func (pool *TxPool) deletePoolUtxos(tx *modules.Transaction) {
 }
 
 func (pool *TxPool) reflashOrphanTxs(tx *modules.Transaction, orphans map[common.Hash]*TxPoolTransaction) {
-	log.Debugf("reflash tx:%s", tx.Hash().String())
-	readyTxs := make([]*TxPoolTransaction, 0)
 	for hash, otx := range orphans {
 		isOrphan := false
 		for _, op := range otx.Tx.GetSpendOutpoints() {
@@ -1947,15 +1938,11 @@ func (pool *TxPool) reflashOrphanTxs(tx *modules.Transaction, orphans map[common
 			}
 		}
 		if !isOrphan { //该交易不再是孤儿交易，使之变为有效交易。
-			readyTxs = append(readyTxs, otx)
 			pool.orphans.Delete(hash)
-		}
-	}
-
-	for _, tx := range readyTxs {
-		log.Infof("reflash orphan tx[%s] goto packaged.", tx.Tx.Hash().String())
-		if err := pool.addLocal(tx); err != nil {
-			break
+			if err := pool.addLocal(otx); err != nil {
+				log.Debugf("addlocal failed,error:%s,hash:%s", err.Error(), otx.Tx.Hash().String())
+				pool.orphans.Store(hash, otx)
+			}
 		}
 	}
 }
