@@ -79,7 +79,7 @@ type ChainIndexJson struct {
 }
 
 func ConvertUnit2Json(unit *modules.Unit, utxoQuery modules.QueryUtxoFunc,
-	versionFunc modules.QueryStateByVersionFunc) *UnitJson {
+	versionFunc modules.QueryStateByVersionFunc, enableGasFee bool) *UnitJson {
 	json := &UnitJson{
 		UnitHash:   unit.Hash(),
 		UnitSize:   unit.Size(),
@@ -90,13 +90,15 @@ func ConvertUnit2Json(unit *modules.Unit, utxoQuery modules.QueryUtxoFunc,
 		txjson := ConvertTx2FullJson(tx, utxoQuery)
 		json.Txs = append(json.Txs, txjson)
 	}
-	reward, err := unit.Txs[0].GetCoinbaseReward(versionFunc, tokenengine.Instance.GetAddressFromScript)
-	if err != nil {
-		log.Error(err.Error())
-		return json
-	}
-	if reward.Amount != 0 {
-		json.Reward = reward.Asset.DisplayAmount(reward.Amount)
+	if enableGasFee {
+		reward, err := unit.Txs[0].GetCoinbaseReward(versionFunc, tokenengine.Instance.GetAddressFromScript)
+		if err != nil {
+			log.Error(err.Error())
+			return json
+		}
+		if reward.Amount != 0 {
+			json.Reward = reward.Asset.DisplayAmount(reward.Amount)
+		}
 	}
 	return json
 }

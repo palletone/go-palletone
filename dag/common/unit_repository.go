@@ -53,7 +53,7 @@ type IUnitRepository interface {
 	SaveUnit(unit *modules.Unit, isGenesis bool) error
 	SaveTransaction(tx *modules.Transaction, txIndex int) error
 	CreateUnit(mediatorReward common.Address, txs []*modules.Transaction, when time.Time,
-		propdb IPropRepository, getJurorRewardFunc modules.GetJurorRewardAddFunc,enableGasFee bool) (*modules.Unit, error)
+		propdb IPropRepository, getJurorRewardFunc modules.GetJurorRewardAddFunc, enableGasFee bool) (*modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
 	GetAddrTransactions(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
 	GetAddrUtxoTxs(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
@@ -536,7 +536,7 @@ create common unit
 return: correct if error is nil, and otherwise is incorrect
 */
 func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txs2 []*modules.Transaction,
-	when time.Time, propdb IPropRepository, getJurorRewardFunc modules.GetJurorRewardAddFunc,enableGasFee bool) (*modules.Unit, error) {
+	when time.Time, propdb IPropRepository, getJurorRewardFunc modules.GetJurorRewardAddFunc, enableGasFee bool) (*modules.Unit, error) {
 	log.Debug("create unit lock unitRepository.")
 	rep.lock.RLock()
 	defer rep.lock.RUnlock()
@@ -579,40 +579,42 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txs2 []*mod
 	//for _, tx := range poolTxs {
 	//	txs2 = append(txs2, tx.Tx)
 	//}
-	ads, err := rep.ComputeTxFeesAllocate(mediatorReward, txs2, getJurorRewardFunc)
-	if err != nil {
-		txs2Ids := ""
-		for _, tx := range txs2 {
-			txs2Ids += tx.Hash().String() + ","
+	txs := make(modules.Transactions, 0)
+	if enableGasFee { //计算手续费和Coinbase
+		ads, err := rep.ComputeTxFeesAllocate(mediatorReward, txs2, getJurorRewardFunc)
+		if err != nil {
+			txs2Ids := ""
+			for _, tx := range txs2 {
+				txs2Ids += tx.Hash().String() + ","
+			}
+
+			//pooltxStatusStr := ""
+			//for txid, pooltx := range txpool.AllTxpoolTxs() {
+			//	pooltxStatusStr += txid.String() + ":UnitHash[" + pooltx.UnitHash.String() + "];"
+			//}
+			log.Error("CreateUnit", "ComputeTxFees is failed, error", err.Error(), "txs in this unit", txs2Ids)
+			return nil, err
 		}
 
-		//pooltxStatusStr := ""
-		//for txid, pooltx := range txpool.AllTxpoolTxs() {
-		//	pooltxStatusStr += txid.String() + ":UnitHash[" + pooltx.UnitHash.String() + "];"
-		//}
-		log.Error("CreateUnit", "ComputeTxFees is failed, error", err.Error(), "txs in this unit", txs2Ids)
-		return nil, err
-	}
+		//出块奖励
+		rewardAd := rep.ComputeGenerateUnitReward(mediatorReward, assetId.ToAsset())
+		if rewardAd != nil && rewardAd.Amount > 0 {
+			ads = append(ads, rewardAd)
+		}
 
-	//出块奖励
-	rewardAd := rep.ComputeGenerateUnitReward(mediatorReward, assetId.ToAsset())
-	if rewardAd != nil && rewardAd.Amount > 0 {
-		ads = append(ads, rewardAd)
-	}
+		outAds := arrangeAdditionFeeList(ads)
 
-	outAds := arrangeAdditionFeeList(ads)
+		coinbase, rewards, err := rep.CreateCoinbase(outAds, chainIndex.Index)
+		if err != nil {
+			log.Error(err.Error())
+			return nil, err
+		}
 
-	coinbase, rewards, err := rep.CreateCoinbase(outAds, chainIndex.Index)
-	if err != nil {
-		log.Error(err.Error())
-		return nil, err
+		if len(outAds) > 0 {
+			log.Debug("rewards && coinbase tx: ", "amount", rewards, "hash", coinbase.Hash().String())
+			txs = append(txs, coinbase)
+		}
 	}
-	txs := make(modules.Transactions, 0)
-	if len(outAds) > 0 {
-		log.Debug("rewards && coinbase tx: ", "amount", rewards, "hash", coinbase.Hash().String())
-		txs = append(txs, coinbase)
-	}
-
 	illegalTxs := make([]uint16, 0)
 	// step6 get unit's txs in txpool's txs
 	//TODO must recover
