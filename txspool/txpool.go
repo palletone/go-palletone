@@ -1636,23 +1636,23 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 		if tx == nil {
 			log.Debugf("The task of txspool get priority_pricedtx has been finished,count:%d", len(list))
 			break
-		} else {
-			if !tx.Pending {
-				if has, _ := pool.unit.IsTransactionExist(tx.Tx.Hash()); has {
-					continue
-				}
-				log.Debugf("pool tx  is not  nil      ")
-				// add precusorTxs 获取该交易的前驱交易列表
-				poolTxs = pool.AllTxpoolTxs()
-	            orphanTxs = pool.AllOrphanTxs()
-				_, p_txs := pool.getPrecusorTxs(tx, poolTxs, orphanTxs)
-				for _, p_tx := range p_txs {
-					if _, has := map_pretxs[p_tx.Tx.Hash()]; !has {
-						map_pretxs[p_tx.Tx.Hash()] = len(list)
-						if !p_tx.Pending {
-							list = append(list, p_tx)
-							total += p_tx.Tx.Size()
-						}
+		} 
+
+		if !tx.Pending {
+			if has, _ := pool.unit.IsTransactionExist(tx.Tx.Hash()); has {
+				continue
+			}
+			log.Debugf("pool tx  is not  nil      ")
+			// add precusorTxs 获取该交易的前驱交易列表
+			poolTxs = pool.AllTxpoolTxs()
+            orphanTxs = pool.AllOrphanTxs()
+			_, p_txs := pool.getPrecusorTxs(tx, poolTxs, orphanTxs)
+			for _, p_tx := range p_txs {
+				if _, has := map_pretxs[p_tx.Tx.Hash()]; !has {
+					map_pretxs[p_tx.Tx.Hash()] = len(list)
+					if !p_tx.Pending {
+						list = append(list, p_tx)
+						total += p_tx.Tx.Size()
 					}
 				}
 			}
