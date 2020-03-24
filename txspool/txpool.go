@@ -648,32 +648,6 @@ func (pool *TxPool) journalTx(tx *TxPoolTransaction) {
 // Note, this method assumes the pool lock is held!
 func (pool *TxPool) promoteTx(hash common.Hash, tx *TxPoolTransaction, number, index uint64) {
 	// Try to insert the transaction into the pending queue
-	tx_hash := tx.Tx.Hash()
-	if tx.TxFee == nil {
-		if amount, err := pool.GetTxFee(tx.Tx); err == nil {
-			tx.TxFee = append(tx.TxFee, &modules.Addition{Amount: amount.Amount, Asset: amount.Asset})
-		}
-	}
-	//TODO Devin 在打包交易后setPendingTx会在此找不到UTXO
-	pool.setPriorityLvl(tx)
-	interTx, has := pool.all.Load(tx_hash)
-	if has {
-		if this, ok := interTx.(*TxPoolTransaction); ok {
-			if this.Pending || this.Confirmed {
-				// An older transaction was better, discard this
-				this.Pending = true
-				this.Discarded = true
-				pool.all.Store(tx_hash, this)
-				// delete utxo
-				pool.deletePoolUtxos(tx.Tx)
-				return
-			}
-		} else {
-			pool.all.Delete(tx_hash)
-			pool.priority_sorted.Removed()
-		}
-	}
-	// Failsafe to work around direct pending inserts (tests)
 	tx.Pending = true
 	tx.Discarded = false
 	tx.Confirmed = false
@@ -682,7 +656,7 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *TxPoolTransaction, number, i
 	tx.Index = index
 	// delete utxo
 	pool.deletePoolUtxos(tx.Tx)
-	pool.all.Store(tx_hash, tx)
+	pool.all.Store(tx.Tx.Hash(), tx)
 }
 
 // AddLocal enqueues a single transaction into the pool if it is valid, marking
@@ -1444,7 +1418,6 @@ func (pool *TxPool) SetPendingTxs(unit_hash common.Hash, num uint64, txs []*modu
 }
 func (pool *TxPool) setPendingTx(unit_hash common.Hash, tx *modules.Transaction, number, index uint64) error {
 	hash := tx.Hash()
-	// in all pool
 	if tx.IsSystemContract() {
 		hash = tx.RequestHash()
 	}
@@ -1455,7 +1428,6 @@ func (pool *TxPool) setPendingTx(unit_hash common.Hash, tx *modules.Transaction,
 		tx.Discarded = false
 		tx.Index = index
 		pool.all.Store(hash, tx)
-		return nil
 	} else if _, has := pool.all.Load(tx.RequestHash()); has {
 		p_tx := TxtoTxpoolTx(tx)
 		p_tx.Pending = true
@@ -1463,12 +1435,12 @@ func (pool *TxPool) setPendingTx(unit_hash common.Hash, tx *modules.Transaction,
 		p_tx.Discarded = false
 		p_tx.Index = index
 		pool.all.Store(hash, p_tx)
-		return nil
 	}
 	// add in pool
 	p_tx := TxtoTxpoolTx(tx)
 	// 将该交易的输入输出缓存到交易池
 	pool.addCache(p_tx)
+	// 更新交易的状态及utxo状态
 	pool.promoteTx(unit_hash, p_tx, number, index)
 	return nil
 }
