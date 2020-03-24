@@ -490,6 +490,10 @@ func (b *PtnApiBackend) GetUnpackedTxsByAddr(addr string) ([]*txspool.TxPoolTran
 	tx, err := b.ptn.txPool.GetUnpackedTxsByAddr(address)
 	return tx, err
 }
+func (b *PtnApiBackend) GetPoolAddrUtxos(addr common.Address, token *modules.Asset) (
+	map[modules.OutPoint]*modules.Utxo, error) {
+	return b.ptn.txPool.GetAddrUtxos(addr, token)
+}
 
 func (b *PtnApiBackend) QueryProofOfExistenceByReference(ref string) ([]*ptnjson.ProofOfExistenceJson, error) {
 	poes, err := b.ptn.dag.QueryProofOfExistenceByReference([]byte(ref))
@@ -555,7 +559,7 @@ func (b *PtnApiBackend) GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Ad
 	return address, err
 }
 
-func (b *PtnApiBackend) GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error) {
+func (b *PtnApiBackend) GetDagAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error) {
 	address, err := common.StringToAddress(addr)
 	if err != nil {
 		return nil, err

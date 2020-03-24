@@ -78,7 +78,7 @@ func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFe
 		fmt.Println(err.Error())
 		return nil, nil, err
 	}
-	from := fromAddr.String()
+	//from := fromAddr.String()
 	toAddr, err := parseAddressStr(toStr, b.GetKeyStore(), password)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -93,36 +93,37 @@ func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFe
 	}
 
 	//构造转移PTN的Message0
-	var dbUtxos map[modules.OutPoint]*modules.Utxo
-	var reqTxMapping map[common.Hash]common.Hash
-	dbUtxos, reqTxMapping, err = b.Dag().GetAddrUtxoAndReqMapping(fromAddr, nil)
-
-	if err != nil {
-		return nil, nil, fmt.Errorf("GetAddrRawUtxos utxo err:%s", err.Error())
-	}
-	log.DebugDynamic(func() string {
-		utxoKeys := ""
-		for o := range dbUtxos {
-			utxoKeys += o.String() + ";"
-		}
-		mapping := ""
-		for req, tx := range reqTxMapping {
-			mapping += req.String() + ":" + tx.String() + ";"
-		}
-		return "db utxo outpoints:" + utxoKeys + " req:tx mapping :" + mapping
-	})
-	poolTxs, err := b.GetUnpackedTxsByAddr(from)
-	if err != nil {
-		return nil, nil, fmt.Errorf("GetUnpackedTxsByAddr err:%s", err.Error())
-	}
-	log.DebugDynamic(func() string {
-		txHashs := ""
-		for _, tx := range poolTxs {
-			txHashs += "[tx:" + tx.Tx.Hash().String() + "-req:" + tx.Tx.RequestHash().String() + "];"
-		}
-		return "txpool unpacked tx:" + txHashs
-	})
-	utxosPTN, err := SelectUtxoFromDagAndPool(dbUtxos, reqTxMapping, poolTxs, from, gasToken)
+	//var dbUtxos map[modules.OutPoint]*modules.Utxo
+	//var reqTxMapping map[common.Hash]common.Hash
+	//dbUtxos, reqTxMapping, err = b.Dag().GetAddrUtxoAndReqMapping(fromAddr, nil)
+	//
+	//if err != nil {
+	//	return nil, nil, fmt.Errorf("GetAddrRawUtxos utxo err:%s", err.Error())
+	//}
+	//log.DebugDynamic(func() string {
+	//	utxoKeys := ""
+	//	for o := range dbUtxos {
+	//		utxoKeys += o.String() + ";"
+	//	}
+	//	mapping := ""
+	//	for req, tx := range reqTxMapping {
+	//		mapping += req.String() + ":" + tx.String() + ";"
+	//	}
+	//	return "db utxo outpoints:" + utxoKeys + " req:tx mapping :" + mapping
+	//})
+	//poolTxs, err := b.GetUnpackedTxsByAddr(from)
+	//if err != nil {
+	//	return nil, nil, fmt.Errorf("GetUnpackedTxsByAddr err:%s", err.Error())
+	//}
+	//log.DebugDynamic(func() string {
+	//	txHashs := ""
+	//	for _, tx := range poolTxs {
+	//		txHashs += "[tx:" + tx.Tx.Hash().String() + "-req:" + tx.Tx.RequestHash().String() + "];"
+	//	}
+	//	return "txpool unpacked tx:" + txHashs
+	//})
+	//utxosPTN, err := SelectUtxoFromDagAndPool(dbUtxos, reqTxMapping, poolTxs, from, gasToken)
+	utxosPTN, err := b.GetPoolAddrUtxos(fromAddr, gasAsset.ToAsset())
 	if err != nil {
 		return nil, nil, fmt.Errorf("SelectUtxoFromDagAndPool utxo err:%s", err.Error())
 	}
@@ -137,7 +138,8 @@ func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFe
 	}
 	log.Debugf("gas token[%s], transfer token[%s], start build payment1", gasToken, tokenId)
 	//构造转移Token的Message1
-	utxosToken, err := SelectUtxoFromDagAndPool(dbUtxos, reqTxMapping, poolTxs, from, tokenId)
+	//utxosToken, err := SelectUtxoFromDagAndPool(dbUtxos, reqTxMapping, poolTxs, from, tokenId)
+	utxosToken, err := b.GetPoolAddrUtxos(fromAddr, tokenAsset)
 	if err != nil {
 		return nil, nil, fmt.Errorf("SelectUtxoFromDagAndPool token utxo err:%s", err.Error())
 	}

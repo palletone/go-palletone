@@ -70,4 +70,6 @@ type ITxPool interface {
 	Status() (int, int, int)
 	//返回交易池中交易的内容
 	Content() (map[common.Hash]*TxPoolTransaction, map[common.Hash]*TxPoolTransaction)
+	//获取某地址针对某Token的UTXO
+	GetAddrUtxos(addr common.Address, token *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 }

@@ -203,6 +203,9 @@ func (ud *UnitDag4Test) GetTxFee(pay *modules.Transaction) (*modules.AmountAsset
 	return &modules.AmountAsset{}, nil
 }
 
+func (ud *UnitDag4Test) GetAddrUtxoAndReqMapping(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, map[common.Hash]common.Hash, error) {
+	return map[modules.OutPoint]*modules.Utxo{}, map[common.Hash]common.Hash{}, nil
+}
 func (ud *UnitDag4Test) GetTransactionOnly(hash common.Hash) (*modules.Transaction, error) {
 	return nil, nil
 }

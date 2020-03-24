@@ -355,7 +355,7 @@ func (b *LesApiBackend) GetAddrOutpoints(addr string) ([]modules.OutPoint, error
 func (b *LesApiBackend) GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error) {
 	return common.Address{}, nil
 }
-func (b *LesApiBackend) GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error) {
+func (b *LesApiBackend) GetDagAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error) {
 	address, err := common.StringToAddress(addr)
 	if err != nil {
 		return nil, err
@@ -370,6 +370,11 @@ func (b *LesApiBackend) GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error) {
 	}
 	return result, nil
 
+}
+
+func (b *LesApiBackend) GetPoolAddrUtxos(addr common.Address, token *modules.Asset) (
+	map[modules.OutPoint]*modules.Utxo, error) {
+	return b.ptn.txPool.GetAddrUtxos(addr, token)
 }
 func (b *LesApiBackend) GetAddrUtxos2(addr string) ([]*ptnjson.UtxoJson, error) {
 	return nil, nil
@@ -532,6 +537,7 @@ func (b *LesApiBackend) GetFileInfo(filehash string) ([]*modules.ProofOfExistenc
 func (b *LesApiBackend) GetProofOfExistencesByMaindata(mainata string) ([]*modules.ProofOfExistencesInfo, error) {
 	return nil, nil
 }
+
 //SPV
 func (b *LesApiBackend) GetProofTxInfoByHash(txhash string) ([][]byte, error) {
 	return nil, nil

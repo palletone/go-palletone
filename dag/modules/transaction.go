@@ -645,7 +645,6 @@ func (tx *Transaction) GetRequestTx() *Transaction {
 	for _, msg := range msgs {
 		request.TxMessages = append(request.TxMessages, msg)
 		if msg.App.IsRequest() {
-
 			break
 		}
 
@@ -736,7 +735,7 @@ func (tx *Transaction) GetFromAddrs(queryUtxoFunc QueryUtxoFunc, getAddrFunc Get
 							out := msgs[input.PreviousOutPoint.MessageIndex].Payload.(*PaymentPayload).Outputs[input.PreviousOutPoint.OutIndex]
 							lockScript = out.PkScript
 						} else {
-							log.Errorf("Cannot find txo by:%s", input.PreviousOutPoint.String())
+							log.Errorf("[%s]Cannot find txo by:%s", tx.RequestHash().ShortStr(), input.PreviousOutPoint.String())
 							return nil, err
 						}
 					} else {
@@ -806,7 +805,8 @@ func (tx *Transaction) GetRequesterAddr(queryUtxoFunc QueryUtxoFunc, getAddrFunc
 	common.Address, error) {
 	msg0 := tx.txdata.TxMessages[0]
 	if msg0.App != APP_PAYMENT {
-		return common.Address{}, errors.New("Coinbase or Invalid Tx, first message must be a payment")
+		return common.Address{}, fmt.Errorf("[%s]Coinbase or Invalid Tx, first message must be a payment",
+			tx.RequestHash().ShortStr())
 	}
 	pay := msg0.Payload.(*PaymentPayload)
 
@@ -968,7 +968,7 @@ func (tx *Transaction) IsSystemContract() bool {
 			//log.Debug("isSystemContract", "contract id", contractAddr, "len", len(contractAddr))
 			return contractAddr.IsSystemContractAddress() //, nil
 
-		} 
+		}
 	}
 	return false //没有Request，当然就不是系统合约
 }

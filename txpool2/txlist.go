@@ -95,7 +95,7 @@ func (l *txList) AddTx(tx *txspool.TxPoolTransaction) error {
 	for _, o := range tx.Tx.GetSpendOutpoints() {
 		l.spendUtxo[*o] = tx.TxHash
 	}
-	for op, utxo := range tx.Tx.GetNewTxUtxoAndReqUtxos() {
+	for op, utxo := range tx.Tx.GetNewUtxos() {
 		l.newUtxo[op] = utxo
 	}
 	return nil
@@ -180,8 +180,11 @@ func (l *txList) deleteTxUtxo(tx *txspool.TxPoolTransaction) {
 	for _, o := range tx.Tx.GetSpendOutpoints() {
 		delete(l.spendUtxo, *o)
 	}
-	for op := range tx.Tx.GetNewTxUtxoAndReqUtxos() {
+	for op := range tx.Tx.GetNewUtxos() {
 		delete(l.newUtxo, op)
+	}
+	if tx.ReqHash != tx.TxHash {
+		delete(l.reqTxMap, tx.ReqHash)
 	}
 }
 func (l *txList) deleteTxLink(tx *linkTx) error {

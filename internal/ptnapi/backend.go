@@ -72,7 +72,7 @@ type Backend interface {
 	GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, error)
 	GetTxPoolTxByHash(hash common.Hash) (*ptnjson.TxPoolTxJson, error)
 	GetUnpackedTxsByAddr(addr string) ([]*txspool.TxPoolTransaction, error)
-
+	GetPoolAddrUtxos(addr common.Address, token *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	//GetPoolNonce(ctx context.Context, addr common.Address) (uint64, error)
 	Status() (int, int, int)
 	TxPoolContent() (map[common.Hash]*txspool.TxPoolTransaction, map[common.Hash]*txspool.TxPoolTransaction)
@@ -127,7 +127,7 @@ type Backend interface {
 	//------- Get addr utxo start ------//
 	GetAddrOutpoints(addr string) ([]modules.OutPoint, error)
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
-	GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error)
+	GetDagAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error)
 	GetAddrUtxoTxs(addr string) ([]*ptnjson.TxWithUnitInfoJson, error)
 	GetAddrUtxos2(addr string) ([]*ptnjson.UtxoJson, error)
 	GetAddrRawUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, error)

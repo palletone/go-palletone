@@ -352,80 +352,52 @@ func (pm *ProtocolManager) NewBlockHashesMsg(msg p2p.Msg, p *peer) error {
 //	return false
 //}
 func (pm *ProtocolManager) TxMsg(msg p2p.Msg, p *peer) error {
-	log.Debug("Enter ProtocolManager TxMsg")
-	defer log.Debug("End ProtocolManager TxMsg")
+	log.Debug("Enter TxMsg")
+	defer log.Debug("End TxMsg")
 	// Transactions arrived, make sure we have a valid and fresh chain to handle them
 	if atomic.LoadUint32(&pm.acceptTxs) == 0 {
-		log.Debug("ProtocolManager handlmsg TxMsg pm.acceptTxs==0")
+		log.Debug("TxMsg pm.acceptTxs==0")
 		return nil
 	}
 	// Transactions can be processed, parse all of them and deliver to the pool
 	var txs []*modules.Transaction
 	if err := msg.Decode(&txs); err != nil {
-		log.Debug("ProtocolManager handlmsg TxMsg", "Decode err:", err, "msg:", msg)
+		log.Debug("TxMsg", "Decode err:", err, "msg:", msg)
 		return errResp(ErrDecode, "msg %v: %v", msg, err)
 	}
+	log.Debugf("TxMsg, tx num[%d]", len(txs))
 
-	log.Debugf("ProtocolManager, tx num[%d]", len(txs))
-
-	//unitNumber := pm.dag.HeadUnitNum() + 1
-	//unitId := fmt.Sprintf("%d", unitNumber)
-	//rwM, err := rwset.NewRwSetMgr(unitId)
-	//if err != nil {
-	//	log.Errorf("ProtocolManager NewRwSetMgr err: %s", err.Error())
-	//	return err
-	//}
-	//defer rwM.Close()
-	//mDag, err := pm.dag.NewTemp()
-	//if err != nil {
-	//	log.Errorf("ProtocolManager NewTemp err: %s", err.Error())
-	//	return err
-	//}
-
-	//log.Debugf("ProtocolManager, TxMsg len(txs)[%d]", len(txs))
 	for i, tx := range txs {
 		if tx == nil {
-			return errResp(ErrDecode, "transaction %d is nil", i)
+			return errResp(ErrDecode, "TxMsg transaction %d is nil", i)
 		}
-
 		txHash := tx.Hash()
+		reqId := tx.RequestHash()
 		p.MarkTransaction(txHash)
 		if pm.IsExistInCache(txHash.Bytes()) {
 			return nil
 		}
 
-		log.Debugf("ProtocolManager, index[%d] txHash[%s] tx:%s", i, tx.Hash().ShortStr(), tx.String())
+		log.Debugf("[%s]TxMsg, index[%d] txHash[%s] tx:%s", reqId.ShortStr(), i, txHash.ShortStr(), tx.String())
 		if tx.IsContractTx() && tx.GetContractTxType() == modules.APP_CONTRACT_INVOKE_REQUEST {
 			//系统合约的请求可以P2P广播，但是包含结果的系统合约请求，只能在打包时生成，不能广播
 			if tx.IsSystemContract() {
 				if !tx.IsOnlyContractRequest() {
-					log.Debugf("ProtocolManager, Tx[%s] is a sys contract with result, don't need send by p2p", txHash.String())
+					log.Debugf("[%s]TxMsg, Tx[%s] is a sys contract with result, don't need send by p2p",
+						reqId.ShortStr(), txHash.String())
 					continue
 				}
 			}
 		}
-		//else {
-		//		if tx.IsOnlyContractRequest() {
-		//			_, err := pm.contractProc.ProcessUserContractTxMsg(tx, rwM, mDag)
-		//			if err != nil {
-		//				log.Errorf("ProtocolManager, Tx[%s] ProcessContractTxMsg err:%s", tx.RequestHash().String(), err.Error())
-		//			}
-		//		}
-		//	}
-		//}
-		//
-		//if tx != nil {
-		//	mDag.SaveTransaction(tx, i)
-		//}
+
 		//添加到本地交易
 		err := pm.contractProc.AddLocalTx(tx)
 		if err != nil {
-			log.Warnf("ProtocolManager, AddLocalTx[%s]-[%s] err:%s",
-				tx.RequestHash().String(), tx.Hash().String(), err.Error())
+			log.Warnf("[%s]TxMsg, AddLocalTx[%s] err:%s", reqId.ShortStr(), txHash.String(), err.Error())
 		}
 		err = pm.txpool.AddRemote(tx)
 		if err != nil {
-			log.Infof("ProtocolManager,the transaction %s not accepteable, err:%s", tx.Hash().String(), err.Error())
+			log.Infof("[%s]TxMsg,the transaction %s not accepteable, err:%s", reqId.ShortStr(), txHash.String(), err.Error())
 		}
 	}
 
@@ -656,7 +628,7 @@ func (pm *ProtocolManager) VSSResponseMsg(msg p2p.Msg, p *peer) error {
 func (pm *ProtocolManager) ContractMsg(msg p2p.Msg, p *peer) error {
 	var event jury.ContractEvent
 	if err := msg.Decode(&event); err != nil {
-		log.Info("ProtocolManager ContractMsg", "err:", err)
+		log.Info("ContractMsg", "err:", err)
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
 	if pm.IsExistInCache(event.Hash().Bytes()) {
@@ -672,17 +644,17 @@ func (pm *ProtocolManager) ContractMsg(msg p2p.Msg, p *peer) error {
 	//}
 
 	reqId := event.Tx.RequestHash()
-	log.Debugf("[%s] ProtocolManager ContractMsg, event type[%v]", reqId.String()[0:8], event.CType)
+	log.Debugf("[%s] ContractMsg, event type[%v]", reqId.ShortStr(), event.CType)
 	brd, err := pm.contractProc.ProcessContractEvent(&event)
 	if err != nil {
-		log.Debugf("[%s]ProtocolManager ContractMsg, error:%s", reqId.String()[0:8], err.Error())
+		log.Debugf("[%s]ContractMsg, error:%s", reqId.ShortStr(), err.Error())
 	}
 	if brd && pm.peers != nil {
 		peers := pm.peers.GetPeers()
-		log.Debugf("[%s]ProtocolManager, event type[%d], peers num[%d]", reqId.String()[0:8], event.CType, len(peers))
+		log.Debugf("[%s]ContractMsg, event type[%d], peers num[%d]", reqId.ShortStr(), event.CType, len(peers))
 		for _, peer := range peers {
 			if err := peer.SendContractTransaction(event); err != nil {
-				log.Error("ContractBroadcast", "SendContractTransaction err:", err.Error())
+				log.Error("ContractMsg", "SendContractTransaction err:", err.Error())
 			}
 		}
 	}
@@ -692,7 +664,7 @@ func (pm *ProtocolManager) ContractMsg(msg p2p.Msg, p *peer) error {
 func (pm *ProtocolManager) ElectionMsg(msg p2p.Msg, p *peer) error {
 	var evs jury.ElectionEventBytes
 	if err := msg.Decode(&evs); err != nil {
-		log.Info("===ElectionMsg===", "err:", err)
+		log.Info("ElectionMsg", "err:", err)
 		return errResp(ErrDecode, "%v: %v", msg, err)
 	}
 	if pm.IsExistInCache(evs.Hash().Bytes()) {
@@ -702,26 +674,25 @@ func (pm *ProtocolManager) ElectionMsg(msg p2p.Msg, p *peer) error {
 	// 判断是否同步, 如果没同步完成，接收到的 ElectionMsg 对当前节点来说是超前的
 	if !pm.dag.IsSynced(false) {
 		log.Debugf(errStr)
-		//return fmt.Errorf(errStr)
 		return nil
 	}
-
 	event, err := evs.ToElectionEvent()
 	if err != nil {
-		log.Debug("ElectionMsg, ToElectionEvent fail")
+		log.Errorf("ElectionMsg, ToElectionEvent fail, err:%s", err.Error())
 		return nil
 	}
-	log.Debugf("ElectionMsg, event type[%v]", event.EType)
+	ReqId := event.ReqId()
+	log.Debugf("[%s]ElectionMsg, event type[%v]", ReqId.ShortStr(), event.EType)
 	err = pm.contractProc.ProcessElectionEvent(event)
 	if err != nil {
-		log.Warn("ElectionMsg", "ProcessElectionEvent error:", err)
+		log.Warnf("[%s]ElectionMsg, ProcessElectionEvent error:%s", ReqId.ShortStr(), err)
 	}
 	if pm.peers != nil {
 		peers := pm.peers.GetPeers()
-		log.Debugf("ElectionMsg, event type[%d], peers num[%d]", event.EType, len(peers))
-		for _, peer := range peers {
+		log.Debugf("[%s]ElectionMsg, event type[%d], peers num[%d]", ReqId.ShortStr(), event.EType, len(peers))
+		for idx, peer := range peers {
 			if err := peer.SendElectionEvent(*event); err != nil {
-				log.Error("ElectionMsg", "SendContractTransaction err:", err.Error())
+				log.Errorf("[%s]ElectionMsg, SendContractTransaction err[%d]:%s", ReqId.ShortStr(), idx, err.Error())
 			}
 		}
 	}

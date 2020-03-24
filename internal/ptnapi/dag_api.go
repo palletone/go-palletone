@@ -490,7 +490,7 @@ func (s *PublicDagAPI) GetAddrOutpoints(ctx context.Context, addr string) (strin
 }
 
 func (s *PublicDagAPI) GetAddrUtxos(ctx context.Context, addr string) (string, error) {
-	items, err := s.b.GetAddrUtxos(addr)
+	items, err := s.b.GetDagAddrUtxos(addr)
 
 	if err != nil {
 		return "", err
