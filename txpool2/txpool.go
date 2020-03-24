@@ -18,6 +18,7 @@
 package txpool2
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"sync"
@@ -110,19 +111,19 @@ func (pool *TxPool) AddRemote(tx *modules.Transaction) error {
 }
 func (pool *TxPool) checkDuplicateAdd(txHash common.Hash) error {
 	if _, err := pool.normals.GetTx(txHash); err == nil { //found tx
-		log.Infof("try to add duplicate tx[%s] to tx pool", txHash.String())
+		log.Infof("ignore add duplicate tx[%s] to tx pool", txHash.String())
 		return ErrDuplicate
 	}
 	if _, ok := pool.orphans[txHash]; ok { //found in orphans
-		log.Infof("try to add duplicate orphan tx[%s] to tx pool", txHash.String())
+		log.Infof("ignore add duplicate orphan tx[%s] to tx pool", txHash.String())
 		return ErrDuplicate
 	}
 	if _, ok := pool.userContractRequests[txHash]; ok { //found in userContractRequests
-		log.Infof("try to add duplicate user contract request[%s] to tx pool", txHash.String())
+		log.Infof("ignore add duplicate user contract request[%s] to tx pool", txHash.String())
 		return ErrDuplicate
 	}
 	if _, ok := pool.basedOnRequestOrphans[txHash]; ok { //found in basedOnRequestOrphans
-		log.Infof("try to add duplicate Tx[%s] to tx pool", txHash.String())
+		log.Infof("ignore add duplicate Tx[%s] to tx pool", txHash.String())
 		return ErrDuplicate
 	}
 	return nil
@@ -311,36 +312,105 @@ func (pool *TxPool) GetSortedTxs() ([]*txspool.TxPoolTransaction, error) {
 func (pool *TxPool) GetUtxoFromAll(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	pool.RLock()
 	defer pool.RUnlock()
-	_, newUtxo := pool.getAllSpendAndNewUtxo()
+	_, newUtxo, reqTxMapping := pool.getAllSpendAndNewUtxo()
 	utxo, ok := newUtxo[*outpoint]
 	if ok {
 		return utxo, nil
 	}
+	if txHash, ok := reqTxMapping[outpoint.TxHash]; ok {
+		o2 := modules.OutPoint{
+			TxHash:       txHash,
+			MessageIndex: outpoint.MessageIndex,
+			OutIndex:     outpoint.OutIndex,
+		}
+		if utxo, ok := newUtxo[o2]; ok {
+			return utxo, nil
+		}
+	}
 	return nil, ErrNotFound
 
 }
+func parseTxUtxo(txs []*txspool.TxPoolTransaction, addr common.Address, token *modules.Asset) (
+	map[modules.OutPoint]*modules.Utxo, map[common.Hash]common.Hash, map[modules.OutPoint]bool) {
+	dbUtxos := make(map[modules.OutPoint]*modules.Utxo)
+	spendUtxo := make(map[modules.OutPoint]bool)
+	dbReqTxMapping := make(map[common.Hash]common.Hash)
+	lockScript := tokenengine.Instance.GenerateLockScript(addr)
+	for _, tx := range txs {
+		for k, v := range tx.Tx.GetNewUtxos() {
+			if !bytes.Equal(lockScript, v.PkScript) {
+				continue
+			}
+			if token != nil && v.Asset.Equal(token) {
+				dbUtxos[k] = v
+			}
+		}
+		for _, so := range tx.Tx.GetSpendOutpoints() {
+			spendUtxo[*so] = true
+		}
+		if tx.TxHash != tx.ReqHash {
+			dbReqTxMapping[tx.ReqHash] = tx.TxHash
+		}
+	}
+	return dbUtxos, dbReqTxMapping, spendUtxo
+}
 
-//func (pool *TxPool) GetUtxoFromFree(outpoint *modules.OutPoint) (*modules.Utxo, error) {
-//	pool.RLock()
-//	defer pool.RUnlock()
-//	poolUtxo, err := pool.normals.GetUtxoEntry(outpoint)
-//	if err != nil {
-//		if len(pool.userContractRequests) > 0 {
-//			reqUtxo, err := getUtxoFromTxs(pool.userContractRequests, outpoint)
-//			if err == nil {
-//				return reqUtxo, nil
-//			}
-//		}
-//		if len(pool.basedOnRequestOrphans) > 0 {
-//			reqUtxo, err := getUtxoFromTxs(pool.basedOnRequestOrphans, outpoint)
-//			if err == nil {
-//				return reqUtxo, nil
-//			}
-//		}
-//	}
-//	return poolUtxo, nil
-//}
-func (pool *TxPool) getAllSpendAndNewUtxo() (map[modules.OutPoint]common.Hash, map[modules.OutPoint]*modules.Utxo) {
+func (pool *TxPool) GetAddrUtxos(addr common.Address, token *modules.Asset) (
+	map[modules.OutPoint]*modules.Utxo, error) {
+	dbUtxos, dbReqTxMapping, err := pool.dag.GetAddrUtxoAndReqMapping(addr, token)
+	if err != nil {
+		return nil, err
+	}
+	log.DebugDynamic(func() string {
+		utxoKeys := ""
+		for o := range dbUtxos {
+			utxoKeys += o.String() + ";"
+		}
+		mapping := ""
+		for req, tx := range dbReqTxMapping {
+			mapping += req.String() + ":" + tx.String() + ";"
+		}
+		return "db utxo outpoints:" + utxoKeys + " req:tx mapping :" + mapping
+	})
+	pool.RLock()
+	defer pool.RUnlock()
+
+	txs, err := pool.GetUnpackedTxsByAddr(addr)
+	if err != nil {
+		return nil, err
+	}
+	log.DebugDynamic(func() string {
+		txHashs := ""
+		for _, tx := range txs {
+			txHashs += "[tx:" + tx.Tx.Hash().String() + "-req:" + tx.Tx.RequestHash().String() + "];"
+		}
+		return "txpool unpacked tx:" + txHashs
+	})
+	poolUtxo, poolReqTxMapping, poolSpend := parseTxUtxo(txs, addr, token)
+	for k, v := range dbUtxos {
+		poolUtxo[k] = v
+	}
+	for k, v := range dbReqTxMapping {
+		poolReqTxMapping[k] = v
+	}
+	for spend := range poolSpend {
+		delete(poolUtxo, spend)
+		if txHash, ok := poolReqTxMapping[spend.TxHash]; ok {
+			spend2 := modules.OutPoint{
+				TxHash:       txHash,
+				MessageIndex: spend.MessageIndex,
+				OutIndex:     spend.OutIndex,
+			}
+			delete(poolUtxo, spend2)
+		}
+	}
+	return poolUtxo, nil
+}
+
+//返回交易池中花费的UTXO，新产生的UTXO，Req-Tx Mapping
+func (pool *TxPool) getAllSpendAndNewUtxo() (map[modules.OutPoint]common.Hash,
+	map[modules.OutPoint]*modules.Utxo, map[common.Hash]common.Hash) {
+	//查询NormalPool的已花费UTXO，新UTXO和Req-Tx Mapping
 	spendUtxoes := make(map[modules.OutPoint]common.Hash)
 	for k, v := range pool.normals.spendUtxo {
 		spendUtxoes[k] = v
@@ -349,6 +419,11 @@ func (pool *TxPool) getAllSpendAndNewUtxo() (map[modules.OutPoint]common.Hash, m
 	for k, v := range pool.normals.newUtxo {
 		newUtxoes[k] = v
 	}
+	reqTxMapping := make(map[common.Hash]common.Hash)
+	for req, txHash := range pool.normals.reqTxMap {
+		reqTxMapping[req] = txHash
+	}
+	//查询用户合约Request池的已花费UTXO，新UTXO，这里不会有Req-Tx Mapping
 	s1, n1 := getUtxoFromTxs(pool.userContractRequests)
 	for k, v := range s1 {
 		spendUtxoes[k] = v
@@ -356,6 +431,7 @@ func (pool *TxPool) getAllSpendAndNewUtxo() (map[modules.OutPoint]common.Hash, m
 	for k, v := range n1 {
 		newUtxoes[k] = v
 	}
+	//查询based on request 池的已花费UTXO，新UTXO和Req-Tx Mapping
 	s2, n2 := getUtxoFromTxs(pool.basedOnRequestOrphans)
 	for k, v := range s2 {
 		spendUtxoes[k] = v
@@ -363,12 +439,27 @@ func (pool *TxPool) getAllSpendAndNewUtxo() (map[modules.OutPoint]common.Hash, m
 	for k, v := range n2 {
 		newUtxoes[k] = v
 	}
-	return spendUtxoes, newUtxoes
+	for _, tx := range pool.basedOnRequestOrphans {
+		if tx.TxHash != tx.ReqHash {
+			reqTxMapping[tx.ReqHash] = tx.TxHash
+		}
+	}
+	return spendUtxoes, newUtxoes, reqTxMapping
 }
 
 //主要用于Validator，不带锁,从Normal，Request和BasedOnReq三个池获取UTXO，而且禁止双花，如果Pool找不到，就去Dag找
 func (pool *TxPool) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
-	spendUtxoes, newUtxoes := pool.getAllSpendAndNewUtxo()
+	spendUtxoes, newUtxoes, reqTxMapping := pool.getAllSpendAndNewUtxo()
+	for o, hash := range spendUtxoes {
+		if txHash, ok := reqTxMapping[o.TxHash]; ok {
+			o2 := modules.OutPoint{
+				TxHash:       txHash,
+				MessageIndex: o.MessageIndex,
+				OutIndex:     o.OutIndex,
+			}
+			spendUtxoes[o2] = hash
+		}
+	}
 	if spendTxHash, ok := spendUtxoes[*outpoint]; ok {
 		log.Warnf("Utxo(%s) already spend in pool tx[%s]", outpoint.String(), spendTxHash.String())
 		return nil, ErrDoubleSpend
@@ -376,12 +467,23 @@ func (pool *TxPool) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, err
 	if utxo, ok := newUtxoes[*outpoint]; ok {
 		return utxo, nil
 	}
+	if txHash, ok := reqTxMapping[outpoint.TxHash]; ok {
+		o2 := modules.OutPoint{
+			TxHash:       txHash,
+			MessageIndex: outpoint.MessageIndex,
+			OutIndex:     outpoint.OutIndex,
+		}
+		if utxo, ok := newUtxoes[o2]; ok {
+			return utxo, nil
+		}
+	}
 	log.DebugDynamic(func() string {
 		return fmt.Sprintf("GetUtxoEntry(%s) not found in pool", outpoint.String())
 	})
 	return pool.dag.GetUtxoEntry(outpoint)
 }
 
+//获得交易列表的消耗的UTXO和新产生的UTXO
 func getUtxoFromTxs(txs map[common.Hash]*txspool.TxPoolTransaction) (map[modules.OutPoint]common.Hash, map[modules.OutPoint]*modules.Utxo) {
 	newUtxo := make(map[modules.OutPoint]*modules.Utxo)
 	spendUtxo := make(map[modules.OutPoint]common.Hash)
@@ -397,7 +499,7 @@ func getUtxoFromTxs(txs map[common.Hash]*txspool.TxPoolTransaction) (map[modules
 }
 
 func (pool *TxPool) GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error) {
-	spendUtxoes, newUtxoes := pool.getAllSpendAndNewUtxo()
+	spendUtxoes, newUtxoes, _ := pool.getAllSpendAndNewUtxo()
 	if spendTxHash, ok := spendUtxoes[*outpoint]; ok {
 		var utxo *modules.Utxo
 		var ok2 bool

@@ -251,3 +251,18 @@ func (mr *MockITxPoolMockRecorder) Content() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Content", reflect.TypeOf((*MockITxPool)(nil).Content))
 }
+
+// GetAddrUtxos mocks base method
+func (m *MockITxPool) GetAddrUtxos(addr common.Address, token *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAddrUtxos", addr, token)
+	ret0, _ := ret[0].(map[modules.OutPoint]*modules.Utxo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAddrUtxos indicates an expected call of GetAddrUtxos
+func (mr *MockITxPoolMockRecorder) GetAddrUtxos(addr, token interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAddrUtxos", reflect.TypeOf((*MockITxPool)(nil).GetAddrUtxos), addr, token)
+}

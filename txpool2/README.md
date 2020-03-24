@@ -45,3 +45,6 @@ Txpool同时支持Request和FullTx的Add，对于用户合约调用，先是将R
 ### 更新交易状态为已打包
 如果有ABCDE连续交易，本节点只收到了BCE，现在来了一个Unit包含AB交易，那么在更新状态时，
 应该把BC从孤儿池删除，ABC交易放入Normal，然后更新状态Packed，E保持不变。
+
+###关于UTXO的查询
+假如我们要发起ReqA,ReqB,ReqC3笔用户合约调用，当发起第二笔时，ReqA未完成，所以ReqB是基于ReqA的，然后再过了一会儿FullTxA来替换了ReqA，然后发起ReqC，我们必须知道ReqB已经把FullTxA的UTXO使用了。

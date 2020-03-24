@@ -270,7 +270,11 @@ func (s *PublicTransactionPoolAPI) GetAddrOutpoints(ctx context.Context, addr st
 	return string(result_json), nil
 }
 func (s *PublicTransactionPoolAPI) GetAddrUtxos(ctx context.Context, addr string) (string, error) {
-	items, err := s.b.GetAddrUtxos(addr)
+	address, err := common.StringToAddress(addr)
+	if err != nil {
+		return "", err
+	}
+	items, err := s.b.GetPoolAddrUtxos(address, nil)
 
 	if err != nil {
 		return "", err
@@ -638,6 +642,9 @@ func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, reqTxMa
 					}
 					if addr.String() == from {
 						allUtxo[op] = modules.NewUtxo(output, pay.LockTime, time.Now().Unix())
+					}
+					if tx.ReqHash != tx.TxHash {
+						reqTxMapping[tx.ReqHash] = tx.TxHash
 					}
 
 				}

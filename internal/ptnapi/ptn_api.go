@@ -110,7 +110,7 @@ func NewPublicBlockChainAPI(b Backend) *PublicBlockChainAPI {
 // given block number. The rpc.LatestBlockNumber and rpc.PendingBlockNumber meta
 // block numbers are also allowed.
 func (s *PublicBlockChainAPI) GetBalance(ctx context.Context, address string) (map[string]decimal.Decimal, error) {
-	utxos, err := s.b.GetAddrUtxos(address)
+	utxos, err := s.b.GetDagAddrUtxos(address)
 	if err != nil {
 		return nil, err
 	}

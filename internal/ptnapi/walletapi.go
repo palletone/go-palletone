@@ -621,7 +621,7 @@ func WalletCreateProofTransaction( /*s *rpcServer*/ c *ptnjson.CreateProofTransa
 
 func (s *PublicWalletAPI) GetAddrUtxos(ctx context.Context, addr string) (string, error) {
 
-	items, err := s.b.GetAddrUtxos(addr)
+	items, err := s.b.GetDagAddrUtxos(addr)
 	if err != nil {
 		return "", err
 	}
@@ -648,7 +648,7 @@ func (s *PublicWalletAPI) GetBalance(ctx context.Context, addr string) (map[stri
 		return nil, err
 	}
 	address := realAddr.String()
-	utxos, err := s.b.GetAddrUtxos(address)
+	utxos, err := s.b.GetDagAddrUtxos(address)
 	if err != nil {
 		return nil, err
 	}
@@ -785,7 +785,7 @@ func (s *PrivateWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to s
 	}
 	amounts = append(amounts, ptnjson.AddressAmt{Address: to, Amount: a})
 
-	utxoJsons, err := s.b.GetAddrUtxos(from)
+	utxoJsons, err := s.b.GetDagAddrUtxos(from)
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -1048,6 +1048,7 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 	start := time.Now()
 	rawTx, usedUtxo, err := buildRawTransferTx(s.b, asset, from, to, amount, fee, password)
 	if err != nil {
+		log.Error("buildRawTransferTx error:" + err.Error())
 		return common.Hash{}, err
 	}
 	log.Debugf("build raw tx spend:%v", time.Since(start))
@@ -1063,6 +1064,11 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 	//ks := s.b.GetKeyStore()
 	err = signRawTransaction(s.b, rawTx, from, password, duration, 1, usedUtxo)
 	if err != nil {
+		data, _ := json.Marshal(rawTx)
+		log.Debug(string(data))
+		data, _ = json.Marshal(usedUtxo)
+		log.Debugf("used utxo:%s", string(data))
+		log.Error("signRawTransaction error:" + err.Error())
 		return common.Hash{}, err
 	}
 	//save tx to memory dag
@@ -1074,7 +1080,12 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 
 	log.Debugf("sign raw tx spend:%v", time.Since(start))
 	//4. send
-	return submitTransaction(ctx, s.b, rawTx)
+	txHash, err := submitTransaction(ctx, s.b, rawTx)
+	if err != nil {
+		log.Error("submitTransaction error:" + err.Error())
+		return common.Hash{}, err
+	}
+	return txHash, nil
 }
 
 //转移Token，并确认打包后返回
@@ -1534,7 +1545,6 @@ func (s *PublicWalletAPI) getProofOfExistencesByMaindata(maindata string) ([]*pt
 	}
 	return result, nil
 }
-
 
 //根据交易哈希 查询存证结果
 func (s *PublicWalletAPI) GetFileInfoByTxid(ctx context.Context, txid common.Hash) (*ptnjson.ProofOfExistenceJson, error) {
