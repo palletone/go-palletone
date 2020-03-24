@@ -65,7 +65,7 @@ type IDag interface {
 	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
 	GetJurorByAddrHash(addrHash common.Hash) (*modules.JurorDeposit, error)
 	GetJurorReward(jurorAdd common.Address) common.Address
-
+	GetAddrUtxoAndReqMapping(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, map[common.Hash]common.Hash, error)
 	CheckReadSetValid(contractId []byte, readSet []modules.ContractReadSet) bool
 }
 
