@@ -385,6 +385,3 @@ func TestTxPool_AddUserContractAndTransferTx(t *testing.T) {
 	txs, _ = pool.GetUnpackedTxsByAddr(addr)
 	assert.Equal(t, 2, len(txs))
 }
-func TestTxPool_GetAddrUtxoFreeRealData(t *testing.T) {
-
-}
