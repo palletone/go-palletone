@@ -58,9 +58,9 @@ type TxPool struct {
 
 // NewTxPool creates a new transaction pool to gather, sort and filter inbound
 // transactions from the network.
-func NewTxPool(config txspool.TxPoolConfig, cachedb palletcache.ICache, unit txspool.IDag) *TxPool {
+func NewTxPool(config txspool.TxPoolConfig, cachedb palletcache.ICache, unit txspool.IDag, enableGasFee bool) *TxPool {
 	tokenEngine := tokenengine.Instance
-	val := validator.NewValidate(unit, unit, unit, unit, nil, cachedb, false)
+	val := validator.NewValidate(unit, unit, unit, unit, nil, cachedb, false, enableGasFee)
 	pool := NewTxPool4DI(config, cachedb, unit, tokenEngine, val)
 	//pool.startJournal(config)
 	return pool

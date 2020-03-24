@@ -138,7 +138,7 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 			return nil, err
 		}
 	}
-	dag, err := dag.NewDag(db, localdb, cache, false)
+	dag, err := dag.NewDag(db, localdb, cache, false, config.EnableGasFee)
 	if err != nil {
 		log.Error("PalletOne New", "NewDag err:", err)
 		return nil, err
@@ -165,10 +165,10 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
 	}
 	//val:=validator.NewValidate(ptn.dag,ptn.dag,ptn.dag,ptn.dag,cache)
-	if config.TxPool.Version==2{
-		ptn.txPool = txpool2.NewTxPool(config.TxPool, cache, ptn.dag)
-	}else {
-		ptn.txPool = txspool.NewTxPool(config.TxPool, cache, ptn.dag)
+	if config.TxPool.Version == 2 {
+		ptn.txPool = txpool2.NewTxPool(config.TxPool, cache, ptn.dag, config.EnableGasFee)
+	} else {
+		ptn.txPool = txspool.NewTxPool(config.TxPool, cache, ptn.dag, config.EnableGasFee)
 	}
 	//Test for P2P
 	ptn.engine = consensus.New(dag, ptn.txPool)
@@ -528,4 +528,8 @@ func initGenesisData(keys, values []string, db ptndb.Putter) error {
 		}
 	}
 	return nil
+}
+
+func (p *PalletOne) EnableGasFee() bool {
+	return p.config.EnableGasFee
 }

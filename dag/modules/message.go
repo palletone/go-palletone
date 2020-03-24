@@ -554,6 +554,11 @@ type ContractStopPayload struct {
 	ErrMsg     ContractError      `json:"contract_error"` // contract error message
 }
 
+func NewSignaturePayload(pubKey, signature []byte) *SignaturePayload {
+	ss := SignatureSet{PubKey: pubKey, Signature: signature}
+	return &SignaturePayload{Signatures: []SignatureSet{ss}}
+}
+
 //contract invoke result
 type ContractInvokeResult struct {
 	ContractId  []byte             `json:"contract_id"` // contract id

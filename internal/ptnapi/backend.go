@@ -205,6 +205,7 @@ type Backend interface {
 	SyncUTXOByAddr(addr string) string
 	StartCorsSync() (string, error)
 
+	EnableGasFee() bool
 	GetContractsWithJuryAddr(addr common.Hash) []*modules.Contract
 }
 

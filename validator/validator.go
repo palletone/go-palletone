@@ -54,11 +54,12 @@ type Validate struct {
 	light                    bool
 	contractCheckFun         ContractTxCheckFunc //合约检查函数，通过Set方法注入
 	//buildTempDagFunc         BuildTempContractDagFunc //为合约运行构造临时Db的方法，通过Set注入
+	enableGasFee bool //Tx是否必须有手续费的存在
 }
 
 func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery, propquery IPropQuery,
 	contractDag dboperation.IContractDag,
-	cache palletcache.ICache, light bool) Validator {
+	cache palletcache.ICache, light bool, enableGasFee bool) Validator {
 	//cache := freecache.NewCache(20 * 1024 * 1024)
 	vcache := NewValidatorCache(cache)
 	return &Validate{
@@ -75,6 +76,7 @@ func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery, propq
 		enableContractRwSetCheck: true,
 		enableTxFullCheck:        true,
 		light:                    light,
+		enableGasFee:             enableGasFee,
 	}
 }
 
@@ -131,7 +133,7 @@ func (validate *Validate) validateTransactions(rwM rwset.TxManager, txs modules.
 		if validate.checkTxIsExist(tx) {
 			return TxValidationCode_DUPLICATE_TXID
 		}
-		if txIndex == 0 {
+		if txIndex == 0 && validate.enableGasFee {
 			coinbase = tx
 			continue
 			//每个单元的第一条交易比较特殊，是Coinbase交易，其包含增发和收集的手续费
@@ -174,7 +176,7 @@ func (validate *Validate) validateTransactions(rwM rwset.TxManager, txs modules.
 		//validate.utxoquery = newUtxoQuery
 	}
 	//验证第一条交易
-	if len(txs) > 0 {
+	if validate.enableGasFee && len(txs) > 0 {
 		//附加上出块奖励
 		a := &modules.Addition{
 			Addr:   unitAuthor,

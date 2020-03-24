@@ -623,6 +623,21 @@ func (tx *Transaction) GetContractTxSignatureAddress() []common.Address {
 	return addrs
 }
 
+//获得合约结果部分的Signature，如果不是合约Tx，则返回第一个Signature
+func (tx *Transaction) GetResultSignature() (int, *SignaturePayload, error) {
+	reqSign := tx.NeedRequestSignature()
+	for msgIdx, msg := range tx.txdata.TxMessages {
+		if msg.App == APP_SIGNATURE {
+			if reqSign {
+				reqSign = false
+			} else {
+				return msgIdx, msg.Payload.(*SignaturePayload), nil
+			}
+		}
+	}
+	return 0, nil, errors.ErrMessageNotFound
+}
+
 //如果是合约调用交易，Copy其中的Msg0到ContractRequest的部分，如果不是请求，那么返回完整Tx
 func (tx *Transaction) GetRequestTx() *Transaction {
 	msgs := tx.TxMessages()
@@ -765,6 +780,25 @@ func (tx *Transaction) GetToAddrs(getAddrFunc GetAddressFromScriptFunc) ([]commo
 		keys = append(keys, k)
 	}
 	return keys, nil
+}
+
+//判断一个Tx是否有请求的SignaturePayload
+func (tx *Transaction) NeedRequestSignature() bool {
+	return tx.txdata.TxMessages[0].App != APP_PAYMENT
+}
+
+//根据Tx中的第一个SignaturePayload，计算签名者地址
+func (tx *Transaction) GetSignatureAddr() (common.Address, error) {
+	for _, msg := range tx.txdata.TxMessages {
+		if msg.App == APP_SIGNATURE {
+			sign := msg.Payload.(*SignaturePayload)
+			if len(sign.Signatures) == 0 {
+				return common.Address{}, errors.New("Invalid SignaturePayload")
+			}
+			return crypto.PubkeyBytesToAddress(sign.Signatures[0].PubKey), nil
+		}
+	}
+	return common.Address{}, errors.New("SignaturePayload not found")
 }
 
 //获取该交易的发起人地址

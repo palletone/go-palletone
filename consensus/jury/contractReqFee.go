@@ -69,7 +69,7 @@ func (p *Processor) ContractInstallReqFee(from, to common.Address, daoAmount, da
 			Creator:        from.String(),
 		},
 	}
-	reqTx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, nil, msgReq)
+	reqTx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, nil, msgReq, p.ptn.EnableGasFee())
 	if err != nil {
 		log.Error("ContractInstallReqFee", "CreateGenericTransaction err:", err)
 		return 0, 0, 0, err
@@ -99,7 +99,7 @@ func (p *Processor) ContractDeployReqFee(from, to common.Address, daoAmount, dao
 			Timeout:    uint32(timeout),
 		},
 	}
-	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, nil, msgReq)
+	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, nil, msgReq, p.ptn.EnableGasFee())
 	if err != nil {
 		log.Error("ContractDeployReqFee", "CreateGenericTransaction err:", err)
 		return 0, 0, 0, err
@@ -117,7 +117,7 @@ func (p *Processor) ContractInvokeReqFee(from, to common.Address, daoAmount, dao
 			Timeout:    timeout,
 		},
 	}
-	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, nil, msgReq)
+	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, nil, msgReq, p.ptn.EnableGasFee())
 	if err != nil {
 		log.Error("ContractInvokeReqFee", "CreateGenericTransaction err:", err)
 		return 0, 0, 0, err
@@ -139,7 +139,7 @@ func (p *Processor) ContractStopReqFee(from, to common.Address, daoAmount, daoFe
 			DeleteImage: deleteImage,
 		},
 	}
-	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, nil, msgReq)
+	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, nil, msgReq, p.ptn.EnableGasFee())
 	if err != nil {
 		log.Error("ContractStopReqFee", "CreateGenericTransaction err:", err)
 		return 0, 0, 0, err

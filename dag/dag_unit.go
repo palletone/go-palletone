@@ -207,7 +207,7 @@ func (d *Dag) createUnit(mAddr common.Address, txs []*modules.Transaction,
 
 	//return d.unstableUnitRep.CreateUnit(med.GetRewardAdd(), txpool, rep, state.GetJurorReward)
 	return d.unstableUnitRep.CreateUnit(med.GetRewardAdd(), txs, when,
-		d.unstablePropRep, d.unstableStateRep.GetJurorReward)
+		d.unstablePropRep, d.unstableStateRep.GetJurorReward, d.enableGasFee)
 }
 
 func (d *Dag) GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error) {

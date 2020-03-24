@@ -60,6 +60,7 @@ type MemDag struct {
 	ldbPropRep         common2.IPropRepository
 	ldbUnitProduceRep  common2.IUnitProduceRepository
 	saveHeaderOnly     bool
+	enableGasFee       bool
 	lock               sync.RWMutex
 	cache              palletcache.ICache
 	// append by albert·gou 用于通知群签名
@@ -107,7 +108,7 @@ func (pmg *MemDag) SetStableThreshold(count int) {
 	pmg.threshold = count
 }
 
-func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptndb.Database,
+func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly, enableGasFee bool, db ptndb.Database,
 	stableUnitRep common2.IUnitRepository, propRep common2.IPropRepository,
 	stableStateRep common2.IStateRepository, cache palletcache.ICache,
 	tokenEngine tokenengine.ITokenEngine, builderFunc validator.ValidatorBuilderFunc) *MemDag {
@@ -151,11 +152,12 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 		validatorBuilderFunc: builderFunc,
 		tokenEngine:          tokenEngine,
 		observers:            []SwitchMainChainEventFunc{},
+		enableGasFee:enableGasFee,
 	}
 	memdag.stableUnitHash.Store(stablehash)
 	memdag.stableUnitHeight.Store(index)
 	memdag.lastMainChainUnit.Store(stableUnit)
-	temp, _ := NewChainTempDb(db, cache, tokenEngine, saveHeaderOnly, builderFunc)
+	temp, _ := NewChainTempDb(db, cache, tokenEngine, saveHeaderOnly, builderFunc, enableGasFee)
 	temp.Unit = stableUnit
 	memdag.tempdb.Store(stablehash, temp)
 	memdag.chainUnits.Store(stablehash, temp)
@@ -165,7 +167,7 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly bool, db ptn
 	tstateRep := common2.NewStateRepository4Db(db)
 	tpropRep := common2.NewPropRepository4Db(db)
 	contractDag := NewContractSupportRepository(db)
-	val := builderFunc(trep, tutxoRep, tstateRep, tpropRep, contractDag, cache, saveHeaderOnly)
+	val := builderFunc(trep, tutxoRep, tstateRep, tpropRep, contractDag, cache, saveHeaderOnly, enableGasFee)
 	//val.SetBuildTempContractDagFunc(buildTempContractDagFunc)
 	val.SetContractTxCheckFun(jury.CheckContractTxResult)
 	//TODO Devin
@@ -674,9 +676,9 @@ func (chain *MemDag) addUnit(unit *modules.Unit, isGenerate bool) (common2.IUnit
 			if !has { // 分叉链
 				if inter != nil {
 					p_temp := inter.(*ChainTempDb)
-					temp_db, _ = NewChainTempDb(p_temp.Tempdb, chain.cache, chain.tokenEngine, chain.saveHeaderOnly, chain.validatorBuilderFunc)
+					temp_db, _ = NewChainTempDb(p_temp.Tempdb, chain.cache, chain.tokenEngine, chain.saveHeaderOnly, chain.validatorBuilderFunc, chain.enableGasFee)
 				} else { // 父单元没有在memdag，节点重启后产的第一个单元
-					temp_db, _ = NewChainTempDb(chain.db, chain.cache, chain.tokenEngine, chain.saveHeaderOnly, chain.validatorBuilderFunc)
+					temp_db, _ = NewChainTempDb(chain.db, chain.cache, chain.tokenEngine, chain.saveHeaderOnly, chain.validatorBuilderFunc, chain.enableGasFee)
 				}
 			} else {
 				temp_db = inter_temp.(*ChainTempDb)
@@ -740,7 +742,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, isGenerate bool) (common2.IUnit
 			var main_temp *ChainTempDb
 			inter_main, has := chain.tempdb.Load(parentHash)
 			if !has { // 分叉
-				main_temp, _ = NewChainTempDb(chain.db, chain.cache, chain.tokenEngine, chain.saveHeaderOnly, chain.validatorBuilderFunc)
+				main_temp, _ = NewChainTempDb(chain.db, chain.cache, chain.tokenEngine, chain.saveHeaderOnly, chain.validatorBuilderFunc, chain.enableGasFee)
 				forks := chain.getForkUnits(unit)
 				for i := 0; i < len(forks)-1; i++ {
 					main_temp, _ = main_temp.AddUnit(forks[i], chain.saveHeaderOnly)
@@ -811,7 +813,7 @@ func (chain *MemDag) addUnit(unit *modules.Unit, isGenerate bool) (common2.IUnit
 	chain.addUnitHeight(unit)
 	inter_tmp, has := chain.chainUnits.Load(chain.GetLastMainChainUnit().Hash())
 	if !has {
-		temp, _ := NewChainTempDb(chain.db, chain.cache, chain.tokenEngine, chain.saveHeaderOnly, chain.validatorBuilderFunc)
+		temp, _ := NewChainTempDb(chain.db, chain.cache, chain.tokenEngine, chain.saveHeaderOnly, chain.validatorBuilderFunc, chain.enableGasFee)
 		return temp.UnitRep, temp.UtxoRep, temp.StateRep, temp.PropRep, temp.UnitProduceRep, nil, isOrphan
 	}
 

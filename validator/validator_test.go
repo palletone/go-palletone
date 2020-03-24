@@ -65,6 +65,7 @@ func TestValidate_ValidateUnitTxs(t *testing.T) {
 		enableDeveloperCheck:     true,
 		enableContractRwSetCheck: true,
 		light:                    false,
+		enableGasFee:true,
 	}
 	addr, _ := common.StringToAddress("P1HXNZReTByQHgWQNGMXotMyTkMG9XeEQfX")
 	code := validate.validateTransactions(rwset.RwM, txs, 1564675200, addr)

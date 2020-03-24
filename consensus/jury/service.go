@@ -60,9 +60,11 @@ type PalletOne interface {
 	LocalHaveActiveMediator() bool
 	GetLocalActiveMediators() []common.Address
 	SignGenericTransaction(from common.Address, tx *modules.Transaction) (*modules.Transaction, error)
+	EnableGasFee() bool
 }
 
 type iDag interface {
+	GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
 	//CurrentHeader(token modules.AssetId) *modules.Header
 	GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error)
 	GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error)
@@ -89,7 +91,7 @@ type iDag interface {
 	IsActiveMediator(addr common.Address) bool
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
-		msg *modules.Message) (*modules.Transaction, uint64, error)
+		msg *modules.Message, enableGasFee bool) (*modules.Transaction, uint64, error)
 	CreateTokenTransaction(from, to common.Address, token *modules.Asset, daoAmountToken, daoFee uint64,
 		msg *modules.Message) (*modules.Transaction, uint64, error)
 	GetTransaction(hash common.Hash) (*modules.TransactionWithUnitInfo, error)
@@ -200,7 +202,7 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 	log.Debug("NewContractProcessor", "contractEleNum", cfgEleNum, "contractSigNum", cfgSigNum)
 
 	cache := freecache.NewCache(20 * 1024 * 1024)
-	val := validator.NewValidate(dag, dag, dag, dag, dag, cache, false)
+	val := validator.NewValidate(dag, dag, dag, dag, dag, cache, false, ptn.EnableGasFee())
 	//val.SetContractTxCheckFun(CheckTxContract)
 	//TODO Devin
 
@@ -871,7 +873,7 @@ func (p *Processor) createContractTxReqToken(contractId, from, to common.Address
 
 func (p *Processor) createContractTxReq(contractId, from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
 	msg *modules.Message) (common.Hash, *modules.Transaction, error) {
-	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, certID, msg)
+	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, certID, msg, p.ptn.EnableGasFee())
 	if err != nil {
 		return common.Hash{}, nil, err
 	}

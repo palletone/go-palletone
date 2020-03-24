@@ -293,7 +293,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 		utxodb.SaveUtxoEntity(outpoint, utxo)
 	}
 	pool := NewTxPool4DI(config, freecache.NewCache(1*1024*1024), unitchain,
-		tokenengine.Instance, &validator.ValidatorAllPass{})
+		tokenengine.Instance, &validator.ValidatorAllPass{},true)
 	defer pool.Stop()
 	pool.startJournal(config)
 	var pending_cache, queue_cache, all, origin int
@@ -444,7 +444,7 @@ func TestGetProscerTx(t *testing.T) {
 		utxodb.SaveUtxoEntity(outpoint, utxo)
 	}
 	pool := NewTxPool4DI(config, freecache.NewCache(1*1024*1024), unitchain,
-		tokenengine.Instance, &validator.ValidatorAllPass{})
+		tokenengine.Instance, &validator.ValidatorAllPass{},true)
 	defer pool.Stop()
 	pool.startJournal(config)
 

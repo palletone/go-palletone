@@ -68,6 +68,11 @@ func (b *PtnApiBackend) Lock() {
 func (b *PtnApiBackend) Unlock() {
 	b.mutex.Unlock()
 }
+
+func (b *PtnApiBackend) EnableGasFee() bool {
+	return b.ptn.config.EnableGasFee
+}
+
 func (b *PtnApiBackend) Dag() dag.IDag {
 	return b.ptn.dag
 }

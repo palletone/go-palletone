@@ -48,7 +48,7 @@ func newTxo4Greedy(outPoint modules.OutPoint, amount uint64) *Txo4Greedy {
 	}
 }
 
-func (dag *Dag) createBaseTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int) (*modules.Transaction, error) {
+func (dag *Dag) createBaseTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,enableGasFee bool) (*modules.Transaction, error) {
 	daoTotal := daoAmount + daoFee
 	// 1. 获取转出账户所有的PTN utxo
 	//allUtxos, err := dag.GetAddrUtxos(from)
@@ -300,12 +300,12 @@ func (dag *Dag) calculateDataFee(data interface{}) uint64 {
 }
 
 func (dag *Dag) CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
-	msg *modules.Message) (*modules.Transaction, uint64, error) {
+	msg *modules.Message, enableGasFee bool) (*modules.Transaction, uint64, error) {
 	// 如果是 text，则增加费用，以防止用户任意增加文本，导致网络负担加重
 	if msg.App == modules.APP_DATA {
 		daoFee += dag.calculateDataFee(msg.Payload)
 	}
-	tx, err := dag.createBaseTransaction(from, to, daoAmount, daoFee, certID)
+	tx, err := dag.createBaseTransaction(from, to, daoAmount, daoFee, certID, enableGasFee)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -356,7 +356,7 @@ func (dag *Dag) GenVoteMediatorTx(voter common.Address, mediators map[string]boo
 	// 2. 组装 tx
 	//fee := dag.CurrentFeeSchedule().AccountUpdateFee
 	fee := dag.GetChainParameters().AccountUpdateFee
-	tx, fee, err := dag.CreateGenericTransaction(voter, voter, 0, fee, nil, msg)
+	tx, fee, err := dag.CreateGenericTransaction(voter, voter, 0, fee, nil, msg, true)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -365,14 +365,14 @@ func (dag *Dag) GenVoteMediatorTx(voter common.Address, mediators map[string]boo
 }
 
 // 构建一个转ptn的转账交易
-func (dag *Dag) GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string) (*modules.Transaction, uint64, error) {
+func (dag *Dag) GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string, enableGasFee bool) (*modules.Transaction, uint64, error) {
 	fee := dag.GetChainParameters().TransferPtnBaseFee
 	var tx *modules.Transaction
 	var err error
 
 	// 如果没有文本，或者文本为空
 	if text == nil || *text == "" {
-		tx, err = dag.createBaseTransaction(from, to, daoAmount, fee, nil)
+		tx, err = dag.createBaseTransaction(from, to, daoAmount, fee, nil, enableGasFee)
 	} else {
 		// 1. 组装 message
 		msg := &modules.Message{
@@ -381,7 +381,7 @@ func (dag *Dag) GenTransferPtnTx(from, to common.Address, daoAmount uint64, text
 		}
 
 		// 2. 创建 tx
-		tx, fee, err = dag.CreateGenericTransaction(from, to, daoAmount, fee, nil, msg)
+		tx, fee, err = dag.CreateGenericTransaction(from, to, daoAmount, fee, nil, msg, true)
 	}
 
 	if err != nil {

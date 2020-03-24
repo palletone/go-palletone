@@ -63,7 +63,7 @@ func TestMemDag_AddUnit(t *testing.T) {
 	propRep.StoreGlobalProp(modules.NewGlobalProp())
 	stateRep := dagcommon.NewStateRepository(stateDb, dagDb)
 	gasToken := dagconfig.DagConfig.GetGasToken()
-	memdag := NewMemDag(gasToken, 2, false,
+	memdag := NewMemDag(gasToken, 2, false,true,
 		db, unitRep, propRep, stateRep, cache(), tokenengine.Instance, validator.NewValidatorAllPass)
 	parent := common.HexToHash("0x2c30cd5b06c4c6d184aae3e1ed76492f16a0fa335673dba99c8efa813c1a1e30")
 	_, _, _, _, _, err := memdag.AddUnit(newTestUnit(parent, 1, key2), true)
@@ -89,7 +89,7 @@ func BenchmarkMemDag_AddUnit(b *testing.B) {
 	propRep.StoreGlobalProp(modules.NewGlobalProp())
 	stateRep := dagcommon.NewStateRepository(stateDb, dagDb)
 	gasToken := modules.PTNCOIN
-	memdag := NewMemDag(gasToken, 2, false,
+	memdag := NewMemDag(gasToken, 2, false,true,
 		db, unitRep, propRep, stateRep, cache(), tokenengine.Instance, validator.NewValidatorAllPass)
 
 	parentHash := lastHeader.Hash()
@@ -167,7 +167,7 @@ func TestMemDag_AddOrphanUnit(t *testing.T) {
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb, dagDb)
 	gasToken := modules.PTNCOIN
-	memdag := NewMemDag(gasToken, 2, false,
+	memdag := NewMemDag(gasToken, 2, false,true,
 		db, unitRep, propRep, stateRep, cache(), tokenengine.Instance, validator.NewValidatorAllPass)
 	u1 := newTestUnit(lastHeader.Hash(), 1, key2)
 	log.Debugf("Try add unit[%x] to memdag, index: %d", u1.Hash(), u1.NumberU64())
@@ -214,7 +214,7 @@ func TestMemDag_SwitchMainChain(t *testing.T) {
 	stateRep := dagcommon.NewStateRepository(stateDb, dagDb)
 	gasToken := modules.PTNCOIN
 	memdag := NewMemDag(gasToken, 2,
-		false, db, unitRep, propRep, stateRep, cache(), tokenengine.Instance, validator.NewValidatorAllPass)
+		false, true,db, unitRep, propRep, stateRep, cache(), tokenengine.Instance, validator.NewValidatorAllPass)
 
 	u1 := newTestUnit(u0.Hash(), 2, key2)
 	log.Debugf("Try add unit[%x] to memdag", u1.Hash())

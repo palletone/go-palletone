@@ -73,12 +73,16 @@ func (validate *Validate) validateTx(rwM rwset.TxManager, tx *modules.Transactio
 		return TxValidationCode_INVALID_MSG, nil
 	}
 	isOrphanTx := false
-	if msgs[0].App != modules.APP_PAYMENT { // 交易费
+	if validate.enableGasFee && msgs[0].App != modules.APP_PAYMENT { // 交易费
 		return TxValidationCode_INVALID_MSG, nil
 	}
-	txFeePass, txFee := validate.validateTxFeeValid(tx)
-	if txFeePass != TxValidationCode_VALID {
-		return txFeePass, nil
+	txFee := []*modules.Addition{}
+	var txFeePass ValidationCode
+	if validate.enableGasFee {
+		txFeePass, txFee = validate.validateTxFeeValid(tx)
+		if txFeePass != TxValidationCode_VALID {
+			return txFeePass, nil
+		}
 	}
 	// validate tx size
 	if tx.Size().Float64() > float64(modules.TX_MAXSIZE) {

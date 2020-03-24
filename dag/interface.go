@@ -207,7 +207,7 @@ type IDag interface {
 	IsContractDeveloper(addr common.Address) bool
 	//GetActiveJuries() []common.Address
 	CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
-		msg *modules.Message) (*modules.Transaction, uint64, error)
+		msg *modules.Message, enableGasFee bool) (*modules.Transaction, uint64, error)
 	CreateTokenTransaction(from, to common.Address, token *modules.Asset, daoAmountToken, daoFee uint64,
 		msg *modules.Message) (*modules.Transaction, uint64, error)
 	ChainThreshold() int

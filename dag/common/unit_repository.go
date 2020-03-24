@@ -53,7 +53,7 @@ type IUnitRepository interface {
 	SaveUnit(unit *modules.Unit, isGenesis bool) error
 	SaveTransaction(tx *modules.Transaction, txIndex int) error
 	CreateUnit(mediatorReward common.Address, txs []*modules.Transaction, when time.Time,
-		propdb IPropRepository, getJurorRewardFunc modules.GetJurorRewardAddFunc) (*modules.Unit, error)
+		propdb IPropRepository, getJurorRewardFunc modules.GetJurorRewardAddFunc,enableGasFee bool) (*modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
 	GetAddrTransactions(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
 	GetAddrUtxoTxs(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
@@ -536,7 +536,7 @@ create common unit
 return: correct if error is nil, and otherwise is incorrect
 */
 func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txs2 []*modules.Transaction,
-	when time.Time, propdb IPropRepository, getJurorRewardFunc modules.GetJurorRewardAddFunc) (*modules.Unit, error) {
+	when time.Time, propdb IPropRepository, getJurorRewardFunc modules.GetJurorRewardAddFunc,enableGasFee bool) (*modules.Unit, error) {
 	log.Debug("create unit lock unitRepository.")
 	rep.lock.RLock()
 	defer rep.lock.RUnlock()
