@@ -61,6 +61,7 @@ func (validate *Validate) validateTx(rwM rwset.TxManager, tx *modules.Transactio
 	}
 	unithigh := int64(chainindex.Index)
 	reqId := tx.RequestHash()
+	//reqMsgCount:=tx.GetRequestMsgCount()
 	msgs := tx.TxMessages()
 	if len(msgs) == 0 {
 		return TxValidationCode_INVALID_MSG, nil
@@ -194,12 +195,13 @@ func (validate *Validate) validateTx(rwM rwset.TxManager, tx *modules.Transactio
 			if payload.TplName == "" || payload.Path == "" || payload.Version == "" {
 				return TxValidationCode_INVALID_CONTRACT, txFee
 			}
-			reqAddr, err := validate.dagquery.GetTxRequesterAddress(tx)
-			if err != nil {
+			//reqAddr, err :=  validate.dagquery.GetTxRequesterAddress(tx)
+			reqAddrs, err := tx.GetFromAddrs(validate.utxoquery.GetUtxoEntry, validate.tokenEngine.GetAddressFromScript)
+			if err != nil || len(reqAddrs) == 0 {
 				return TxValidationCode_INVALID_CONTRACT, txFee
 			}
 			if validate.enableDeveloperCheck {
-				if !validate.statequery.IsContractDeveloper(reqAddr) {
+				if !validate.statequery.IsContractDeveloper(reqAddrs[0]) {
 					return TxValidationCode_NOT_TPL_DEVELOPER, txFee
 				}
 			}
@@ -250,9 +252,10 @@ func (validate *Validate) validateTx(rwM rwset.TxManager, tx *modules.Transactio
 				return validateCode, txFee
 			}
 		case modules.APP_SIGNATURE:
-			// 签名验证
+			// 签名验证,被签名的消息是SignaturePayload之前的所有消息
+
 			payload, _ := msg.Payload.(*modules.SignaturePayload)
-			validateCode := validate.validateContractSignature(payload.Signatures[:], tx, isFullTx)
+			validateCode := validate.validateContractSignature(payload.Signatures[:], tx, msgIdx, isFullTx)
 			if validateCode != TxValidationCode_VALID {
 				return validateCode, txFee
 			}

@@ -476,21 +476,6 @@ func (mr *MockIDagMockRecorder) GetTxSearchEntry(hash interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxSearchEntry", reflect.TypeOf((*MockIDag)(nil).GetTxSearchEntry), hash)
 }
 
-// GetTxRequesterAddress mocks base method
-func (m *MockIDag) GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTxRequesterAddress", tx)
-	ret0, _ := ret[0].(common.Address)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetTxRequesterAddress indicates an expected call of GetTxRequesterAddress
-func (mr *MockIDagMockRecorder) GetTxRequesterAddress(tx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxRequesterAddress", reflect.TypeOf((*MockIDag)(nil).GetTxRequesterAddress), tx)
-}
-
 // GetNewestUnit mocks base method
 func (m *MockIDag) GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error) {
 	m.ctrl.T.Helper()

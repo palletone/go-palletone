@@ -21,13 +21,14 @@
 package validator
 
 import (
+	"math"
+
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/dag/modules"
-	"math"
 )
 
 /**
@@ -70,7 +71,7 @@ func (validate *Validate) validateContractDeploy(tplId []byte) ValidationCode {
 
 //验证陪审团签名是否有效
 func (validate *Validate) validateContractSignature(signatures []modules.SignatureSet,
-	tx *modules.Transaction, isFullTx bool) ValidationCode {
+	tx *modules.Transaction, signPayloadMsgIndex int, isFullTx bool) ValidationCode {
 
 	//contractId := tx.GetContractId()
 	txHash := tx.Hash().String()
@@ -121,7 +122,7 @@ func (validate *Validate) validateContractSignature(signatures []modules.Signatu
 	}
 
 	//2.确认签名都验证通过
-	tx4Sign := tx.GetResultRawTx()
+	tx4Sign := tx.CopyPartTx(signPayloadMsgIndex - 1)
 	txBytes, _ := rlp.EncodeToBytes(tx4Sign)
 	passCount := 0
 	for _, s := range signatures {
@@ -136,7 +137,9 @@ func (validate *Validate) validateContractSignature(signatures []modules.Signatu
 	}
 	//3.确认签名数量满足系统要求
 	if isFullTx && passCount < needSign {
-		log.Errorf("Tx[%s] need signature count:%d, but current has %d", txHash, needSign, passCount)
+		data, _ := rlp.EncodeToBytes(tx)
+		log.Errorf("Tx[%s] need signature count:%d, but current has %d tx hex:\r\n%x",
+			txHash, needSign, passCount, string(data))
 		return TxValidationCode_INVALID_CONTRACT_SIGN
 	}
 	return TxValidationCode_VALID

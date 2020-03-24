@@ -305,8 +305,9 @@ type GetJurorRewardAddFunc func(jurorAdd common.Address) common.Address
 //计算该交易的手续费，基于UTXO，所以传入查询UTXO的函数指针
 func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, error) {
 	msg0 := tx.txdata.TxMessages[0]
-	if msg0.App != APP_PAYMENT {
-		return nil, errors.New("Tx message 0 must a payment payload")
+	if msg0.App != APP_PAYMENT { //no gas fee
+		//return nil, errors.New("Tx message 0 must a payment payload")
+		return NewAmountAsset(0, nil), nil
 	}
 	payload := msg0.Payload.(*PaymentPayload)
 
@@ -610,17 +611,14 @@ func (tx *Transaction) GetContractTxSignatureAddress() []common.Address {
 	if !tx.IsContractTx() {
 		return nil
 	}
-	addrs := make([]common.Address, 0)
 	for _, msg := range tx.txdata.TxMessages {
 		switch msg.App {
 		case APP_SIGNATURE:
 			payload := msg.Payload.(*SignaturePayload)
-			for _, sig := range payload.Signatures {
-				addrs = append(addrs, crypto.PubkeyBytesToAddress(sig.PubKey))
-			}
+			return payload.SignAddress()
 		}
 	}
-	return addrs
+	return []common.Address{}
 }
 
 //获得合约结果部分的Signature，如果不是合约Tx，则返回第一个Signature
@@ -642,31 +640,58 @@ func (tx *Transaction) GetResultSignature() (int, *SignaturePayload, error) {
 func (tx *Transaction) GetRequestTx() *Transaction {
 	msgs := tx.TxMessages()
 	request := transaction_sdw{}
-	for _, msg := range msgs {
-		request.TxMessages = append(request.TxMessages, msg)
-		if msg.App.IsRequest() {
-			break
+	if msgs[0].App != APP_PAYMENT { //no gas fee
+		for _, msg := range msgs {
+			request.TxMessages = append(request.TxMessages, msg)
+			if msg.App == APP_SIGNATURE {
+				break
+			}
 		}
-
+	} else { //有GasFee
+		for _, msg := range msgs {
+			request.TxMessages = append(request.TxMessages, msg)
+			if msg.App.IsRequest() {
+				break
+			}
+		}
 	}
 	request.CertId = tx.CertId()
 	return &Transaction{txdata: request}
 
 }
 
+//判断一个交易的请求部分有多少个Message，如果不是一个请求，则返回全部Message数量
+func (tx *Transaction) GetRequestMsgCount() int {
+	if tx.txdata.TxMessages[0].App != APP_PAYMENT { //no gas fee
+		for i, msg := range tx.txdata.TxMessages {
+			if msg.App == APP_SIGNATURE {
+				return i + 1
+			}
+		}
+	}
+	//有GasFee
+	for i, msg := range tx.txdata.TxMessages {
+		if msg.App.IsRequest() {
+			return i + 1
+		}
+	}
+	return len(tx.txdata.TxMessages)
+}
+
 //获取一个被Jury执行完成后，但是还没有进行陪审员签名的交易
 func (tx *Transaction) GetResultRawTx() *Transaction {
 
 	sdw := transaction_sdw{}
-	isResultMsg := false
-	for _, msg := range tx.TxMessages() {
-		if msg.App.IsRequest() {
-			isResultMsg = true
+	reqMsgCount := tx.GetRequestMsgCount()
+	for i, msg := range tx.TxMessages() {
+		if i < reqMsgCount {
+			sdw.TxMessages = append(sdw.TxMessages, msg)
+			continue
 		}
 		if msg.App == APP_SIGNATURE {
 			continue //移除SignaturePayload
 		}
-		if isResultMsg && msg.App == APP_PAYMENT { //移除ContractPayout中的解锁脚本
+		if msg.App == APP_PAYMENT { //移除ContractPayout中的解锁脚本
 			pay := msg.Payload.(*PaymentPayload)
 			for _, in := range pay.Inputs {
 				in.SignatureScript = nil
@@ -679,17 +704,32 @@ func (tx *Transaction) GetResultRawTx() *Transaction {
 	return &Transaction{txdata: sdw}
 }
 
-func (tx *Transaction) GetResultTx() *Transaction {
+//复制一个只包含前面几条Message的Tx，包括msgIdx本身这条
+func (tx *Transaction) CopyPartTx(msgIdx int) *Transaction {
 	sdw := transaction_sdw{}
-	for _, msg := range tx.TxMessages() {
-		if msg.App == APP_SIGNATURE {
-			continue //移除SignaturePayload
+	for i, msg := range tx.TxMessages() {
+		if i > msgIdx {
+			break
 		}
 		sdw.TxMessages = append(sdw.TxMessages, msg)
 	}
 	sdw.CertId = tx.CertId()
+	sdw.Illegal = tx.Illegal()
 	return &Transaction{txdata: sdw}
 }
+
+//
+//func (tx *Transaction) GetResultTx() *Transaction {
+//	sdw := transaction_sdw{}
+//	for _, msg := range tx.TxMessages() {
+//		if msg.App == APP_SIGNATURE {
+//			continue //移除SignaturePayload
+//		}
+//		sdw.TxMessages = append(sdw.TxMessages, msg)
+//	}
+//	sdw.CertId = tx.CertId()
+//	return &Transaction{txdata: sdw}
+//}
 
 //Request 这条Message的Index是多少
 func (tx *Transaction) GetRequestMsgIndex() int {
@@ -721,6 +761,15 @@ func (tx *Transaction) HasContractPayoutMsg() (bool, int, *Message) {
 
 //获取该交易的所有From地址
 func (tx *Transaction) GetFromAddrs(queryUtxoFunc QueryUtxoFunc, getAddrFunc GetAddressFromScriptFunc) ([]common.Address, error) {
+	if tx.txdata.TxMessages[0].App != APP_PAYMENT { //没有GasFee
+		for _, msg := range tx.txdata.TxMessages {
+			if msg.App == APP_SIGNATURE {
+				sign := msg.Payload.(*SignaturePayload)
+				return sign.SignAddress(), nil
+			}
+		}
+	}
+	//有GasFee
 	resultMap := map[common.Address]int{}
 	msgs := tx.TxMessages()
 	for _, msg := range msgs {
@@ -991,9 +1040,21 @@ func (tx *Transaction) IsUserContract() bool {
 
 //判断一个交易是否是一个合约请求交易，并且还没有被执行
 func (tx *Transaction) IsOnlyContractRequest() bool {
-	lastMsg := tx.txdata.TxMessages[len(tx.txdata.TxMessages)-1]
-	return lastMsg.App.IsRequest()
-
+	if tx.txdata.TxMessages[0].App == APP_PAYMENT {
+		lastMsg := tx.txdata.TxMessages[len(tx.txdata.TxMessages)-1]
+		return lastMsg.App.IsRequest()
+	}
+	//no gas fee 判断第一个SignaturePayload是不是最后一个Message
+	for i, msg := range tx.txdata.TxMessages {
+		if msg.App == APP_SIGNATURE {
+			if i == len(tx.txdata.TxMessages)-1 {
+				return true
+			} else { //SignaturePayload下面还有其他Message
+				return false
+			}
+		}
+	}
+	return false
 }
 
 //获得合约请求Msg的Index

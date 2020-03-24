@@ -97,7 +97,7 @@ type iDag interface {
 	GetTransaction(hash common.Hash) (*modules.TransactionWithUnitInfo, error)
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
-	GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
+	//GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
 	//GetConfig(name string) ([]byte, *modules.StateVersion, error)
 	IsTransactionExist(hash common.Hash) (bool, error)
 	GetContractJury(contractId []byte) (*modules.ElectionNode, error)
@@ -438,11 +438,10 @@ func (p *Processor) GenContractSigTransaction(signer common.Address, password st
 	}
 	tx := orgTx
 	needSignMsg := true
-	resultMsg := false
 	isSysContract := false
 	reqId := tx.RequestHash()
 	msgs := tx.TxMessages()
-
+	reqMsgCount := tx.GetRequestMsgCount()
 	pubKey, err := ks.GetPublicKey(signer)
 	if err != nil {
 		return nil, fmt.Errorf("GenContractSigTransaction GetPublicKey fail, address[%s], reqId[%s]",
@@ -450,12 +449,12 @@ func (p *Processor) GenContractSigTransaction(signer common.Address, password st
 	}
 	for msgidx, msg := range msgs {
 		if msg.App == modules.APP_CONTRACT_INVOKE_REQUEST {
-			resultMsg = true
+
 			requestMsg := msg.Payload.(*modules.ContractInvokeRequestPayload)
 			isSysContract = common.IsSystemContractId(requestMsg.ContractId)
 			continue
 		}
-		if resultMsg {
+		if msgidx >= reqMsgCount { //invoke result
 			if msg.App == modules.APP_PAYMENT {
 				//Contract result里面的Payment只有2种，创币或者从合约付出
 				payment := msg.Payload.(*modules.PaymentPayload)

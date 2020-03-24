@@ -42,6 +42,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/syscontract/sysconfigcc"
 	"github.com/palletone/go-palletone/contracts/ucc"
 	"github.com/palletone/go-palletone/core"
+	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -333,6 +334,39 @@ func (s *PrivateContractAPI) Ccinvoketx(ctx context.Context, from, to string, am
 	return s.CcinvokeToken(ctx, from, to, dagconfig.DagConfig.GasToken, amount, fee, contractAddress, param, password, timeout)
 }
 
+//创建没有Payment的ccinvoketx
+func (s *PrivateContractAPI) buildCcinvokeTxWithoutGasFee(b Backend, from,
+	contractAddr common.Address, args [][]byte, pwd string, exeTimeout uint32) (*modules.Transaction, error) {
+	msgReq := &modules.Message{
+		App: modules.APP_CONTRACT_INVOKE_REQUEST,
+		Payload: &modules.ContractInvokeRequestPayload{
+			ContractId: contractAddr.Bytes(),
+			Args:       args,
+			Timeout:    exeTimeout,
+		},
+	}
+	tx := modules.NewTransaction([]*modules.Message{msgReq})
+	keystore := b.GetKeyStore()
+	if !keystore.IsUnlock(from) {
+		keystore.Unlock(accounts.Account{Address: from}, pwd)
+	}
+	sign, err := keystore.SigData(tx, from)
+	if err != nil {
+		return nil, err
+	}
+	pubKey, err := keystore.GetPublicKey(from)
+	if err != nil {
+		return nil, err
+	}
+	ss := modules.SignatureSet{
+		PubKey:    pubKey,
+		Signature: sign,
+	}
+	signature := &modules.SignaturePayload{Signatures: []modules.SignatureSet{ss}}
+	tx.AddMessage(modules.NewMessage(modules.APP_SIGNATURE, signature))
+	return tx, nil
+}
+
 func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token string, amountToken, fee decimal.Decimal,
 	contractAddress string, param []string, pwd *string, timeout *Int) (*ContractInvokeRsp, error) {
 
@@ -354,27 +388,37 @@ func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token 
 		args[i] = []byte(arg)
 		log.Infof("      index[%d], value[%s]\n", i, arg)
 	}
+	exeTimeout := timeout.Uint32()
 	s.b.Lock()
 	defer s.b.Unlock()
-	tx, usedUtxo, err := buildRawTransferTx(s.b, token, from, to, amountToken, fee, password)
-	if err != nil {
-		return nil, err
-	}
-	exeTimeout := timeout.Uint32()
+	var tx *modules.Transaction
+	var err error
+	if s.b.EnableGasFee() {
+		var usedUtxo []*modules.UtxoWithOutPoint
+		tx, usedUtxo, err = buildRawTransferTx(s.b, token, from, to, amountToken, fee, password)
+		if err != nil {
+			return nil, err
+		}
 
-	msgReq := &modules.Message{
-		App: modules.APP_CONTRACT_INVOKE_REQUEST,
-		Payload: &modules.ContractInvokeRequestPayload{
-			ContractId: contractAddr.Bytes(),
-			Args:       args,
-			Timeout:    exeTimeout,
-		},
-	}
-	tx.AddMessage(msgReq)
-	//3. sign
-	err = signRawTransaction(s.b, tx, from, password, timeout, 1, usedUtxo)
-	if err != nil {
-		return nil, err
+		msgReq := &modules.Message{
+			App: modules.APP_CONTRACT_INVOKE_REQUEST,
+			Payload: &modules.ContractInvokeRequestPayload{
+				ContractId: contractAddr.Bytes(),
+				Args:       args,
+				Timeout:    exeTimeout,
+			},
+		}
+		tx.AddMessage(msgReq)
+		//3. sign
+		err = signRawTransaction(s.b, tx, from, password, timeout, 1, usedUtxo)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		tx, err = s.buildCcinvokeTxWithoutGasFee(s.b, fromAddr, contractAddr, args, password, exeTimeout)
+		if err != nil {
+			return nil, err
+		}
 	}
 	//4. send
 	reqId, err := submitTransaction(ctx, s.b, tx)

@@ -131,6 +131,7 @@ func (validate *Validate) validateTransactions(rwM rwset.TxManager, txs modules.
 		//先检查普通交易并计算手续费，最后检查Coinbase
 		txHash := tx.Hash()
 		if validate.checkTxIsExist(tx) {
+			log.Warnf("Tx[%s] already exist in dag", tx.Hash().String())
 			return TxValidationCode_DUPLICATE_TXID
 		}
 		if txIndex == 0 && validate.enableGasFee {
@@ -293,17 +294,16 @@ func (validate *Validate) CheckTxIsExist(tx *modules.Transaction) bool {
 	return validate.checkTxIsExist(tx)
 }
 func (validate *Validate) checkTxIsExist(tx *modules.Transaction) bool {
-	if len(tx.TxMessages()) > 2 {
-		txHash := tx.Hash()
-		if validate.dagquery == nil {
-			log.Warnf("Validate DagQuery doesn't set, cannot check tx[%s] is exist or not", txHash.String())
-			return false
-		}
-		if has, _ := validate.dagquery.IsTransactionExist(txHash); has {
-			log.Debug("checkTxIsExist transactions exist in dag", "txHash", txHash.String())
-			return true
-		}
+	txHash := tx.Hash()
+	if validate.dagquery == nil {
+		log.Warnf("Validate DagQuery doesn't set, cannot check tx[%s] is exist or not", txHash.String())
+		return false
 	}
+	if has, _ := validate.dagquery.IsTransactionExist(txHash); has {
+		log.Debug("checkTxIsExist transactions exist in dag", "txHash", txHash.String())
+		return true
+	}
+
 	return false
 }
 

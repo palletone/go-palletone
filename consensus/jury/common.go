@@ -455,12 +455,13 @@ func handleMsg0(tx *modules.Transaction, dag dboperation.IContractDag, txPool tx
 		//	return nil, err
 		//}
 		var invokeTokensAll []*modules.InvokeTokens
-		for i := 0; i < lenTxMsgs; i++ {
-			msg, ok := msgs[i].Payload.(*modules.PaymentPayload)
-			if !ok {
+		for _, msg := range msgs {
+			if msg.App != modules.APP_PAYMENT {
 				continue
 			}
-			for _, output := range msg.Outputs {
+			payment := msg.Payload.(*modules.PaymentPayload)
+
+			for _, output := range payment.Outputs {
 				addr, err := tokenengine.Instance.GetAddressFromScript(output.PkScript)
 				if err != nil {
 					return nil, err
@@ -618,14 +619,16 @@ func (p *Processor) checkTxAddrValid(tx *modules.Transaction) bool {
 		log.Infof("[%s]checkTxAddrValid, getContractTxType fail", reqId.ShortStr())
 		return false
 	}
-	reqAddr, err := p.dag.GetTxRequesterAddress(tx)
-	if err != nil {
+	//reqAddr, err := p.dag.GetTxRequesterAddress(tx)
+	reqAddrs, err := tx.GetFromAddrs(p.dag.GetUtxoEntry, tokenengine.Instance.GetAddressFromScript)
+	if err != nil || len(reqAddrs) == 0 {
 		log.Infof("[%s]checkTxAddrValid, GetTxRequesterAddress fail", reqId.ShortStr())
 		return false
 	}
+
 	switch cType {
 	case modules.APP_CONTRACT_TPL_REQUEST:
-		return p.dag.IsContractDeveloper(reqAddr)
+		return p.dag.IsContractDeveloper(reqAddrs[0])
 	case modules.APP_CONTRACT_DEPLOY_REQUEST:
 	case modules.APP_CONTRACT_INVOKE_REQUEST:
 	case modules.APP_CONTRACT_STOP_REQUEST:
@@ -635,10 +638,11 @@ func (p *Processor) checkTxAddrValid(tx *modules.Transaction) bool {
 			log.Debugf("[%s]checkTxAddrValid, GetContract fail, contractId[%v]", reqId.ShortStr(), contractId)
 			return false
 		}
-		reqAddr, err := p.dag.GetTxRequesterAddress(tx)
-		if err != nil {
-			return false
-		}
+		//reqAddr, err := p.dag.GetTxRequesterAddress(tx)
+		//if err != nil {
+		//	return false
+		//}
+		reqAddr := reqAddrs[0]
 		jjhAd := p.dag.GetChainParameters().FoundationAddress
 		if jjhAd != reqAddr.String() && !bytes.Equal(contract.Creator, reqAddr.Bytes()) {
 			log.Debugf("[%s]checkTxAddrValid, addr is not equal, Creator[%v], reqAddr[%v]",
@@ -783,6 +787,20 @@ func getContractTxContractInfo(tx *modules.Transaction, msgType modules.MessageT
 	return 0, nil, nil
 }
 
+//获取一个Tx中合约执行结果部分的某条Message
+func getContractTxResultMsg(tx *modules.Transaction, msgType modules.MessageType) (int, *modules.Message, error) {
+	if tx == nil {
+		return 0, nil, errors.New("getContractTxType get param is nil")
+	}
+	reqMsgCount := tx.GetRequestMsgCount()
+	for i, msg := range tx.TxMessages() {
+		if i >= reqMsgCount && msg.App == msgType {
+			return i, msg, nil
+		}
+	}
+	log.Debugf("[%s]getContractTxContractInfo,  not find msgType[%v]", tx.RequestHash().ShortStr(), msgType)
+	return 0, nil, nil
+}
 func getContractInvokeMulPaymentInputNum(tx *modules.Transaction) int {
 	afterReq := false
 	isSysContract := false
@@ -845,8 +863,6 @@ func electionWeightValue(total uint64) (val uint64) {
 	}
 	return 4
 }
-
-
 
 func getValidAddress(addrs []common.Address) []common.Address {
 	result := make([]common.Address, 0)
@@ -1003,7 +1019,7 @@ func addContractSignatureSet(tx *modules.Transaction, sigSet *modules.SignatureS
 		log.Error("addContractSignatureSet, param is nil")
 		return fmt.Errorf("addContractSignatureSet, param is nil")
 	}
-	index, sigMsg, err := getContractTxContractInfo(tx, modules.APP_SIGNATURE)
+	index, sigMsg, err := getContractTxResultMsg(tx, modules.APP_SIGNATURE)
 	if err != nil {
 		return err
 	}

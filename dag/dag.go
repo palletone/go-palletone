@@ -820,7 +820,7 @@ func NewDagSimple(db ptndb.Database) (*Dag, error) {
 		unstableStateRep:     stateRep,
 		unstableUtxoRep:      utxoRep,
 		PartitionMemDag:      make(map[modules.AssetId]memunit.IMemDag),
-		enableGasFee:true,
+		enableGasFee:         true,
 	}
 	return dag, nil
 }
@@ -862,7 +862,7 @@ func NewDagForTest(db ptndb.Database) (*Dag, error) {
 		unstablePropRep:        tpropRep,
 		unstableUnitProduceRep: tUnitProduceRep,
 		PartitionMemDag:        make(map[modules.AssetId]memunit.IMemDag),
-		enableGasFee:true,
+		enableGasFee:           true,
 	}
 	return dag, nil
 }
@@ -1387,9 +1387,9 @@ func (bc *Dag) GetMainChain() (*modules.MainChain, error) {
 }
 
 // return requester's address from the transaction
-func (d *Dag) GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error) {
-	return d.unstableUnitRep.GetTxRequesterAddress(tx)
-}
+//func (d *Dag) GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error) {
+//	return d.unstableUnitRep.GetTxRequesterAddress(tx)
+//}
 
 // refresh all address transaction's index
 func (d *Dag) RefreshAddrTxIndex() error {

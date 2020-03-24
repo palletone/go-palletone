@@ -68,7 +68,7 @@ type IDag interface {
 	GetStableUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error)
 	IsTransactionExist(hash common.Hash) (bool, error)
 	GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error)
-	GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
+	//GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
 	GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error)
 	// InsertHeaderDag inserts a batch of headers into the local chain.
 	InsertHeaderDag([]*modules.Header) (int, error)

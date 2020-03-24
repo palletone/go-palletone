@@ -101,7 +101,7 @@ type IUnitRepository interface {
 	//GetLastIrreversibleUnit(assetID modules.AssetId) (*modules.Unit, error)
 
 	//GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
-	GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
+	//GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
 	//根据现有Tx数据，重新构建地址和Tx的关系索引
 	RefreshAddrTxIndex() error
 	GetAssetReference(asset []byte) ([]*modules.ProofOfExistence, error)
@@ -937,23 +937,23 @@ func (rep *UnitRepository) updateAccountInfo(msg *modules.Message, account commo
 }
 
 //Get who send this transaction
-func (rep *UnitRepository) GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error) {
-	msg0 := tx.TxMessages()[0]
-	if msg0.App != modules.APP_PAYMENT {
-		errStr := "Invalid Tx, first message must be a payment"
-		log.Debug(errStr)
-		return common.Address{}, errors.New(errStr)
-	}
-	pay := msg0.Payload.(*modules.PaymentPayload)
-
-	utxo, err := rep.utxoRepository.GetUtxoEntry(pay.Inputs[0].PreviousOutPoint)
-	if err != nil {
-		log.Debug(err.Error())
-		return common.Address{}, err
-	}
-	return rep.tokenEngine.GetAddressFromScript(utxo.PkScript)
-
-}
+//func (rep *UnitRepository) GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error) {
+//	msg0 := tx.TxMessages()[0]
+//	if msg0.App != modules.APP_PAYMENT {
+//		errStr := "Invalid Tx, first message must be a payment"
+//		log.Debug(errStr)
+//		return common.Address{}, errors.New(errStr)
+//	}
+//	pay := msg0.Payload.(*modules.PaymentPayload)
+//
+//	utxo, err := rep.utxoRepository.GetUtxoEntry(pay.Inputs[0].PreviousOutPoint)
+//	if err != nil {
+//		log.Debug(err.Error())
+//		return common.Address{}, err
+//	}
+//	return rep.tokenEngine.GetAddressFromScript(utxo.PkScript)
+//
+//}
 
 /**
 保存单元数据，如果单元的结构基本相同
@@ -1015,10 +1015,12 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 	var requester common.Address
 	var err error
 	if txIndex > 0 { //coinbase don't have requester
-		requester, err = rep.GetTxRequesterAddress(tx)
-		if err != nil {
+		//requester, err = rep.GetTxRequesterAddress(tx)
+		addrs, err := tx.GetFromAddrs(rep.utxoRepository.GetUtxoEntry, rep.tokenEngine.GetAddressFromScript)
+		if err != nil || len(addrs) == 0 {
 			return err
 		}
+		requester = addrs[0]
 	}
 
 	txHash := tx.Hash()
