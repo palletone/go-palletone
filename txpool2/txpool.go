@@ -312,10 +312,20 @@ func (pool *TxPool) GetSortedTxs() ([]*txspool.TxPoolTransaction, error) {
 func (pool *TxPool) GetUtxoFromAll(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	pool.RLock()
 	defer pool.RUnlock()
-	_, newUtxo, _ := pool.getAllSpendAndNewUtxo()
+	_, newUtxo, reqTxMapping := pool.getAllSpendAndNewUtxo()
 	utxo, ok := newUtxo[*outpoint]
 	if ok {
 		return utxo, nil
+	}
+	if txHash, ok := reqTxMapping[outpoint.TxHash]; ok {
+		o2 := modules.OutPoint{
+			TxHash:       txHash,
+			MessageIndex: outpoint.MessageIndex,
+			OutIndex:     outpoint.OutIndex,
+		}
+		if utxo, ok := newUtxo[o2]; ok {
+			return utxo, nil
+		}
 	}
 	return nil, ErrNotFound
 
@@ -396,8 +406,11 @@ func (pool *TxPool) GetAddrUtxos(addr common.Address, token *modules.Asset) (
 	}
 	return poolUtxo, nil
 }
+
+//返回交易池中花费的UTXO，新产生的UTXO，Req-Tx Mapping
 func (pool *TxPool) getAllSpendAndNewUtxo() (map[modules.OutPoint]common.Hash,
 	map[modules.OutPoint]*modules.Utxo, map[common.Hash]common.Hash) {
+	//查询NormalPool的已花费UTXO，新UTXO和Req-Tx Mapping
 	spendUtxoes := make(map[modules.OutPoint]common.Hash)
 	for k, v := range pool.normals.spendUtxo {
 		spendUtxoes[k] = v
@@ -407,11 +420,10 @@ func (pool *TxPool) getAllSpendAndNewUtxo() (map[modules.OutPoint]common.Hash,
 		newUtxoes[k] = v
 	}
 	reqTxMapping := make(map[common.Hash]common.Hash)
-	for _, tx := range pool.normals.txs {
-		if tx.Tx.TxHash != tx.Tx.ReqHash {
-			reqTxMapping[tx.Tx.ReqHash] = tx.Tx.TxHash
-		}
+	for req, txHash := range pool.normals.reqTxMap {
+		reqTxMapping[req] = txHash
 	}
+	//查询用户合约Request池的已花费UTXO，新UTXO，这里不会有Req-Tx Mapping
 	s1, n1 := getUtxoFromTxs(pool.userContractRequests)
 	for k, v := range s1 {
 		spendUtxoes[k] = v
@@ -419,6 +431,7 @@ func (pool *TxPool) getAllSpendAndNewUtxo() (map[modules.OutPoint]common.Hash,
 	for k, v := range n1 {
 		newUtxoes[k] = v
 	}
+	//查询based on request 池的已花费UTXO，新UTXO和Req-Tx Mapping
 	s2, n2 := getUtxoFromTxs(pool.basedOnRequestOrphans)
 	for k, v := range s2 {
 		spendUtxoes[k] = v
@@ -454,12 +467,23 @@ func (pool *TxPool) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, err
 	if utxo, ok := newUtxoes[*outpoint]; ok {
 		return utxo, nil
 	}
+	if txHash, ok := reqTxMapping[outpoint.TxHash]; ok {
+		o2 := modules.OutPoint{
+			TxHash:       txHash,
+			MessageIndex: outpoint.MessageIndex,
+			OutIndex:     outpoint.OutIndex,
+		}
+		if utxo, ok := newUtxoes[o2]; ok {
+			return utxo, nil
+		}
+	}
 	log.DebugDynamic(func() string {
 		return fmt.Sprintf("GetUtxoEntry(%s) not found in pool", outpoint.String())
 	})
 	return pool.dag.GetUtxoEntry(outpoint)
 }
 
+//获得交易列表的消耗的UTXO和新产生的UTXO
 func getUtxoFromTxs(txs map[common.Hash]*txspool.TxPoolTransaction) (map[modules.OutPoint]common.Hash, map[modules.OutPoint]*modules.Utxo) {
 	newUtxo := make(map[modules.OutPoint]*modules.Utxo)
 	spendUtxo := make(map[modules.OutPoint]common.Hash)
