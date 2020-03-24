@@ -310,7 +310,7 @@ func (p *Processor) processElectionRequestEvent(reqEvt *ElectionRequestEvent) (e
 
 	reqId := reqEvt.ReqId
 	if !p.localHaveActiveJury() {
-		return fmt.Errorf("processElectionRequestEvent, local jury addr is nil, reqId[%s]", reqId.String())
+		return fmt.Errorf("[%s]processElectionRequestEvent, local jury addr is nil", reqId.ShortStr())
 	}
 	account := p.getLocalJuryAccount()
 	if account == nil {
@@ -546,7 +546,6 @@ func (p *Processor) ProcessElectionEvent(event *ElectionEvent) (err error) {
 		log.Debugf("[%s]ProcessElectionEvent, received=%v, invalid=%v", reqId.ShortStr(), received, invalid)
 		return nil
 	}
-	log.Infof("[%s]ProcessElectionEvent, event type[%v] ", reqId.ShortStr(), event.EType)
 
 	if event.EType == ELECTION_EVENT_VRF_REQUEST {
 		err = p.processElectionRequestEvent(event.Event.(*ElectionRequestEvent))
