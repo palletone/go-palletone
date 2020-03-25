@@ -69,7 +69,7 @@ func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFe
 	if err != nil {
 		return nil, nil, err
 	}
-	if !gasFee.IsPositive() {
+	if !gasFee.IsPositive() && b.EnableGasFee() {
 		return nil, nil, fmt.Errorf("fee is ZERO ")
 	}
 	//
