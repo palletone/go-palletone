@@ -123,39 +123,51 @@ func (dag *Dag) createBaseTransaction(from, to common.Address, daoAmount, daoFee
 func (dag *Dag) createTokenTransaction(from, to common.Address, token *modules.Asset, daoAmountToken, daoFee uint64,
 ) (*modules.Transaction, error) {
 	// 条件判断
-	if daoFee == 0 {
-		return nil, fmt.Errorf("transaction fee cannot be 0")
-	}
-
-	daoTotal := daoFee
-	if daoTotal > dag.GetPtnBalance(from) {
-		return nil, fmt.Errorf("the ptn balance of the account is not enough %v", daoTotal)
-	}
-
+	tx := &modules.Transaction{}
 	// 1. 获取转出账户所有的PTN utxo
 	coreUtxos, tokenUtxos, err := dag.getAddrCoreUtxosToken(from, token)
 	if err != nil {
 		return nil, err
 	}
-
 	if len(coreUtxos) == 0 {
 		return nil, fmt.Errorf("%v 's utxo is empty", from.Str())
 	}
 	if len(tokenUtxos) == 0 {
 		return nil, fmt.Errorf("%v 's  utxo of this Token is empty", from.Str())
 	}
-	//2. 获取 PaymentPayload
-	ploadPTN, err := dag.getPayload(from, from, 0, daoFee, coreUtxos)
-	if err != nil {
-		return nil, err
+	if dag.enableGasFee {
+		if daoFee == 0 {
+			return nil, fmt.Errorf("transaction fee cannot be 0")
+		}
+		daoTotal := daoAmountToken + daoFee
+		if daoTotal > dag.GetPtnBalance(from) {
+			return nil, fmt.Errorf("the ptn balance of the account is not enough %v", daoTotal)
+		}
+		// 1. 获取转出账户所有的PTN utxo
+		//coreUtxos, tokenUtxos, err := dag.getAddrCoreUtxosToken(from, assetToken, txPool)
+		//if err != nil {
+		//	return nil, err
+		//}
+
+		//if len(coreUtxos) == 0 {
+		//	return nil, fmt.Errorf("%v 's utxo is empty", from.Str())
+		//}
+		//if len(tokenUtxos) == 0 {
+		//	return nil, fmt.Errorf("%v 's  utxo of this Token is empty", from.Str())
+		//}
+		//2. 获取 PaymentPayload
+		ploadPTN, err := dag.getPayload(from, to, daoAmountToken, daoFee, coreUtxos)
+		if err != nil {
+			return nil, err
+		}
+		tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, ploadPTN))
 	}
 	ploadToken, err := dag.getPayload(from, to, daoAmountToken, 0, tokenUtxos)
 	if err != nil {
 		return nil, err
 	}
 	// 3. 构建Transaction
-	tx := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_PAYMENT, ploadPTN),
-		modules.NewMessage(modules.APP_PAYMENT, ploadToken)})
+	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, ploadToken))
 	return tx, nil
 }
 
