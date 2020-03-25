@@ -148,6 +148,19 @@ func (ev *ElectionEvent) ToElectionEventBytes() (*ElectionEventBytes, error) {
 	es.Event = byteJson
 	return es, err
 }
+func (ev *ElectionEvent) ReqId() common.Hash {
+	switch ev.EType {
+	case ELECTION_EVENT_VRF_REQUEST:
+		return ev.Event.(*ElectionRequestEvent).ReqId
+	case ELECTION_EVENT_VRF_RESULT:
+		return ev.Event.(*ElectionResultEvent).ReqId
+	case ELECTION_EVENT_SIG_REQUEST:
+		return ev.Event.(*ElectionSigRequestEvent).ReqId
+	case ELECTION_EVENT_SIG_RESULT:
+		return ev.Event.(*ElectionSigResultEvent).ReqId
+	}
+	return common.Hash{}
+}
 
 //Adapter
 type AdapterEvent struct {
