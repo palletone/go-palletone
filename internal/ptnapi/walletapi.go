@@ -1779,7 +1779,7 @@ func (s *PrivateWalletAPI) buildRawTransferTx2(tokenId, from, to, gasFrom string
 	if err != nil {
 		return nil, nil, err
 	}
-	if !gasFee.IsPositive() {
+	if !gasFee.IsPositive() && s.b.EnableGasFee(){
 		return nil, nil, fmt.Errorf("fee is ZERO ")
 	}
 	//
