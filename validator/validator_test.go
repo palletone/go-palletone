@@ -69,7 +69,7 @@ func TestValidate_ValidateUnitTxs(t *testing.T) {
 	}
 	addr, _ := common.StringToAddress("P1HXNZReTByQHgWQNGMXotMyTkMG9XeEQfX")
 	code := validate.validateTransactions(rwset.RwM, txs, 1564675200, addr)
-	assert.Equal(t, code, TxValidationCode_VALID)
+	assert.Equal(t, code, TxValidationCode_DUPLICATE_TXID)
 }
 
 type mockStatedbQuery struct {
