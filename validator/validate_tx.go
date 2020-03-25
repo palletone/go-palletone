@@ -52,7 +52,10 @@ func (validate *Validate) validateTx(rwM rwset.TxManager, tx *modules.Transactio
 	if tx == nil {
 		return TxValidationCode_VALID, nil
 	}
-
+	msgs := tx.TxMessages()
+	if len(msgs) == 0 {
+		return TxValidationCode_INVALID_MSG, nil
+	}
 	//ptn := modules.NewPTNAsset()
 	ptn := dagconfig.DagConfig.GetGasToken()
 	_, chainindex, err := validate.propquery.GetNewestUnit(ptn)
@@ -62,10 +65,6 @@ func (validate *Validate) validateTx(rwM rwset.TxManager, tx *modules.Transactio
 	unithigh := int64(chainindex.Index)
 	reqId := tx.RequestHash()
 	//reqMsgCount:=tx.GetRequestMsgCount()
-	msgs := tx.TxMessages()
-	if len(msgs) == 0 {
-		return TxValidationCode_INVALID_MSG, nil
-	}
 	isOrphanTx := false
 	if validate.enableGasFee && msgs[0].App != modules.APP_PAYMENT { // 交易费
 		return TxValidationCode_INVALID_MSG, nil
