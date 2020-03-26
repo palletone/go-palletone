@@ -393,7 +393,8 @@ func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token 
 	defer s.b.Unlock()
 	var tx *modules.Transaction
 	var err error
-	if s.b.EnableGasFee() {
+	//如没有GasFee，而且to address不是合约地址，则不构建Payment，直接InvokeRequest+Signature
+	if s.b.EnableGasFee() || toAddr == contractAddr {
 		var usedUtxo []*modules.UtxoWithOutPoint
 		tx, usedUtxo, err = buildRawTransferTx(s.b, token, from, to, amountToken, fee, password)
 		if err != nil {
@@ -415,6 +416,7 @@ func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token 
 			return nil, err
 		}
 	} else {
+		log.Infof("Disabled gas fee, to address[%s],amount[%s] and fee[%s] will ignore.", to, amountToken.String(), fee.String())
 		tx, err = s.buildCcinvokeTxWithoutGasFee(s.b, fromAddr, contractAddr, args, password, exeTimeout)
 		if err != nil {
 			return nil, err
