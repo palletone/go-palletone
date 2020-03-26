@@ -53,6 +53,12 @@ func (aa *AmountAsset) String() string {
 	number := assetAmt2DecimalAmt(aa.Asset, aa.Amount)
 	return number.String() + aa.Asset.String()
 }
+func (aa *AmountAsset) GetFloatdec() float64 {
+	fal, _ := aa.Asset.DisplayAmount(aa.Amount).Float64()
+	dec := float64(aa.Amount) / fal
+	return dec / 100000000
+}
+
 func assetAmt2DecimalAmt(asset *Asset, amount uint64) decimal.Decimal {
 	dec := asset.GetDecimal()
 	d, _ := decimal.NewFromString(fmt.Sprintf("%d", amount))

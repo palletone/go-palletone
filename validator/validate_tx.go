@@ -373,6 +373,7 @@ func (validate *Validate) ValidateTxFeeEnough(tx *modules.Transaction, extSize f
 		timeFee = opFee * timeUnitFee * (float64(timeout) + extTime)
 		allFee = sizeFee + timeFee + accountUpdateFee + appDataFee
 	}
+	allFee *= fees.GetFloatdec()
 	val := math.Max(float64(fees.Amount), allFee) == float64(fees.Amount)
 	if !val {
 		log.Errorf("[%s]validateTxFeeEnough invalid, fee amount[%f]-fees[%f] (%f + %f + %f + %f), "+
