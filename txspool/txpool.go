@@ -972,16 +972,20 @@ func (pool *TxPool) getPoolTxsByAddr(addr common.Address, onlyUnpacked bool) ([]
 	// 将交易按地址分类
 	poolTxs := pool.AllTxpoolTxs()
 	for _, tx := range poolTxs {
-		if !tx.Confirmed {
-			if onlyUnpacked {
-				if tx.Pending {
-					continue //已打包，忽略
-				}
+		if tx.Confirmed {
+			continue
+		}
+		if onlyUnpacked &&tx.Pending{
+			continue
 			}
 			for _, msg := range tx.Tx.TxMessages() {
-				if msg.App == modules.APP_PAYMENT {
+			if msg.App != modules.APP_PAYMENT {
+                continue
+			}
 					payment, ok := msg.Payload.(*modules.PaymentPayload)
-					if ok {
+			if !ok {
+				continue 
+			}
 						addrs, err := tx.Tx.GetFromAddrs(pool.GetTxOutput, pool.tokenEngine.GetAddressFromScript)
 						if err != nil {
 							return nil, err
@@ -996,9 +1000,6 @@ func (pool *TxPool) getPoolTxsByAddr(addr common.Address, onlyUnpacked bool) ([]
 								txs[address] = append(txs[address], tx)
 							} else {
 								log.Error("PKSCript to address failed.", "error", err1)
-							}
-						}
-					}
 				}
 			}
 		}
@@ -1009,9 +1010,13 @@ func (pool *TxPool) getPoolTxsByAddr(addr common.Address, onlyUnpacked bool) ([]
 			continue
 		}
 		for _, msg := range tx.Tx.Messages() {
-			if msg.App == modules.APP_PAYMENT {
+			if msg.App != modules.APP_PAYMENT {
+				continue 
+			}
 				payment, ok := msg.Payload.(*modules.PaymentPayload)
-				if ok {
+			if !ok {
+				continue 
+			}
 					addrs, err := tx.Tx.GetFromAddrs(pool.GetTxOutput, pool.tokenEngine.GetAddressFromScript)
 					if err != nil {
 						return nil, err
@@ -1027,31 +1032,29 @@ func (pool *TxPool) getPoolTxsByAddr(addr common.Address, onlyUnpacked bool) ([]
 							txs[address] = append(txs[address], tx)
 						} else {
 							log.Error("PKSCript to address failed.", "error", err1)
-						}
-					}
 				}
 			}
 		}
 	}
 	result := make([]*TxPoolTransaction, 0)
+	exist:=false
 	if re, has := txs[addr]; has {
 		for i, tx := range re {
+			exist = false
 			if i == 0 {
 				result = append(result, tx)
-			} else {
-				var exist bool
-				for _, old := range result {
-					if old.Tx.Hash() == tx.Tx.Hash() {
-						exist = true
-						break
-					}
-				}
-				if !exist {
-					result = append(result, tx)
+				continue 
+			}  
+			for _, old := range result {
+				if old.Tx.Hash() == tx.Tx.Hash() {
+					exist = true
+					break
 				}
 			}
+			if !exist {
+				result = append(result, tx)
+			}
 		}
-		return result, nil
 	}
 	return result, nil //nil, errors.New(fmt.Sprintf("not found txs by addr:(%s).", addr))
 }
