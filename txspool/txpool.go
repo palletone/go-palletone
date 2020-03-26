@@ -1466,24 +1466,26 @@ func (pool *TxPool) DiscardTx(hash common.Hash) error {
 	return pool.discardTx(hash)
 }
 func (pool *TxPool) discardTx(hash common.Hash) error {
-	if pool.isTransactionInPool(hash) {
-		// in orphan pool
-		if pool.isOrphanInPool(hash) {
-			interOtx, has := pool.orphans.Load(hash)
-			if has {
-				otx := interOtx.(*TxPoolTransaction)
-				otx.Discarded = true
-				pool.orphans.Store(hash, otx)
-			}
-		}
-		// in all pool
-		interTx, has := pool.all.Load(hash)
+	if !pool.isTransactionInPool(hash) {
+		return nil
+	}
+	// in orphan pool
+	if pool.isOrphanInPool(hash) {
+		interOtx, has := pool.orphans.Load(hash)
 		if has {
-			tx := interTx.(*TxPoolTransaction)
-			tx.Discarded = true
-			pool.all.Store(hash, tx)
+			otx := interOtx.(*TxPoolTransaction)
+			otx.Discarded = true
+			pool.orphans.Store(hash, otx)
 		}
 	}
+	// in all pool
+	interTx, has := pool.all.Load(hash)
+	if !has {
+		return nil
+	}
+	tx := interTx.(*TxPoolTransaction)
+	tx.Discarded = true
+	pool.all.Store(hash, tx)
 	// not in pool
 	return nil
 }
@@ -1539,27 +1541,30 @@ func (pool *TxPool) addCache(tx *TxPoolTransaction) {
 	txHash := tx.Tx.Hash()
 	reqHash := tx.Tx.RequestHash()
 	for i, msgcopy := range tx.Tx.Messages() {
-		if msgcopy.App == modules.APP_PAYMENT {
-			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
-				for _, txin := range msg.Inputs {
-					if txin.PreviousOutPoint != nil {
-						pool.outpoints.Store(*txin.PreviousOutPoint, tx)
-					}
-				}
-				// add  outputs
-				preout := modules.OutPoint{TxHash: txHash}
-				for j, out := range msg.Outputs {
-					preout.MessageIndex = uint32(i)
-					preout.OutIndex = uint32(j)
-					utxo := &modules.Utxo{Amount: out.Value, Asset: &modules.Asset{
-						AssetId: out.Asset.AssetId, UniqueId: out.Asset.UniqueId},
-						PkScript: out.PkScript[:]}
-					pool.outputs.Store(preout, utxo)
-					if txHash != reqHash {
-						preout.TxHash = reqHash
-						pool.reqOutputs.Store(preout, utxo)
-					}
-				}
+		if msgcopy.App != modules.APP_PAYMENT {
+			continue
+		}
+		msg, ok := msgcopy.Payload.(*modules.PaymentPayload)
+		if !ok {
+			continue
+		}
+		for _, txin := range msg.Inputs {
+			if txin.PreviousOutPoint != nil {
+				pool.outpoints.Store(*txin.PreviousOutPoint, tx)
+			}
+		}
+		// add  outputs
+		preout := modules.OutPoint{TxHash: txHash}
+		for j, out := range msg.Outputs {
+			preout.MessageIndex = uint32(i)
+			preout.OutIndex = uint32(j)
+			utxo := &modules.Utxo{Amount: out.Value, Asset: &modules.Asset{
+				AssetId: out.Asset.AssetId, UniqueId: out.Asset.UniqueId},
+				PkScript: out.PkScript[:]}
+			pool.outputs.Store(preout, utxo)
+			if txHash != reqHash {
+				preout.TxHash = reqHash
+				pool.reqOutputs.Store(preout, utxo)
 			}
 		}
 	}
@@ -1620,23 +1625,26 @@ func (pool *TxPool) GetSortedTxs() ([]*TxPoolTransaction, error) {
 		if tx == nil {
 			log.Debugf("The task of txspool get priority_pricedtx has been finished,count:%d", len(list))
 			break
-		} else {
-			if !tx.Pending {
-				if has, _ := pool.unit.IsTransactionExist(tx.Tx.Hash()); has {
-					continue
-				}
-				// add precusorTxs 获取该交易的前驱交易列表
-				_, p_txs := pool.getPrecusorTxs(tx, poolTxs, orphanTxs)
-				for _, p_tx := range p_txs {
-					if _, has := map_pretxs[p_tx.Tx.Hash()]; !has {
-						map_pretxs[p_tx.Tx.Hash()] = len(list)
-						if !p_tx.Pending {
-							list = append(list, p_tx)
-							total += p_tx.Tx.Size()
-						}
-					}
-				}
+		}
+		if tx.Pending {
+			continue
+		}
+		if has, _ := pool.unit.IsTransactionExist(tx.Tx.Hash()); has {
+			continue
+		}
+		// add precusorTxs 获取该交易的前驱交易列表
+		_, p_txs := pool.getPrecusorTxs(tx, poolTxs, orphanTxs)
+		for _, p_tx := range p_txs {
+			_, has := map_pretxs[p_tx.Tx.Hash()]
+			if has {
+				continue
 			}
+			map_pretxs[p_tx.Tx.Hash()] = len(list)
+			if p_tx.Pending {
+				continue
+			}
+			list = append(list, p_tx)
+			total += p_tx.Tx.Size()
 		}
 	}
 	t2 := time.Now()
@@ -1786,17 +1794,16 @@ func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs,
 				}
 			}
 		}
-		if queue_tx != nil {
-			//if find precusor tx  ,and go on to find its
-			log.Info("find in precusor tx.", "hash", queue_tx.Tx.Hash().String(), "ohash", op.TxHash.String(),
-				"pending", tx.Pending)
-			if !queue_tx.Pending {
-				_, list := pool.getPrecusorTxs(queue_tx, poolTxs, orphanTxs)
-				for _, p_tx := range list {
-					pretxs = append(pretxs, p_tx)
-					delete(poolTxs, p_tx.Tx.Hash())
-				}
-			}
+		//if find precusor tx  ,and go on to find its
+		log.Info("find in precusor tx.", "hash", queue_tx.Tx.Hash().String(), "ohash", op.TxHash.String(),
+			"pending", tx.Pending)
+		if queue_tx == nil || queue_tx.Pending {
+			continue
+		}
+		_, list := pool.getPrecusorTxs(queue_tx, poolTxs, orphanTxs)
+		for _, p_tx := range list {
+			pretxs = append(pretxs, p_tx)
+			delete(poolTxs, p_tx.Tx.Hash())
 		}
 	}
 	if !isNotOriginal { //返回自己
