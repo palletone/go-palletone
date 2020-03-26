@@ -524,6 +524,7 @@ func checkAndAddTxSigMsgData(local *modules.Transaction, recv *modules.Transacti
 		return false, errors.New("checkAndAddTxSigMsgData param is nil")
 	}
 	reqId := local.RequestHash()
+	reqMsgCount := local.GetRequestMsgCount()
 	msgs := local.TxMessages()
 	recv_msgs := recv.TxMessages()
 	if len(msgs) != len(recv_msgs) {
@@ -531,7 +532,7 @@ func checkAndAddTxSigMsgData(local *modules.Transaction, recv *modules.Transacti
 			reqId.ShortStr(), len(msgs), len(recv_msgs))
 	}
 	for i := 0; i < len(msgs); i++ {
-		if recv_msgs[i].App == modules.APP_SIGNATURE {
+		if recv_msgs[i].App == modules.APP_SIGNATURE && i > reqMsgCount {
 			recvSigMsg = recv_msgs[i]
 		} else if !msgs[i].CompareMessages(recv_msgs[i]) {
 			log.Info("checkAndAddTxSigMsgData", "reqId", reqId.ShortStr(), "local:", msgs[i],
@@ -543,7 +544,7 @@ func checkAndAddTxSigMsgData(local *modules.Transaction, recv *modules.Transacti
 		return false, fmt.Errorf("[%s]checkAndAddTxSigMsgData not find recv sig msg", reqId.ShortStr())
 	}
 	for i, msg := range msgs {
-		if msg.App == modules.APP_SIGNATURE {
+		if msg.App == modules.APP_SIGNATURE && i > reqMsgCount {
 			sigPayload := msg.Payload.(*modules.SignaturePayload)
 			sigs := sigPayload.Signatures
 			for _, sig := range sigs {
