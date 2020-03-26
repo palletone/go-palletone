@@ -345,7 +345,6 @@ func (validate *Validate) ValidateTxFeeEnough(tx *modules.Transaction, extSize f
 		log.Warnf("[%s]validateTxFeeEnough return ORPHAN since GetTxFee err:%s", reqId.ShortStr(), err.Error())
 		return TxValidationCode_ORPHAN
 	}
-
 	cp := validate.propquery.GetChainParameters()
 	timeUnitFee := float64(cp.ContractTxTimeoutUnitFee)
 	sizeUnitFee := float64(cp.ContractTxSizeUnitFee)
@@ -379,18 +378,16 @@ func (validate *Validate) ValidateTxFeeEnough(tx *modules.Transaction, extSize f
 		timeFee = opFee * timeUnitFee * (float64(timeout) + extTime)
 		allFee = sizeFee + timeFee + accountUpdateFee + appDataFee
 	}
+	allFee *= fees.GetFloatdec()
 	val := math.Max(float64(fees.Amount), allFee) == float64(fees.Amount)
+	//val := math.Max(float64(fees.Amount), allFee) == float64(fees.Amount)
+
 	if !val {
 		log.Errorf("[%s]validateTxFeeEnough invalid, fee amount[%f]-fees[%f] (%f + %f + %f + %f), "+
 			"txSize[%f], timeout[%d], extSize[%f], extTime[%f]",
 			reqId.ShortStr(), float64(fees.Amount), allFee, sizeFee, timeFee, accountUpdateFee, appDataFee,
 			txSize, timeout, extSize, extTime)
 	}
-
-	log.Debugf("[%s]validateTxFeeEnough is %v, fee amount[%f]-fees[%f](%f + %f + %f + %f), "+
-		"txSize[%f], timeout[%d], extSize[%f], extTime[%f]",
-		reqId.ShortStr(), val, float64(fees.Amount), allFee, sizeFee, timeFee, accountUpdateFee, appDataFee,
-		txSize, timeout, extSize, extTime)
 	if val {
 		return TxValidationCode_VALID
 	} else {

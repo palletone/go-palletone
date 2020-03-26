@@ -360,6 +360,8 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, erro
 		return nil, fmt.Errorf("Compute fees: tx %s txin amount less than txout amount. amount:%d ,outAmount:%d ",
 			tx.Hash().String(), inAmount, outAmount)
 	}
+	log.Debugf("Compute fees: tx %s txin amount more than txout amount. amount:%d ,outAmount:%d ",
+			tx.Hash().String(), inAmount, outAmount)
 	fees := inAmount - outAmount
 
 	return &AmountAsset{Amount: fees, Asset: feeAsset}, nil
