@@ -61,6 +61,7 @@ type IUnitRepository interface {
 	GetHeaderList(hash common.Hash, parentCount int) ([]*modules.Header, error)
 	SaveHeader(header *modules.Header) error
 	SaveNewestHeader(header *modules.Header) error
+	InitNewestHeader(header *modules.Header) error
 	SaveHeaders(headers []*modules.Header) error
 	GetHeaderByNumber(index *modules.ChainIndex) (*modules.Header, error)
 	GetHeadersByAuthor(authorAddr common.Address, startHeight, count uint64) ([]*modules.Header, error)
@@ -201,6 +202,7 @@ func (rep *UnitRepository) GetHeaderList(hash common.Hash, parentCount int) ([]*
 func (rep *UnitRepository) SaveHeader(header *modules.Header) error {
 	return rep.dagdb.SaveHeader(header)
 }
+
 func (rep *UnitRepository) SaveNewestHeader(header *modules.Header) error {
 	//要增加的Unit必须是NewestUnit后的一个单元，否则报错
 	//uHash, uIndex, _, err := rep.propdb.GetNewestUnit(header.GetAssetId())
@@ -233,6 +235,14 @@ func (rep *UnitRepository) SaveNewestHeader(header *modules.Header) error {
 	}
 	return rep.propdb.SetNewestUnit(header)
 }
+func (rep *UnitRepository) InitNewestHeader(header *modules.Header) error {
+	err := rep.dagdb.SaveHeader(header)
+	if err != nil {
+		return err
+	}
+	return rep.propdb.SetNewestUnit(header)
+}
+
 func (rep *UnitRepository) SaveHeaders(headers []*modules.Header) error {
 	return rep.dagdb.SaveHeaders(headers)
 }

@@ -20,6 +20,7 @@
 package txspool
 
 import (
+	"bytes"
 	"fmt"
 	"sort"
 	"sync"
@@ -1917,4 +1918,59 @@ func (pool *TxPool) reflashOrphanTxs(tx *modules.Transaction, orphans map[common
 			}
 		}
 	}
+}
+func (pool *TxPool) GetAddrUtxos(addr common.Address, token *modules.Asset) (
+	map[modules.OutPoint]*modules.Utxo, error) {
+	dbUtxos, dbReqTxMapping, err := pool.unit.GetAddrUtxoAndReqMapping(addr, token)
+	if err != nil {
+		return nil, err
+	}
+	txs, err := pool.GetUnpackedTxsByAddr(addr)
+	if err != nil {
+		return nil, err
+	}
+	poolUtxo, poolReqTxMapping, poolSpend := parseTxUtxo(txs, addr, token)
+	for k, v := range dbUtxos {
+		poolUtxo[k] = v
+	}
+	for k, v := range dbReqTxMapping {
+		poolReqTxMapping[k] = v
+	}
+	for spend := range poolSpend {
+		delete(poolUtxo, spend)
+		if txHash, ok := poolReqTxMapping[spend.TxHash]; ok {
+			spend2 := modules.OutPoint{
+				TxHash:       txHash,
+				MessageIndex: spend.MessageIndex,
+				OutIndex:     spend.OutIndex,
+			}
+			delete(poolUtxo, spend2)
+		}
+	}
+	return poolUtxo, nil
+}
+
+func parseTxUtxo(txs []*TxPoolTransaction, addr common.Address, token *modules.Asset) (
+	map[modules.OutPoint]*modules.Utxo, map[common.Hash]common.Hash, map[modules.OutPoint]bool) {
+	dbUtxos := make(map[modules.OutPoint]*modules.Utxo)
+	spendUtxo := make(map[modules.OutPoint]bool)
+	dbReqTxMapping := make(map[common.Hash]common.Hash)
+	lockScript := tokenengine.Instance.GenerateLockScript(addr)
+	for _, tx := range txs {
+		for k, v := range tx.Tx.GetNewUtxos() {
+			if !bytes.Equal(lockScript, v.PkScript) {
+				continue
+			}
+			if token != nil && v.Asset.Equal(token) {
+				dbUtxos[k] = v
+			}
+		}
+		for _, so := range tx.Tx.GetSpendOutpoints() {
+			spendUtxo[*so] = true
+		}
+		if tx.TxHash != tx.ReqHash {
+			dbReqTxMapping[tx.ReqHash] = tx.TxHash
+		}
+	}
+	return dbUtxos, dbReqTxMapping, spendUtxo
 }
