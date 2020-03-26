@@ -898,7 +898,7 @@ func (pool *TxPool) maybeAcceptTransaction(tx *modules.Transaction, rateLimit bo
 
 // addTx enqueues a single transaction into the pool if it is valid.
 func (pool *TxPool) addTx(tx *TxPoolTransaction, local bool) error {
-	//chaneg by wzhyuan 
+	//chaneg by wzhyuan
 	pool.mu.Lock()
 	defer pool.mu.Unlock()
 	// Try to inject the transaction and update any state
@@ -915,7 +915,7 @@ func (pool *TxPool) addTx(tx *TxPoolTransaction, local bool) error {
 
 // addTxs attempts to queue a batch of transactions if they are valid.
 func (pool *TxPool) addTxs(txs []*TxPoolTransaction, local bool) []error {
-	//change by wzhyuan 
+	//change by wzhyuan
 	pool.mu.Lock()
 	defer pool.mu.Unlock()
 
@@ -1003,34 +1003,35 @@ func (pool *TxPool) getPoolTxsByAddr(addr string, onlyUnpacked bool) ([]*TxPoolT
 	// 将交易按地址分类
 	poolTxs := pool.AllTxpoolTxs()
 	for _, tx := range poolTxs {
-		if !tx.Confirmed {
-			if onlyUnpacked {
-				if tx.Pending {
-					continue //已打包，忽略
-				}
+		if tx.Confirmed {
+			continue
+		}
+		if onlyUnpacked &&tx.Pending{
+			continue
+		}
+		for _, msg := range tx.Tx.TxMessages() {
+			if msg.App != modules.APP_PAYMENT {
+                continue
 			}
-			for _, msg := range tx.Tx.TxMessages() {
-				if msg.App == modules.APP_PAYMENT {
-					payment, ok := msg.Payload.(*modules.PaymentPayload)
-					if ok {
-						addrs, err := tx.Tx.GetFromAddrs(pool.GetTxOutput, pool.tokenEngine.GetAddressFromScript)
-						if err != nil {
-							return nil, err
-						}
-						for _, addr := range addrs {
-							addr1 := addr.String()
-							txs[addr1] = append(txs[addr1], tx)
-						}
+			payment, ok := msg.Payload.(*modules.PaymentPayload)
+			if !ok {
+				continue 
+			}
+			addrs, err := tx.Tx.GetFromAddrs(pool.GetTxOutput, pool.tokenEngine.GetAddressFromScript)
+			if err != nil {
+				return nil, err
+			}
+			for _, addr := range addrs {
+				addr1 := addr.String()
+				txs[addr1] = append(txs[addr1], tx)
+			}
 
-						for _, out := range payment.Outputs {
-							address, err1 := pool.tokenEngine.GetAddressFromScript(out.PkScript[:])
-							if err1 == nil {
-								txs[address.String()] = append(txs[address.String()], tx)
-							} else {
-								log.Error("PKSCript to address failed.", "error", err1)
-							}
-						}
-					}
+			for _, out := range payment.Outputs {
+				address, err1 := pool.tokenEngine.GetAddressFromScript(out.PkScript[:])
+				if err1 == nil {
+					txs[address.String()] = append(txs[address.String()], tx)
+				} else {
+					log.Error("PKSCript to address failed.", "error", err1)
 				}
 			}
 		}
@@ -1041,27 +1042,29 @@ func (pool *TxPool) getPoolTxsByAddr(addr string, onlyUnpacked bool) ([]*TxPoolT
 			continue
 		}
 		for _, msg := range tx.Tx.Messages() {
-			if msg.App == modules.APP_PAYMENT {
-				payment, ok := msg.Payload.(*modules.PaymentPayload)
-				if ok {
-					addrs, err := tx.Tx.GetFromAddrs(pool.GetTxOutput, pool.tokenEngine.GetAddressFromScript)
-					if err != nil {
-						return nil, err
-					}
-					//if addrs, err := pool.unit.GetTxFromAddress(tx.Tx); err == nil {
-					for _, addr := range addrs {
-						addr1 := addr.String()
-						txs[addr1] = append(txs[addr1], tx)
-					}
-					//}
-					for _, out := range payment.Outputs {
-						address, err1 := pool.tokenEngine.GetAddressFromScript(out.PkScript[:])
-						if err1 == nil {
-							txs[address.String()] = append(txs[address.String()], tx)
-						} else {
-							log.Error("PKSCript to address failed.", "error", err1)
-						}
-					}
+			if msg.App != modules.APP_PAYMENT {
+				continue 
+			}
+			payment, ok := msg.Payload.(*modules.PaymentPayload)
+			if !ok {
+				continue 
+			}
+			addrs, err := tx.Tx.GetFromAddrs(pool.GetTxOutput, pool.tokenEngine.GetAddressFromScript)
+			if err != nil {
+				return nil, err
+			}
+			//if addrs, err := pool.unit.GetTxFromAddress(tx.Tx); err == nil {
+			for _, addr := range addrs {
+				addr1 := addr.String()
+				txs[addr1] = append(txs[addr1], tx)
+			}
+			//}
+			for _, out := range payment.Outputs {
+				address, err1 := pool.tokenEngine.GetAddressFromScript(out.PkScript[:])
+				if err1 == nil {
+					txs[address.String()] = append(txs[address.String()], tx)
+				} else {
+					log.Error("PKSCript to address failed.", "error", err1)
 				}
 			}
 		}
@@ -1604,15 +1607,15 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 		return nil, 0
 	}
 	unithigh := int64(chainindex.Index)
-	log.Debugf("unithigh-------1604----------%d\n",unithigh)
+	log.Debugf("unithigh-------1604----------%d\n", unithigh)
 	map_pretxs := make(map[common.Hash]int)
 	// get sequenTxs
 	stxs_txs := pool.GetSequenTxs()
 	poolTxs := pool.AllTxpoolTxs()
 	orphanTxs := pool.AllOrphanTxs()
 	unit_size := common.StorageSize(parameter.CurrentSysParameters.UnitMaxSize)
-	
-    stxs := make(orList, 0)
+
+	stxs := make(orList, 0)
 	for _, tx := range stxs_txs {
 		stxs = append(stxs, tx)
 	}
@@ -1629,14 +1632,14 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 			log.Infof("get sorted timeout spent times: %s , count: %d ", time.Since(t0), len(list))
 			break
 		}
-		if total >= unit_size{
+		if total >= unit_size {
 			break
 		}
 		tx := pool.priority_sorted.Get()
 		if tx == nil {
 			log.Debugf("The task of txspool get priority_pricedtx has been finished,count:%d", len(list))
 			break
-		} 
+		}
 		if tx.Pending {
 			continue
 		}
@@ -1646,7 +1649,7 @@ func (pool *TxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTrans
 		log.Debugf("pool tx  is not  nil      ")
 		// add precusorTxs 获取该交易的前驱交易列表
 		poolTxs = pool.AllTxpoolTxs()
-        orphanTxs = pool.AllOrphanTxs()
+		orphanTxs = pool.AllOrphanTxs()
 		_, p_txs := pool.getPrecusorTxs(tx, poolTxs, orphanTxs)
 		for _, p_tx := range p_txs {
 			if _, has := map_pretxs[p_tx.Tx.Hash()]; !has {
@@ -1759,17 +1762,17 @@ func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs,
 		//  若该utxo在db里找不到,try to find it in pool and ophans txs
 		queue_tx, has := poolTxs[op.TxHash]
 		if !has {
-			poolloop:
+		poolloop:
 			for _, otx := range poolTxs {
 				if otx.Tx.RequestHash() == op.TxHash {
 					for i, msg := range otx.Tx.Messages() {
 						if msg.App != modules.APP_PAYMENT {
-                            continue
+							continue
 						}
 						payment := msg.Payload.(*modules.PaymentPayload)
 						for j := range payment.Outputs {
 							if op.OutIndex == uint32(j) && op.MessageIndex == uint32(i) {
-					
+
 								log.Debugf("found  in pool")
 								queue_tx = otx
 								break poolloop
@@ -1778,7 +1781,7 @@ func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs,
 					}
 				}
 			}
-			orphTxsLOOP:
+		orphTxsLOOP:
 			for _, otx := range orphanTxs {
 				if otx.Tx.RequestHash() == op.TxHash {
 					for i, msg := range otx.Tx.Messages() {
@@ -1796,7 +1799,7 @@ func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs,
 			}
 		}
 		if queue_tx != nil {
-			//if find precusor tx  ,and go on to find its 
+			//if find precusor tx  ,and go on to find its
 			log.Info("find in precusor tx.", "hash", queue_tx.Tx.Hash().String(), "ohash", op.TxHash.String(),
 				"pending", tx.Pending)
 			if !queue_tx.Pending {
