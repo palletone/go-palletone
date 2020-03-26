@@ -52,23 +52,22 @@ func localIsMinSignature(tx *modules.Transaction) bool {
 	if tx == nil || len(tx.Messages()) < 3 {
 		return false
 	}
-	for _, msg := range tx.Messages() {
-		if msg.App == modules.APP_SIGNATURE {
-			sigPayload := msg.Payload.(*modules.SignaturePayload)
-			sigs := sigPayload.Signatures
-			localSig := sigs[0].Signature
+	sigPayload, _ := tx.GetResultSignaturePayload()
+	if sigPayload != nil {
+		sigs := sigPayload.Signatures
+		localSig := sigs[0].Signature
 
-			for i := 1; i < len(sigs); i++ {
-				if sigs[i].Signature == nil {
-					return false
-				}
-				if bytes.Compare(localSig, sigs[i].Signature) >= 1 {
-					return false
-				}
+		for i := 1; i < len(sigs); i++ {
+			if sigs[i].Signature == nil {
+				return false
 			}
-			//log.Debug("localIsMinSignature", "local sig", localSig)
-			return true
+			if bytes.Compare(localSig, sigs[i].Signature) >= 1 {
+				return false
+			}
 		}
+		//log.Debug("localIsMinSignature", "local sig", localSig)
+		return true
+
 	}
 	return false
 }
@@ -562,6 +561,10 @@ func checkAndAddTxSigMsgData(local *modules.Transaction, recv *modules.Transacti
 			local.ModifiedMsg(i, msg)
 			log.Infof("[%s]checkAndAddTxSigMsgData, add sig payload, len(Signatures)=%d, Signatures[%s]",
 				reqId.ShortStr(), len(sigPayload.Signatures), sigPayload.Signatures)
+			log.DebugDynamic(func() string {
+				data, _ := json.Marshal(local)
+				return fmt.Sprintf("signed contract tx:\t%s", string(data))
+			})
 			return true, nil
 		}
 	}
@@ -570,10 +573,9 @@ func checkAndAddTxSigMsgData(local *modules.Transaction, recv *modules.Transacti
 
 func getTxSigNum(tx *modules.Transaction) int {
 	if tx != nil {
-		for _, msg := range tx.Messages() {
-			if msg.App == modules.APP_SIGNATURE {
-				return len(msg.Payload.(*modules.SignaturePayload).Signatures)
-			}
+		signPayload, _ := tx.GetResultSignaturePayload()
+		if signPayload != nil {
+			return len(signPayload.Signatures)
 		}
 	}
 	return 0

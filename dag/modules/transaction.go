@@ -361,7 +361,7 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, erro
 			tx.Hash().String(), inAmount, outAmount)
 	}
 	log.Debugf("Compute fees: tx %s txin amount more than txout amount. amount:%d ,outAmount:%d ",
-			tx.Hash().String(), inAmount, outAmount)
+		tx.Hash().String(), inAmount, outAmount)
 	fees := inAmount - outAmount
 
 	return &AmountAsset{Amount: fees, Asset: feeAsset}, nil
@@ -624,19 +624,19 @@ func (tx *Transaction) GetContractTxSignatureAddress() []common.Address {
 }
 
 //获得合约结果部分的Signature，如果不是合约Tx，则返回第一个Signature
-func (tx *Transaction) GetResultSignature() (int, *SignaturePayload, error) {
-	reqSign := tx.NeedRequestSignature()
-	for msgIdx, msg := range tx.txdata.TxMessages {
-		if msg.App == APP_SIGNATURE {
-			if reqSign {
-				reqSign = false
-			} else {
-				return msgIdx, msg.Payload.(*SignaturePayload), nil
-			}
-		}
-	}
-	return 0, nil, errors.ErrMessageNotFound
-}
+//func (tx *Transaction) GetResultSignature() (int, *SignaturePayload, error) {
+//	reqSign := tx.NeedRequestSignature()
+//	for msgIdx, msg := range tx.txdata.TxMessages {
+//		if msg.App == APP_SIGNATURE {
+//			if reqSign {
+//				reqSign = false
+//			} else {
+//				return msgIdx, msg.Payload.(*SignaturePayload), nil
+//			}
+//		}
+//	}
+//	return 0, nil, errors.ErrMessageNotFound
+//}
 
 //如果是合约调用交易，Copy其中的Msg0到ContractRequest的部分，如果不是请求，那么返回完整Tx
 func (tx *Transaction) GetRequestTx() *Transaction {
@@ -678,6 +678,23 @@ func (tx *Transaction) GetRequestMsgCount() int {
 		}
 	}
 	return len(tx.txdata.TxMessages)
+}
+
+//获得一个交易中执行结果的签名Payload和所在的MessageIndex,如果没有执行结果，则返回nil
+func (tx *Transaction) GetResultSignaturePayload() (*SignaturePayload, int) {
+	signCount := 1
+	if tx.txdata.TxMessages[0].App != APP_PAYMENT { //no gas fee
+		signCount = 2
+	}
+	for i, msg := range tx.txdata.TxMessages {
+		if msg.App == APP_SIGNATURE {
+			signCount--
+			if signCount == 0 {
+				return msg.Payload.(*SignaturePayload), i
+			}
+		}
+	}
+	return nil, -1
 }
 
 //获取一个被Jury执行完成后，但是还没有进行陪审员签名的交易
