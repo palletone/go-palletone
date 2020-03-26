@@ -193,10 +193,6 @@ func (utxodb *UtxoDb) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, e
 
 	utxo := new(modules.Utxo)
 	key := outpoint.ToKey(utxodb.UTXO_PREFIX)
-	//if stxo, err := utxodb.GetStxoEntry(outpoint); err == nil && stxo != nil {
-	//	return nil, fmt.Errorf("DB[%s,%p,req=%t] utxo[%s] is spent by[%s].", reflect.TypeOf(utxodb.db).String(),
-	//		utxodb.db, utxodb.isRequest, outpoint.String(), stxo.SpentByTxId.String())
-	//}
 	err := RetrieveFromRlpBytes(utxodb.db, key, utxo)
 	if err != nil {
 		log.DebugDynamic(func() string {

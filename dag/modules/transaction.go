@@ -720,7 +720,7 @@ func (tx *Transaction) GetFromAddrs(queryUtxoFunc QueryUtxoFunc, getAddrFunc Get
 							out := msgs[input.PreviousOutPoint.MessageIndex].Payload.(*PaymentPayload).Outputs[input.PreviousOutPoint.OutIndex]
 							lockScript = out.PkScript
 						} else {
-							log.Errorf("[%s]Cannot find txo by:%s", tx.RequestHash().ShortStr(), input.PreviousOutPoint.String())
+							log.Errorf("txhash[%s][%s]Cannot find txo by:%s", tx.Hash().String(), tx.RequestHash().ShortStr(), input.PreviousOutPoint.String())
 							return nil, err
 						}
 					} else {

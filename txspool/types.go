@@ -325,7 +325,6 @@ func (pooltx *TxPoolTransaction) EncodeRLP(w io.Writer) error {
 	temp.UnitHash = pooltx.UnitHash
 	temp.UnitIndex = pooltx.UnitIndex
 	temp.Pending = pooltx.Pending
-	temp.Confirmed = pooltx.Confirmed
 	temp.IsOrphan = pooltx.IsOrphan
 	temp.Discarded = pooltx.Discarded
 	for _, addition := range pooltx.TxFee {
@@ -479,7 +478,6 @@ func (pooltx *TxPoolTransaction) DecodeRLP(s *rlp.Stream) error {
 	pooltx.UnitHash = temp.UnitHash
 	pooltx.UnitIndex = temp.UnitIndex
 	pooltx.Pending = temp.Pending
-	pooltx.Confirmed = temp.Confirmed
 	pooltx.IsOrphan = temp.IsOrphan
 	pooltx.Discarded = temp.Discarded
 	pooltx.TxFee = make([]*modules.Addition, 0)
