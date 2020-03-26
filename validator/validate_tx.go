@@ -29,6 +29,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/constants"
@@ -64,7 +65,7 @@ func (validate *Validate) validateTx(rwM rwset.TxManager, tx *modules.Transactio
 	}
 	unithigh := int64(chainindex.Index)
 	reqId := tx.RequestHash()
-	//reqMsgCount:=tx.GetRequestMsgCount()
+	reqMsgCount := tx.GetRequestMsgCount()
 	isOrphanTx := false
 	if validate.enableGasFee && msgs[0].App != modules.APP_PAYMENT { // 交易费
 		return TxValidationCode_INVALID_MSG, nil
@@ -251,10 +252,14 @@ func (validate *Validate) validateTx(rwM rwset.TxManager, tx *modules.Transactio
 				return validateCode, txFee
 			}
 		case modules.APP_SIGNATURE:
-			// 签名验证,被签名的消息是SignaturePayload之前的所有消息
-
 			payload, _ := msg.Payload.(*modules.SignaturePayload)
-			validateCode := validate.validateContractSignature(payload.Signatures[:], tx, msgIdx, isFullTx)
+			var validateCode ValidationCode
+			// 签名验证,被签名的消息是SignaturePayload之前的所有消息
+			if msgIdx < reqMsgCount {
+				validateCode = validate.validateRequesterSignature(payload.Signatures[:], tx, msgIdx)
+			} else {
+				validateCode = validate.validateContractSignature(payload.Signatures[:], tx, msgIdx, isFullTx)
+			}
 			if validateCode != TxValidationCode_VALID {
 				return validateCode, txFee
 			}
@@ -276,6 +281,23 @@ func (validate *Validate) validateTx(rwM rwset.TxManager, tx *modules.Transactio
 	return TxValidationCode_VALID, txFee
 }
 
+//Disable GasFee的情况下，验证发起人的签名是否有效
+func (validate *Validate) validateRequesterSignature(signatures []modules.SignatureSet,
+	tx *modules.Transaction, signPayloadMsgIndex int) ValidationCode {
+	tx4Sign := tx.CopyPartTx(signPayloadMsgIndex - 1)
+	txBytes, _ := rlp.EncodeToBytes(tx4Sign)
+	for _, s := range signatures {
+		pass, err := crypto.MyCryptoLib.Verify(s.PubKey, s.Signature, txBytes)
+		if err != nil {
+			log.Error(err.Error())
+			return TxValidationCode_INVALID_SIGNATURE
+		}
+		if !pass {
+			return TxValidationCode_INVALID_SIGNATURE
+		}
+	}
+	return TxValidationCode_VALID
+}
 func (validate *Validate) validateVoteMediatorTx(payload interface{}) ValidationCode {
 	accountUpdate, ok := payload.(*modules.AccountStateUpdatePayload)
 	if !ok {
