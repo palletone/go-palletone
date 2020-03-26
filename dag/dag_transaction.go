@@ -343,7 +343,7 @@ func (dag *Dag) CreateTokenTransaction(from, to common.Address, token *modules.A
 }
 
 // to build a vote mediator transaction
-func (dag *Dag) GenVoteMediatorTx(voter common.Address, mediators map[string]bool) (*modules.Transaction, uint64, error) {
+func (dag *Dag) GenVoteMediatorTx(voter common.Address, mediators map[string]bool, enableGasFee bool) (*modules.Transaction, uint64, error) {
 	// 1. 组装 message
 	msb, err := json.Marshal(mediators)
 	if err != nil {
@@ -368,7 +368,7 @@ func (dag *Dag) GenVoteMediatorTx(voter common.Address, mediators map[string]boo
 	// 2. 组装 tx
 	//fee := dag.CurrentFeeSchedule().AccountUpdateFee
 	fee := dag.GetChainParameters().AccountUpdateFee
-	tx, fee, err := dag.CreateGenericTransaction(voter, voter, 0, fee, nil, msg, true)
+	tx, fee, err := dag.CreateGenericTransaction(voter, voter, 0, fee, nil, msg, enableGasFee)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -393,7 +393,7 @@ func (dag *Dag) GenTransferPtnTx(from, to common.Address, daoAmount uint64, text
 		}
 
 		// 2. 创建 tx
-		tx, fee, err = dag.CreateGenericTransaction(from, to, daoAmount, fee, nil, msg, true)
+		tx, fee, err = dag.CreateGenericTransaction(from, to, daoAmount, fee, nil, msg, enableGasFee)
 	}
 
 	if err != nil {
