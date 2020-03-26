@@ -1379,59 +1379,58 @@ func (pool *TxPool) promoteExecutables() {
 	pendingTxs := make([]*TxPoolTransaction, 0)
 	poolTxs := pool.AllTxpoolTxs()
 	for _, tx := range poolTxs {
-		if !tx.Pending {
-			pendingTxs = append(pendingTxs, tx)
+		if tx.Pending {
+			continue
 		}
+		pendingTxs = append(pendingTxs, tx)
 	}
 	pending := len(pendingTxs)
-	if uint64(pending) > pool.config.GlobalSlots {
-		// Assemble a spam order to penalize large transactors first
-		spammers := prque.New()
-		for i, tx := range pendingTxs {
-			// Only evict transactions from high rollers
-			spammers.Push(tx.Tx.Hash(), float32(i))
-		}
-		// Gradually drop transactions from offenders
-		offenders := []common.Hash{}
-		for uint64(pending) > pool.config.GlobalSlots && !spammers.Empty() {
-			// Retrieve the next offender if not local address
-			offender, _ := spammers.Pop()
-			offenders = append(offenders, offender.(common.Hash))
+	if uint64(pending) <= pool.config.GlobalSlots {
+		return
+	}
+	// Assemble a spam order to penalize large transactors first
+	spammers := prque.New()
+	for i, tx := range pendingTxs {
+		// Only evict transactions from high rollers
+		spammers.Push(tx.Tx.Hash(), float32(i))
+	}
+	// Gradually drop transactions from offenders
+	offenders := []common.Hash{}
+	if spammers.Empty() {
+		return
+	}
+	// Retrieve the next offender if not local address
+	offender, _ := spammers.Pop()
+	offenders = append(offenders, offender.(common.Hash))
 
-			// Equalize balances until all the same or below threshold
-			if len(offenders) > 1 {
-				// Iteratively reduce all offenders until below limit or threshold reached
-				for uint64(pending) > pool.config.GlobalSlots {
-					for i := 0; i < len(offenders)-1; i++ {
-						for _, tx := range pendingTxs {
-							hash := tx.Tx.Hash()
-							if offenders[i].String() == hash.String() {
-								// Drop the transaction from the global pools too
-								pool.all.Delete(hash)
-								pool.priority_sorted.Removed()
-								log.Trace("Removed fairness-exceeding pending transaction", "hash", hash)
-								pending--
-								break
-							}
-						}
-					}
+	// Equalize balances until all the same or below threshold
+	if len(offenders) > 1 {
+		// Iteratively reduce all offenders until below limit or threshold reached
+		for i := 0; i < len(offenders)-1; i++ {
+			for _, tx := range pendingTxs {
+				hash := tx.Tx.Hash()
+				if offenders[i].String() == hash.String() {
+					// Drop the transaction from the global pools too
+					pool.all.Delete(hash)
+					pool.priority_sorted.Removed()
+					log.Trace("Removed fairness-exceeding pending transaction", "hash", hash)
+					pending--
+					break
 				}
 			}
 		}
-		// If still above threshold, reduce to limit or min allowance
-		if uint64(pending) > pool.config.GlobalSlots && len(offenders) > 0 {
-			for uint64(pending) > pool.config.GlobalSlots {
-				for _, addr := range offenders {
-					for _, tx := range pendingTxs {
-						hash := tx.Tx.Hash()
-						if addr.String() == hash.String() {
-							pool.all.Delete(hash)
-							pool.priority_sorted.Removed()
-							log.Trace("Removed fairness-exceeding pending transaction", "hash", hash)
-							pending--
-							break
-						}
-					}
+	}
+	// If still above threshold, reduce to limit or min allowance
+	if len(offenders) > 0 {
+		for _, addr := range offenders {
+			for _, tx := range pendingTxs {
+				hash := tx.Tx.Hash()
+				if addr.String() == hash.String() {
+					pool.all.Delete(hash)
+					pool.priority_sorted.Removed()
+					log.Trace("Removed fairness-exceeding pending transaction", "hash", hash)
+					pending--
+					break
 				}
 			}
 		}
