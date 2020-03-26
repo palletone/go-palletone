@@ -53,8 +53,8 @@ type TxPool struct {
 	dag                   txspool.IDag
 	tokenengine           tokenengine.ITokenEngine
 	sync.RWMutex
-	txFeed event.Feed
-	scope  event.SubscriptionScope
+	txFeed                event.Feed
+	scope                 event.SubscriptionScope
 }
 
 // NewTxPool creates a new transaction pool to gather, sort and filter inbound
@@ -86,7 +86,7 @@ func (pool *TxPool) AddLocal(tx *modules.Transaction) error {
 	defer pool.Unlock()
 	log.DebugDynamic(func() string {
 		data, _ := rlp.EncodeToBytes(tx)
-		return fmt.Sprintf("try to add tx[%s] to txpool, tx hex:%x", tx.Hash().String(), data)
+		return fmt.Sprintf("[%s]try to add tx[%s] to txpool, tx hex:%x", tx.RequestHash().ShortStr(), tx.Hash().String(), data)
 	})
 	err := pool.addLocal(tx)
 	if err != nil {
@@ -100,7 +100,7 @@ func (pool *TxPool) AddRemote(tx *modules.Transaction) error {
 	defer pool.Unlock()
 	log.DebugDynamic(func() string {
 		data, _ := rlp.EncodeToBytes(tx)
-		return fmt.Sprintf("try to add tx[%s] to txpool, tx hex:%x", tx.Hash().String(), data)
+		return fmt.Sprintf("[%s]try to add tx[%s] to txpool, tx hex:%x", tx.RequestHash().ShortStr(), tx.Hash().String(), data)
 	})
 	err := pool.addLocal(tx)
 	if err != nil {
@@ -123,7 +123,7 @@ func (pool *TxPool) checkDuplicateAdd(txHash common.Hash) error {
 		return ErrDuplicate
 	}
 	if _, ok := pool.basedOnRequestOrphans[txHash]; ok { //found in basedOnRequestOrphans
-		log.Infof("ignore add duplicate Tx[%s] to tx pool", txHash.String())
+		log.Infof("ignore add duplicate tx[%s] to tx pool", txHash.String())
 		return ErrDuplicate
 	}
 	return nil
@@ -131,39 +131,39 @@ func (pool *TxPool) checkDuplicateAdd(txHash common.Hash) error {
 func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 	//check duplicate add
 	txHash := tx.Hash()
+	reqHash := tx.RequestHash()
 	err := pool.checkDuplicateAdd(txHash)
 	if err != nil {
 		return nil //重复添加，不用报错
 	}
 	if tx.IsSystemContract() && !tx.IsOnlyContractRequest() {
-		log.Infof("tx[%s] is a full system contract invoke tx, don't support", txHash.String())
+		log.Infof("[%s]tx[%s] is a full system contract invoke tx, don't support", reqHash.ShortStr(), txHash.String())
 		return ErrNotSupport
 	}
 	//0. if tx is a full user contract tx, delete request from pool first
 	var deletedReq *txspool.TxPoolTransaction
 	if tx.IsUserContract() && !tx.IsOnlyContractRequest() { //FullTx about user contract
 		//delete request
-		reqHash := tx.RequestHash()
 		var ok bool
 		deletedReq, ok = pool.userContractRequests[reqHash]
 		if ok {
 			delete(pool.userContractRequests, reqHash)
-			log.Debugf("delete user contract request by hash:%s", reqHash.String())
+			log.Debugf("[%s]delete user contract request by hash:%s", reqHash.ShortStr(), txHash.String())
 		}
 	}
 	reverseDeleteReq := func() {
 		if deletedReq != nil {
 			pool.userContractRequests[deletedReq.TxHash] = deletedReq
-			log.Debugf("reverse delete request %s", deletedReq.TxHash.String())
+			log.Debugf("[%s]reverse delete request %s", reqHash.ShortStr(), deletedReq.TxHash.String())
 		}
 	}
 	//1.validate tx
 	pool.txValidator.SetUtxoQuery(pool)
 	fee, vcode, err := pool.txValidator.ValidateTx(tx, !tx.IsOnlyContractRequest())
-	log.Debugf("validate tx[%s] get result:%v", txHash.String(), vcode)
+	log.Debugf("[%s]validate tx[%s] get result:%v", reqHash.ShortStr(), txHash.String(), vcode)
 	if err != nil && vcode != validator.TxValidationCode_ORPHAN {
 		//验证不通过，而且也不是孤儿
-		log.Warnf("validate tx[%s] get error:%s", txHash.String(), err.Error())
+		log.Warnf("[%s]validate tx[%s] get error:%s", reqHash.ShortStr(), txHash.String(), err.Error())
 		reverseDeleteReq()
 		return err
 	}
@@ -178,7 +178,7 @@ func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 	//否则，增加到正常交易池。
 	if tx.IsUserContract() && tx.IsOnlyContractRequest() {
 		//user contract request
-		log.Debugf("add tx[%s] to user contract request pool", txHash.String())
+		log.Debugf("[%s]add tx[%s] to user contract request pool",reqHash.ShortStr() ,txHash.String())
 		pool.userContractRequests[tx2.TxHash] = tx2
 		pool.txFeed.Send(modules.TxPreEvent{Tx: tx, IsOrphan: false})
 	} else { //不是用户合约请求
