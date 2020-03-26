@@ -1070,24 +1070,24 @@ func (pool *TxPool) getPoolTxsByAddr(addr string, onlyUnpacked bool) ([]*TxPoolT
 		}
 	}
 	result := make([]*TxPoolTransaction, 0)
+	exist:=false
 	if re, has := txs[addr]; has {
 		for i, tx := range re {
+			exist = false
 			if i == 0 {
 				result = append(result, tx)
-			} else {
-				var exist bool
-				for _, old := range result {
-					if old.Tx.Hash() == tx.Tx.Hash() {
-						exist = true
-						break
-					}
-				}
-				if !exist {
-					result = append(result, tx)
+				continue 
+			}  
+			for _, old := range result {
+				if old.Tx.Hash() == tx.Tx.Hash() {
+					exist = true
+					break
 				}
 			}
+			if !exist {
+				result = append(result, tx)
+			}
 		}
-		return result, nil
 	}
 	return result, nil //nil, errors.New(fmt.Sprintf("not found txs by addr:(%s).", addr))
 }
