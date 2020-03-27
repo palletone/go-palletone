@@ -47,11 +47,11 @@ func marshalOrPanic(pb proto.Message) []byte {
 }
 
 // CreateChaincodeProposalWithTxIDNonceAndTransient creates a proposal from given input
-func createChaincodeProposalWithTxIDNonceAndTransient(txid string, typ common.HeaderType, chainID string, cis *peer.ChaincodeInvocationSpec, nonce, creator []byte, transientMap map[string][]byte) (*peer.Proposal, string, error) {
+func createChaincodeProposalWithTxIDNonceAndTransient(txid string, typ common.HeaderType, chainID string, cis *peer.PtnChaincodeInvocationSpec, nonce, creator []byte, transientMap map[string][]byte) (*peer.PtnProposal, string, error) {
 	// get a more appropriate mechanism to handle it in.
 	var epoch uint64 = 0
 
-	ccHdrExt := &peer.ChaincodeHeaderExtension{ChaincodeId: cis.ChaincodeSpec.ChaincodeId}
+	ccHdrExt := &peer.PtnChaincodeHeaderExtension{ChaincodeId: cis.ChaincodeSpec.ChaincodeId}
 	ccHdrExtBytes, err := proto.Marshal(ccHdrExt)
 	if err != nil {
 		return nil, "", err
@@ -62,7 +62,7 @@ func createChaincodeProposalWithTxIDNonceAndTransient(txid string, typ common.He
 		return nil, "", err
 	}
 
-	ccPropPayload := &peer.ChaincodeProposalPayload{Input: cisBytes, TransientMap: transientMap}
+	ccPropPayload := &peer.PtnChaincodeProposalPayload{Input: cisBytes, TransientMap: transientMap}
 	ccPropPayloadBytes, err := proto.Marshal(ccPropPayload)
 	if err != nil {
 		return nil, "", err
@@ -83,7 +83,7 @@ func createChaincodeProposalWithTxIDNonceAndTransient(txid string, typ common.He
 		return nil, "", err
 	}
 
-	return &peer.Proposal{Header: hdrBytes, Payload: ccPropPayloadBytes}, txid, nil
+	return &peer.PtnProposal{Header: hdrBytes, Payload: ccPropPayloadBytes}, txid, nil
 }
 
 //func computeProposalTxID(nonce, creator []byte) (string, error) {
@@ -93,7 +93,7 @@ func createChaincodeProposalWithTxIDNonceAndTransient(txid string, typ common.He
 //	return hex.EncodeToString(digest), nil
 //}
 
-func createChaincodeProposalWithTransient(typ common.HeaderType, chainID string, txid string, cis *peer.ChaincodeInvocationSpec, creator []byte, transientMap map[string][]byte) (*peer.Proposal, string, error) {
+func createChaincodeProposalWithTransient(typ common.HeaderType, chainID string, txid string, cis *peer.PtnChaincodeInvocationSpec, creator []byte, transientMap map[string][]byte) (*peer.PtnProposal, string, error) {
 	// generate a random nonce
 	nonce, err := crypto.GetRandomNonce()
 	if err != nil {
@@ -102,21 +102,21 @@ func createChaincodeProposalWithTransient(typ common.HeaderType, chainID string,
 	return createChaincodeProposalWithTxIDNonceAndTransient(txid, typ, chainID, cis, nonce, creator, transientMap)
 }
 
-func createChaincodeProposal(typ common.HeaderType, chainID string, txid string, cis *peer.ChaincodeInvocationSpec, creator []byte) (*peer.Proposal, string, error) {
+func createChaincodeProposal(typ common.HeaderType, chainID string, txid string, cis *peer.PtnChaincodeInvocationSpec, creator []byte) (*peer.PtnProposal, string, error) {
 	return createChaincodeProposalWithTransient(typ, chainID, txid, cis, creator, nil)
 }
 
-func GetBytesProposal(prop *peer.Proposal) ([]byte, error) {
+func GetBytesProposal(prop *peer.PtnProposal) ([]byte, error) {
 	propBytes, err := proto.Marshal(prop)
 	return propBytes, err
 }
 
-func SignedEndorserProposa(chainID string, txid string, cs *peer.ChaincodeSpec, creator, signature []byte) (*peer.SignedProposal, *peer.Proposal, error) {
+func SignedEndorserProposa(chainID string, txid string, cs *peer.PtnChaincodeSpec, creator, signature []byte) (*peer.PtnSignedProposal, *peer.PtnProposal, error) {
 	prop, _, err := createChaincodeProposal(
 		common.HeaderType_ENDORSER_TRANSACTION,
 		chainID,
 		txid,
-		&peer.ChaincodeInvocationSpec{ChaincodeSpec: cs},
+		&peer.PtnChaincodeInvocationSpec{ChaincodeSpec: cs},
 		creator)
 	if err != nil {
 		return nil, nil, err
@@ -127,7 +127,7 @@ func SignedEndorserProposa(chainID string, txid string, cs *peer.ChaincodeSpec, 
 		return nil, nil, err
 	}
 
-	return &peer.SignedProposal{ProposalBytes: propBytes, Signature: signature}, prop, nil
+	return &peer.PtnSignedProposal{ProposalBytes: propBytes, Signature: signature}, prop, nil
 }
 
 var grpcServer *grpc.Server

@@ -24,6 +24,7 @@ type Ada struct {
 	Btc        BTC
 	Eth        ETH
 	ChainKeyKV map[string]KeyInfo //chainName --- keyInfo
+	Fab        Fabric
 }
 
 type BTC struct {
@@ -38,6 +39,15 @@ type ETH struct {
 	NetID      int
 	Rawurl     string
 	TxQueryUrl string
+}
+type Fabric struct {
+	ConfigFile  string	//sdk的配置文件路径
+	UserName string		//组织的普通用户
+	ChannelID string	//通道id
+	OrgAdmin string		//组织的管理员用户
+	OrgName  string		//组织名字 organizations --- org1
+	OrgID    string		//组织id organizations --- org1 --- mspid: Org1MSP
+	EnvGoPath string	//GOPATH
 }
 
 type KeyInfo struct { //information of private key

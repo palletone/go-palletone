@@ -38,13 +38,13 @@ import (
 // Interface for validating the specification and and writing the package for
 // the given platform
 type Platform interface {
-	ValidateSpec(spec *pb.ChaincodeSpec) error
-	ValidateDeploymentSpec(spec *pb.ChaincodeDeploymentSpec) error
-	GetChainCodePayload(spec *pb.ChaincodeSpec) ([]byte, error)
-	GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte, error)
-	GenerateDockerfile(spec *pb.ChaincodeDeploymentSpec) (string, error)
-	GenerateDockerBuild(spec *pb.ChaincodeDeploymentSpec, tw *tar.Writer) error
-	GetPlatformEnvPath(spec *pb.ChaincodeSpec) (string, error)
+	ValidateSpec(spec *pb.PtnChaincodeSpec) error
+	ValidateDeploymentSpec(spec *pb.PtnChaincodeDeploymentSpec) error
+	GetChainCodePayload(spec *pb.PtnChaincodeSpec) ([]byte, error)
+	GetDeploymentPayload(spec *pb.PtnChaincodeSpec) ([]byte, error)
+	GenerateDockerfile(spec *pb.PtnChaincodeDeploymentSpec) (string, error)
+	GenerateDockerBuild(spec *pb.PtnChaincodeDeploymentSpec, tw *tar.Writer) error
+	GetPlatformEnvPath(spec *pb.PtnChaincodeSpec) (string, error)
 }
 
 //var log = flogging.MustGetLogger("chaincode-platform")
@@ -61,21 +61,21 @@ var _generateDockerfile = generateDockerfile
 var _generateDockerBuild = generateDockerBuild
 
 // Find returns the platform interface for the given platform type
-func Find(chaincodeType pb.ChaincodeSpec_Type) (Platform, error) {
+func Find(chaincodeType pb.PtnChaincodeSpec_Type) (Platform, error) {
 
 	switch chaincodeType {
-	case pb.ChaincodeSpec_GOLANG:
+	case pb.PtnChaincodeSpec_GOLANG:
 		return &golang.Platform{}, nil
-	case pb.ChaincodeSpec_JAVA:
+	case pb.PtnChaincodeSpec_JAVA:
 		return &java.Platform{}, nil
-	case pb.ChaincodeSpec_NODE:
+	case pb.PtnChaincodeSpec_NODE:
 		return &node.Platform{}, nil
 	default:
 		return nil, fmt.Errorf("Unknown chaincodeType: %s", chaincodeType)
 	}
 }
 
-func GetChainCodePayload(spec *pb.ChaincodeSpec) ([]byte, error) {
+func GetChainCodePayload(spec *pb.PtnChaincodeSpec) ([]byte, error) {
 	platform, err := _Find(spec.Type)
 	if err != nil {
 		return nil, err
@@ -83,7 +83,7 @@ func GetChainCodePayload(spec *pb.ChaincodeSpec) ([]byte, error) {
 	return platform.GetChainCodePayload(spec)
 }
 
-func GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte, error) {
+func GetDeploymentPayload(spec *pb.PtnChaincodeSpec) ([]byte, error) {
 	platform, err := _Find(spec.Type)
 	if err != nil {
 		return nil, err
@@ -92,7 +92,7 @@ func GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte, error) {
 	return platform.GetDeploymentPayload(spec)
 }
 
-func GetPlatformEnvPath(spec *pb.ChaincodeSpec) (string, error) {
+func GetPlatformEnvPath(spec *pb.PtnChaincodeSpec) (string, error) {
 	platform, err := _Find(spec.Type)
 	if err != nil {
 		return "", err
@@ -100,7 +100,7 @@ func GetPlatformEnvPath(spec *pb.ChaincodeSpec) (string, error) {
 	return platform.GetPlatformEnvPath(spec)
 }
 
-func generateDockerfile(platform Platform, cds *pb.ChaincodeDeploymentSpec) ([]byte, error) {
+func generateDockerfile(platform Platform, cds *pb.PtnChaincodeDeploymentSpec) ([]byte, error) {
 	var buf []string
 
 	// ----------------------------------------------------------------------------------------------------
@@ -138,7 +138,7 @@ func generateDockerfile(platform Platform, cds *pb.ChaincodeDeploymentSpec) ([]b
 
 type InputFiles map[string][]byte
 
-func generateDockerBuild(platform Platform, cds *pb.ChaincodeDeploymentSpec, inputFiles InputFiles, tw *tar.Writer) error {
+func generateDockerBuild(platform Platform, cds *pb.PtnChaincodeDeploymentSpec, inputFiles InputFiles, tw *tar.Writer) error {
 
 	var err error
 
@@ -163,7 +163,7 @@ func generateDockerBuild(platform Platform, cds *pb.ChaincodeDeploymentSpec, inp
 	return nil
 }
 
-func GenerateDockerBuild(cds *pb.ChaincodeDeploymentSpec) (io.Reader, error) {
+func GenerateDockerBuild(cds *pb.PtnChaincodeDeploymentSpec) (io.Reader, error) {
 
 	inputFiles := make(InputFiles)
 

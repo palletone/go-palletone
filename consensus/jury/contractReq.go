@@ -365,12 +365,12 @@ func (p *Processor) ContractQuery(id []byte, args [][]byte, timeout time.Duratio
 				return nil, err
 			}
 			cv := ct.Version + ":" + contractcfg.GetConfig().ContractAddress
-			spec := &pb.ChaincodeSpec{
-				Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value["GOLANG"]),
-				Input: &pb.ChaincodeInput{
+			spec := &pb.PtnChaincodeSpec{
+				Type: pb.PtnChaincodeSpec_Type(pb.PtnChaincodeSpec_Type_value["GOLANG"]),
+				Input: &pb.PtnChaincodeInput{
 					Args: [][]byte{},
 				},
-				ChaincodeId: &pb.ChaincodeID{
+				ChaincodeId: &pb.PtnChaincodeID{
 					Name:    addr.String(),
 					Path:    ct.Path,
 					Version: cv,

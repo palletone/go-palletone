@@ -124,8 +124,8 @@ func deploySysCC(chainID string, syscc *SystemChaincode) error {
 			defer txsim.Done()
 		}
 	*/
-	chaincodeID := &pb.ChaincodeID{Path: syscc.Path, Name: syscc.Name, Version: syscc.Version}
-	spec := &pb.ChaincodeSpec{Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value["GOLANG"]), ChaincodeId: chaincodeID, Input: &pb.ChaincodeInput{Args: syscc.InitArgs}}
+	chaincodeID := &pb.PtnChaincodeID{Path: syscc.Path, Name: syscc.Name, Version: syscc.Version}
+	spec := &pb.PtnChaincodeSpec{Type: pb.PtnChaincodeSpec_Type(pb.PtnChaincodeSpec_Type_value["GOLANG"]), ChaincodeId: chaincodeID, Input: &pb.PtnChaincodeInput{Args: syscc.InitArgs}}
 
 	// First build and get the deployment spec
 	chaincodeDeploymentSpec := buildSysCC(spec)
@@ -164,8 +164,8 @@ func deploySysCC(chainID string, syscc *SystemChaincode) error {
 
 // DeDeploySysCC stops the system chaincode and deregisters it from inproccontroller
 func DeDeploySysCC(chainID string, syscc *SystemChaincode, dontRmCon bool) error {
-	chaincodeID := &pb.ChaincodeID{Path: syscc.Path, Name: syscc.Name, Version: syscc.Version}
-	spec := &pb.ChaincodeSpec{Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value["GOLANG"]), ChaincodeId: chaincodeID, Input: &pb.ChaincodeInput{Args: syscc.InitArgs}}
+	chaincodeID := &pb.PtnChaincodeID{Path: syscc.Path, Name: syscc.Name, Version: syscc.Version}
+	spec := &pb.PtnChaincodeSpec{Type: pb.PtnChaincodeSpec_Type(pb.PtnChaincodeSpec_Type_value["GOLANG"]), ChaincodeId: chaincodeID, Input: &pb.PtnChaincodeInput{Args: syscc.InitArgs}}
 	ctx := context.Background()
 	// First build and get the deployment spec
 	chaincodeDeploymentSpec := buildSysCC(spec)
@@ -186,9 +186,9 @@ func DeDeploySysCC(chainID string, syscc *SystemChaincode, dontRmCon bool) error
 }
 
 // buildLocal builds a given chaincode code
-func buildSysCC(spec *pb.ChaincodeSpec) *pb.ChaincodeDeploymentSpec {
+func buildSysCC(spec *pb.PtnChaincodeSpec) *pb.PtnChaincodeDeploymentSpec {
 	var codePackageBytes []byte
-	chaincodeDeploymentSpec := &pb.ChaincodeDeploymentSpec{ExecEnv: pb.ChaincodeDeploymentSpec_SYSTEM, ChaincodeSpec: spec, CodePackage: codePackageBytes}
+	chaincodeDeploymentSpec := &pb.PtnChaincodeDeploymentSpec{ExecEnv: pb.PtnChaincodeDeploymentSpec_SYSTEM, ChaincodeSpec: spec, CodePackage: codePackageBytes}
 	return chaincodeDeploymentSpec
 }
 

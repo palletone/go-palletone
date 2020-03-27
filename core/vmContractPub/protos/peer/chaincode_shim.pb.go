@@ -23,44 +23,44 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
-type ChaincodeMessage_Type int32
+type PtnChaincodeMessage_Type int32
 
 const (
-	ChaincodeMessage_UNDEFINED           ChaincodeMessage_Type = 0
-	ChaincodeMessage_REGISTER            ChaincodeMessage_Type = 1
-	ChaincodeMessage_REGISTERED          ChaincodeMessage_Type = 2
-	ChaincodeMessage_INIT                ChaincodeMessage_Type = 3
-	ChaincodeMessage_READY               ChaincodeMessage_Type = 4
-	ChaincodeMessage_TRANSACTION         ChaincodeMessage_Type = 5
-	ChaincodeMessage_COMPLETED           ChaincodeMessage_Type = 6
-	ChaincodeMessage_ERROR               ChaincodeMessage_Type = 7
-	ChaincodeMessage_GET_STATE           ChaincodeMessage_Type = 8
-	ChaincodeMessage_PUT_STATE           ChaincodeMessage_Type = 9
-	ChaincodeMessage_DEL_STATE           ChaincodeMessage_Type = 10
-	ChaincodeMessage_INVOKE_CHAINCODE    ChaincodeMessage_Type = 11
-	ChaincodeMessage_RESPONSE            ChaincodeMessage_Type = 13
-	ChaincodeMessage_GET_STATE_BY_PREFIX ChaincodeMessage_Type = 14
-	//        GET_QUERY_RESULT = 15;
-	//        QUERY_STATE_NEXT = 16;
-	//        QUERY_STATE_CLOSE = 17;
-	ChaincodeMessage_KEEPALIVE ChaincodeMessage_Type = 18
-	//        GET_HISTORY_FOR_KEY = 19;
-	ChaincodeMessage_GET_SYSTEM_CONFIG_REQUEST ChaincodeMessage_Type = 23
-	ChaincodeMessage_GET_CONTRACT_ALL_STATE    ChaincodeMessage_Type = 24
-	ChaincodeMessage_GET_TOKEN_BALANCE         ChaincodeMessage_Type = 25
-	ChaincodeMessage_PAY_OUT_TOKEN             ChaincodeMessage_Type = 26
-	ChaincodeMessage_DEFINE_TOKEN              ChaincodeMessage_Type = 27
-	ChaincodeMessage_SUPPLY_TOKEN              ChaincodeMessage_Type = 28
-	ChaincodeMessage_GET_TIMESTAMP             ChaincodeMessage_Type = 29
-	ChaincodeMessage_SEND_JURY                 ChaincodeMessage_Type = 30
-	ChaincodeMessage_RECV_JURY                 ChaincodeMessage_Type = 31
-	ChaincodeMessage_GET_CERT_STATE            ChaincodeMessage_Type = 32
-	ChaincodeMessage_OUTCHAIN_CALL             ChaincodeMessage_Type = 33
-	ChaincodeMessage_GET_STABLE_TRANSACTION    ChaincodeMessage_Type = 34
-	ChaincodeMessage_GET_STABLE_UNIT           ChaincodeMessage_Type = 35
+	PtnChaincodeMessage_UNDEFINED           PtnChaincodeMessage_Type = 0
+	PtnChaincodeMessage_REGISTER            PtnChaincodeMessage_Type = 1
+	PtnChaincodeMessage_REGISTERED          PtnChaincodeMessage_Type = 2
+	PtnChaincodeMessage_INIT                PtnChaincodeMessage_Type = 3
+	PtnChaincodeMessage_READY               PtnChaincodeMessage_Type = 4
+	PtnChaincodeMessage_TRANSACTION         PtnChaincodeMessage_Type = 5
+	PtnChaincodeMessage_COMPLETED           PtnChaincodeMessage_Type = 6
+	PtnChaincodeMessage_ERROR               PtnChaincodeMessage_Type = 7
+	PtnChaincodeMessage_PTN_GET_STATE       PtnChaincodeMessage_Type = 8
+	PtnChaincodeMessage_PTN_PUT_STATE       PtnChaincodeMessage_Type = 9
+	PtnChaincodeMessage_PTN_DEL_STATE       PtnChaincodeMessage_Type = 10
+	PtnChaincodeMessage_INVOKE_CHAINCODE    PtnChaincodeMessage_Type = 11
+	PtnChaincodeMessage_RESPONSE            PtnChaincodeMessage_Type = 13
+	PtnChaincodeMessage_GET_STATE_BY_PREFIX PtnChaincodeMessage_Type = 14
+	//        PTN_GET_QUERY_RESULT = 15;
+	//        PTN_QUERY_STATE_NEXT = 16;
+	//        PTN_QUERY_STATE_CLOSE = 17;
+	PtnChaincodeMessage_KEEPALIVE PtnChaincodeMessage_Type = 18
+	//        PTN_GET_HISTORY_FOR_KEY = 19;
+	PtnChaincodeMessage_GET_SYSTEM_CONFIG_REQUEST PtnChaincodeMessage_Type = 23
+	PtnChaincodeMessage_GET_CONTRACT_ALL_STATE    PtnChaincodeMessage_Type = 24
+	PtnChaincodeMessage_GET_TOKEN_BALANCE         PtnChaincodeMessage_Type = 25
+	PtnChaincodeMessage_PAY_OUT_TOKEN             PtnChaincodeMessage_Type = 26
+	PtnChaincodeMessage_DEFINE_TOKEN              PtnChaincodeMessage_Type = 27
+	PtnChaincodeMessage_SUPPLY_TOKEN              PtnChaincodeMessage_Type = 28
+	PtnChaincodeMessage_GET_TIMESTAMP             PtnChaincodeMessage_Type = 29
+	PtnChaincodeMessage_SEND_JURY                 PtnChaincodeMessage_Type = 30
+	PtnChaincodeMessage_RECV_JURY                 PtnChaincodeMessage_Type = 31
+	PtnChaincodeMessage_GET_CERT_STATE            PtnChaincodeMessage_Type = 32
+	PtnChaincodeMessage_OUTCHAIN_CALL             PtnChaincodeMessage_Type = 33
+	PtnChaincodeMessage_GET_STABLE_TRANSACTION    PtnChaincodeMessage_Type = 34
+	PtnChaincodeMessage_GET_STABLE_UNIT           PtnChaincodeMessage_Type = 35
 )
 
-var ChaincodeMessage_Type_name = map[int32]string{
+var PtnChaincodeMessage_Type_name = map[int32]string{
 	0:  "UNDEFINED",
 	1:  "REGISTER",
 	2:  "REGISTERED",
@@ -69,9 +69,9 @@ var ChaincodeMessage_Type_name = map[int32]string{
 	5:  "TRANSACTION",
 	6:  "COMPLETED",
 	7:  "ERROR",
-	8:  "GET_STATE",
-	9:  "PUT_STATE",
-	10: "DEL_STATE",
+	8:  "PTN_GET_STATE",
+	9:  "PTN_PUT_STATE",
+	10: "PTN_DEL_STATE",
 	11: "INVOKE_CHAINCODE",
 	13: "RESPONSE",
 	14: "GET_STATE_BY_PREFIX",
@@ -91,7 +91,7 @@ var ChaincodeMessage_Type_name = map[int32]string{
 	35: "GET_STABLE_UNIT",
 }
 
-var ChaincodeMessage_Type_value = map[string]int32{
+var PtnChaincodeMessage_Type_value = map[string]int32{
 	"UNDEFINED":                 0,
 	"REGISTER":                  1,
 	"REGISTERED":                2,
@@ -100,9 +100,9 @@ var ChaincodeMessage_Type_value = map[string]int32{
 	"TRANSACTION":               5,
 	"COMPLETED":                 6,
 	"ERROR":                     7,
-	"GET_STATE":                 8,
-	"PUT_STATE":                 9,
-	"DEL_STATE":                 10,
+	"PTN_GET_STATE":             8,
+	"PTN_PUT_STATE":             9,
+	"PTN_DEL_STATE":             10,
 	"INVOKE_CHAINCODE":          11,
 	"RESPONSE":                  13,
 	"GET_STATE_BY_PREFIX":       14,
@@ -122,24 +122,24 @@ var ChaincodeMessage_Type_value = map[string]int32{
 	"GET_STABLE_UNIT":           35,
 }
 
-func (x ChaincodeMessage_Type) String() string {
-	return proto.EnumName(ChaincodeMessage_Type_name, int32(x))
+func (x PtnChaincodeMessage_Type) String() string {
+	return proto.EnumName(PtnChaincodeMessage_Type_name, int32(x))
 }
 
-func (ChaincodeMessage_Type) EnumDescriptor() ([]byte, []int) {
+func (PtnChaincodeMessage_Type) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_adb8e00c9c92d6c8, []int{0, 0}
 }
 
-type ChaincodeMessage struct {
-	Type      ChaincodeMessage_Type `protobuf:"varint,1,opt,name=type,proto3,enum=protos.ChaincodeMessage_Type" json:"type,omitempty"`
-	Timestamp *timestamp.Timestamp  `protobuf:"bytes,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	Payload   []byte                `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload,omitempty"`
-	Txid      string                `protobuf:"bytes,4,opt,name=txid,proto3" json:"txid,omitempty"`
-	Proposal  *SignedProposal       `protobuf:"bytes,5,opt,name=proposal,proto3" json:"proposal,omitempty"`
+type PtnChaincodeMessage struct {
+	Type      PtnChaincodeMessage_Type `protobuf:"varint,1,opt,name=type,proto3,enum=protos.PtnChaincodeMessage_Type" json:"type,omitempty"`
+	Timestamp *timestamp.Timestamp     `protobuf:"bytes,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	Payload   []byte                   `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload,omitempty"`
+	Txid      string                   `protobuf:"bytes,4,opt,name=txid,proto3" json:"txid,omitempty"`
+	Proposal  *PtnSignedProposal       `protobuf:"bytes,5,opt,name=proposal,proto3" json:"proposal,omitempty"`
 	//event emitted by chaincode. Used only with Init or Invoke.
 	// This event is then stored (currently)
 	//with Block.NonHashData.TransactionResult
-	ChaincodeEvent *ChaincodeEvent `protobuf:"bytes,6,opt,name=chaincode_event,json=chaincodeEvent,proto3" json:"chaincode_event,omitempty"`
+	ChaincodeEvent *PtnChaincodeEvent `protobuf:"bytes,6,opt,name=chaincode_event,json=chaincodeEvent,proto3" json:"chaincode_event,omitempty"`
 	//channel id
 	ChannelId string `protobuf:"bytes,7,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
 	//contract id
@@ -149,88 +149,88 @@ type ChaincodeMessage struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ChaincodeMessage) Reset()         { *m = ChaincodeMessage{} }
-func (m *ChaincodeMessage) String() string { return proto.CompactTextString(m) }
-func (*ChaincodeMessage) ProtoMessage()    {}
-func (*ChaincodeMessage) Descriptor() ([]byte, []int) {
+func (m *PtnChaincodeMessage) Reset()         { *m = PtnChaincodeMessage{} }
+func (m *PtnChaincodeMessage) String() string { return proto.CompactTextString(m) }
+func (*PtnChaincodeMessage) ProtoMessage()    {}
+func (*PtnChaincodeMessage) Descriptor() ([]byte, []int) {
 	return fileDescriptor_adb8e00c9c92d6c8, []int{0}
 }
 
-func (m *ChaincodeMessage) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_ChaincodeMessage.Unmarshal(m, b)
+func (m *PtnChaincodeMessage) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_PtnChaincodeMessage.Unmarshal(m, b)
 }
-func (m *ChaincodeMessage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_ChaincodeMessage.Marshal(b, m, deterministic)
+func (m *PtnChaincodeMessage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_PtnChaincodeMessage.Marshal(b, m, deterministic)
 }
-func (m *ChaincodeMessage) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ChaincodeMessage.Merge(m, src)
+func (m *PtnChaincodeMessage) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PtnChaincodeMessage.Merge(m, src)
 }
-func (m *ChaincodeMessage) XXX_Size() int {
-	return xxx_messageInfo_ChaincodeMessage.Size(m)
+func (m *PtnChaincodeMessage) XXX_Size() int {
+	return xxx_messageInfo_PtnChaincodeMessage.Size(m)
 }
-func (m *ChaincodeMessage) XXX_DiscardUnknown() {
-	xxx_messageInfo_ChaincodeMessage.DiscardUnknown(m)
+func (m *PtnChaincodeMessage) XXX_DiscardUnknown() {
+	xxx_messageInfo_PtnChaincodeMessage.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ChaincodeMessage proto.InternalMessageInfo
+var xxx_messageInfo_PtnChaincodeMessage proto.InternalMessageInfo
 
-func (m *ChaincodeMessage) GetType() ChaincodeMessage_Type {
+func (m *PtnChaincodeMessage) GetType() PtnChaincodeMessage_Type {
 	if m != nil {
 		return m.Type
 	}
-	return ChaincodeMessage_UNDEFINED
+	return PtnChaincodeMessage_UNDEFINED
 }
 
-func (m *ChaincodeMessage) GetTimestamp() *timestamp.Timestamp {
+func (m *PtnChaincodeMessage) GetTimestamp() *timestamp.Timestamp {
 	if m != nil {
 		return m.Timestamp
 	}
 	return nil
 }
 
-func (m *ChaincodeMessage) GetPayload() []byte {
+func (m *PtnChaincodeMessage) GetPayload() []byte {
 	if m != nil {
 		return m.Payload
 	}
 	return nil
 }
 
-func (m *ChaincodeMessage) GetTxid() string {
+func (m *PtnChaincodeMessage) GetTxid() string {
 	if m != nil {
 		return m.Txid
 	}
 	return ""
 }
 
-func (m *ChaincodeMessage) GetProposal() *SignedProposal {
+func (m *PtnChaincodeMessage) GetProposal() *PtnSignedProposal {
 	if m != nil {
 		return m.Proposal
 	}
 	return nil
 }
 
-func (m *ChaincodeMessage) GetChaincodeEvent() *ChaincodeEvent {
+func (m *PtnChaincodeMessage) GetChaincodeEvent() *PtnChaincodeEvent {
 	if m != nil {
 		return m.ChaincodeEvent
 	}
 	return nil
 }
 
-func (m *ChaincodeMessage) GetChannelId() string {
+func (m *PtnChaincodeMessage) GetChannelId() string {
 	if m != nil {
 		return m.ChannelId
 	}
 	return ""
 }
 
-func (m *ChaincodeMessage) GetContractId() []byte {
+func (m *PtnChaincodeMessage) GetContractId() []byte {
 	if m != nil {
 		return m.ContractId
 	}
 	return nil
 }
 
-type GetState struct {
+type PtnGetState struct {
 	Key                  string   `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 	Collection           string   `protobuf:"bytes,2,opt,name=collection,proto3" json:"collection,omitempty"`
 	ContractId           []byte   `protobuf:"bytes,3,opt,name=contractId,proto3" json:"contractId,omitempty"`
@@ -239,46 +239,46 @@ type GetState struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetState) Reset()         { *m = GetState{} }
-func (m *GetState) String() string { return proto.CompactTextString(m) }
-func (*GetState) ProtoMessage()    {}
-func (*GetState) Descriptor() ([]byte, []int) {
+func (m *PtnGetState) Reset()         { *m = PtnGetState{} }
+func (m *PtnGetState) String() string { return proto.CompactTextString(m) }
+func (*PtnGetState) ProtoMessage()    {}
+func (*PtnGetState) Descriptor() ([]byte, []int) {
 	return fileDescriptor_adb8e00c9c92d6c8, []int{1}
 }
 
-func (m *GetState) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetState.Unmarshal(m, b)
+func (m *PtnGetState) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_PtnGetState.Unmarshal(m, b)
 }
-func (m *GetState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetState.Marshal(b, m, deterministic)
+func (m *PtnGetState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_PtnGetState.Marshal(b, m, deterministic)
 }
-func (m *GetState) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetState.Merge(m, src)
+func (m *PtnGetState) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PtnGetState.Merge(m, src)
 }
-func (m *GetState) XXX_Size() int {
-	return xxx_messageInfo_GetState.Size(m)
+func (m *PtnGetState) XXX_Size() int {
+	return xxx_messageInfo_PtnGetState.Size(m)
 }
-func (m *GetState) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetState.DiscardUnknown(m)
+func (m *PtnGetState) XXX_DiscardUnknown() {
+	xxx_messageInfo_PtnGetState.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_GetState proto.InternalMessageInfo
+var xxx_messageInfo_PtnGetState proto.InternalMessageInfo
 
-func (m *GetState) GetKey() string {
+func (m *PtnGetState) GetKey() string {
 	if m != nil {
 		return m.Key
 	}
 	return ""
 }
 
-func (m *GetState) GetCollection() string {
+func (m *PtnGetState) GetCollection() string {
 	if m != nil {
 		return m.Collection
 	}
 	return ""
 }
 
-func (m *GetState) GetContractId() []byte {
+func (m *PtnGetState) GetContractId() []byte {
 	if m != nil {
 		return m.ContractId
 	}
@@ -379,7 +379,7 @@ func (m *GetTimestamp) GetCollection() string {
 	return ""
 }
 
-type PutState struct {
+type PtnPutState struct {
 	Key                  string   `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 	Value                []byte   `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 	Collection           string   `protobuf:"bytes,3,opt,name=collection,proto3" json:"collection,omitempty"`
@@ -389,60 +389,60 @@ type PutState struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *PutState) Reset()         { *m = PutState{} }
-func (m *PutState) String() string { return proto.CompactTextString(m) }
-func (*PutState) ProtoMessage()    {}
-func (*PutState) Descriptor() ([]byte, []int) {
+func (m *PtnPutState) Reset()         { *m = PtnPutState{} }
+func (m *PtnPutState) String() string { return proto.CompactTextString(m) }
+func (*PtnPutState) ProtoMessage()    {}
+func (*PtnPutState) Descriptor() ([]byte, []int) {
 	return fileDescriptor_adb8e00c9c92d6c8, []int{4}
 }
 
-func (m *PutState) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_PutState.Unmarshal(m, b)
+func (m *PtnPutState) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_PtnPutState.Unmarshal(m, b)
 }
-func (m *PutState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_PutState.Marshal(b, m, deterministic)
+func (m *PtnPutState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_PtnPutState.Marshal(b, m, deterministic)
 }
-func (m *PutState) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_PutState.Merge(m, src)
+func (m *PtnPutState) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PtnPutState.Merge(m, src)
 }
-func (m *PutState) XXX_Size() int {
-	return xxx_messageInfo_PutState.Size(m)
+func (m *PtnPutState) XXX_Size() int {
+	return xxx_messageInfo_PtnPutState.Size(m)
 }
-func (m *PutState) XXX_DiscardUnknown() {
-	xxx_messageInfo_PutState.DiscardUnknown(m)
+func (m *PtnPutState) XXX_DiscardUnknown() {
+	xxx_messageInfo_PtnPutState.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_PutState proto.InternalMessageInfo
+var xxx_messageInfo_PtnPutState proto.InternalMessageInfo
 
-func (m *PutState) GetKey() string {
+func (m *PtnPutState) GetKey() string {
 	if m != nil {
 		return m.Key
 	}
 	return ""
 }
 
-func (m *PutState) GetValue() []byte {
+func (m *PtnPutState) GetValue() []byte {
 	if m != nil {
 		return m.Value
 	}
 	return nil
 }
 
-func (m *PutState) GetCollection() string {
+func (m *PtnPutState) GetCollection() string {
 	if m != nil {
 		return m.Collection
 	}
 	return ""
 }
 
-func (m *PutState) GetContractId() []byte {
+func (m *PtnPutState) GetContractId() []byte {
 	if m != nil {
 		return m.ContractId
 	}
 	return nil
 }
 
-type DelState struct {
+type PtnDelState struct {
 	Key                  string   `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 	Collection           string   `protobuf:"bytes,2,opt,name=collection,proto3" json:"collection,omitempty"`
 	ContractId           []byte   `protobuf:"bytes,3,opt,name=contractId,proto3" json:"contractId,omitempty"`
@@ -451,53 +451,53 @@ type DelState struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DelState) Reset()         { *m = DelState{} }
-func (m *DelState) String() string { return proto.CompactTextString(m) }
-func (*DelState) ProtoMessage()    {}
-func (*DelState) Descriptor() ([]byte, []int) {
+func (m *PtnDelState) Reset()         { *m = PtnDelState{} }
+func (m *PtnDelState) String() string { return proto.CompactTextString(m) }
+func (*PtnDelState) ProtoMessage()    {}
+func (*PtnDelState) Descriptor() ([]byte, []int) {
 	return fileDescriptor_adb8e00c9c92d6c8, []int{5}
 }
 
-func (m *DelState) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_DelState.Unmarshal(m, b)
+func (m *PtnDelState) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_PtnDelState.Unmarshal(m, b)
 }
-func (m *DelState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_DelState.Marshal(b, m, deterministic)
+func (m *PtnDelState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_PtnDelState.Marshal(b, m, deterministic)
 }
-func (m *DelState) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DelState.Merge(m, src)
+func (m *PtnDelState) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PtnDelState.Merge(m, src)
 }
-func (m *DelState) XXX_Size() int {
-	return xxx_messageInfo_DelState.Size(m)
+func (m *PtnDelState) XXX_Size() int {
+	return xxx_messageInfo_PtnDelState.Size(m)
 }
-func (m *DelState) XXX_DiscardUnknown() {
-	xxx_messageInfo_DelState.DiscardUnknown(m)
+func (m *PtnDelState) XXX_DiscardUnknown() {
+	xxx_messageInfo_PtnDelState.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_DelState proto.InternalMessageInfo
+var xxx_messageInfo_PtnDelState proto.InternalMessageInfo
 
-func (m *DelState) GetKey() string {
+func (m *PtnDelState) GetKey() string {
 	if m != nil {
 		return m.Key
 	}
 	return ""
 }
 
-func (m *DelState) GetCollection() string {
+func (m *PtnDelState) GetCollection() string {
 	if m != nil {
 		return m.Collection
 	}
 	return ""
 }
 
-func (m *DelState) GetContractId() []byte {
+func (m *PtnDelState) GetContractId() []byte {
 	if m != nil {
 		return m.ContractId
 	}
 	return nil
 }
 
-type GetStateByRange struct {
+type PtnGetStateByRange struct {
 	StartKey             string   `protobuf:"bytes,1,opt,name=startKey,proto3" json:"startKey,omitempty"`
 	EndKey               string   `protobuf:"bytes,2,opt,name=endKey,proto3" json:"endKey,omitempty"`
 	Collection           string   `protobuf:"bytes,3,opt,name=collection,proto3" json:"collection,omitempty"`
@@ -506,53 +506,53 @@ type GetStateByRange struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetStateByRange) Reset()         { *m = GetStateByRange{} }
-func (m *GetStateByRange) String() string { return proto.CompactTextString(m) }
-func (*GetStateByRange) ProtoMessage()    {}
-func (*GetStateByRange) Descriptor() ([]byte, []int) {
+func (m *PtnGetStateByRange) Reset()         { *m = PtnGetStateByRange{} }
+func (m *PtnGetStateByRange) String() string { return proto.CompactTextString(m) }
+func (*PtnGetStateByRange) ProtoMessage()    {}
+func (*PtnGetStateByRange) Descriptor() ([]byte, []int) {
 	return fileDescriptor_adb8e00c9c92d6c8, []int{6}
 }
 
-func (m *GetStateByRange) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetStateByRange.Unmarshal(m, b)
+func (m *PtnGetStateByRange) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_PtnGetStateByRange.Unmarshal(m, b)
 }
-func (m *GetStateByRange) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetStateByRange.Marshal(b, m, deterministic)
+func (m *PtnGetStateByRange) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_PtnGetStateByRange.Marshal(b, m, deterministic)
 }
-func (m *GetStateByRange) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetStateByRange.Merge(m, src)
+func (m *PtnGetStateByRange) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PtnGetStateByRange.Merge(m, src)
 }
-func (m *GetStateByRange) XXX_Size() int {
-	return xxx_messageInfo_GetStateByRange.Size(m)
+func (m *PtnGetStateByRange) XXX_Size() int {
+	return xxx_messageInfo_PtnGetStateByRange.Size(m)
 }
-func (m *GetStateByRange) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetStateByRange.DiscardUnknown(m)
+func (m *PtnGetStateByRange) XXX_DiscardUnknown() {
+	xxx_messageInfo_PtnGetStateByRange.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_GetStateByRange proto.InternalMessageInfo
+var xxx_messageInfo_PtnGetStateByRange proto.InternalMessageInfo
 
-func (m *GetStateByRange) GetStartKey() string {
+func (m *PtnGetStateByRange) GetStartKey() string {
 	if m != nil {
 		return m.StartKey
 	}
 	return ""
 }
 
-func (m *GetStateByRange) GetEndKey() string {
+func (m *PtnGetStateByRange) GetEndKey() string {
 	if m != nil {
 		return m.EndKey
 	}
 	return ""
 }
 
-func (m *GetStateByRange) GetCollection() string {
+func (m *PtnGetStateByRange) GetCollection() string {
 	if m != nil {
 		return m.Collection
 	}
 	return ""
 }
 
-type GetQueryResult struct {
+type PtnGetQueryResult struct {
 	Query                string   `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
 	Collection           string   `protobuf:"bytes,2,opt,name=collection,proto3" json:"collection,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -560,250 +560,250 @@ type GetQueryResult struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetQueryResult) Reset()         { *m = GetQueryResult{} }
-func (m *GetQueryResult) String() string { return proto.CompactTextString(m) }
-func (*GetQueryResult) ProtoMessage()    {}
-func (*GetQueryResult) Descriptor() ([]byte, []int) {
+func (m *PtnGetQueryResult) Reset()         { *m = PtnGetQueryResult{} }
+func (m *PtnGetQueryResult) String() string { return proto.CompactTextString(m) }
+func (*PtnGetQueryResult) ProtoMessage()    {}
+func (*PtnGetQueryResult) Descriptor() ([]byte, []int) {
 	return fileDescriptor_adb8e00c9c92d6c8, []int{7}
 }
 
-func (m *GetQueryResult) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetQueryResult.Unmarshal(m, b)
+func (m *PtnGetQueryResult) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_PtnGetQueryResult.Unmarshal(m, b)
 }
-func (m *GetQueryResult) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetQueryResult.Marshal(b, m, deterministic)
+func (m *PtnGetQueryResult) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_PtnGetQueryResult.Marshal(b, m, deterministic)
 }
-func (m *GetQueryResult) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetQueryResult.Merge(m, src)
+func (m *PtnGetQueryResult) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PtnGetQueryResult.Merge(m, src)
 }
-func (m *GetQueryResult) XXX_Size() int {
-	return xxx_messageInfo_GetQueryResult.Size(m)
+func (m *PtnGetQueryResult) XXX_Size() int {
+	return xxx_messageInfo_PtnGetQueryResult.Size(m)
 }
-func (m *GetQueryResult) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetQueryResult.DiscardUnknown(m)
+func (m *PtnGetQueryResult) XXX_DiscardUnknown() {
+	xxx_messageInfo_PtnGetQueryResult.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_GetQueryResult proto.InternalMessageInfo
+var xxx_messageInfo_PtnGetQueryResult proto.InternalMessageInfo
 
-func (m *GetQueryResult) GetQuery() string {
+func (m *PtnGetQueryResult) GetQuery() string {
 	if m != nil {
 		return m.Query
 	}
 	return ""
 }
 
-func (m *GetQueryResult) GetCollection() string {
+func (m *PtnGetQueryResult) GetCollection() string {
 	if m != nil {
 		return m.Collection
 	}
 	return ""
 }
 
-type GetHistoryForKey struct {
+type PtnGetHistoryForKey struct {
 	Key                  string   `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetHistoryForKey) Reset()         { *m = GetHistoryForKey{} }
-func (m *GetHistoryForKey) String() string { return proto.CompactTextString(m) }
-func (*GetHistoryForKey) ProtoMessage()    {}
-func (*GetHistoryForKey) Descriptor() ([]byte, []int) {
+func (m *PtnGetHistoryForKey) Reset()         { *m = PtnGetHistoryForKey{} }
+func (m *PtnGetHistoryForKey) String() string { return proto.CompactTextString(m) }
+func (*PtnGetHistoryForKey) ProtoMessage()    {}
+func (*PtnGetHistoryForKey) Descriptor() ([]byte, []int) {
 	return fileDescriptor_adb8e00c9c92d6c8, []int{8}
 }
 
-func (m *GetHistoryForKey) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetHistoryForKey.Unmarshal(m, b)
+func (m *PtnGetHistoryForKey) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_PtnGetHistoryForKey.Unmarshal(m, b)
 }
-func (m *GetHistoryForKey) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetHistoryForKey.Marshal(b, m, deterministic)
+func (m *PtnGetHistoryForKey) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_PtnGetHistoryForKey.Marshal(b, m, deterministic)
 }
-func (m *GetHistoryForKey) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetHistoryForKey.Merge(m, src)
+func (m *PtnGetHistoryForKey) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PtnGetHistoryForKey.Merge(m, src)
 }
-func (m *GetHistoryForKey) XXX_Size() int {
-	return xxx_messageInfo_GetHistoryForKey.Size(m)
+func (m *PtnGetHistoryForKey) XXX_Size() int {
+	return xxx_messageInfo_PtnGetHistoryForKey.Size(m)
 }
-func (m *GetHistoryForKey) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetHistoryForKey.DiscardUnknown(m)
+func (m *PtnGetHistoryForKey) XXX_DiscardUnknown() {
+	xxx_messageInfo_PtnGetHistoryForKey.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_GetHistoryForKey proto.InternalMessageInfo
+var xxx_messageInfo_PtnGetHistoryForKey proto.InternalMessageInfo
 
-func (m *GetHistoryForKey) GetKey() string {
+func (m *PtnGetHistoryForKey) GetKey() string {
 	if m != nil {
 		return m.Key
 	}
 	return ""
 }
 
-type QueryStateNext struct {
+type PtnQueryStateNext struct {
 	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *QueryStateNext) Reset()         { *m = QueryStateNext{} }
-func (m *QueryStateNext) String() string { return proto.CompactTextString(m) }
-func (*QueryStateNext) ProtoMessage()    {}
-func (*QueryStateNext) Descriptor() ([]byte, []int) {
+func (m *PtnQueryStateNext) Reset()         { *m = PtnQueryStateNext{} }
+func (m *PtnQueryStateNext) String() string { return proto.CompactTextString(m) }
+func (*PtnQueryStateNext) ProtoMessage()    {}
+func (*PtnQueryStateNext) Descriptor() ([]byte, []int) {
 	return fileDescriptor_adb8e00c9c92d6c8, []int{9}
 }
 
-func (m *QueryStateNext) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_QueryStateNext.Unmarshal(m, b)
+func (m *PtnQueryStateNext) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_PtnQueryStateNext.Unmarshal(m, b)
 }
-func (m *QueryStateNext) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_QueryStateNext.Marshal(b, m, deterministic)
+func (m *PtnQueryStateNext) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_PtnQueryStateNext.Marshal(b, m, deterministic)
 }
-func (m *QueryStateNext) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryStateNext.Merge(m, src)
+func (m *PtnQueryStateNext) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PtnQueryStateNext.Merge(m, src)
 }
-func (m *QueryStateNext) XXX_Size() int {
-	return xxx_messageInfo_QueryStateNext.Size(m)
+func (m *PtnQueryStateNext) XXX_Size() int {
+	return xxx_messageInfo_PtnQueryStateNext.Size(m)
 }
-func (m *QueryStateNext) XXX_DiscardUnknown() {
-	xxx_messageInfo_QueryStateNext.DiscardUnknown(m)
+func (m *PtnQueryStateNext) XXX_DiscardUnknown() {
+	xxx_messageInfo_PtnQueryStateNext.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_QueryStateNext proto.InternalMessageInfo
+var xxx_messageInfo_PtnQueryStateNext proto.InternalMessageInfo
 
-func (m *QueryStateNext) GetId() string {
+func (m *PtnQueryStateNext) GetId() string {
 	if m != nil {
 		return m.Id
 	}
 	return ""
 }
 
-type QueryStateClose struct {
+type PtnQueryStateClose struct {
 	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *QueryStateClose) Reset()         { *m = QueryStateClose{} }
-func (m *QueryStateClose) String() string { return proto.CompactTextString(m) }
-func (*QueryStateClose) ProtoMessage()    {}
-func (*QueryStateClose) Descriptor() ([]byte, []int) {
+func (m *PtnQueryStateClose) Reset()         { *m = PtnQueryStateClose{} }
+func (m *PtnQueryStateClose) String() string { return proto.CompactTextString(m) }
+func (*PtnQueryStateClose) ProtoMessage()    {}
+func (*PtnQueryStateClose) Descriptor() ([]byte, []int) {
 	return fileDescriptor_adb8e00c9c92d6c8, []int{10}
 }
 
-func (m *QueryStateClose) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_QueryStateClose.Unmarshal(m, b)
+func (m *PtnQueryStateClose) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_PtnQueryStateClose.Unmarshal(m, b)
 }
-func (m *QueryStateClose) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_QueryStateClose.Marshal(b, m, deterministic)
+func (m *PtnQueryStateClose) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_PtnQueryStateClose.Marshal(b, m, deterministic)
 }
-func (m *QueryStateClose) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryStateClose.Merge(m, src)
+func (m *PtnQueryStateClose) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PtnQueryStateClose.Merge(m, src)
 }
-func (m *QueryStateClose) XXX_Size() int {
-	return xxx_messageInfo_QueryStateClose.Size(m)
+func (m *PtnQueryStateClose) XXX_Size() int {
+	return xxx_messageInfo_PtnQueryStateClose.Size(m)
 }
-func (m *QueryStateClose) XXX_DiscardUnknown() {
-	xxx_messageInfo_QueryStateClose.DiscardUnknown(m)
+func (m *PtnQueryStateClose) XXX_DiscardUnknown() {
+	xxx_messageInfo_PtnQueryStateClose.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_QueryStateClose proto.InternalMessageInfo
+var xxx_messageInfo_PtnQueryStateClose proto.InternalMessageInfo
 
-func (m *QueryStateClose) GetId() string {
+func (m *PtnQueryStateClose) GetId() string {
 	if m != nil {
 		return m.Id
 	}
 	return ""
 }
 
-type QueryResultBytes struct {
+type PtnQueryResultBytes struct {
 	ResultBytes          []byte   `protobuf:"bytes,1,opt,name=resultBytes,proto3" json:"resultBytes,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *QueryResultBytes) Reset()         { *m = QueryResultBytes{} }
-func (m *QueryResultBytes) String() string { return proto.CompactTextString(m) }
-func (*QueryResultBytes) ProtoMessage()    {}
-func (*QueryResultBytes) Descriptor() ([]byte, []int) {
+func (m *PtnQueryResultBytes) Reset()         { *m = PtnQueryResultBytes{} }
+func (m *PtnQueryResultBytes) String() string { return proto.CompactTextString(m) }
+func (*PtnQueryResultBytes) ProtoMessage()    {}
+func (*PtnQueryResultBytes) Descriptor() ([]byte, []int) {
 	return fileDescriptor_adb8e00c9c92d6c8, []int{11}
 }
 
-func (m *QueryResultBytes) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_QueryResultBytes.Unmarshal(m, b)
+func (m *PtnQueryResultBytes) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_PtnQueryResultBytes.Unmarshal(m, b)
 }
-func (m *QueryResultBytes) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_QueryResultBytes.Marshal(b, m, deterministic)
+func (m *PtnQueryResultBytes) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_PtnQueryResultBytes.Marshal(b, m, deterministic)
 }
-func (m *QueryResultBytes) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryResultBytes.Merge(m, src)
+func (m *PtnQueryResultBytes) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PtnQueryResultBytes.Merge(m, src)
 }
-func (m *QueryResultBytes) XXX_Size() int {
-	return xxx_messageInfo_QueryResultBytes.Size(m)
+func (m *PtnQueryResultBytes) XXX_Size() int {
+	return xxx_messageInfo_PtnQueryResultBytes.Size(m)
 }
-func (m *QueryResultBytes) XXX_DiscardUnknown() {
-	xxx_messageInfo_QueryResultBytes.DiscardUnknown(m)
+func (m *PtnQueryResultBytes) XXX_DiscardUnknown() {
+	xxx_messageInfo_PtnQueryResultBytes.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_QueryResultBytes proto.InternalMessageInfo
+var xxx_messageInfo_PtnQueryResultBytes proto.InternalMessageInfo
 
-func (m *QueryResultBytes) GetResultBytes() []byte {
+func (m *PtnQueryResultBytes) GetResultBytes() []byte {
 	if m != nil {
 		return m.ResultBytes
 	}
 	return nil
 }
 
-type QueryResponse struct {
-	Results              []*QueryResultBytes `protobuf:"bytes,1,rep,name=results,proto3" json:"results,omitempty"`
-	HasMore              bool                `protobuf:"varint,2,opt,name=has_more,json=hasMore,proto3" json:"has_more,omitempty"`
-	Id                   string              `protobuf:"bytes,3,opt,name=id,proto3" json:"id,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}            `json:"-"`
-	XXX_unrecognized     []byte              `json:"-"`
-	XXX_sizecache        int32               `json:"-"`
+type PtnQueryResponse struct {
+	Results              []*PtnQueryResultBytes `protobuf:"bytes,1,rep,name=results,proto3" json:"results,omitempty"`
+	HasMore              bool                   `protobuf:"varint,2,opt,name=has_more,json=hasMore,proto3" json:"has_more,omitempty"`
+	Id                   string                 `protobuf:"bytes,3,opt,name=id,proto3" json:"id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
 }
 
-func (m *QueryResponse) Reset()         { *m = QueryResponse{} }
-func (m *QueryResponse) String() string { return proto.CompactTextString(m) }
-func (*QueryResponse) ProtoMessage()    {}
-func (*QueryResponse) Descriptor() ([]byte, []int) {
+func (m *PtnQueryResponse) Reset()         { *m = PtnQueryResponse{} }
+func (m *PtnQueryResponse) String() string { return proto.CompactTextString(m) }
+func (*PtnQueryResponse) ProtoMessage()    {}
+func (*PtnQueryResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_adb8e00c9c92d6c8, []int{12}
 }
 
-func (m *QueryResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_QueryResponse.Unmarshal(m, b)
+func (m *PtnQueryResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_PtnQueryResponse.Unmarshal(m, b)
 }
-func (m *QueryResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_QueryResponse.Marshal(b, m, deterministic)
+func (m *PtnQueryResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_PtnQueryResponse.Marshal(b, m, deterministic)
 }
-func (m *QueryResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryResponse.Merge(m, src)
+func (m *PtnQueryResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PtnQueryResponse.Merge(m, src)
 }
-func (m *QueryResponse) XXX_Size() int {
-	return xxx_messageInfo_QueryResponse.Size(m)
+func (m *PtnQueryResponse) XXX_Size() int {
+	return xxx_messageInfo_PtnQueryResponse.Size(m)
 }
-func (m *QueryResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_QueryResponse.DiscardUnknown(m)
+func (m *PtnQueryResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_PtnQueryResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_QueryResponse proto.InternalMessageInfo
+var xxx_messageInfo_PtnQueryResponse proto.InternalMessageInfo
 
-func (m *QueryResponse) GetResults() []*QueryResultBytes {
+func (m *PtnQueryResponse) GetResults() []*PtnQueryResultBytes {
 	if m != nil {
 		return m.Results
 	}
 	return nil
 }
 
-func (m *QueryResponse) GetHasMore() bool {
+func (m *PtnQueryResponse) GetHasMore() bool {
 	if m != nil {
 		return m.HasMore
 	}
 	return false
 }
 
-func (m *QueryResponse) GetId() string {
+func (m *PtnQueryResponse) GetId() string {
 	if m != nil {
 		return m.Id
 	}
@@ -1447,20 +1447,20 @@ func (m *GetStateByPrefixKv) GetResultBytes() []byte {
 }
 
 func init() {
-	proto.RegisterEnum("protos.ChaincodeMessage_Type", ChaincodeMessage_Type_name, ChaincodeMessage_Type_value)
-	proto.RegisterType((*ChaincodeMessage)(nil), "protos.ChaincodeMessage")
-	proto.RegisterType((*GetState)(nil), "protos.GetState")
+	proto.RegisterEnum("protos.PtnChaincodeMessage_Type", PtnChaincodeMessage_Type_name, PtnChaincodeMessage_Type_value)
+	proto.RegisterType((*PtnChaincodeMessage)(nil), "protos.PtnChaincodeMessage")
+	proto.RegisterType((*PtnGetState)(nil), "protos.PtnGetState")
 	proto.RegisterType((*GetStateByPrefix)(nil), "protos.GetStateByPrefix")
 	proto.RegisterType((*GetTimestamp)(nil), "protos.GetTimestamp")
-	proto.RegisterType((*PutState)(nil), "protos.PutState")
-	proto.RegisterType((*DelState)(nil), "protos.DelState")
-	proto.RegisterType((*GetStateByRange)(nil), "protos.GetStateByRange")
-	proto.RegisterType((*GetQueryResult)(nil), "protos.GetQueryResult")
-	proto.RegisterType((*GetHistoryForKey)(nil), "protos.GetHistoryForKey")
-	proto.RegisterType((*QueryStateNext)(nil), "protos.QueryStateNext")
-	proto.RegisterType((*QueryStateClose)(nil), "protos.QueryStateClose")
-	proto.RegisterType((*QueryResultBytes)(nil), "protos.QueryResultBytes")
-	proto.RegisterType((*QueryResponse)(nil), "protos.QueryResponse")
+	proto.RegisterType((*PtnPutState)(nil), "protos.PtnPutState")
+	proto.RegisterType((*PtnDelState)(nil), "protos.PtnDelState")
+	proto.RegisterType((*PtnGetStateByRange)(nil), "protos.PtnGetStateByRange")
+	proto.RegisterType((*PtnGetQueryResult)(nil), "protos.PtnGetQueryResult")
+	proto.RegisterType((*PtnGetHistoryForKey)(nil), "protos.PtnGetHistoryForKey")
+	proto.RegisterType((*PtnQueryStateNext)(nil), "protos.PtnQueryStateNext")
+	proto.RegisterType((*PtnQueryStateClose)(nil), "protos.PtnQueryStateClose")
+	proto.RegisterType((*PtnQueryResultBytes)(nil), "protos.PtnQueryResultBytes")
+	proto.RegisterType((*PtnQueryResponse)(nil), "protos.PtnQueryResponse")
 	proto.RegisterType((*OutChainCall)(nil), "protos.OutChainCall")
 	proto.RegisterType((*GetCertState)(nil), "protos.GetCertState")
 	proto.RegisterType((*SendJury)(nil), "protos.SendJury")
@@ -1478,94 +1478,95 @@ func init() {
 func init() { proto.RegisterFile("chaincode_shim.proto", fileDescriptor_adb8e00c9c92d6c8) }
 
 var fileDescriptor_adb8e00c9c92d6c8 = []byte{
-	// 1388 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x57, 0x5f, 0x53, 0xdb, 0xc6,
-	0x16, 0x8f, 0xb1, 0x01, 0xfb, 0x18, 0x1b, 0x65, 0xc3, 0x25, 0x0e, 0x37, 0x24, 0x44, 0xf7, 0x4e,
-	0x86, 0x97, 0x6b, 0x6e, 0x69, 0x1f, 0xfa, 0xd6, 0x08, 0x79, 0x01, 0x07, 0x23, 0x29, 0x2b, 0x99,
-	0x09, 0x9d, 0x74, 0x34, 0x42, 0x5a, 0x6c, 0x4d, 0x64, 0xc9, 0x91, 0x56, 0x14, 0xbf, 0xf6, 0xa1,
-	0xd3, 0xef, 0xd9, 0xef, 0xd1, 0xe9, 0xac, 0xb4, 0x92, 0x8d, 0x49, 0x86, 0x99, 0xa6, 0x7d, 0xb2,
-	0x7e, 0xe7, 0x1c, 0x9d, 0x3f, 0xbf, 0xb3, 0xe7, 0x68, 0x0d, 0x5b, 0xee, 0xd8, 0xf1, 0x43, 0x37,
-	0xf2, 0xa8, 0x9d, 0x8c, 0xfd, 0x49, 0x77, 0x1a, 0x47, 0x2c, 0x42, 0x6b, 0xd9, 0x4f, 0xb2, 0x73,
-	0x31, 0xf2, 0xd9, 0x38, 0xbd, 0xea, 0xba, 0xd1, 0xe4, 0x60, 0xea, 0x04, 0x01, 0x65, 0x51, 0x48,
-	0x0f, 0x46, 0xd1, 0xff, 0xe6, 0xc0, 0x8d, 0x62, 0x7a, 0x70, 0x33, 0x51, 0xa3, 0x90, 0xc5, 0x8e,
-	0xcb, 0x8c, 0xf4, 0xea, 0x20, 0x7f, 0xf9, 0x60, 0x4a, 0x69, 0x7c, 0x30, 0x77, 0x4f, 0x6f, 0x68,
-	0xc8, 0x72, 0xff, 0x3b, 0xfa, 0x57, 0xfb, 0x9d, 0xc6, 0xd1, 0x34, 0x4a, 0x9c, 0x40, 0x38, 0x7c,
-	0x39, 0x8a, 0xa2, 0x51, 0x40, 0x73, 0x93, 0xab, 0xf4, 0xfa, 0x80, 0xf9, 0x13, 0x9a, 0x30, 0x67,
-	0x32, 0xcd, 0x0d, 0xe4, 0xdf, 0xd7, 0x40, 0x52, 0x8b, 0x5c, 0xce, 0x69, 0x92, 0x38, 0x23, 0x8a,
-	0xbe, 0x81, 0x1a, 0x9b, 0x4d, 0x69, 0xa7, 0xb2, 0x57, 0xd9, 0x6f, 0x1f, 0xee, 0xe6, 0xa6, 0x49,
-	0x77, 0xd9, 0xae, 0x6b, 0xcd, 0xa6, 0x94, 0x64, 0xa6, 0xe8, 0x7b, 0x68, 0x94, 0xae, 0x3b, 0x2b,
-	0x7b, 0x95, 0xfd, 0xe6, 0xe1, 0x4e, 0x37, 0x0f, 0xde, 0x2d, 0x82, 0x77, 0xad, 0xc2, 0x82, 0xcc,
-	0x8d, 0x51, 0x07, 0xd6, 0xa7, 0xce, 0x2c, 0x88, 0x1c, 0xaf, 0x53, 0xdd, 0xab, 0xec, 0x6f, 0x90,
-	0x02, 0x22, 0x04, 0x35, 0x76, 0xeb, 0x7b, 0x9d, 0xda, 0x5e, 0x65, 0xbf, 0x41, 0xb2, 0x67, 0x74,
-	0x08, 0xf5, 0xa2, 0xc4, 0xce, 0x6a, 0x16, 0x66, 0xbb, 0x48, 0xcf, 0xf4, 0x47, 0x21, 0xf5, 0x0c,
-	0xa1, 0x25, 0xa5, 0x1d, 0xfa, 0x01, 0x36, 0x97, 0xe8, 0xee, 0xac, 0xdd, 0x7d, 0xb5, 0xac, 0x0c,
-	0x73, 0x2d, 0x69, 0xbb, 0x77, 0x30, 0xda, 0x05, 0x70, 0xc7, 0x4e, 0x18, 0xd2, 0xc0, 0xf6, 0xbd,
-	0xce, 0x7a, 0x96, 0x4e, 0x43, 0x48, 0xfa, 0x1e, 0x7a, 0x09, 0x4d, 0x57, 0xb4, 0x83, 0xeb, 0xeb,
-	0x59, 0x15, 0x50, 0x88, 0xfa, 0x9e, 0xfc, 0x47, 0x15, 0x6a, 0x9c, 0x2b, 0xd4, 0x82, 0xc6, 0x50,
-	0xeb, 0xe1, 0xe3, 0xbe, 0x86, 0x7b, 0xd2, 0x23, 0xb4, 0x01, 0x75, 0x82, 0x4f, 0xfa, 0xa6, 0x85,
-	0x89, 0x54, 0x41, 0x6d, 0x80, 0x02, 0xe1, 0x9e, 0xb4, 0x82, 0xea, 0x50, 0xeb, 0x6b, 0x7d, 0x4b,
-	0xaa, 0xa2, 0x06, 0xac, 0x12, 0xac, 0xf4, 0x2e, 0xa5, 0x1a, 0xda, 0x84, 0xa6, 0x45, 0x14, 0xcd,
-	0x54, 0x54, 0xab, 0xaf, 0x6b, 0xd2, 0x2a, 0x77, 0xa9, 0xea, 0xe7, 0xc6, 0x00, 0x5b, 0xb8, 0x27,
-	0xad, 0x71, 0x53, 0x4c, 0x88, 0x4e, 0xa4, 0x75, 0xae, 0x39, 0xc1, 0x96, 0x6d, 0x5a, 0x8a, 0x85,
-	0xa5, 0x3a, 0x87, 0xc6, 0xb0, 0x80, 0x0d, 0x0e, 0x7b, 0x78, 0x20, 0x20, 0xa0, 0x2d, 0x90, 0xfa,
-	0xda, 0x85, 0x7e, 0x86, 0x6d, 0xf5, 0x54, 0xe9, 0x6b, 0xaa, 0xde, 0xc3, 0x52, 0x33, 0x4f, 0xd0,
-	0x34, 0x74, 0xcd, 0xc4, 0x52, 0x0b, 0x3d, 0x85, 0x27, 0xa5, 0x43, 0xfb, 0xe8, 0xd2, 0x36, 0x08,
-	0x3e, 0xee, 0xbf, 0x97, 0xda, 0xdc, 0xd7, 0x19, 0xc6, 0x86, 0x32, 0xe8, 0x5f, 0x60, 0x09, 0xa1,
-	0x5d, 0x78, 0x96, 0xd9, 0x5d, 0x9a, 0x16, 0x3e, 0xb7, 0x55, 0x5d, 0x3b, 0xee, 0x9f, 0xd8, 0x04,
-	0xbf, 0x1b, 0x62, 0xd3, 0x92, 0x9e, 0xa2, 0x1d, 0xd8, 0xe6, 0x6a, 0x55, 0xd7, 0x2c, 0xa2, 0xa8,
-	0x96, 0xad, 0x0c, 0x8a, 0x34, 0x3a, 0xe8, 0x5f, 0xf0, 0x98, 0xeb, 0x2c, 0xfd, 0x0c, 0x6b, 0xf6,
-	0x91, 0x32, 0x50, 0x34, 0x15, 0x4b, 0xcf, 0xd0, 0x63, 0x68, 0x19, 0xca, 0xa5, 0xad, 0x0f, 0x85,
-	0x4a, 0xda, 0x41, 0x12, 0x6c, 0xe4, 0x44, 0x0a, 0xc9, 0xbf, 0xb9, 0xc4, 0x1c, 0x1a, 0xc6, 0xe0,
-	0x52, 0x48, 0x9e, 0xf3, 0xd7, 0x32, 0x6f, 0xfd, 0x73, 0x6c, 0x5a, 0xca, 0xb9, 0x21, 0xed, 0xf2,
-	0x54, 0x4d, 0xac, 0xf5, 0xec, 0xb7, 0x43, 0x72, 0x29, 0xbd, 0xe0, 0x90, 0x60, 0xf5, 0x22, 0x87,
-	0x2f, 0x11, 0x82, 0x76, 0x96, 0x1a, 0x26, 0x05, 0x51, 0x7b, 0xdc, 0x89, 0x3e, 0xb4, 0x32, 0x56,
-	0x6c, 0x55, 0x19, 0x0c, 0xa4, 0x57, 0x45, 0x05, 0xa6, 0xa5, 0x1c, 0x0d, 0xb0, 0xbd, 0xd8, 0x0f,
-	0x19, 0x3d, 0x81, 0xcd, 0x05, 0xdd, 0x90, 0x37, 0xf0, 0x3f, 0xf2, 0x07, 0xa8, 0x9f, 0x50, 0x66,
-	0x32, 0x87, 0x51, 0x24, 0x41, 0xf5, 0x23, 0x9d, 0x65, 0xb3, 0xd5, 0x20, 0xfc, 0x11, 0xbd, 0x00,
-	0x70, 0xa3, 0x20, 0xa0, 0x2e, 0xf3, 0xa3, 0x30, 0x1b, 0x9e, 0x06, 0x59, 0x90, 0xe4, 0xfa, 0xe2,
-	0x30, 0x89, 0x21, 0x59, 0x3c, 0x5e, 0x6f, 0x41, 0x2a, 0xbc, 0x1f, 0xcd, 0x8c, 0x98, 0x5e, 0xfb,
-	0xb7, 0x68, 0x1b, 0xd6, 0xa6, 0xd9, 0x93, 0x08, 0x24, 0xd0, 0x92, 0xaf, 0x95, 0x7b, 0xbe, 0x0c,
-	0xd8, 0x38, 0xa1, 0xac, 0x1c, 0x54, 0xb4, 0x07, 0xcd, 0xd8, 0x09, 0x47, 0x54, 0x4b, 0x27, 0x57,
-	0x34, 0xce, 0x9c, 0xb5, 0xc8, 0xa2, 0xe8, 0xa1, 0xec, 0xe5, 0x18, 0xea, 0x46, 0xfa, 0xc5, 0xda,
-	0xb7, 0x60, 0xf5, 0xc6, 0x09, 0x52, 0x2a, 0x52, 0xc9, 0xc1, 0x92, 0xcf, 0xea, 0x03, 0x8c, 0xd4,
-	0xee, 0x55, 0xf1, 0x01, 0xea, 0x3d, 0x1a, 0xfc, 0x53, 0x7c, 0x53, 0xd8, 0x9c, 0xf3, 0x4d, 0x38,
-	0x15, 0x68, 0x07, 0xea, 0x09, 0x73, 0x62, 0x76, 0x56, 0x46, 0x2a, 0x31, 0x6f, 0x05, 0x0d, 0x3d,
-	0xae, 0xc9, 0x43, 0x09, 0xf4, 0x50, 0x91, 0xf2, 0x31, 0xb4, 0x4f, 0x28, 0x7b, 0x97, 0xd2, 0x78,
-	0x46, 0x68, 0x92, 0x06, 0x8c, 0x93, 0xf5, 0x89, 0x43, 0x11, 0x22, 0x07, 0x0f, 0x36, 0xe0, 0xbf,
-	0xd9, 0xf1, 0x38, 0xf5, 0x13, 0x16, 0xc5, 0xb3, 0xe3, 0x28, 0xe6, 0xb1, 0xef, 0x91, 0x22, 0xef,
-	0x41, 0x3b, 0x0b, 0x95, 0x95, 0xa5, 0xd1, 0x5b, 0x86, 0xda, 0xb0, 0xe2, 0x7b, 0xc2, 0x64, 0xc5,
-	0xf7, 0xe4, 0x57, 0xb0, 0x39, 0xb7, 0x50, 0x83, 0x28, 0xa1, 0xf7, 0x4c, 0xbe, 0x03, 0x69, 0x21,
-	0xdf, 0xa3, 0x19, 0xa3, 0x49, 0x76, 0x82, 0xe6, 0x30, 0x33, 0xde, 0x20, 0x8b, 0x22, 0x39, 0x84,
-	0x56, 0xf1, 0xd6, 0x34, 0x0a, 0x13, 0x8a, 0x0e, 0x61, 0x3d, 0xd7, 0x73, 0xf3, 0xea, 0x7e, 0xf3,
-	0xb0, 0x53, 0x2c, 0xea, 0x65, 0xef, 0xa4, 0x30, 0x44, 0xcf, 0xa0, 0x3e, 0x76, 0x12, 0x7b, 0x12,
-	0xc5, 0xf9, 0x59, 0xaa, 0x93, 0xf5, 0xb1, 0x93, 0x9c, 0x47, 0x71, 0x91, 0x65, 0xb5, 0xcc, 0xf2,
-	0x97, 0x0a, 0x6c, 0xe8, 0x29, 0xcb, 0x96, 0xbe, 0xea, 0x04, 0x01, 0x92, 0xe7, 0x58, 0x73, 0x26,
-	0x54, 0x14, 0x74, 0x47, 0xc6, 0xbb, 0x38, 0xa1, 0x6c, 0x1c, 0x79, 0x45, 0x17, 0x73, 0x94, 0x0d,
-	0x9a, 0x13, 0x3b, 0x93, 0x44, 0x1c, 0x14, 0x81, 0x96, 0xba, 0x52, 0xbb, 0xd7, 0x95, 0x37, 0xd9,
-	0xa0, 0xa9, 0x34, 0xfe, 0xab, 0x6b, 0x41, 0xfe, 0xad, 0x02, 0x75, 0x93, 0x86, 0xde, 0xdb, 0x34,
-	0x9e, 0xf1, 0xaf, 0xe8, 0x24, 0x19, 0x59, 0xc5, 0x57, 0xbb, 0x45, 0x0a, 0x88, 0x5e, 0x43, 0xdb,
-	0x8d, 0x42, 0x4e, 0x12, 0xbf, 0x33, 0xf0, 0x8f, 0x5f, 0x3e, 0x6a, 0x4b, 0x52, 0x7e, 0x84, 0x27,
-	0x33, 0x25, 0x4c, 0x7e, 0xa6, 0xb1, 0x28, 0xa5, 0xc4, 0x0f, 0x16, 0xf3, 0x6b, 0x05, 0xea, 0x84,
-	0xba, 0x37, 0x7f, 0x53, 0x2a, 0x1d, 0x58, 0xe7, 0xf7, 0x83, 0x28, 0x65, 0x59, 0x26, 0x2d, 0x52,
-	0xc0, 0x07, 0x13, 0x51, 0xb2, 0xd1, 0xb4, 0xa2, 0x8f, 0x34, 0x3c, 0x72, 0x02, 0x27, 0x74, 0x29,
-	0x77, 0xe6, 0x78, 0x5e, 0x4c, 0x93, 0x44, 0x90, 0x5b, 0x40, 0x3e, 0x4e, 0x4e, 0x92, 0x50, 0x26,
-	0xb8, 0xcd, 0x81, 0xdc, 0x85, 0xad, 0x7c, 0xba, 0xaf, 0x02, 0x6a, 0xc5, 0x4e, 0x98, 0x38, 0xf9,
-	0x56, 0xd8, 0x86, 0x35, 0x76, 0x7b, 0xea, 0x24, 0xe3, 0x62, 0xa3, 0xe6, 0x48, 0x3e, 0x83, 0x56,
-	0x69, 0x3f, 0x0c, 0xfd, 0x8c, 0xc8, 0x34, 0xf4, 0xd9, 0x82, 0x69, 0x89, 0x79, 0xfe, 0xfc, 0x59,
-	0x6c, 0x53, 0x1e, 0xb7, 0x46, 0x16, 0x24, 0xf2, 0x27, 0x68, 0x1a, 0xce, 0x4c, 0x4f, 0xf3, 0x12,
-	0xe6, 0x19, 0xe6, 0x53, 0x93, 0x03, 0x9e, 0x89, 0x33, 0x89, 0x52, 0x41, 0x5f, 0x8d, 0x08, 0xc4,
-	0x03, 0x07, 0x91, 0xfb, 0x91, 0x73, 0x25, 0x78, 0x2b, 0xf1, 0x22, 0x0b, 0xb5, 0x3b, 0x2c, 0xc8,
-	0x3f, 0x41, 0xb3, 0x47, 0xaf, 0xfd, 0x90, 0xe6, 0x21, 0x9f, 0x43, 0x83, 0xf1, 0x87, 0xb2, 0x7f,
-	0xab, 0x64, 0x2e, 0xe0, 0xa1, 0xbd, 0xcc, 0x58, 0x74, 0x4e, 0x20, 0xee, 0xde, 0x8d, 0xa9, 0xc3,
-	0xa2, 0x58, 0xcc, 0x59, 0x01, 0xe5, 0x14, 0x9a, 0x66, 0x3a, 0x9d, 0x06, 0xb3, 0xdc, 0x3d, 0xcf,
-	0x83, 0x17, 0xd1, 0xf7, 0x44, 0x4d, 0x05, 0x14, 0xb4, 0x7d, 0x4a, 0x69, 0xf9, 0x5d, 0x2a, 0xf1,
-	0x42, 0xc5, 0xd5, 0x3b, 0x15, 0x2f, 0x84, 0xad, 0xdd, 0x0d, 0xfb, 0x1a, 0xd0, 0x19, 0xe5, 0xdb,
-	0xce, 0x9c, 0x25, 0x8c, 0xf2, 0xeb, 0xf2, 0xb5, 0x3f, 0xfa, 0xcc, 0xda, 0x3b, 0x05, 0xb4, 0xfc,
-	0xed, 0x3c, 0xbb, 0xf9, 0xcc, 0x30, 0x2e, 0x6d, 0xb1, 0x95, 0x7b, 0x5b, 0xec, 0xf0, 0xfd, 0xc2,
-	0x45, 0x9a, 0x57, 0x1c, 0xc5, 0x0c, 0xf5, 0xf8, 0x58, 0x8c, 0xfc, 0x84, 0xd1, 0x18, 0x75, 0xbe,
-	0x74, 0x8d, 0xde, 0xf9, 0xa2, 0x46, 0x7e, 0xb4, 0x5f, 0xf9, 0x7f, 0xe5, 0x48, 0x87, 0xa6, 0x30,
-	0xe0, 0x57, 0xfc, 0x1f, 0xdf, 0x7c, 0xed, 0x9f, 0x84, 0xab, 0xfc, 0x6f, 0xcc, 0xb7, 0x7f, 0x06,
-	0x00, 0x00, 0xff, 0xff, 0x41, 0xbc, 0x0b, 0xb0, 0xe5, 0x0c, 0x00, 0x00,
+	// 1406 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x57, 0xdf, 0x53, 0xdb, 0x48,
+	0x12, 0x8e, 0xc1, 0x80, 0xdd, 0xe6, 0x87, 0x32, 0xe1, 0x12, 0x43, 0x7e, 0x71, 0xca, 0x55, 0x8e,
+	0x97, 0x33, 0x57, 0xdc, 0xa5, 0xee, 0x1e, 0x23, 0xdb, 0x03, 0x18, 0x8c, 0xac, 0x8c, 0x64, 0x6a,
+	0xd9, 0xaa, 0x5d, 0x95, 0x90, 0x06, 0x5b, 0x15, 0x59, 0x72, 0xa4, 0x11, 0x8b, 0x5f, 0xf7, 0x61,
+	0x6b, 0x6b, 0xff, 0xe5, 0x7d, 0xd9, 0x9a, 0xd1, 0x48, 0x16, 0x26, 0x1b, 0xaa, 0x36, 0xbb, 0x4f,
+	0xd6, 0xd7, 0xd3, 0xea, 0xfe, 0xfa, 0xeb, 0xe9, 0x19, 0x19, 0xb6, 0xdd, 0xb1, 0xe3, 0x87, 0x6e,
+	0xe4, 0x51, 0x3b, 0x19, 0xfb, 0x93, 0xd6, 0x34, 0x8e, 0x58, 0x84, 0x56, 0xc5, 0x4f, 0xb2, 0x7b,
+	0x31, 0xf2, 0xd9, 0x38, 0xbd, 0x6a, 0xb9, 0xd1, 0xe4, 0x60, 0xea, 0x04, 0x01, 0x65, 0x51, 0x48,
+	0x0f, 0x46, 0xd1, 0xbf, 0xe6, 0xc0, 0x8d, 0x62, 0x7a, 0x70, 0x33, 0xe9, 0x44, 0x21, 0x8b, 0x1d,
+	0x97, 0x19, 0xe9, 0xd5, 0x41, 0xf6, 0xf2, 0xc1, 0x94, 0xd2, 0xf8, 0x60, 0x1e, 0x9e, 0xde, 0xd0,
+	0x90, 0x65, 0xf1, 0x77, 0x07, 0x5f, 0x1d, 0x77, 0x1a, 0x47, 0xd3, 0x28, 0x71, 0x02, 0x19, 0xf0,
+	0xf5, 0x28, 0x8a, 0x46, 0x01, 0xcd, 0x5c, 0xae, 0xd2, 0xeb, 0x03, 0xe6, 0x4f, 0x68, 0xc2, 0x9c,
+	0xc9, 0x34, 0x73, 0x50, 0x7f, 0x5d, 0x85, 0x27, 0x06, 0x0b, 0x3b, 0x39, 0x9d, 0x73, 0x9a, 0x24,
+	0xce, 0x88, 0xa2, 0xff, 0x42, 0x95, 0xcd, 0xa6, 0xb4, 0x59, 0xd9, 0xab, 0xec, 0x6f, 0x1e, 0xee,
+	0x65, 0xde, 0x49, 0xeb, 0x33, 0xae, 0x2d, 0x6b, 0x36, 0xa5, 0x44, 0x78, 0xa3, 0xff, 0x43, 0xbd,
+	0x48, 0xd0, 0x5c, 0xda, 0xab, 0xec, 0x37, 0x0e, 0x77, 0x5b, 0x19, 0x85, 0x56, 0x4e, 0xa1, 0x65,
+	0xe5, 0x1e, 0x64, 0xee, 0x8c, 0x9a, 0xb0, 0x36, 0x75, 0x66, 0x41, 0xe4, 0x78, 0xcd, 0xe5, 0xbd,
+	0xca, 0xfe, 0x3a, 0xc9, 0x21, 0x42, 0x50, 0x65, 0xb7, 0xbe, 0xd7, 0xac, 0xee, 0x55, 0xf6, 0xeb,
+	0x44, 0x3c, 0xa3, 0x77, 0x50, 0xcb, 0x0b, 0x6d, 0xae, 0x88, 0x34, 0x3b, 0x25, 0x86, 0xa6, 0x3f,
+	0x0a, 0xa9, 0x67, 0x48, 0x07, 0x52, 0xb8, 0xa2, 0x36, 0x6c, 0x2d, 0xe8, 0xde, 0x5c, 0xbd, 0xf7,
+	0x76, 0x51, 0x1f, 0xe6, 0x0e, 0x64, 0xd3, 0xbd, 0x83, 0xd1, 0x4b, 0x00, 0x77, 0xec, 0x84, 0x21,
+	0x0d, 0x6c, 0xdf, 0x6b, 0xae, 0x09, 0x52, 0x75, 0x69, 0xe9, 0x79, 0xe8, 0x35, 0x34, 0x5c, 0xd9,
+	0x1a, 0xbe, 0x5e, 0x13, 0xb5, 0x40, 0x6e, 0xea, 0x79, 0xea, 0x2f, 0x55, 0xa8, 0x72, 0xc5, 0xd0,
+	0x06, 0xd4, 0x87, 0x7a, 0x17, 0x1f, 0xf5, 0x74, 0xdc, 0x55, 0x1e, 0xa1, 0x75, 0xa8, 0x11, 0x7c,
+	0xdc, 0x33, 0x2d, 0x4c, 0x94, 0x0a, 0xda, 0x04, 0xc8, 0x11, 0xee, 0x2a, 0x4b, 0xa8, 0x06, 0xd5,
+	0x9e, 0xde, 0xb3, 0x94, 0x65, 0x54, 0x87, 0x15, 0x82, 0xb5, 0xee, 0xa5, 0x52, 0x45, 0x5b, 0xd0,
+	0xb0, 0x88, 0xa6, 0x9b, 0x5a, 0xc7, 0xea, 0x0d, 0x74, 0x65, 0x85, 0x87, 0xec, 0x0c, 0xce, 0x8d,
+	0x3e, 0xb6, 0x70, 0x57, 0x59, 0xe5, 0xae, 0x98, 0x90, 0x01, 0x51, 0xd6, 0xd0, 0x63, 0xd8, 0x30,
+	0x2c, 0xdd, 0x3e, 0xc6, 0x96, 0x6d, 0x5a, 0x9a, 0x85, 0x95, 0x5a, 0x6e, 0x32, 0x86, 0xb9, 0xa9,
+	0x9e, 0x9b, 0xba, 0xb8, 0x2f, 0x4d, 0x80, 0xb6, 0x41, 0xe9, 0xe9, 0x17, 0x83, 0x33, 0x6c, 0x77,
+	0x4e, 0xb4, 0x9e, 0xde, 0x19, 0x74, 0xb1, 0xd2, 0xc8, 0xc8, 0x9a, 0xc6, 0x40, 0x37, 0xb1, 0xb2,
+	0x81, 0x9e, 0xc1, 0x93, 0x22, 0xb0, 0xdd, 0xbe, 0xb4, 0x0d, 0x82, 0x8f, 0x7a, 0xdf, 0x28, 0x9b,
+	0x9c, 0xcf, 0x19, 0xc6, 0x86, 0xd6, 0xef, 0x5d, 0x60, 0x05, 0xa1, 0x97, 0xb0, 0x23, 0xfc, 0x2e,
+	0x4d, 0x0b, 0x9f, 0xdb, 0x9d, 0x81, 0x7e, 0xd4, 0x3b, 0xb6, 0x09, 0xfe, 0x30, 0xc4, 0xa6, 0xa5,
+	0x3c, 0x43, 0xbb, 0xf0, 0x94, 0x2f, 0x77, 0x06, 0xba, 0x45, 0xb4, 0x8e, 0x65, 0x6b, 0xfd, 0x9c,
+	0x46, 0x13, 0xfd, 0x0d, 0x1e, 0xf3, 0x35, 0x6b, 0x70, 0x86, 0x75, 0xbb, 0xad, 0xf5, 0x35, 0xbd,
+	0x83, 0x95, 0x1d, 0x41, 0x58, 0xbb, 0xb4, 0x07, 0x43, 0xb9, 0xa4, 0xec, 0x22, 0x05, 0xd6, 0x33,
+	0x51, 0xa5, 0xe5, 0x39, 0xb7, 0x98, 0x43, 0xc3, 0xe8, 0x5f, 0x4a, 0xcb, 0x0b, 0xfe, 0x9a, 0x88,
+	0xd6, 0x3b, 0xc7, 0xa6, 0xa5, 0x9d, 0x1b, 0xca, 0x4b, 0x4e, 0xd5, 0xc4, 0x7a, 0xd7, 0x3e, 0x1d,
+	0x92, 0x4b, 0xe5, 0x15, 0x87, 0x04, 0x77, 0x2e, 0x32, 0xf8, 0x1a, 0x21, 0xd8, 0x14, 0xd4, 0x30,
+	0xc9, 0xc5, 0xda, 0xe3, 0x41, 0x06, 0x43, 0x4b, 0xa8, 0x62, 0x77, 0xb4, 0x7e, 0x5f, 0xf9, 0x7b,
+	0x5e, 0x81, 0x69, 0x69, 0xed, 0x3e, 0xb6, 0xcb, 0xbd, 0x51, 0xd1, 0x13, 0xd8, 0x2a, 0xad, 0x0d,
+	0x79, 0x33, 0xdf, 0xa8, 0x36, 0x34, 0x0c, 0x16, 0x1e, 0x53, 0x66, 0x32, 0x87, 0x51, 0xa4, 0xc0,
+	0xf2, 0x47, 0x3a, 0x13, 0x33, 0x57, 0x27, 0xfc, 0x11, 0xbd, 0x02, 0x70, 0xa3, 0x20, 0xa0, 0x2e,
+	0xf3, 0xa3, 0x50, 0x4c, 0x54, 0x9d, 0x94, 0x2c, 0xd9, 0x7a, 0xbe, 0xb7, 0xe4, 0xe4, 0x94, 0x77,
+	0xdb, 0x29, 0x28, 0x79, 0xf4, 0xf6, 0xcc, 0x88, 0xe9, 0xb5, 0x7f, 0x8b, 0x9e, 0xc2, 0xea, 0x54,
+	0x3c, 0xc9, 0x44, 0x12, 0x2d, 0xc4, 0x5a, 0xba, 0x17, 0xcb, 0x80, 0xf5, 0x63, 0xca, 0x8a, 0xe9,
+	0x45, 0x7b, 0xd0, 0x88, 0x9d, 0x70, 0x44, 0xf5, 0x74, 0x72, 0x45, 0x63, 0x11, 0x6c, 0x83, 0x94,
+	0x4d, 0x0f, 0xb1, 0x57, 0x53, 0x51, 0xbe, 0x91, 0xfe, 0x6e, 0xf9, 0xdb, 0xb0, 0x72, 0xe3, 0x04,
+	0x29, 0x95, 0x6c, 0x32, 0xb0, 0x10, 0x76, 0xf9, 0x01, 0x51, 0xaa, 0xf7, 0x0a, 0xc9, 0x54, 0xef,
+	0xd2, 0xe0, 0xaf, 0x52, 0x7d, 0x0c, 0xa8, 0xd4, 0xd6, 0xf6, 0x8c, 0x70, 0x4d, 0xd0, 0x2e, 0xd4,
+	0x12, 0xe6, 0xc4, 0xec, 0xac, 0x48, 0x56, 0x60, 0xde, 0x13, 0x1a, 0x7a, 0x7c, 0x25, 0xcb, 0x26,
+	0xd1, 0x43, 0xa5, 0xaa, 0x3d, 0x78, 0x9c, 0x65, 0xfa, 0x90, 0xd2, 0x78, 0x46, 0x68, 0x92, 0x06,
+	0x8c, 0xab, 0xf6, 0x89, 0x43, 0x99, 0x25, 0x03, 0x0f, 0x36, 0xe3, 0x9f, 0xe2, 0x22, 0x38, 0xa6,
+	0xec, 0xc4, 0x4f, 0x58, 0x14, 0xcf, 0x8e, 0xa2, 0x98, 0x33, 0xb8, 0xa7, 0x8e, 0xfa, 0x46, 0xe4,
+	0x14, 0x09, 0x45, 0x7d, 0x3a, 0xbd, 0x65, 0x68, 0x13, 0x96, 0x7c, 0x4f, 0x7a, 0x2d, 0xf9, 0x9e,
+	0xfa, 0x0f, 0x21, 0xc1, 0xdc, 0xa9, 0x13, 0x44, 0x09, 0xbd, 0xe7, 0xf5, 0x3f, 0x91, 0xb3, 0xc4,
+	0xbd, 0x3d, 0x63, 0x34, 0x11, 0x3b, 0x6b, 0x0e, 0x85, 0xff, 0x3a, 0x29, 0x9b, 0x54, 0x06, 0x4a,
+	0xe9, 0xc5, 0x69, 0x14, 0x26, 0x14, 0xbd, 0x83, 0xb5, 0xcc, 0x85, 0xbf, 0xb1, 0xbc, 0xdf, 0x38,
+	0x7c, 0x5e, 0x3a, 0xd5, 0x17, 0x73, 0x90, 0xdc, 0x17, 0xed, 0x40, 0x6d, 0xec, 0x24, 0xf6, 0x24,
+	0x8a, 0xb3, 0x6d, 0x56, 0x23, 0x6b, 0x63, 0x27, 0x39, 0x8f, 0xe2, 0x9c, 0xee, 0x72, 0x41, 0xf7,
+	0xc7, 0x0a, 0xac, 0x0f, 0x52, 0x26, 0x6e, 0x88, 0x8e, 0x13, 0x04, 0x48, 0x9d, 0x63, 0xdd, 0x99,
+	0x50, 0x59, 0xd9, 0x1d, 0x1b, 0x6f, 0xed, 0x84, 0xb2, 0x71, 0xe4, 0xe5, 0xad, 0xcd, 0x90, 0x18,
+	0x43, 0x27, 0x76, 0x26, 0x89, 0xdc, 0x40, 0x12, 0x2d, 0xf4, 0xa9, 0x7a, 0xaf, 0x4f, 0xef, 0xc5,
+	0x18, 0x76, 0x68, 0xfc, 0x47, 0x0f, 0x0d, 0xf5, 0xe7, 0x0a, 0xd4, 0x4c, 0x1a, 0x7a, 0xa7, 0x69,
+	0x3c, 0xe3, 0x17, 0xef, 0x24, 0x19, 0x59, 0xf9, 0x5d, 0xbf, 0x41, 0x72, 0x88, 0xde, 0xc2, 0xa6,
+	0x1b, 0x85, 0x5c, 0x24, 0xfe, 0xb1, 0xc1, 0x2f, 0xcb, 0x6c, 0x0a, 0x17, 0xac, 0x7c, 0x5f, 0x4f,
+	0x66, 0x5a, 0x98, 0xfc, 0x40, 0x63, 0x59, 0x4a, 0x81, 0x1f, 0x2c, 0xe6, 0xa7, 0x0a, 0xd4, 0x08,
+	0x75, 0x6f, 0xfe, 0x24, 0x2a, 0x4d, 0x58, 0xe3, 0x9f, 0x14, 0x51, 0xca, 0x04, 0x93, 0x0d, 0x92,
+	0xc3, 0x07, 0x89, 0x68, 0xb0, 0xc5, 0x0f, 0xb7, 0xe8, 0x23, 0x0d, 0xdb, 0x4e, 0xe0, 0x84, 0x2e,
+	0xe5, 0xc1, 0x1c, 0xcf, 0x8b, 0x69, 0x92, 0x48, 0x71, 0x73, 0xc8, 0x07, 0xcc, 0x49, 0x12, 0xca,
+	0xa4, 0xb6, 0x19, 0x50, 0x5b, 0xb0, 0x9d, 0x8d, 0xfc, 0x55, 0x40, 0xad, 0xd8, 0x09, 0x13, 0x27,
+	0x3b, 0x2d, 0x9e, 0xc2, 0x2a, 0xbb, 0x3d, 0x71, 0x92, 0x71, 0x7e, 0xde, 0x66, 0x48, 0x3d, 0x83,
+	0x8d, 0xc2, 0x7f, 0x18, 0xfa, 0x42, 0xc8, 0x34, 0xf4, 0x59, 0xc9, 0xb5, 0xc0, 0x9c, 0x3f, 0x7f,
+	0x96, 0x67, 0x2d, 0xcf, 0x5b, 0x25, 0x25, 0x8b, 0xfa, 0x09, 0x1a, 0x86, 0x33, 0x1b, 0xa4, 0x59,
+	0x09, 0x73, 0x86, 0xd9, 0xec, 0x64, 0x80, 0x33, 0x71, 0x26, 0x51, 0x2a, 0xe5, 0xab, 0x12, 0x89,
+	0x78, 0xe2, 0x20, 0x72, 0x3f, 0x72, 0xad, 0xa4, 0x6e, 0x05, 0x2e, 0xab, 0x50, 0xbd, 0xa3, 0x82,
+	0xfa, 0x1d, 0x34, 0xba, 0xf4, 0xda, 0x0f, 0x69, 0x96, 0xf2, 0x05, 0xd4, 0x19, 0x7f, 0x28, 0xfa,
+	0xb7, 0x42, 0xe6, 0x06, 0x9e, 0xda, 0x13, 0xce, 0xb2, 0x73, 0x12, 0xf1, 0xf0, 0x6e, 0x4c, 0x1d,
+	0x16, 0xc5, 0x72, 0xce, 0x72, 0xc8, 0x2f, 0x07, 0x33, 0x9d, 0x4e, 0x83, 0x59, 0x16, 0x9e, 0xf3,
+	0xe0, 0x45, 0xf4, 0x3c, 0x59, 0x53, 0x0e, 0xa5, 0x6c, 0x9f, 0x52, 0x5a, 0xdc, 0x5a, 0x05, 0x2e,
+	0x55, 0xbc, 0x7c, 0xa7, 0xe2, 0x52, 0xda, 0xea, 0xdd, 0xb4, 0x6f, 0x01, 0x9d, 0x51, 0x7e, 0xf8,
+	0x99, 0xb3, 0x84, 0x51, 0xfe, 0x9d, 0x7d, 0xed, 0x8f, 0x3e, 0x73, 0x0a, 0x9e, 0x00, 0x5a, 0xbc,
+	0x59, 0xcf, 0x6e, 0x3e, 0x33, 0x8c, 0x0b, 0x67, 0xd9, 0xd2, 0xbd, 0xb3, 0xec, 0xf0, 0x7b, 0x50,
+	0x8a, 0x6f, 0x4e, 0x5e, 0x71, 0x14, 0x33, 0x74, 0xca, 0xc7, 0x62, 0xe4, 0x27, 0x8c, 0xc6, 0xe8,
+	0xf9, 0x17, 0x3e, 0xbe, 0x77, 0xbf, 0xb4, 0xa8, 0x3e, 0xda, 0xaf, 0xfc, 0xbb, 0xd2, 0x1e, 0x40,
+	0x43, 0xfa, 0xf0, 0x7f, 0x08, 0xdf, 0xbe, 0xff, 0xda, 0xff, 0x18, 0x57, 0xd9, 0xbf, 0xa0, 0xff,
+	0xfc, 0x16, 0x00, 0x00, 0xff, 0xff, 0x78, 0xc5, 0xed, 0x31, 0x24, 0x0d, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -1601,8 +1602,8 @@ func (c *chaincodeSupportClient) Register(ctx context.Context, opts ...grpc.Call
 }
 
 type ChaincodeSupport_RegisterClient interface {
-	Send(*ChaincodeMessage) error
-	Recv() (*ChaincodeMessage, error)
+	Send(*PtnChaincodeMessage) error
+	Recv() (*PtnChaincodeMessage, error)
 	grpc.ClientStream
 }
 
@@ -1610,12 +1611,12 @@ type chaincodeSupportRegisterClient struct {
 	grpc.ClientStream
 }
 
-func (x *chaincodeSupportRegisterClient) Send(m *ChaincodeMessage) error {
+func (x *chaincodeSupportRegisterClient) Send(m *PtnChaincodeMessage) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *chaincodeSupportRegisterClient) Recv() (*ChaincodeMessage, error) {
-	m := new(ChaincodeMessage)
+func (x *chaincodeSupportRegisterClient) Recv() (*PtnChaincodeMessage, error) {
+	m := new(PtnChaincodeMessage)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -1636,8 +1637,8 @@ func _ChaincodeSupport_Register_Handler(srv interface{}, stream grpc.ServerStrea
 }
 
 type ChaincodeSupport_RegisterServer interface {
-	Send(*ChaincodeMessage) error
-	Recv() (*ChaincodeMessage, error)
+	Send(*PtnChaincodeMessage) error
+	Recv() (*PtnChaincodeMessage, error)
 	grpc.ServerStream
 }
 
@@ -1645,12 +1646,12 @@ type chaincodeSupportRegisterServer struct {
 	grpc.ServerStream
 }
 
-func (x *chaincodeSupportRegisterServer) Send(m *ChaincodeMessage) error {
+func (x *chaincodeSupportRegisterServer) Send(m *PtnChaincodeMessage) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *chaincodeSupportRegisterServer) Recv() (*ChaincodeMessage, error) {
-	m := new(ChaincodeMessage)
+func (x *chaincodeSupportRegisterServer) Recv() (*PtnChaincodeMessage, error) {
+	m := new(PtnChaincodeMessage)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}

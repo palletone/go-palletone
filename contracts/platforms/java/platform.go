@@ -68,7 +68,7 @@ func getBuildCmd(codePackage []byte) (string, error) {
 }
 
 //ValidateSpec validates the java chaincode specs
-func (javaPlatform *Platform) ValidateSpec(spec *pb.ChaincodeSpec) error {
+func (javaPlatform *Platform) ValidateSpec(spec *pb.PtnChaincodeSpec) error {
 	path, err := url.Parse(spec.ChaincodeId.Path)
 	if err != nil || path == nil {
 		return fmt.Errorf("invalid path: %s", err)
@@ -90,17 +90,17 @@ func (javaPlatform *Platform) ValidateSpec(spec *pb.ChaincodeSpec) error {
 	return nil
 }
 
-func (javaPlatform *Platform) ValidateDeploymentSpec(cds *pb.ChaincodeDeploymentSpec) error {
+func (javaPlatform *Platform) ValidateDeploymentSpec(cds *pb.PtnChaincodeDeploymentSpec) error {
 	// FIXME: Java platform needs to implement its own validation similar to GOLANG
 	return nil
 }
 
-func (javaPlatform *Platform) GetChainCodePayload(spec *pb.ChaincodeSpec) ([]byte, error) {
+func (javaPlatform *Platform) GetChainCodePayload(spec *pb.PtnChaincodeSpec) ([]byte, error) {
 	return nil, nil
 }
 
 // WritePackage writes the java chaincode package
-func (javaPlatform *Platform) GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte, error) {
+func (javaPlatform *Platform) GetDeploymentPayload(spec *pb.PtnChaincodeSpec) ([]byte, error) {
 
 	var err error
 
@@ -130,7 +130,7 @@ func (javaPlatform *Platform) GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]by
 	return payload, nil
 }
 
-func (javaPlatform *Platform) GenerateDockerfile(cds *pb.ChaincodeDeploymentSpec) (string, error) {
+func (javaPlatform *Platform) GenerateDockerfile(cds *pb.PtnChaincodeDeploymentSpec) (string, error) {
 	var err error
 	var buf []string
 
@@ -150,10 +150,10 @@ func (javaPlatform *Platform) GenerateDockerfile(cds *pb.ChaincodeDeploymentSpec
 	return dockerFileContents, nil
 }
 
-func (javaPlatform *Platform) GenerateDockerBuild(cds *pb.ChaincodeDeploymentSpec, tw *tar.Writer) error {
+func (javaPlatform *Platform) GenerateDockerBuild(cds *pb.PtnChaincodeDeploymentSpec, tw *tar.Writer) error {
 	return cutil.WriteBytesToPackage("codepackage.tgz", cds.CodePackage, tw)
 }
 
-func (goPlatform *Platform) GetPlatformEnvPath(spec *pb.ChaincodeSpec) (string, error) {
+func (goPlatform *Platform) GetPlatformEnvPath(spec *pb.PtnChaincodeSpec) (string, error) {
 	return "", errors.New("undo")
 }

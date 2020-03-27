@@ -55,7 +55,7 @@ type Support interface {
 
 	IsSysCC(name string) bool
 
-	Execute(contractid []byte, ctxt context.Context, cid, name, version, txid string, syscc bool, signedProp *pb.SignedProposal, prop *pb.Proposal, spec interface{}, timeout time.Duration) (*pb.Response, *pb.ChaincodeEvent, error)
+	Execute(contractid []byte, ctxt context.Context, cid, name, version, txid string, syscc bool, signedProp *pb.PtnSignedProposal, prop *pb.PtnProposal, spec interface{}, timeout time.Duration) (*pb.Response, *pb.PtnChaincodeEvent, error)
 }
 
 // Endorser provides the Endorser service ProcessProposal
@@ -65,11 +65,11 @@ type Endorser struct {
 
 // validateResult provides the result of endorseProposal verification
 type validateResult struct {
-	prop *pb.Proposal
+	prop *pb.PtnProposal
 	//hdrExt  *pb.ChaincodeHeaderExtension
 	chainID string
 	txid    string
-	resp    *pb.ProposalResponse
+	resp    *pb.PtnProposalResponse
 }
 
 // NewEndorserServer creates and returns a new Endorser server instance.
@@ -81,13 +81,13 @@ func NewEndorserServer(s Support) pb.EndorserServer {
 }
 
 //call specified chaincode (system or user)
-func (e *Endorser) callChaincode(contractid []byte, ctxt context.Context, chainID string, version string, txid string, signedProp *pb.SignedProposal, prop *pb.Proposal, cis *pb.ChaincodeInvocationSpec, chaincodeName string, txsim rwset.TxSimulator, timeout time.Duration) (*pb.Response, *pb.ChaincodeEvent, error) {
+func (e *Endorser) callChaincode(contractid []byte, ctxt context.Context, chainID string, version string, txid string, signedProp *pb.PtnSignedProposal, prop *pb.PtnProposal, cis *pb.PtnChaincodeInvocationSpec, chaincodeName string, txsim rwset.TxSimulator, timeout time.Duration) (*pb.Response, *pb.PtnChaincodeEvent, error) {
 	log.Debugf("call chain code enter")
 	log.Debugf("[%s][%s] Entry chaincode: %s version: %s", chainID, shorttxid(txid), chaincodeName, version)
 	defer log.Debugf("[%s][%s] Exit", chainID, shorttxid(txid))
 	var err error
 	var res *pb.Response
-	var ccevent *pb.ChaincodeEvent
+	var ccevent *pb.PtnChaincodeEvent
 
 	if txsim != nil {
 		ctxt = context.WithValue(ctxt, core.TXSimulatorKey, txsim)
@@ -107,7 +107,7 @@ func (e *Endorser) callChaincode(contractid []byte, ctxt context.Context, chainI
 	return res, ccevent, err
 }
 
-func (e *Endorser) simulateProposal(contractid []byte, ctx context.Context, chainID string, txid string, signedProp *pb.SignedProposal, prop *pb.Proposal, cid *pb.ChaincodeID, txsim rwset.TxSimulator, tmout time.Duration) (*pb.Response, []byte, *pb.ChaincodeEvent, error) {
+func (e *Endorser) simulateProposal(contractid []byte, ctx context.Context, chainID string, txid string, signedProp *pb.PtnSignedProposal, prop *pb.PtnProposal, cid *pb.PtnChaincodeID, txsim rwset.TxSimulator, tmout time.Duration) (*pb.Response, []byte, *pb.PtnChaincodeEvent, error) {
 	log.Debugf("[%s][%s] Entry chaincode: %s", chainID, shorttxid(txid), cid)
 	defer log.Debugf("[%s][%s] Exit", chainID, shorttxid(txid))
 
@@ -139,7 +139,7 @@ func (e *Endorser) simulateProposal(contractid []byte, ctx context.Context, chai
 	//var simResult *ledger.TxSimulationResults
 	var simResBytes []byte
 	var res *pb.Response
-	var ccevent *pb.ChaincodeEvent
+	var ccevent *pb.PtnChaincodeEvent
 	res, ccevent, err = e.callChaincode(contractid, ctx, chainID, cid.Version, txid, signedProp, prop, cis, cid.Name, txsim, tmout)
 	log.Debugf("call chain code")
 	if err != nil {
@@ -157,7 +157,7 @@ func (e *Endorser) simulateProposal(contractid []byte, ctx context.Context, chai
 }
 
 //endorse the proposal
-//func (e *Endorser) endorseProposal(ctx context.Context, chainID string, txid string, signedProp *pb.SignedProposal, proposal *pb.Proposal, response *pb.Response, simRes []byte, event *pb.ChaincodeEvent, visibility []byte, ccid *pb.ChaincodeID, txsim rwset.TxSimulator) (*pb.ProposalResponse, error) {
+//func (e *Endorser) endorseProposal(ctx context.Context, chainID string, txid string, signedProp *pb.PtnSignedProposal, proposal *pb.PtnProposal, response *pb.Response, simRes []byte, event *pb.PtnChaincodeEvent, visibility []byte, ccid *pb.PtnChaincodeID, txsim rwset.TxSimulator) (*pb.PtnProposalResponse, error) {
 //	log.Debugf("[%s][%s] Entry chaincode: %s", chainID, shorttxid(txid), ccid)
 //	defer log.Debugf("[%s][%s] Exit", chainID, shorttxid(txid))
 //
@@ -165,7 +165,7 @@ func (e *Endorser) simulateProposal(contractid []byte, ctx context.Context, chai
 //}
 
 //preProcess checks the tx proposal headers, uniqueness and ACL
-func (e *Endorser) validateProcess(signedProp *pb.SignedProposal) (*validateResult, error) {
+func (e *Endorser) validateProcess(signedProp *pb.PtnSignedProposal) (*validateResult, error) {
 	vr := &validateResult{}
 
 	// extract the Proposal message from signedProp
@@ -183,18 +183,18 @@ func (e *Endorser) validateProcess(signedProp *pb.SignedProposal) (*validateResu
 	//TODO validate the header
 
 	//if err != nil {
-	//	vr.resp = &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}
+	//	vr.resp = &pb.PtnProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}
 	//	return vr, err
 	//}
 
 	chdr, err := putils.UnmarshalChannelHeader(hdr.ChannelHeader)
 	if err != nil {
-		vr.resp = &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}
+		vr.resp = &pb.PtnProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}
 		return vr, err
 	}
 	//shdr, err := putils.GetSignatureHeader(hdr.SignatureHeader)
 	//if err != nil {
-	//	vr.resp = &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}
+	//	vr.resp = &pb.PtnProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}
 	//	return vr, err
 	//}
 
@@ -204,10 +204,10 @@ func (e *Endorser) validateProcess(signedProp *pb.SignedProposal) (*validateResu
 }
 
 // ProcessProposal process the Proposal
-//func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedProposal) (*pb.ProposalResponse, error) {
+//func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.PtnSignedProposal) (*pb.PtnProposalResponse, error) {
 func (e *Endorser) ProcessProposal(rwM rwset.TxManager, idag dboperation.IContractDag, deployId []byte, ctx context.Context,
-	signedProp *pb.SignedProposal, prop *pb.Proposal, chainID string, cid *pb.ChaincodeID, tmout time.Duration) (
-	*pb.ProposalResponse, *modules.ContractInvokeResult, error) {
+	signedProp *pb.PtnSignedProposal, prop *pb.PtnProposal, chainID string, cid *pb.PtnChaincodeID, tmout time.Duration) (
+	*pb.PtnProposalResponse, *modules.ContractInvokeResult, error) {
 	log.Debugf("process proposal enter")
 	var txsim rwset.TxSimulator
 
@@ -225,12 +225,12 @@ func (e *Endorser) ProcessProposal(rwM rwset.TxManager, idag dboperation.IContra
 	txid := result.txid
 	if chainID != "" {
 		if txsim, err = e.s.GetTxSimulator(rwM, idag, txid); err != nil {
-			return &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}, nil, err
+			return &pb.PtnProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}, nil, err
 		}
 		//defer txsim.Done()
 	}
 	if err != nil {
-		return &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}, nil, err
+		return &pb.PtnProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}, nil, err
 	}
 
 	//1 -- simulate
@@ -238,14 +238,14 @@ func (e *Endorser) ProcessProposal(rwM rwset.TxManager, idag dboperation.IContra
 	log.Debugf("simulate proposal")
 	if err != nil {
 		txsim.Rollback()
-		return &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}, nil, err
+		return &pb.PtnProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}, nil, err
 	}
 	if res != nil {
 		if res.Status >= shim.ERROR {
 			log.Infof("[%s][%s] simulateProposal() resulted in chaincode, response status %d for txid %s:%s",
 				chainID, shorttxid(txid), res.Status, txid, res.Message)
 
-			resp := &pb.ProposalResponse{
+			resp := &pb.PtnProposalResponse{
 				Payload:  nil,
 				Response: &pb.Response{Status: 500, Message: res.Message}}
 			txsim.Rollback()
@@ -254,13 +254,13 @@ func (e *Endorser) ProcessProposal(rwM rwset.TxManager, idag dboperation.IContra
 	} else {
 		log.Error("simulateProposal response is nil")
 		txsim.Rollback()
-		return &pb.ProposalResponse{
+		return &pb.PtnProposalResponse{
 				Payload: nil, Response: &pb.Response{Status: 500, Message: "simulateProposal response is nil"}}, nil,
 			errors.New("Chaincode Error:simulateProposal response is nil")
 	}
 
 	//2 -- endorse and get a marshaled ProposalResponse message
-	pResp := &pb.ProposalResponse{Response: res}
+	pResp := &pb.PtnProposalResponse{Response: res}
 	cis, err := putils.GetChaincodeInvocationSpec(prop)
 	if err != nil {
 		txsim.Rollback()

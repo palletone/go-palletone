@@ -192,7 +192,7 @@ func (s *PrivateContractAPI) CcinstalltxOld(ctx context.Context, from, to string
 		cclanguage = GOLANG
 	}
 	language := strings.ToUpper(cclanguage)
-	if _, ok := peer.ChaincodeSpec_Type_value[language]; !ok {
+	if _, ok := peer.PtnChaincodeSpec_Type_value[language]; !ok {
 		return nil, errors.New(cclanguage + " language is not supported")
 	}
 
@@ -234,7 +234,7 @@ func (s *PrivateContractAPI) Ccinstalltx(ctx context.Context, from, to string, a
 		cclanguage = GOLANG
 	}
 	language := strings.ToUpper(cclanguage)
-	if _, ok := peer.ChaincodeSpec_Type_value[language]; !ok {
+	if _, ok := peer.PtnChaincodeSpec_Type_value[language]; !ok {
 		return nil, errors.New(cclanguage + " language is not supported")
 	}
 
@@ -429,7 +429,7 @@ func (s *PrivateContractAPI) Ccinstalltxfee(ctx context.Context, from, to string
 		cclanguage = GOLANG
 	}
 	language := strings.ToUpper(cclanguage)
-	if _, ok := peer.ChaincodeSpec_Type_value[language]; !ok {
+	if _, ok := peer.PtnChaincodeSpec_Type_value[language]; !ok {
 		return nil, errors.New(cclanguage + " language is not supported")
 	}
 	addrs := make([]common.Address, 0)

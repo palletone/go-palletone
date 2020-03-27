@@ -13,6 +13,7 @@ import (
 	"github.com/palletone/adaptor"
 	"github.com/palletone/btc-adaptor"
 	"github.com/palletone/eth-adaptor"
+	"github.com/palletone/fabric-adaptor"
 )
 
 var (
@@ -27,6 +28,7 @@ func setAllChain() {
 	allChain["btc"] = GetBTCAdaptor()
 	allChain["eth"] = GetETHAdaptor()
 	allChain["erc20"] = GetERC20Adaptor()
+	allChain["fabric"] = GetFabricAdaptor()
 }
 
 type Callback func() adaptor.ICryptoCurrency
@@ -55,6 +57,17 @@ func GetERC20Adaptor() adaptor.ICryptoCurrency {
 	ethAdaptor.Rawurl = cfg.Ada.Eth.Rawurl
 	ethAdaptor.TxQueryUrl = cfg.Ada.Eth.TxQueryUrl
 	return &ethAdaptor
+}
+func GetFabricAdaptor() adaptor.ICryptoCurrency {
+	var fabAdaptor fabricadaptor.AdaptorFabric
+	fabAdaptor.ConfigFile = cfg.Ada.Fab.ConfigFile
+	fabAdaptor.UserName = cfg.Ada.Fab.UserName
+	fabAdaptor.ChannelID = cfg.Ada.Fab.ChannelID
+	fabAdaptor.OrgAdmin = cfg.Ada.Fab.OrgAdmin
+	fabAdaptor.OrgName = cfg.Ada.Fab.OrgName
+	fabAdaptor.OrgID = cfg.Ada.Fab.OrgID
+	fabAdaptor.EnvGoPath = cfg.Ada.Fab.EnvGoPath
+	return &fabAdaptor
 }
 
 func ProcessOutChainCall(chaincodeID string, outChainCall *pb.OutChainCall) (result string, err error) {

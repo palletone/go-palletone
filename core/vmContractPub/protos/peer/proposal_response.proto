@@ -35,7 +35,7 @@ import "google/protobuf/timestamp.proto";
 // signature over it by that endorser.  If a sufficient number of distinct
 // endorsers agree on the same action and produce signature to that effect, a
 // transaction can be generated and sent for ordering.
-message ProposalResponse {
+message PtnProposalResponse {
 
 	// Version indicates message protocol version
 	int32 version = 1;
@@ -46,19 +46,19 @@ message ProposalResponse {
 
 	// A response message indicating whether the
 	// endorsement of the action was successful
-	Response response = 4;
+	PtnResponse response = 4;
 
 	// The payload of response. It is the bytes of ProposalResponsePayload
 	bytes payload = 5;
 
 	// The endorsement of the proposal, basically
 	// the endorser's signature over the payload
-	Endorsement endorsement = 6;
+	PtnEndorsement endorsement = 6;
 }
 
 // A response with a representation similar to an HTTP response that can
 // be used within another message.
-message Response {
+message PtnResponse {
 
 	// A status code that should follow the HTTP status codes.
 	int32 status = 1;
@@ -75,7 +75,7 @@ message Response {
 // response to that request. Concretely, for chaincodes, it contains a hashed
 // representation of the proposal (proposalHash) and a representation of the
 // chaincode state changes and events inside the extension field.
-message ProposalResponsePayload {
+message PtnProposalResponsePayload {
 
 	// Hash of the proposal that triggered this response. The hash is used to
 	// link a response with its proposal, both for bookeeping purposes on an
@@ -111,7 +111,7 @@ message ProposalResponsePayload {
 // endorsements are supposed to be collected in a transaction, and they are all
 // expected to endorse a single proposal response/action (many endorsements
 // over a single proposal response)
-message Endorsement {
+message PtnEndorsement {
 
 	// Identity of the endorser (e.g. its certificate)
 	bytes endorser = 1;

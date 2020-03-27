@@ -107,8 +107,8 @@ func (vm *InprocVM) Deploy(ctxt context.Context, ccid ccintf.CCID, args []string
 }
 
 func (ipc *inprocContainer) launchInProc(ctxt context.Context, id string, args []string, env []string, ccSupport ccintf.CCSupport) error {
-	peerRcvCCSend := make(chan *pb.ChaincodeMessage)
-	ccRcvPeerSend := make(chan *pb.ChaincodeMessage)
+	peerRcvCCSend := make(chan *pb.PtnChaincodeMessage)
+	ccRcvPeerSend := make(chan *pb.PtnChaincodeMessage)
 	var err error
 	ccchan := make(chan struct{}, 1)
 	ccsupportchan := make(chan struct{}, 1)

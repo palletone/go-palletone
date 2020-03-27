@@ -277,7 +277,7 @@ type ChaincodeStubInterface interface {
 	// GetSignedProposal returns the SignedProposal object, which contains all
 	// data elements part of a transaction proposal.
 	//TODO
-	//GetSignedProposal() (*pb.SignedProposal, error)
+	//GetSignedProposal() (*pb.PtnSignedProposal, error)
 }
 
 // CommonIteratorInterface allows a chaincode to check whether any more result

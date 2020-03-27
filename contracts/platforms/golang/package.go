@@ -68,7 +68,7 @@ type CodeDescriptor struct {
 //
 //NOTE: for dev mode, user builds and runs chaincode manually. The name provided
 //by the user is equivalent to the path.
-func getCodeDescriptor(spec *pb.ChaincodeSpec) (*CodeDescriptor, error) {
+func getCodeDescriptor(spec *pb.PtnChaincodeSpec) (*CodeDescriptor, error) {
 	if spec == nil {
 		return nil, errors.New("Cannot collect files from nil spec")
 	}

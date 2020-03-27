@@ -31,11 +31,13 @@ require (
 	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/martinlindhe/base36 v0.0.0-20180729042928-5cda0030da17
 	github.com/mattn/go-colorable v0.0.9
+	github.com/mitchellh/mapstructure v1.2.2 // indirect
 	github.com/naoina/toml v0.0.0-20170410220130-ac014c6b6502
 	github.com/palletone/adaptor v1.0.1-0.20191204100220-740fe858e09b
 	github.com/palletone/btc-adaptor v1.0.1-0.20191224041536-3348ea137f6e
 	github.com/palletone/digital-identity v0.6.1-0.20190729063546-3dca665105bb
 	github.com/palletone/eth-adaptor v1.1.1-0.20200114040401-8226d1a11f3f
+	github.com/palletone/fabric-adaptor v0.0.0-20200327133758-e7f247ade38e
 	github.com/pborman/uuid v1.2.0
 	github.com/peterh/liner v0.0.0-20170902204657-a37ad3984311
 	github.com/pkg/errors v0.8.1
@@ -61,7 +63,7 @@ require (
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4
 	golang.org/x/net v0.0.0-20190724013045-ca1201d0de80
 	golang.org/x/tools v0.0.0-20191029190741-b9c20aec41a5
-	google.golang.org/grpc v1.22.0
+	google.golang.org/grpc v1.23.0
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127
 	gopkg.in/errgo.v1 v1.0.1
 	gopkg.in/karalabe/cookiejar.v2 v2.0.0-20150724131613-8dcd6a7f4951

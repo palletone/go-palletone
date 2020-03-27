@@ -57,7 +57,7 @@ func pathExists(path string) (bool, error) {
 }
 
 // ValidateSpec validates Go chaincodes
-func (nodePlatform *Platform) ValidateSpec(spec *pb.ChaincodeSpec) error {
+func (nodePlatform *Platform) ValidateSpec(spec *pb.PtnChaincodeSpec) error {
 	path, err := url.Parse(spec.ChaincodeId.Path)
 	if err != nil || path == nil {
 		return fmt.Errorf("invalid path: %s", err)
@@ -81,7 +81,7 @@ func (nodePlatform *Platform) ValidateSpec(spec *pb.ChaincodeSpec) error {
 	return nil
 }
 
-func (nodePlatform *Platform) ValidateDeploymentSpec(cds *pb.ChaincodeDeploymentSpec) error {
+func (nodePlatform *Platform) ValidateDeploymentSpec(cds *pb.PtnChaincodeDeploymentSpec) error {
 
 	if cds.CodePackage == nil || len(cds.CodePackage) == 0 {
 		// Nothing to validate if no CodePackage was included
@@ -140,12 +140,12 @@ func (nodePlatform *Platform) ValidateDeploymentSpec(cds *pb.ChaincodeDeployment
 	return nil
 }
 
-func (nodePlatform *Platform) GetChainCodePayload(spec *pb.ChaincodeSpec) ([]byte, error) {
+func (nodePlatform *Platform) GetChainCodePayload(spec *pb.PtnChaincodeSpec) ([]byte, error) {
 	return nil, nil
 }
 
 // Generates a deployment payload by putting source files in src/$file entries in .tar.gz format
-func (nodePlatform *Platform) GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte, error) {
+func (nodePlatform *Platform) GetDeploymentPayload(spec *pb.PtnChaincodeSpec) ([]byte, error) {
 
 	var err error
 
@@ -185,7 +185,7 @@ func (nodePlatform *Platform) GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]by
 	return payload.Bytes(), nil
 }
 
-func (nodePlatform *Platform) GenerateDockerfile(cds *pb.ChaincodeDeploymentSpec) (string, error) {
+func (nodePlatform *Platform) GenerateDockerfile(cds *pb.PtnChaincodeDeploymentSpec) (string, error) {
 
 	var buf []string
 
@@ -197,7 +197,7 @@ func (nodePlatform *Platform) GenerateDockerfile(cds *pb.ChaincodeDeploymentSpec
 	return dockerFileContents, nil
 }
 
-func (nodePlatform *Platform) GenerateDockerBuild(cds *pb.ChaincodeDeploymentSpec, tw *tar.Writer) error {
+func (nodePlatform *Platform) GenerateDockerBuild(cds *pb.PtnChaincodeDeploymentSpec, tw *tar.Writer) error {
 
 	codepackage := bytes.NewReader(cds.CodePackage)
 	binpackage := bytes.NewBuffer(nil)
@@ -213,6 +213,6 @@ func (nodePlatform *Platform) GenerateDockerBuild(cds *pb.ChaincodeDeploymentSpe
 	return cutil.WriteBytesToPackage("binpackage.tar", binpackage.Bytes(), tw)
 }
 
-func (goPlatform *Platform) GetPlatformEnvPath(spec *pb.ChaincodeSpec) (string, error) {
+func (goPlatform *Platform) GetPlatformEnvPath(spec *pb.PtnChaincodeSpec) (string, error) {
 	return "", errors.New("undo")
 }
