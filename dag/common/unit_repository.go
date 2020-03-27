@@ -122,6 +122,7 @@ type UnitRepository struct {
 	tokenEngine    tokenengine.ITokenEngine
 	lock           sync.RWMutex
 	observers      []AfterSysContractStateChangeEventFunc
+	enableGasFee   bool
 }
 
 //type Observer interface {
@@ -133,7 +134,7 @@ type AfterSysContractStateChangeEventFunc func(event *modules.SysContractStateCh
 func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb,
 	txutxodb storage.IUtxoDb, requtxodb storage.IUtxoDb, statedb storage.IStateDb,
 	propdb storage.IPropertyDb,
-	engine tokenengine.ITokenEngine) *UnitRepository {
+	engine tokenengine.ITokenEngine, enableGasFee bool) *UnitRepository {
 	utxoRep := NewUtxoRepository(txutxodb, requtxodb, idxdb, statedb, propdb, engine)
 
 	return &UnitRepository{
@@ -144,10 +145,11 @@ func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb,
 		utxoRepository: utxoRep,
 		propdb:         propdb,
 		tokenEngine:    engine,
+		enableGasFee:   enableGasFee,
 	}
 }
 
-func NewUnitRepository4Db(db ptndb.Database, tokenEngine tokenengine.ITokenEngine) *UnitRepository {
+func NewUnitRepository4Db(db ptndb.Database, tokenEngine tokenengine.ITokenEngine, enableGasFee bool) *UnitRepository {
 	dagdb := storage.NewDagDb(db)
 	txutxodb := storage.NewUtxoDb(db, tokenEngine, false)
 	requtxodb := storage.NewUtxoDb(db, tokenEngine, true)
@@ -163,6 +165,7 @@ func NewUnitRepository4Db(db ptndb.Database, tokenEngine tokenengine.ITokenEngin
 		propdb:         propdb,
 		utxoRepository: utxoRep,
 		tokenEngine:    tokenEngine,
+		enableGasFee:   enableGasFee,
 	}
 }
 func (rep *UnitRepository) GetDb() ptndb.Database {
@@ -1014,7 +1017,7 @@ func (rep *UnitRepository) SaveTransaction(tx *modules.Transaction, txIndex int)
 func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modules.Transaction) error {
 	var requester common.Address
 	var err error
-	if txIndex > 0 { //coinbase don't have requester
+	if txIndex > 0 || !rep.enableGasFee { //coinbase don't have requester
 		//requester, err = rep.GetTxRequesterAddress(tx)
 		addrs, err := tx.GetFromAddrs(rep.utxoRepository.GetUtxoEntry, rep.tokenEngine.GetAddressFromScript)
 		if err != nil || len(addrs) == 0 {

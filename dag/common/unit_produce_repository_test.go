@@ -22,9 +22,10 @@ package common
 
 import (
 	"encoding/json"
-	"github.com/palletone/go-palletone/tokenengine"
 	"testing"
 	"time"
+
+	"github.com/palletone/go-palletone/tokenengine"
 
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/uint128"
@@ -37,7 +38,7 @@ func Test_UnitProduceRepository_UpdateSysParams(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-	upRep := NewUnitProduceRepository4Db(db, tokenengine.Instance)
+	upRep := NewUnitProduceRepository4Db(db, tokenengine.Instance, true)
 
 	// 初始化若干个链参数
 	gp := modules.NewGlobalProp()
@@ -139,7 +140,7 @@ func Test_updateAndSaveRecentSlotsFilled(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-	upRep := NewUnitProduceRepository4Db(db, tokenengine.Instance)
+	upRep := NewUnitProduceRepository4Db(db, tokenengine.Instance, true)
 
 	upRep.propRep.StoreDynGlobalProp(dgp)
 	dgp1, err := upRep.propRep.RetrieveDynGlobalProp()

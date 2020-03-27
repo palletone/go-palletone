@@ -152,7 +152,7 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly, enableGasFe
 		validatorBuilderFunc: builderFunc,
 		tokenEngine:          tokenEngine,
 		observers:            []SwitchMainChainEventFunc{},
-		enableGasFee:enableGasFee,
+		enableGasFee:         enableGasFee,
 	}
 	memdag.stableUnitHash.Store(stablehash)
 	memdag.stableUnitHeight.Store(index)
@@ -162,11 +162,11 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly, enableGasFe
 	memdag.tempdb.Store(stablehash, temp)
 	memdag.chainUnits.Store(stablehash, temp)
 	// init ldbvalidator
-	trep := common2.NewUnitRepository4Db(db, tokenEngine)
+	trep := common2.NewUnitRepository4Db(db, tokenEngine, enableGasFee)
 	tutxoRep := common2.NewUtxoRepository4Db(db, tokenEngine)
 	tstateRep := common2.NewStateRepository4Db(db)
 	tpropRep := common2.NewPropRepository4Db(db)
-	contractDag := NewContractSupportRepository(db)
+	contractDag := NewContractSupportRepository(db, enableGasFee)
 	val := builderFunc(trep, tutxoRep, tstateRep, tpropRep, contractDag, cache, saveHeaderOnly, enableGasFee)
 	//val.SetBuildTempContractDagFunc(buildTempContractDagFunc)
 	val.SetContractTxCheckFun(jury.CheckContractTxResult)
@@ -207,7 +207,7 @@ func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2
 	if chain.GetLastMainChainUnit() == nil {
 		log.Infof("the last_unit is nil, want rebuild memdag repository by db.")
 		tempdb, _ := ptndb.NewTempdb(chain.db)
-		trep := common2.NewUnitRepository4Db(tempdb, chain.tokenEngine)
+		trep := common2.NewUnitRepository4Db(tempdb, chain.tokenEngine, chain.enableGasFee)
 		tutxoRep := common2.NewUtxoRepository4Db(tempdb, chain.tokenEngine)
 		tstateRep := common2.NewStateRepository4Db(tempdb)
 		tpropRep := common2.NewPropRepository4Db(tempdb)
@@ -221,7 +221,7 @@ func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2
 		if !has {
 			log.Warnf("the last_unit: %s , is not exist in memdag", last_main_hash.String())
 			tempdb, _ := ptndb.NewTempdb(chain.db)
-			trep := common2.NewUnitRepository4Db(tempdb, chain.tokenEngine)
+			trep := common2.NewUnitRepository4Db(tempdb, chain.tokenEngine, chain.enableGasFee)
 			tutxoRep := common2.NewUtxoRepository4Db(tempdb, chain.tokenEngine)
 			tstateRep := common2.NewStateRepository4Db(tempdb)
 			tpropRep := common2.NewPropRepository4Db(tempdb)
@@ -233,7 +233,7 @@ func (chain *MemDag) GetUnstableRepositories() (common2.IUnitRepository, common2
 	} else { // 如果lastmainUnit很久没更新了，既快速同步刚结束时，使用stalbeUnit重构tempdb状态
 		if temp_rep.Unit.NumberU64() < chain.GetLastStableUnitHeight() {
 			tempdb, _ := ptndb.NewTempdb(chain.db)
-			trep := common2.NewUnitRepository4Db(tempdb, chain.tokenEngine)
+			trep := common2.NewUnitRepository4Db(tempdb, chain.tokenEngine, chain.enableGasFee)
 			tutxoRep := common2.NewUtxoRepository4Db(tempdb, chain.tokenEngine)
 			tstateRep := common2.NewStateRepository4Db(tempdb)
 			tpropRep := common2.NewPropRepository4Db(tempdb)
