@@ -61,7 +61,6 @@ type UnitProduceRepository struct {
 
 	// append by albert·gou 用于account 各种投票数据统计
 	mediatorVoteTally voteTallys
-	enableGasFee      bool
 }
 
 type AfterChainMaintenanceEventFunc func(event *modules.ChainMaintenanceEvent)
