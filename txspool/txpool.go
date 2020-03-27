@@ -315,17 +315,14 @@ func (pool *TxPool) stats() (int, int, int) {
 	for _, tx := range poolTxs {
 		if tx.Pending {
 			p_count++
-		} else {
-			q_count++
-		}
-	}
-	for _, tx := range orphanTxs {
-		if !tx.Pending {
+		} else if !tx.IsOrphan {
 			q_count++
 		}
 	}
 	for _, tx := range seq_txs {
-		if !tx.Pending {
+		if tx.Pending {
+			p_count++
+		} else {
 			q_count++
 		}
 	}
@@ -632,6 +629,7 @@ func (pool *TxPool) add(tx *modules.Transaction, local bool) (bool, error) {
 			for _, tx := range drop {
 				log.Trace("Discarding freshly underpriced transaction", "hash", hash, "price", tx.GetTxFee().Int64())
 				pool.removeTransaction(tx, true)
+				pool.removeTx(tx.Tx.Hash())
 			}
 		}
 	}
@@ -827,9 +825,6 @@ func (pool *TxPool) maybeAcceptTransaction(tx *modules.Transaction) error {
 		return nil
 	}
 
-	// Perform preliminary sanity checks on the transaction.  This makes
-	// use of blockchain which contains the invariant rules for what
-	// transactions are allowed into blocks.
 	err := CheckTransactionSanity(tx)
 	if err != nil {
 		log.Info("Check Transaction Sanity err:", "error", err)
@@ -931,11 +926,8 @@ func (pool *TxPool) getPoolTxsByAddr(addr common.Address, onlyUnpacked bool) ([]
 	}
 	for _, tx := range poolTxs {
 		// 如果已被打包，则忽略
-		if tx.Pending {
-			continue
-		}
-		// 事件通知bug，导致交易池某些交易的pending状态没及时更新。
-		if exist, _ := pool.unit.IsTransactionExist(tx.Tx.Hash()); exist {
+		_, status, _ := pool.unit.GetLocalTx(tx.Tx.Hash())
+		if status == modules.TxStatus_Unstable || status == modules.TxStatus_Stable || tx.Pending {
 			continue
 		}
 		if tx.IsFrom(addr) || tx.IsTo(addr) {
@@ -948,8 +940,6 @@ func (pool *TxPool) getPoolTxsByAddr(addr common.Address, onlyUnpacked bool) ([]
 // Get returns a transaction if it is contained in the pool
 // and nil otherwise.
 func (pool *TxPool) GetTx(hash common.Hash) (*TxPoolTransaction, error) {
-	//var u_hash common.Hash
-	//tx := new(TxPoolTransaction)
 	interTx, has := pool.all.Load(hash)
 	if has {
 		tx := interTx.(*TxPoolTransaction)
@@ -1043,8 +1033,6 @@ func (pool *TxPool) removeTx(hash common.Hash) {
 		return
 	}
 	tx.Discarded = true
-	// Remove it from the list of known transactions
-	// pool.priority_sorted.Removed(hash)
 	pool.all.Store(hash, tx)
 
 	for i, msg := range tx.Tx.TxMessages() {
@@ -1077,7 +1065,7 @@ func (pool *TxPool) RemoveTxs(hashs []common.Hash) {
 func (pool *TxPool) removeTransaction(tx *TxPoolTransaction, removeRedeemers bool) {
 	hash := tx.Tx.Hash()
 	if removeRedeemers {
-		// Remove any transactions whitch rely on this one.
+		// 删除所有引用该交易的交易。
 		for i, msgcopy := range tx.Tx.TxMessages() {
 			if msgcopy.App == modules.APP_PAYMENT {
 				if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
@@ -1092,51 +1080,23 @@ func (pool *TxPool) removeTransaction(tx *TxPoolTransaction, removeRedeemers boo
 		}
 	}
 	// Remove the transaction if needed.
-	interTx, has := pool.all.Load(hash)
+	_, has := pool.all.Load(hash)
 	if !has {
 		return
 	}
-	if pooltx, ok := interTx.(*TxPoolTransaction); ok {
-		// mark the referenced outpoints as unspent by the pool.
-		for _, msgcopy := range pooltx.Tx.TxMessages() {
-			if msgcopy.App == modules.APP_PAYMENT {
-				if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
-					for _, input := range msg.Inputs {
-						pool.outpoints.Delete(*input.PreviousOutPoint)
-					}
+	// mark the referenced outpoints as unspent by the pool.
+	for _, msgcopy := range tx.Tx.TxMessages() {
+		if msgcopy.App == modules.APP_PAYMENT {
+			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
+				for _, input := range msg.Inputs {
+					pool.outpoints.Delete(*input.PreviousOutPoint)
 				}
 			}
 		}
-		tx.Discarded = true
-		pool.all.Store(hash, tx)
-		//pool.priority_sorted.Removed(hash)
 	}
-}
-func (pool *TxPool) RemoveTransaction(hash common.Hash, removeRedeemers bool) {
-	if interTx, has := pool.all.Load(hash); has {
-		go pool.removeTransaction(interTx.(*TxPoolTransaction), removeRedeemers)
-	} else {
-		go pool.removeTx(hash)
-	}
-}
+	tx.Discarded = true
+	pool.all.Store(hash, tx)
 
-// RemoveDoubleSpends removes all transactions whitch spend outpoints spent by the passed
-// transaction from the memory pool. Removing those transactions then leads to removing all
-// transaction whitch rely on them, recursively. This is necessary when a blocks is connected
-// to the main chain because the block may contain transactions whitch were previously unknow to
-// the memory pool.
-func (pool *TxPool) RemoveDoubleSpends(tx *modules.Transaction) {
-	for _, msg := range tx.TxMessages() {
-		if msg.App == modules.APP_PAYMENT {
-			inputs := msg.Payload.(*modules.PaymentPayload)
-			for _, input := range inputs.Inputs {
-				if tx, ok := pool.outpoints.Load(*input.PreviousOutPoint); ok {
-					ptx := tx.(*TxPoolTransaction)
-					go pool.removeTransaction(ptx, true)
-				}
-			}
-		}
-	}
 }
 
 func (pool *TxPool) checkPoolDoubleSpend(tx *modules.Transaction) error {
@@ -1368,10 +1328,26 @@ func (pool *TxPool) SetPendingTxs(unit_hash common.Hash, num uint64, txs []*modu
 	return nil
 }
 func (pool *TxPool) setPendingTx(unit_hash common.Hash, tx *modules.Transaction, number, index uint64) error {
-	// add in pool
+	// convert
 	p_tx := pool.convertBaseTx(tx)
-	// 将该交易的输入输出缓存到交易池
-	pool.addCache(p_tx)
+	//如果是系统合约，那么需要按RequestHash去查找并改变状态
+	if tx.IsSystemContract() {
+		if !pool.isTransactionInPool(tx.RequestHash()) {
+			//如果有交易没有出现在交易池中，则直接补充
+			e := pool.addLocal(tx.GetRequestTx())
+			if e != nil {
+				return e
+			}
+		}
+	} else {
+		if !pool.isTransactionInPool(tx.Hash()) {
+			//如果有交易没有出现在交易池中，则直接补充
+			e := pool.addLocal(tx)
+			if e != nil {
+				return e
+			}
+		}
+	}
 	// 更新交易的状态及utxo状态
 	pool.promoteTx(unit_hash, p_tx, number, index)
 	return nil
@@ -1822,6 +1798,8 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 
 func (pool *TxPool) deleteOrphanTxOutputs(outpoint modules.OutPoint) {
 	pool.outputs.Delete(outpoint)
+	// 删除缓存的req utxo
+	pool.reqOutputs.Delete(outpoint)
 }
 
 func (pool *TxPool) deletePoolUtxos(tx *modules.Transaction) {
@@ -1831,8 +1809,6 @@ func (pool *TxPool) deletePoolUtxos(tx *modules.Transaction) {
 			if ok {
 				for _, in := range payment.Inputs {
 					pool.deleteOrphanTxOutputs(*in.PreviousOutPoint)
-					// 删除缓存的req utxo
-					pool.reqOutputs.Delete(*in.PreviousOutPoint)
 				}
 			}
 		}

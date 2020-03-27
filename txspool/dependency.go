@@ -67,6 +67,8 @@ type IDag interface {
 	GetJurorReward(jurorAdd common.Address) common.Address
 	GetAddrUtxoAndReqMapping(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, map[common.Hash]common.Hash, error)
 	CheckReadSetValid(contractId []byte, readSet []modules.ContractReadSet) bool
+	// localdb
+	GetLocalTx(txId common.Hash) (*modules.Transaction, modules.TxStatus, error)
 }
 
 type IValidator interface {

@@ -130,13 +130,13 @@ func (l *txPrioritiedList) Removed() {
 	}
 	// Seems we've reached a critical number of stale transactions, reheap
 	reheap := make(priorityHeap, 0)
-
 	l.stales, l.items = 0, &reheap
 	all := l.All()
 	for _, tx := range all {
-		if !tx.Pending && !tx.Discarded {
-			*l.items = append(*l.items, tx)
+		if tx.Pending || tx.Discarded {
+			continue
 		}
+		*l.items = append(*l.items, tx)
 	}
 	sort.Sort(*l.items)
 }
