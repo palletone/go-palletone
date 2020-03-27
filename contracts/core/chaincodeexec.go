@@ -103,11 +103,11 @@ func GetChaincodeDefinition(ctxt context.Context, txid string, signedProp *pb.Pt
 }
 
 // ExecuteChaincode executes a given chaincode given chaincode name and arguments
-func ExecuteChaincode(ctxt context.Context, cccid *ccprovider.CCContext, args [][]byte, timeout time.Duration) (*pb.Response, *pb.PtnChaincodeEvent, error) {
+func ExecuteChaincode(ctxt context.Context, cccid *ccprovider.CCContext, args [][]byte, timeout time.Duration) (*pb.PtnResponse, *pb.PtnChaincodeEvent, error) {
 	log.Debugf("execute chain code")
 	var spec *pb.PtnChaincodeInvocationSpec
 	var err error
-	var res *pb.Response
+	var res *pb.PtnResponse
 	var ccevent *pb.PtnChaincodeEvent
 
 	spec= createCIS(cccid.Name, args)

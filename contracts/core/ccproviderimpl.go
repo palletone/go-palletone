@@ -82,12 +82,12 @@ func (c *ccProviderImpl) GetCCContext(contractid []byte, cid, name, version, txi
 }
 
 // ExecuteChaincode executes the chaincode specified in the context with the specified arguments
-func (c *ccProviderImpl) ExecuteChaincode(ctxt context.Context, cccid interface{}, args [][]byte, timeout time.Duration) (*pb.Response, *pb.PtnChaincodeEvent, error) {
+func (c *ccProviderImpl) ExecuteChaincode(ctxt context.Context, cccid interface{}, args [][]byte, timeout time.Duration) (*pb.PtnResponse, *pb.PtnChaincodeEvent, error) {
 	return ExecuteChaincode(ctxt, cccid.(*ccProviderContextImpl).ctx, args, timeout)
 }
 
 // Execute executes the chaincode given context and spec (invocation or deploy)
-func (c *ccProviderImpl) Execute(ctxt context.Context, cccid interface{}, spec interface{}, timeout time.Duration) (*pb.Response, *pb.PtnChaincodeEvent, error) {
+func (c *ccProviderImpl) Execute(ctxt context.Context, cccid interface{}, spec interface{}, timeout time.Duration) (*pb.PtnResponse, *pb.PtnChaincodeEvent, error) {
 	return Execute(ctxt, cccid.(*ccProviderContextImpl).ctx, spec, timeout)
 }
 

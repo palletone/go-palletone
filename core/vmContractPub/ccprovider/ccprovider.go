@@ -488,9 +488,9 @@ type ChaincodeProvider interface {
 	// GetCCContext returns an opaque chaincode context
 	GetCCContext(contractid []byte, cid, name, version, txid string, syscc bool, signedProp *pb.PtnSignedProposal, prop *pb.PtnProposal) interface{}
 	// ExecuteChaincode executes the chaincode given context and args
-	ExecuteChaincode(ctxt context.Context, cccid interface{}, args [][]byte, timeout time.Duration) (*pb.Response, *pb.PtnChaincodeEvent, error)
+	ExecuteChaincode(ctxt context.Context, cccid interface{}, args [][]byte, timeout time.Duration) (*pb.PtnResponse, *pb.PtnChaincodeEvent, error)
 	// Execute executes the chaincode given context and spec (invocation or deploy)
-	Execute(ctxt context.Context, cccid interface{}, spec interface{}, timeout time.Duration) (*pb.Response, *pb.PtnChaincodeEvent, error)
+	Execute(ctxt context.Context, cccid interface{}, spec interface{}, timeout time.Duration) (*pb.PtnResponse, *pb.PtnChaincodeEvent, error)
 	// ExecuteWithErrorFilter executes the chaincode given context and spec and returns payload
 	ExecuteWithErrorFilter(ctxt context.Context, cccid interface{}, spec interface{}, timeout time.Duration) ([]byte, *pb.PtnChaincodeEvent, error)
 	// Stop stops the chaincode given context and deployment spec

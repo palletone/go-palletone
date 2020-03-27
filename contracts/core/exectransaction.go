@@ -34,7 +34,7 @@ import (
 )
 
 //Execute - execute proposal, return original response of chaincode
-func Execute(ctxt context.Context, cccid *ccprovider.CCContext, spec interface{}, timeout time.Duration) (*pb.Response, *pb.PtnChaincodeEvent, error) {
+func Execute(ctxt context.Context, cccid *ccprovider.CCContext, spec interface{}, timeout time.Duration) (*pb.PtnResponse, *pb.PtnChaincodeEvent, error) {
 	log.Debugf("execute enter")
 	var err error
 	var cds *pb.PtnChaincodeDeploymentSpec
@@ -79,7 +79,7 @@ func Execute(ctxt context.Context, cccid *ccprovider.CCContext, spec interface{}
 	}
 
 	if resp.Type == pb.PtnChaincodeMessage_COMPLETED {
-		res := &pb.Response{}
+		res := &pb.PtnResponse{}
 		unmarshalErr := proto.Unmarshal(resp.Payload, res)
 		if unmarshalErr != nil {
 			return nil, nil, errors.Wrap(unmarshalErr, fmt.Sprintf("failed to unmarshal response for txid (%s)", cccid.TxID))

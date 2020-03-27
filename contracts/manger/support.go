@@ -60,7 +60,7 @@ func (s *SupportImpl) IsSysCC(name string) bool {
 }
 
 //Execute - execute proposal, return original response of chaincode
-func (s *SupportImpl) Execute(contractid []byte, ctxt context.Context, cid, name, version, txid string, syscc bool, signedProp *pb.PtnSignedProposal, prop *pb.PtnProposal, spec interface{}, timeout time.Duration) (*pb.Response, *pb.PtnChaincodeEvent, error) {
+func (s *SupportImpl) Execute(contractid []byte, ctxt context.Context, cid, name, version, txid string, syscc bool, signedProp *pb.PtnSignedProposal, prop *pb.PtnProposal, spec interface{}, timeout time.Duration) (*pb.PtnResponse, *pb.PtnChaincodeEvent, error) {
 	log.Debugf("execute enter")
 	cccid := ccprovider.NewCCContext(contractid, cid, name, version, txid, syscc, signedProp, prop)
 
