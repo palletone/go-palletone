@@ -1547,9 +1547,9 @@ func (mr *MockIDagMockRecorder) RefreshAddrTxIndex() *gomock.Call {
 }
 
 // GenVoteMediatorTx mocks base method
-func (m *MockIDag) GenVoteMediatorTx(voter common.Address, mediators map[string]bool) (*modules.Transaction, uint64, error) {
+func (m *MockIDag) GenVoteMediatorTx(voter common.Address, mediators map[string]bool, enableGasFee bool) (*modules.Transaction, uint64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GenVoteMediatorTx", voter, mediators)
+	ret := m.ctrl.Call(m, "GenVoteMediatorTx", voter, mediators, enableGasFee)
 	ret0, _ := ret[0].(*modules.Transaction)
 	ret1, _ := ret[1].(uint64)
 	ret2, _ := ret[2].(error)
@@ -1557,9 +1557,9 @@ func (m *MockIDag) GenVoteMediatorTx(voter common.Address, mediators map[string]
 }
 
 // GenVoteMediatorTx indicates an expected call of GenVoteMediatorTx
-func (mr *MockIDagMockRecorder) GenVoteMediatorTx(voter, mediators interface{}) *gomock.Call {
+func (mr *MockIDagMockRecorder) GenVoteMediatorTx(voter, mediators, enableGasFee interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenVoteMediatorTx", reflect.TypeOf((*MockIDag)(nil).GenVoteMediatorTx), voter, mediators)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenVoteMediatorTx", reflect.TypeOf((*MockIDag)(nil).GenVoteMediatorTx), voter, mediators, enableGasFee)
 }
 
 // GetDynGlobalProp mocks base method
