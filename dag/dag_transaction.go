@@ -48,8 +48,27 @@ func newTxo4Greedy(outPoint modules.OutPoint, amount uint64) *Txo4Greedy {
 	}
 }
 
-func (dag *Dag) createBaseTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,enableGasFee bool) (*modules.Transaction, error) {
-	daoTotal := daoAmount + daoFee
+func (dag *Dag) createBaseTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
+	enableGasFee bool) (*modules.Transaction, error) {
+	//daoTotal := daoAmount + daoFee
+	daoTotal := daoAmount
+	if from.Equal(to) {
+		if enableGasFee {
+			daoTotal += daoFee
+		} else {
+			tx := &modules.Transaction{}
+			certIDBytes := []byte{}
+			if certID != nil {
+				certIDBytes = certID.Bytes()
+			}
+			tx.SetCertId(certIDBytes)
+			return tx, nil
+		}
+	} else {
+		if enableGasFee {
+			daoTotal += daoFee
+		}
+	}
 	// 1. 获取转出账户所有的PTN utxo
 	//allUtxos, err := dag.GetAddrUtxos(from)
 	coreUtxos, err := dag.getAddrCoreUtxos(from)
@@ -111,12 +130,14 @@ func (dag *Dag) createBaseTransaction(from, to common.Address, daoAmount, daoFee
 	}
 
 	// 5. 构建Transaction
+
 	certIDBytes := []byte{}
 	if certID != nil {
 		certIDBytes = certID.Bytes()
 	}
 	tx := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_PAYMENT, pload)})
 	tx.SetCertId(certIDBytes)
+
 	return tx, nil
 }
 
@@ -321,6 +342,7 @@ func (dag *Dag) CreateGenericTransaction(from, to common.Address, daoAmount, dao
 	if err != nil {
 		return nil, 0, err
 	}
+
 	tx.AddMessage(msg)
 
 	return tx, daoFee, nil

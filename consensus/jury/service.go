@@ -876,6 +876,19 @@ func (p *Processor) createContractTxReq(contractId, from, to common.Address, dao
 	if err != nil {
 		return common.Hash{}, nil, err
 	}
+	//  构造 signature
+	if !p.ptn.EnableGasFee() && from.Equal(to) {
+		ks := p.ptn.GetKeyStore()
+		pubKey, err := ks.GetPublicKey(from)
+		if err != nil {
+			return common.Hash{}, nil, err
+		}
+		sign, err := ks.SigData(tx, from)
+		if err != nil {
+			return common.Hash{}, nil, err
+		}
+		tx.AddMessage(modules.NewMessage(modules.APP_SIGNATURE, modules.NewSignaturePayload(pubKey, sign)))
+	}
 	return p.signGenericTx(contractId, from, tx)
 }
 func (p *Processor) SignAndExecuteAndSendRequest(from common.Address,
@@ -904,9 +917,11 @@ func (p *Processor) signGenericTx(contractId common.Address, from common.Address
 	defer p.locker.Unlock()
 
 	reqId := tx.RequestHash()
-	if p.validator.ValidateTxFeeEnough(tx, ContractDefaultSignatureSize+ContractDefaultRWSize,
-		0) != validator.TxValidationCode_VALID {
-		return common.Hash{}, nil, fmt.Errorf("signGenericTx, tx fee is invalid")
+	if p.ptn.EnableGasFee() {
+		if p.validator.ValidateTxFeeEnough(tx, ContractDefaultSignatureSize+ContractDefaultRWSize,
+			0) != validator.TxValidationCode_VALID {
+			return common.Hash{}, nil, fmt.Errorf("signGenericTx, tx fee is invalid")
+		}
 	}
 	log.Debugf("[%s]signGenericTx, contractId[%s]", reqId.ShortStr(), contractId.String())
 	if p.mtx[reqId] != nil {
