@@ -174,10 +174,10 @@ func (mr *MockChaincodeStubInterfaceMockRecorder) GetChannelID() *gomock.Call {
 }
 
 // InvokeChaincode mocks base method
-func (m *MockChaincodeStubInterface) InvokeChaincode(chaincodeName string, args [][]byte, channel string) peer.PtnResponse {
+func (m *MockChaincodeStubInterface) InvokeChaincode(chaincodeName string, args [][]byte, channel string) peer.Response {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "InvokeChaincode", chaincodeName, args, channel)
-	ret0, _ := ret[0].(peer.PtnResponse)
+	ret0, _ := ret[0].(peer.Response)
 	return ret0
 }
 

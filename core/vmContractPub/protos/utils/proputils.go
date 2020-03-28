@@ -77,8 +77,8 @@ func GetChaincodeProposalContext(prop *peer.PtnProposal) ([]byte, map[string][]b
 		return nil, nil, fmt.Errorf("Could not extract the channel header from the proposal: %s", err)
 	}
 
-	if common.HeaderType(chdr.Type) != common.HeaderType_ENDORSER_TRANSACTION &&
-		common.HeaderType(chdr.Type) != common.HeaderType_CONFIG {
+	if common.PtnHeaderType(chdr.Type) != common.PtnHeaderType_ENDORSER_TRANSACTION &&
+		common.PtnHeaderType(chdr.Type) != common.PtnHeaderType_CONFIG {
 		return nil, nil, fmt.Errorf("Invalid proposal type expected ENDORSER_TRANSACTION or CONFIG. Was: %d", chdr.Type)
 	}
 
@@ -97,8 +97,8 @@ func GetChaincodeProposalContext(prop *peer.PtnProposal) ([]byte, map[string][]b
 }
 
 // GetHeader Get Header from bytes
-func GetHeader(bytes []byte) (*common.Header, error) {
-	hdr := &common.Header{}
+func GetHeader(bytes []byte) (*common.PtnHeader, error) {
+	hdr := &common.PtnHeader{}
 	err := proto.Unmarshal(bytes, hdr)
 	return hdr, err
 }
@@ -119,8 +119,8 @@ func GetNonce(prop *peer.PtnProposal) ([]byte, error) {
 		return nil, fmt.Errorf("Could not extract the channel header from the proposal: %s", err)
 	}
 
-	if common.HeaderType(chdr.Type) != common.HeaderType_ENDORSER_TRANSACTION &&
-		common.HeaderType(chdr.Type) != common.HeaderType_CONFIG {
+	if common.PtnHeaderType(chdr.Type) != common.PtnHeaderType_ENDORSER_TRANSACTION &&
+		common.PtnHeaderType(chdr.Type) != common.PtnHeaderType_CONFIG {
 		return nil, fmt.Errorf("Invalid proposal type expected ENDORSER_TRANSACTION or CONFIG. Was: %d", chdr.Type)
 	}
 
@@ -137,7 +137,7 @@ func GetNonce(prop *peer.PtnProposal) ([]byte, error) {
 }
 
 // GetChaincodeHeaderExtension get chaincode header extension given header
-func GetChaincodeHeaderExtension(hdr *common.Header) (*peer.PtnChaincodeHeaderExtension, error) {
+func GetChaincodeHeaderExtension(hdr *common.PtnHeader) (*peer.PtnChaincodeHeaderExtension, error) {
 	chdr, err := UnmarshalChannelHeader(hdr.ChannelHeader)
 	if err != nil {
 		return nil, err
@@ -209,8 +209,8 @@ func GetProposal(propBytes []byte) (*peer.PtnProposal, error) {
 }
 
 // GetPayload Get Payload from Envelope message
-func GetPayload(e *common.Envelope) (*common.Payload, error) {
-	payload := &common.Payload{}
+func GetPayload(e *common.Envelope) (*common.PtnPayload, error) {
+	payload := &common.PtnPayload{}
 	err := proto.Unmarshal(e.Payload, payload)
 	return payload, err
 }
@@ -223,14 +223,14 @@ func GetChaincodeProposalPayload(bytes []byte) (*peer.PtnChaincodeProposalPayloa
 }
 
 // GetSignatureHeader Get SignatureHeader from bytes
-func GetSignatureHeader(bytes []byte) (*common.SignatureHeader, error) {
-	sh := &common.SignatureHeader{}
+func GetSignatureHeader(bytes []byte) (*common.PtnSignatureHeader, error) {
+	sh := &common.PtnSignatureHeader{}
 	err := proto.Unmarshal(bytes, sh)
 	return sh, err
 }
 
 // CreateChaincodeProposalWithTxIDNonceAndTransient creates a proposal from given input
-func CreateChaincodeProposalWithTxIDNonceAndTransient(txid string, typ common.HeaderType, chainID string, cis *peer.PtnChaincodeInvocationSpec, nonce, creator []byte, transientMap map[string][]byte) (*peer.PtnProposal, string, error) {
+func CreateChaincodeProposalWithTxIDNonceAndTransient(txid string, typ common.PtnHeaderType, chainID string, cis *peer.PtnChaincodeInvocationSpec, nonce, creator []byte, transientMap map[string][]byte) (*peer.PtnProposal, string, error) {
 	ccHdrExt := &peer.PtnChaincodeHeaderExtension{ChaincodeId: cis.ChaincodeSpec.ChaincodeId}
 	ccHdrExtBytes, err := proto.Marshal(ccHdrExt)
 	if err != nil {
@@ -254,14 +254,14 @@ func CreateChaincodeProposalWithTxIDNonceAndTransient(txid string, typ common.He
 
 	timestamp := util.CreateUtcTimestamp()
 
-	hdr := &common.Header{ChannelHeader: MarshalOrPanic(&common.ChannelHeader{
+	hdr := &common.PtnHeader{ChannelHeader: MarshalOrPanic(&common.PtnChannelHeader{
 		Type:      int32(typ),
 		TxId:      txid,
 		Timestamp: timestamp,
 		ChannelId: chainID,
 		Extension: ccHdrExtBytes,
 		Epoch:     epoch}),
-		SignatureHeader: MarshalOrPanic(&common.SignatureHeader{Nonce: nonce, Creator: creator})}
+		SignatureHeader: MarshalOrPanic(&common.PtnSignatureHeader{Nonce: nonce, Creator: creator})}
 
 	hdrBytes, err := proto.Marshal(hdr)
 	if err != nil {
@@ -321,19 +321,19 @@ func GetBytesProposal(prop *peer.PtnProposal) ([]byte, error) {
 }
 
 // GetBytesHeader get the bytes of Header from the message
-func GetBytesHeader(hdr *common.Header) ([]byte, error) {
+func GetBytesHeader(hdr *common.PtnHeader) ([]byte, error) {
 	bytes, err := proto.Marshal(hdr)
 	return bytes, err
 }
 
 // GetBytesSignatureHeader get the bytes of SignatureHeader from the message
-func GetBytesSignatureHeader(hdr *common.SignatureHeader) ([]byte, error) {
+func GetBytesSignatureHeader(hdr *common.PtnSignatureHeader) ([]byte, error) {
 	bytes, err := proto.Marshal(hdr)
 	return bytes, err
 }
 
 // CreateProposalFromCIS returns a proposal given a serialized identity and a ChaincodeInvocationSpec
-func CreateProposalFromCISAndTxid(txid string, typ common.HeaderType, chainID string, cis *peer.PtnChaincodeInvocationSpec, creator []byte) (*peer.PtnProposal, string, error) {
+func CreateProposalFromCISAndTxid(txid string, typ common.PtnHeaderType, chainID string, cis *peer.PtnChaincodeInvocationSpec, creator []byte) (*peer.PtnProposal, string, error) {
 	nonce, err := crypto.GetRandomNonce()
 	if err != nil {
 		return nil, "", err
@@ -343,13 +343,13 @@ func CreateProposalFromCISAndTxid(txid string, typ common.HeaderType, chainID st
 
 // CreateChaincodeProposal creates a proposal from given input.
 // It returns the proposal and the transaction id associated to the proposal
-func CreateChaincodeProposal(typ common.HeaderType, chainID string, cis *peer.PtnChaincodeInvocationSpec, creator []byte) (*peer.PtnProposal, string, error) {
+func CreateChaincodeProposal(typ common.PtnHeaderType, chainID string, cis *peer.PtnChaincodeInvocationSpec, creator []byte) (*peer.PtnProposal, string, error) {
 	return CreateChaincodeProposalWithTransient(typ, chainID, cis, creator, nil)
 }
 
 // CreateChaincodeProposalWithTransient creates a proposal from given input
 // It returns the proposal and the transaction id associated to the proposal
-func CreateChaincodeProposalWithTransient(typ common.HeaderType, chainID string, cis *peer.PtnChaincodeInvocationSpec, creator []byte, transientMap map[string][]byte) (*peer.PtnProposal, string, error) {
+func CreateChaincodeProposalWithTransient(typ common.PtnHeaderType, chainID string, cis *peer.PtnChaincodeInvocationSpec, creator []byte, transientMap map[string][]byte) (*peer.PtnProposal, string, error) {
 	// generate a random nonce
 	nonce, err := crypto.GetRandomNonce()
 	if err != nil {

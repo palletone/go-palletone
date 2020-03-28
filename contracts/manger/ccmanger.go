@@ -47,7 +47,7 @@ func marshalOrPanic(pb proto.Message) []byte {
 }
 
 // CreateChaincodeProposalWithTxIDNonceAndTransient creates a proposal from given input
-func createChaincodeProposalWithTxIDNonceAndTransient(txid string, typ common.HeaderType, chainID string, cis *peer.PtnChaincodeInvocationSpec, nonce, creator []byte, transientMap map[string][]byte) (*peer.PtnProposal, string, error) {
+func createChaincodeProposalWithTxIDNonceAndTransient(txid string, typ common.PtnHeaderType, chainID string, cis *peer.PtnChaincodeInvocationSpec, nonce, creator []byte, transientMap map[string][]byte) (*peer.PtnProposal, string, error) {
 	// get a more appropriate mechanism to handle it in.
 	var epoch uint64 = 0
 
@@ -69,14 +69,14 @@ func createChaincodeProposalWithTxIDNonceAndTransient(txid string, typ common.He
 	}
 
 	timestamp := util.CreateUtcTimestamp()
-	hdr := &common.Header{ChannelHeader: marshalOrPanic(&common.ChannelHeader{
+	hdr := &common.PtnHeader{ChannelHeader: marshalOrPanic(&common.PtnChannelHeader{
 		Type:      int32(typ),
 		TxId:      txid,
 		Timestamp: timestamp,
 		ChannelId: chainID,
 		Extension: ccHdrExtBytes,
 		Epoch:     epoch}),
-		SignatureHeader: marshalOrPanic(&common.SignatureHeader{Nonce: nonce, Creator: creator})}
+		SignatureHeader: marshalOrPanic(&common.PtnSignatureHeader{Nonce: nonce, Creator: creator})}
 
 	hdrBytes, err := proto.Marshal(hdr)
 	if err != nil {
@@ -93,7 +93,7 @@ func createChaincodeProposalWithTxIDNonceAndTransient(txid string, typ common.He
 //	return hex.EncodeToString(digest), nil
 //}
 
-func createChaincodeProposalWithTransient(typ common.HeaderType, chainID string, txid string, cis *peer.PtnChaincodeInvocationSpec, creator []byte, transientMap map[string][]byte) (*peer.PtnProposal, string, error) {
+func createChaincodeProposalWithTransient(typ common.PtnHeaderType, chainID string, txid string, cis *peer.PtnChaincodeInvocationSpec, creator []byte, transientMap map[string][]byte) (*peer.PtnProposal, string, error) {
 	// generate a random nonce
 	nonce, err := crypto.GetRandomNonce()
 	if err != nil {
@@ -102,7 +102,7 @@ func createChaincodeProposalWithTransient(typ common.HeaderType, chainID string,
 	return createChaincodeProposalWithTxIDNonceAndTransient(txid, typ, chainID, cis, nonce, creator, transientMap)
 }
 
-func createChaincodeProposal(typ common.HeaderType, chainID string, txid string, cis *peer.PtnChaincodeInvocationSpec, creator []byte) (*peer.PtnProposal, string, error) {
+func createChaincodeProposal(typ common.PtnHeaderType, chainID string, txid string, cis *peer.PtnChaincodeInvocationSpec, creator []byte) (*peer.PtnProposal, string, error) {
 	return createChaincodeProposalWithTransient(typ, chainID, txid, cis, creator, nil)
 }
 
@@ -113,7 +113,7 @@ func GetBytesProposal(prop *peer.PtnProposal) ([]byte, error) {
 
 func SignedEndorserProposa(chainID string, txid string, cs *peer.PtnChaincodeSpec, creator, signature []byte) (*peer.PtnSignedProposal, *peer.PtnProposal, error) {
 	prop, _, err := createChaincodeProposal(
-		common.HeaderType_ENDORSER_TRANSACTION,
+		common.PtnHeaderType_ENDORSER_TRANSACTION,
 		chainID,
 		txid,
 		&peer.PtnChaincodeInvocationSpec{ChaincodeSpec: cs},
