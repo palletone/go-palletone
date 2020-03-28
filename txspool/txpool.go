@@ -1758,35 +1758,37 @@ func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs,
 		if !has {
 		poolloop:
 			for _, otx := range poolTxs {
-				if otx.Tx.RequestHash() == op.TxHash {
-					for i, msg := range otx.Tx.Messages() {
-						if msg.App != modules.APP_PAYMENT {
-							continue
-						}
-						payment := msg.Payload.(*modules.PaymentPayload)
-						for j := range payment.Outputs {
-							if op.OutIndex == uint32(j) && op.MessageIndex == uint32(i) {
-
-								log.Debugf("found  in pool")
-								queue_tx = otx
-								break poolloop
-							}
+				if otx.Tx.RequestHash() != op.TxHash {
+					continue
+				}
+				for i, msg := range otx.Tx.Messages() {
+					if msg.App != modules.APP_PAYMENT {
+						continue
+					}
+					payment := msg.Payload.(*modules.PaymentPayload)
+					for j := range payment.Outputs {
+						if op.OutIndex == uint32(j) && op.MessageIndex == uint32(i) {
+							queue_tx = otx
+							break poolloop
 						}
 					}
 				}
+
 			}
 		orphTxsLOOP:
 			for _, otx := range orphanTxs {
-				if otx.Tx.RequestHash() == op.TxHash {
-					for i, msg := range otx.Tx.Messages() {
-						if msg.App == modules.APP_PAYMENT {
-							payment := msg.Payload.(*modules.PaymentPayload)
-							for j := range payment.Outputs {
-								if op.OutIndex == uint32(j) && op.MessageIndex == uint32(i) {
-									queue_tx = otx
-									break orphTxsLOOP
-								}
-							}
+				if otx.Tx.RequestHash() != op.TxHash {
+					continue
+				}
+				for i, msg := range otx.Tx.Messages() {
+					if msg.App != modules.APP_PAYMENT {
+						continue
+					}
+					payment := msg.Payload.(*modules.PaymentPayload)
+					for j := range payment.Outputs {
+						if op.OutIndex == uint32(j) && op.MessageIndex == uint32(i) {
+							queue_tx = otx
+							break orphTxsLOOP
 						}
 					}
 				}
