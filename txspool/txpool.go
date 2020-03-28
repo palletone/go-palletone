@@ -1792,12 +1792,12 @@ func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs,
 				}
 			}
 		}
-		//if find precusor tx  ,and go on to find its
-		log.Info("find in precusor tx.", "hash", queue_tx.Tx.Hash().String(), "ohash", op.TxHash.String(),
-			"pending", tx.Pending)
 		if queue_tx == nil || queue_tx.Pending {
 			continue
 		}
+		//if find precusor tx  ,and go on to find its
+		log.Info("find in precusor tx.", "hash", queue_tx.Tx.Hash().String(), "ohash", op.TxHash.String(),
+			"pending", tx.Pending)
 		_, list := pool.getPrecusorTxs(queue_tx, poolTxs, orphanTxs)
 		for _, p_tx := range list {
 			pretxs = append(pretxs, p_tx)
