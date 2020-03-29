@@ -133,7 +133,10 @@ type TxPackInfo struct {
 // It uniquely identifies the transaction.
 func (tx *Transaction) Hash() common.Hash {
 	if hash := tx.hash.Load(); hash != nil {
-		return hash.(common.Hash)
+		cHash := hash.(common.Hash)
+		if !common.EmptyHash(cHash) {
+			return cHash
+		}
 	}
 	oldFlag := tx.Illegal()
 	if oldFlag {
@@ -149,8 +152,18 @@ func (tx *Transaction) Hash() common.Hash {
 }
 
 func (tx *Transaction) RequestHash() common.Hash {
-	reqtx := tx.GetRequestTx()
-	return reqtx.Hash()
+
+	if hash := tx.reqHash.Load(); hash != nil {
+		cHash := hash.(common.Hash)
+		if !common.EmptyHash(cHash) {
+			return cHash
+		}
+	}
+
+	v := tx.GetRequestTx().Hash()
+	tx.reqHash.Store(v)
+	return v
+
 }
 func (tx *Transaction) ErrorResult() string {
 	for _, msg := range tx.txdata.TxMessages {
@@ -287,14 +300,17 @@ func (txs Transactions) GetTxIds() []common.Hash {
 }
 
 type Transaction struct {
-	txdata transaction_sdw
-	hash   atomic.Value
-	size   atomic.Value
+	txdata  transaction_sdw
+	hash    atomic.Value
+	reqHash atomic.Value
+	size    atomic.Value
 }
 type transaction_sdw struct {
-	TxMessages []*Message `json:"messages"`
-	CertId     []byte     `json:"cert_id"` // should be big.Int byte
-	Illegal    bool       `json:"Illegal"` // not hash, 1:no valid, 0:ok
+	Version      uint32     `json:"version"`
+	AccountNonce uint64     `json:"nonce"`
+	TxMessages   []*Message `json:"messages"`
+	CertId       []byte     `json:"cert_id"` // should be big.Int byte
+	Illegal      bool       `json:"Illegal"` // not hash, 1:no valid, 0:ok
 }
 type QueryUtxoFunc func(outpoint *OutPoint) (*Utxo, error)
 type GetAddressFromScriptFunc func(lockScript []byte) (common.Address, error)
@@ -369,65 +385,39 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, erro
 
 func (tx *Transaction) CertId() []byte { return common.CopyBytes(tx.txdata.CertId) }
 func (tx *Transaction) Illegal() bool  { return tx.txdata.Illegal }
+
 func (tx *Transaction) SetMessages(msgs []*Message) {
 	if len(msgs) > 0 {
-		d := transaction_sdw{}
-		d.TxMessages = make([]*Message, len(msgs))
-		copy(d.TxMessages, msgs)
-		d.CertId = tx.CertId()
-		d.Illegal = tx.Illegal()
-		temp := &Transaction{txdata: d}
-		tx.txdata = d
-		tx.hash.Store(temp.Hash())
-		tx.size.Store(temp.Size())
+		txMessages := make([]*Message, len(msgs))
+		copy(txMessages, msgs)
+		tx.txdata.TxMessages = txMessages
 	}
+	tx.resetCache()
 }
 
-func (tx *Transaction) UpdateMessage(index int, msg *Message) {
-	tx.txdata.TxMessages[index] = msg
-	//TODO Devin: 清空缓存？
-	tx.hash.Store(tx.Hash())
-	tx.size.Store(tx.Size())
-
+func (tx *Transaction) resetCache() {
+	hash := common.Hash{}
+	tx.hash.Store(hash)
+	tx.reqHash.Store(hash)
+	size0 := common.StorageSize(0)
+	tx.size.Store(size0)
 }
+
 func (tx *Transaction) SetCertId(certid []byte) {
-	d := transaction_sdw{}
-	d.CertId = common.CopyBytes(certid)
-	d.Illegal = tx.Illegal()
-	d.TxMessages = append(d.TxMessages, tx.txdata.TxMessages...)
-	temp := &Transaction{txdata: d}
-	tx.txdata = d
-	tx.hash.Store(temp.Hash())
-	tx.size.Store(temp.Size())
+	tx.txdata.CertId = certid
+	tx.resetCache()
 }
 func (tx *Transaction) SetIllegal(illegal bool) {
-	d := transaction_sdw{}
-	d.Illegal = illegal
-	d.CertId = common.CopyBytes(tx.CertId())
-	d.TxMessages = append(d.TxMessages, tx.txdata.TxMessages...)
-	temp := &Transaction{txdata: d}
-	tx.txdata = d
-	tx.hash.Store(temp.Hash())
-	tx.size.Store(temp.Size())
+	tx.txdata.Illegal = illegal
+	// tx.resetCache()  //SetIllegal 不会导致TxHash改变
 }
+
 func (tx *Transaction) ModifiedMsg(index int, msg *Message) {
 	if len(tx.Messages()) < index {
 		return
 	}
-	sdw := transaction_sdw{}
-	for i, m := range tx.Messages() {
-		if i == index {
-			sdw.TxMessages = append(sdw.TxMessages, msg)
-		} else {
-			sdw.TxMessages = append(sdw.TxMessages, m)
-		}
-	}
-	sdw.Illegal = tx.Illegal()
-	sdw.CertId = tx.CertId()
-	temp := &Transaction{txdata: sdw}
-	tx.txdata = sdw
-	tx.hash.Store(temp.Hash())
-	tx.size.Store(temp.Size())
+	tx.txdata.TxMessages[index] = msg
+	tx.resetCache()
 }
 
 func (tx *Transaction) GetCoinbaseReward(versionFunc QueryStateByVersionFunc,

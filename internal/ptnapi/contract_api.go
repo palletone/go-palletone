@@ -346,6 +346,9 @@ func (s *PrivateContractAPI) buildCcinvokeTxWithoutGasFee(b Backend, from,
 		},
 	}
 	tx := modules.NewTransaction([]*modules.Message{msgReq})
+	//no gas fee, enable nonce
+	tx.SetNonce(uint64(time.Now().Unix()))
+	tx.SetVersion(1)
 	keystore := b.GetKeyStore()
 	if !keystore.IsUnlock(from) {
 		keystore.Unlock(accounts.Account{Address: from}, pwd)

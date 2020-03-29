@@ -197,6 +197,11 @@ func createPayment(fromAddr, toAddr common.Address, amountToken uint64, feePTN u
 
 func signRawTransaction(b Backend, rawTx *modules.Transaction, fromStr, password string, timeout *Int, hashType uint32,
 	usedUtxo []*modules.UtxoWithOutPoint) error {
+	if !b.EnableGasFee() {
+		//no gas fee, enable nonce
+		rawTx.SetNonce(uint64(time.Now().Unix()))
+		rawTx.SetVersion(1)
+	}
 	ks := b.GetKeyStore()
 	//lockscript
 	getPubKeyFn := func(addr common.Address) ([]byte, error) {

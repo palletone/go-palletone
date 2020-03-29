@@ -14,82 +14,29 @@
 
 /*
  * @author PalletOne core developers <dev@pallet.one>
- * @date 2018
+ * @date 2018-2010
  */
 
 package modules
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
 )
 
-type transactionTemp struct {
-	Version    uint32
+type transactionTempV0 struct {
 	TxMessages []messageTemp
-	TxExtra    []byte
-}
-type messageTemp struct {
-	App  MessageType
-	Data []byte
-}
-type txExtra struct {
-	AccountNonce uint64
-	CertId       []byte // should be big.Int byte
-	Illegal      bool   // not hash, 1:no valid, 0:ok
+	CertId     []byte // should be big.Int byte
+	Illegal    bool   // not hash, 1:no valid, 0:ok
 }
 
-func (tx *Transaction) DecodeRLP(s *rlp.Stream) error {
-	raw, err := s.Raw()
-	if err != nil {
-		return err
-	}
-	txTemp := &transactionTemp{}
-	err = rlp.DecodeBytes(raw, txTemp)
-	if err != nil {
-		txTempV0 := &transactionTempV0{}
-		err = rlp.DecodeBytes(raw, txTempV0)
-		if err != nil {
-			return err
-		}
-		return tempV02Tx(txTempV0, tx)
-	}
-	return temp2Tx(txTemp, tx)
-}
-func (tx *Transaction) EncodeRLP(w io.Writer) error {
-	if tx.Version() == 0 {
-		return encodeRlpTxV0(tx, w)
-	}
-	temp, err := tx2Temp(tx)
-	if err != nil {
-		return err
-	}
-	return rlp.Encode(w, temp)
-}
-func encodeRlpTxV0(tx *Transaction, w io.Writer) error {
-	tempV0, err := tx2TempV0(tx)
-	if err != nil {
-		return err
-	}
-	return rlp.Encode(w, tempV0)
-}
+func tx2TempV0(tx *Transaction) (*transactionTempV0, error) {
+	temp := transactionTempV0{}
+	temp.Illegal = tx.Illegal()
+	temp.CertId = tx.CertId()
 
-func tx2Temp(tx *Transaction) (*transactionTemp, error) {
-	temp := transactionTemp{}
-	txExtra := txExtra{}
-	txExtra.AccountNonce = tx.Nonce()
-	txExtra.Illegal = tx.Illegal()
-	txExtra.CertId = tx.CertId()
-	txExtraB, err := rlp.EncodeToBytes(txExtra)
-	if err != nil {
-		return nil, err
-	}
-	temp.TxExtra = txExtraB
-	temp.Version = tx.Version()
 	for _, m := range tx.Messages() {
 		m1 := messageTemp{
 			App: m.App,
@@ -105,7 +52,7 @@ func tx2Temp(tx *Transaction) (*transactionTemp, error) {
 	}
 	return &temp, nil
 }
-func temp2Tx(temp *transactionTemp, tx *Transaction) error {
+func tempV02Tx(temp *transactionTempV0, tx *Transaction) error {
 	d := transaction_sdw{}
 	for _, m := range temp.TxMessages {
 		m1 := new(Message)
@@ -220,54 +167,10 @@ func temp2Tx(temp *transactionTemp, tx *Transaction) error {
 		d.TxMessages = append(d.TxMessages, m1)
 
 	}
-	d.Version = temp.Version
-	txExtra := new(txExtra)
-	err := rlp.DecodeBytes(temp.TxExtra, &txExtra)
-	if err != nil {
-		return err
-	}
-	d.AccountNonce = txExtra.AccountNonce
-	d.Illegal = txExtra.Illegal
-	d.CertId = txExtra.CertId
+	d.Illegal = temp.Illegal
+	d.CertId = temp.CertId
 	// init tx
 	tx.txdata = d
 	return nil
-}
 
-//RLP编码有Bug，在struct引用了空指针后，Decode会报错。所以将Input扁平化
-
-type inputTemp struct {
-	SignatureScript []byte
-	Extra           []byte
-	TxHash          common.Hash // reference Utxo struct key field
-	MessageIndex    uint32      // message index in transaction
-	OutIndex        uint32
-}
-
-func (input *Input) DecodeRLP(s *rlp.Stream) error {
-	raw, err := s.Raw()
-	if err != nil {
-		return err
-	}
-	temp := &inputTemp{TxHash: common.Hash{}}
-	err = rlp.DecodeBytes(raw, temp)
-	if err != nil {
-		return err
-	}
-
-	input.SignatureScript = temp.SignatureScript
-	input.Extra = temp.Extra
-	if !common.EmptyHash(temp.TxHash) {
-		input.PreviousOutPoint = &OutPoint{TxHash: temp.TxHash, MessageIndex: temp.MessageIndex, OutIndex: temp.OutIndex}
-	}
-	return nil
-}
-func (input *Input) EncodeRLP(w io.Writer) error {
-	temp := inputTemp{SignatureScript: input.SignatureScript, Extra: input.Extra}
-	if input.PreviousOutPoint != nil {
-		temp.TxHash = input.PreviousOutPoint.TxHash
-		temp.MessageIndex = input.PreviousOutPoint.MessageIndex
-		temp.OutIndex = input.PreviousOutPoint.OutIndex
-	}
-	return rlp.Encode(w, temp)
 }
