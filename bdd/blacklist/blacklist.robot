@@ -71,7 +71,7 @@ multiToken
     sleep    5
     ${pb}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DRdWEXJF    PTN
     log    ${pb}
-    Should Be Equal As Numbers    ${pb}    19999
+    Should Be Equal As Numbers    ${pb}    20000
     ${bb}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DRdWEXJF    ${assetId}
     log    ${bb}
     Should Be Equal As Numbers    ${bb}    1000
@@ -84,7 +84,7 @@ multiToken
     sleep    5
     ${b}    getBalance    P1DQA485N7r8sjUB31pKDqE2x7ZEfJxCJ2A    PTN
     log    ${b}
-    Should Be Equal As Numbers    ${b}    19999
+    Should Be Equal As Numbers    ${b}    20000
     ${res}    payout    P1DQA485N7r8sjUB31pKDqE2x7ZEfJxCJ2A    ${bb}    ${assetId}
     log    ${res}
     sleep    5
