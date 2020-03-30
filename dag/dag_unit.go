@@ -73,11 +73,18 @@ func (dag *Dag) getBePackedTxs(txp txspool.ITxPool, cp *jury.Processor,
 	if err != nil {
 		return nil, err
 	}
+	log.DebugDynamic(func() string {
+		txHashs := ""
+		for _, tx := range list {
+			txHashs += fmt.Sprintf("Tx[%s]-Req[%s];", tx.TxHash.String(), tx.ReqHash.String())
+		}
+		return fmt.Sprintf("Txpool prepare sorted txs:%s for unit[%d]", txHashs, unitNumber)
+	})
 	for _, ptx := range list {
 		txHashStr += ptx.Tx.Hash().String() + ";"
 		tx := ptx.Tx
 		i++ //第0条是Coinbase
-		log.Debugf("pack tx[%s] into unit[#%d]", tx.RequestHash().String(), unitNumber)
+		log.Debugf("pack tx[%s]-req[%s] into unit[#%d]", tx.Hash().String(), tx.RequestHash().String(), unitNumber)
 		signedTx := tx
 		if tx.IsSystemContract() && tx.IsOnlyContractRequest() { //是未执行的系统合约
 			signedTx, err = cp.RunAndSignTx(tx, rwM, tempDag, producer)
