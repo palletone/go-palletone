@@ -648,6 +648,8 @@ func (tx *Transaction) GetRequestTx() *Transaction {
 		}
 	}
 	request.CertId = tx.CertId()
+	request.Version = tx.Version()
+	request.AccountNonce = tx.Nonce()
 	return &Transaction{txdata: request}
 
 }
@@ -709,6 +711,8 @@ func (tx *Transaction) GetResultRawTx() *Transaction {
 		sdw.TxMessages = append(sdw.TxMessages, msg)
 	}
 	sdw.CertId = tx.CertId()
+	sdw.Version = tx.Version()
+	sdw.AccountNonce = tx.Nonce()
 	sdw.Illegal = tx.Illegal()
 	return &Transaction{txdata: sdw}
 }
@@ -723,6 +727,8 @@ func (tx *Transaction) CopyPartTx(msgIdx int) *Transaction {
 		sdw.TxMessages = append(sdw.TxMessages, msg)
 	}
 	sdw.CertId = tx.CertId()
+	sdw.Version = tx.Version()
+	sdw.AccountNonce = tx.Nonce()
 	sdw.Illegal = tx.Illegal()
 	return &Transaction{txdata: sdw}
 }
