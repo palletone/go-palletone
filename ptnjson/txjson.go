@@ -37,6 +37,8 @@ type TxJson struct {
 	TxHash             string              `json:"tx_hash"`
 	RequestHash        string              `json:"request_hash"`
 	TxSize             float64             `json:"tx_size"`
+	Version            uint32              `json:"version"`
+	Nonce              uint64              `json:"nonce"`
 	Payment            []*PaymentJson      `json:"payment"`
 	Fee                uint64              `json:"fee"`
 	AccountStateUpdate *AccountStateJson   `json:"account_state_update"`
@@ -172,6 +174,8 @@ func ConvertTx2FullJson(tx *modules.Transaction,
 	txjson.TxHash = tx.Hash().String()
 	txjson.RequestHash = tx.RequestHash().String()
 	txjson.TxSize = float64(tx.Size())
+	txjson.Version = tx.Version()
+	txjson.Nonce = tx.Nonce()
 	for i, m := range tx.TxMessages() {
 		if m.App == modules.APP_PAYMENT {
 			pay := m.Payload.(*modules.PaymentPayload)
