@@ -129,15 +129,14 @@ func homeDir() string {
 }
 
 func (c *Config) GetGasToken() modules.AssetId {
-	if c.gasToken != modules.ZeroIdType16() {
-		return c.gasToken
+	if c.gasToken == modules.ZeroIdType16() {
+		token, _, err := modules.String2AssetId(c.GasToken)
+		if err != nil {
+			log.Warn("Cannot parse node.GasToken to a correct asset, token str:" + c.GasToken + ",error: " + err.Error())
+			return modules.PTNCOIN
+		}
+		c.gasToken = token
 	}
-	token, _, err := modules.String2AssetId(c.GasToken)
-	if err != nil {
-		log.Warn("Cannot parse node.GasToken to a correct asset, token str:" + c.GasToken + ",error: " + err.Error())
-		return modules.PTNCOIN
-	}
-	c.gasToken = token
 	return c.gasToken
 }
 
