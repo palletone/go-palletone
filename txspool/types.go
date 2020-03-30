@@ -232,18 +232,18 @@ func (seqTxs *SequeueTxPoolTxs) AddPriority(newPoolTx *TxPoolTransaction) {
 	defer seqTxs.mu.Unlock()
 	if seqTxs.Len() == 0 {
 		(*seqTxs).seqtxs = append((*seqTxs).seqtxs, newPoolTx)
-		return
-	}
-	added := false
-	for i, item := range (*seqTxs).seqtxs {
-		if newPoolTx.GetPriorityfloat64() > item.GetPriorityfloat64() {
-			(*seqTxs).seqtxs = append((*seqTxs).seqtxs[:i], append([]*TxPoolTransaction{newPoolTx}, (*seqTxs).seqtxs[i:]...)...)
-			added = true
-			break
+	} else {
+		added := false
+		for i, item := range (*seqTxs).seqtxs {
+			if newPoolTx.GetPriorityfloat64() > item.GetPriorityfloat64() {
+				(*seqTxs).seqtxs = append((*seqTxs).seqtxs[:i], append([]*TxPoolTransaction{newPoolTx}, (*seqTxs).seqtxs[i:]...)...)
+				added = true
+				break
+			}
 		}
-	}
-	if !added {
-		(*seqTxs).seqtxs = append((*seqTxs).seqtxs, newPoolTx)
+		if !added {
+			(*seqTxs).seqtxs = append((*seqTxs).seqtxs, newPoolTx)
+		}
 	}
 }
 
