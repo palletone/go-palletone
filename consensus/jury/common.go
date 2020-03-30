@@ -89,7 +89,7 @@ func (p *Processor) generateJuryRedeemScript(jury *modules.ElectionNode) []byte 
 	return tokenengine.Instance.GenerateRedeemScript(needed, pubKeys)
 }
 
-//对于Contract Payout的情况，将SignatureSet转移到Payment的解锁脚本中
+//对于Contract Payout的情况，将Jury的SignatureSet转移到Payment的解锁脚本中
 func (p *Processor) processContractPayout(tx *modules.Transaction, ele *modules.ElectionNode) {
 	if tx == nil || ele == nil {
 		log.Error("processContractPayout param is nil")
@@ -97,7 +97,7 @@ func (p *Processor) processContractPayout(tx *modules.Transaction, ele *modules.
 	}
 	reqId := tx.RequestHash()
 	if has, index, payout_msg := tx.HasContractPayoutMsg(); has {
-		pubkeys, signs := getSignature(tx)
+		pubkeys, signs := getJurySignature(tx)
 		redeem := p.generateJuryRedeemScript(ele)
 
 		signsOrder := SortSigs(pubkeys, signs, redeem)
@@ -112,11 +112,13 @@ func (p *Processor) processContractPayout(tx *modules.Transaction, ele *modules.
 		}
 		tx.ModifiedMsg(index, payout_msg)
 		//remove signature payload
+		_, jurySignMsgIndex := tx.GetResultSignaturePayload()
 		var msgs []*modules.Message
-		for _, msg := range tx.Messages() {
-			if msg.App != modules.APP_SIGNATURE {
-				msgs = append(msgs, msg)
+		for i, msg := range tx.Messages() {
+			if i == jurySignMsgIndex {
+				break
 			}
+			msgs = append(msgs, msg)
 		}
 		tx.SetMessages(msgs)
 		log.Debugf("[%s]processContractPayout, Remove SignaturePayload from req[%s]", reqId.ShortStr(), reqId.String())
@@ -184,20 +186,16 @@ func SortSigs(pubkeys [][]byte, signs [][]byte, redeem []byte) [][]byte {
 	return signsOrder
 }
 
-func getSignature(tx *modules.Transaction) ([][]byte, [][]byte) {
-	for _, msg := range tx.Messages() {
-		if msg.App == modules.APP_SIGNATURE {
-			sig := msg.Payload.(*modules.SignaturePayload)
-			var pubKeys [][]byte
-			var signs [][]byte
-			for _, s := range sig.Signatures {
-				pubKeys = append(pubKeys, s.PubKey)
-				signs = append(signs, s.Signature)
-			}
-			return pubKeys, signs
-		}
+func getJurySignature(tx *modules.Transaction) ([][]byte, [][]byte) {
+	sig, _ := tx.GetResultSignaturePayload()
+	var pubKeys [][]byte
+	var signs [][]byte
+	for _, s := range sig.Signatures {
+		pubKeys = append(pubKeys, s.PubKey)
+		signs = append(signs, s.Signature)
 	}
-	return nil, nil
+	return pubKeys, signs
+
 }
 
 func genContractErrorMsg(tx *modules.Transaction,

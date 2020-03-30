@@ -599,19 +599,19 @@ func (tx *Transaction) GetSpendOutpoints() []*OutPoint {
 }
 
 //获得合约交易的签名对应的陪审员地址
-func (tx *Transaction) GetContractTxSignatureAddress() []common.Address {
-	if !tx.IsContractTx() {
-		return nil
-	}
-	for _, msg := range tx.txdata.TxMessages {
-		switch msg.App {
-		case APP_SIGNATURE:
-			payload := msg.Payload.(*SignaturePayload)
-			return payload.SignAddress()
-		}
-	}
-	return []common.Address{}
-}
+//func (tx *Transaction) GetContractTxSignatureAddress() []common.Address {
+//	if !tx.IsContractTx() {
+//		return nil
+//	}
+//	for _, msg := range tx.txdata.TxMessages {
+//		switch msg.App {
+//		case APP_SIGNATURE:
+//			payload := msg.Payload.(*SignaturePayload)
+//			return payload.SignAddress()
+//		}
+//	}
+//	return []common.Address{}
+//}
 
 //获得合约结果部分的Signature，如果不是合约Tx，则返回第一个Signature
 //func (tx *Transaction) GetResultSignature() (int, *SignaturePayload, error) {
@@ -758,13 +758,12 @@ func (tx *Transaction) GetRequestMsgIndex() int {
 
 //这个交易是否包含了从合约付款出去的结果,有则返回该Payment
 func (tx *Transaction) HasContractPayoutMsg() (bool, int, *Message) {
-	isInvokeResult := false
+	reqMsgCount := tx.GetRequestMsgCount()
 	for i, msg := range tx.txdata.TxMessages {
-		if msg.App.IsRequest() {
-			isInvokeResult = true
+		if i < reqMsgCount {
 			continue
 		}
-		if isInvokeResult && msg.App == APP_PAYMENT {
+		if msg.App == APP_PAYMENT {
 			pay := msg.Payload.(*PaymentPayload)
 			if !pay.IsCoinbase() {
 				return true, i, msg
