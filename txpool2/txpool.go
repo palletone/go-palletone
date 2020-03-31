@@ -202,15 +202,15 @@ func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 				return err
 			}
 			pool.txFeed.Send(modules.TxPreEvent{Tx: tx, IsOrphan: false})
+			//添加了该Tx后，会不会导致其他Orphan变成普通交易？所以需要检查一下
+			err = pool.checkBasedOnReqOrphanTxToNormal(tx2.TxHash, tx2.ReqHash)
+			if err != nil {
+				return err
+			}
 		}
 	}
-	//添加了该Tx后，会不会导致其他Orphan变成普通交易？所以需要检查一下
 	//4. check orphan txpool
-	err = pool.checkBasedOnReqOrphanTxToNormal()
-	if err != nil {
-		return err
-	}
-	return pool.checkOrphanTxToNormal(tx2.TxHash)
+	return pool.checkOrphanTxToNormal(tx2.TxHash, tx2.ReqHash)
 }
 func (pool *TxPool) isBasedOnRequestPool(tx *txspool.TxPoolTransaction) bool {
 	for h := range tx.DependOnTxs {
@@ -231,10 +231,10 @@ func (pool *TxPool) isBasedOnRequestPool(tx *txspool.TxPoolTransaction) bool {
 }
 
 //检查如果将一个Tx加入Normal后，有没有后续的孤儿Tx需要连带加入
-func (pool *TxPool) checkOrphanTxToNormal(txHash common.Hash) error {
+func (pool *TxPool) checkOrphanTxToNormal(txHash, reqHash common.Hash) error {
 	readyTx := []*modules.Transaction{}
 	for hash, otx := range pool.orphans {
-		if otx.IsFineToNormal(txHash) { //满足Normal的条件了
+		if otx.IsFineToNormal(txHash) || otx.IsFineToNormal(reqHash) { //满足Normal的条件了
 			log.Debugf("move tx[%s] from orphans to normals", otx.TxHash.String())
 			delete(pool.orphans, hash) //从孤儿池删除
 			readyTx = append(readyTx, otx.Tx)
@@ -248,19 +248,19 @@ func (pool *TxPool) checkOrphanTxToNormal(txHash common.Hash) error {
 	}
 	return nil
 }
-func (pool *TxPool) checkBasedOnReqOrphanTxToNormal() error {
-	readyTx := []*modules.Transaction{}
+func (pool *TxPool) checkBasedOnReqOrphanTxToNormal(txHash, reqHash common.Hash) error {
+	//readyTx := []*modules.Transaction{}
 	for hash, otx := range pool.basedOnRequestOrphans {
-		if !pool.isBasedOnRequestPool(otx) { //满足Normal的条件了
-			log.Debugf("move tx[%s] from based on request orphans to normals", otx.TxHash.String())
+		if !pool.isBasedOnRequestPool(otx) && (otx.IsDependOnTx(txHash) || otx.IsDependOnTx(reqHash)) { //满足Normal的条件了
+			log.Debugf("move tx[%s] from based on request orphans to normals since tx[%s] is normal",
+				otx.TxHash.String(), txHash.String())
 			delete(pool.basedOnRequestOrphans, hash) //从孤儿池删除
-			readyTx = append(readyTx, otx.Tx)
-		}
-	}
-	for _, tx := range readyTx {
-		err := pool.addLocal(tx) //因为之前孤儿交易没有手续费，UTXO等，所以需要重新计算
-		if err != nil {
-			log.Warnf("add tx[%s] to pool fail:%s", tx.Hash().String(), err.Error())
+			//readyTx = append(readyTx, otx.Tx)
+			err := pool.addLocal(otx.Tx) //因为之前孤儿交易没有手续费，UTXO等，所以需要重新计算
+			if err != nil {
+				log.Warnf("add tx[%s] to pool fail:%s", otx.TxHash.String(), err.Error())
+				return err
+			}
 		}
 	}
 	return nil
@@ -559,7 +559,7 @@ func (pool *TxPool) DiscardTxs(txs []*modules.Transaction) error {
 			if _, ok := pool.userContractRequests[requestHash]; ok {
 				log.Debugf("Request[%s] already packed into unit, delete it from request pool", requestHash.String())
 				delete(pool.userContractRequests, requestHash)
-				pool.checkBasedOnReqOrphanTxToNormal()
+				pool.checkBasedOnReqOrphanTxToNormal(tx.Hash(), requestHash)
 			}
 		}
 		err := pool.normals.DiscardTx(tx.Hash())
