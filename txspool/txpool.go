@@ -600,7 +600,7 @@ func (pool *TxPool) add_journalTx(ptx *TxPoolTransaction) error {
 	}
 
 	// 更新一次孤儿交易池数据。
-	pool.reflashOrphanTxs(ptx.Tx, pool.AllOrphanTxs())
+	pool.reflashOrphanTxs(ptx.Tx, pool.AllOrphanTxs(), false)
 	return nil
 }
 
@@ -735,7 +735,7 @@ func (pool *TxPool) add(tx *modules.Transaction, local bool) (bool, error) {
 	}
 
 	// 更新一次孤儿交易池数据。
-	pool.reflashOrphanTxs(tx, pool.AllOrphanTxs())
+	pool.reflashOrphanTxs(tx, pool.AllOrphanTxs(), local)
 	return true, nil
 }
 
@@ -787,6 +787,8 @@ func (pool *TxPool) AddLocal(tx *modules.Transaction) error {
 	return pool.addLocal(tx)
 }
 func (pool *TxPool) addLocal(tx *modules.Transaction) error {
+	pool.mu.Lock()
+	defer pool.mu.Unlock()
 	return pool.addTx(tx, !pool.config.NoLocals)
 }
 func (pool *TxPool) addJournalTx(ptx *TxPoolTransaction) error {
@@ -943,8 +945,6 @@ func (pool *TxPool) maybeAcceptTransaction(tx *modules.Transaction) error {
 
 // addTx enqueues a single transaction into the pool if it is valid.
 func (pool *TxPool) addTx(tx *modules.Transaction, local bool) error {
-	pool.mu.Lock()
-	defer pool.mu.Unlock()
 	// Try to inject the transaction and update any state
 	replace, err := pool.add(tx, local)
 	if err != nil {
@@ -1895,7 +1895,7 @@ func (pool *TxPool) deletePoolUtxos(tx *modules.Transaction) {
 	}
 }
 
-func (pool *TxPool) reflashOrphanTxs(tx *modules.Transaction, orphans map[common.Hash]*TxPoolTransaction) {
+func (pool *TxPool) reflashOrphanTxs(tx *modules.Transaction, orphans map[common.Hash]*TxPoolTransaction, local bool) {
 	for hash, otx := range orphans {
 		isOrphan := false
 		for _, op := range otx.Tx.GetSpendOutpoints() {
@@ -1908,7 +1908,7 @@ func (pool *TxPool) reflashOrphanTxs(tx *modules.Transaction, orphans map[common
 		}
 		if !isOrphan { //该交易不再是孤儿交易，使之变为有效交易。
 			pool.orphans.Delete(hash)
-			if err := pool.addLocal(otx.Tx); err != nil {
+			if err := pool.addTx(otx.Tx, local); err != nil {
 				log.Debugf("addlocal failed,error:%s,hash:%s", err.Error(), otx.Tx.Hash().String())
 				pool.orphans.Store(hash, otx)
 			}
