@@ -186,10 +186,8 @@ func SortSigs(pubkeys [][]byte, signs [][]byte, redeem []byte) [][]byte {
 	return signsOrder
 }
 
-func getJurySignature(tx *modules.Transaction) ([][]byte, [][]byte) {
+func getJurySignature(tx *modules.Transaction) (pubKeys [][]byte,signs [][]byte) {
 	sig, _ := tx.GetResultSignaturePayload()
-	var pubKeys [][]byte
-	var signs [][]byte
 	for _, s := range sig.Signatures {
 		pubKeys = append(pubKeys, s.PubKey)
 		signs = append(signs, s.Signature)
