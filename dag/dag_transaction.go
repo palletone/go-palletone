@@ -366,7 +366,7 @@ func (dag *Dag) CreateTokenTransaction(from, to common.Address, token *modules.A
 }
 
 // to build a vote mediator transaction
-func (dag *Dag) GenVoteMediatorTx(voter common.Address, mediators map[string]bool, enableGasFee bool,ks *keystore.KeyStore) (*modules.Transaction, uint64, error) {
+func (dag *Dag) GenVoteMediatorTx(voter common.Address, mediators map[string]bool, enableGasFee bool, ks *keystore.KeyStore) (*modules.Transaction, uint64, error) {
 	// 1. 组装 message
 	msb, err := json.Marshal(mediators)
 	if err != nil {
@@ -407,7 +407,7 @@ func (dag *Dag) GenVoteMediatorTx(voter common.Address, mediators map[string]boo
 		return nil, 0, err
 	}
 	tx.AddMessage(modules.NewMessage(modules.APP_SIGNATURE, modules.NewSignaturePayload(pubKey, sign)))
-	return tx,0,nil
+	return tx, 0, nil
 }
 
 // 构建一个转ptn的转账交易
