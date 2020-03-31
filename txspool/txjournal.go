@@ -25,14 +25,15 @@ import (
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/dag/errors"
 	"path/filepath"
 )
 
 // errNoActiveJournal is returned if a transaction is attempted to be inserted
 // into the journal, but no such file is currently open.
 var errNoActiveJournal = errors.New("no active journal")
+
 // devNull is a WriteCloser that just discards anything written into it. Its
 // goal is to allow the transaction journal to write into a fake journal when
 // loading transactions on startup without printing warnings due to no file

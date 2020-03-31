@@ -53,8 +53,8 @@ type TxPool struct {
 	dag                   txspool.IDag
 	tokenengine           tokenengine.ITokenEngine
 	sync.RWMutex
-	txFeed                event.Feed
-	scope                 event.SubscriptionScope
+	txFeed event.Feed
+	scope  event.SubscriptionScope
 }
 
 // NewTxPool creates a new transaction pool to gather, sort and filter inbound
@@ -148,7 +148,7 @@ func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 		deletedReq, ok = pool.userContractRequests[reqHash]
 		if ok {
 			delete(pool.userContractRequests, reqHash)
-			log.Debugf("[%s]delete user contract request by hash:%s", reqHash.ShortStr(), txHash.String())
+			log.Debugf("[%s]delete user contract request[%s] by hash:%s", reqHash.ShortStr(), reqHash.String(), txHash.String())
 		}
 	}
 	reverseDeleteReq := func() {
@@ -160,7 +160,7 @@ func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 	//1.validate tx
 	pool.txValidator.SetUtxoQuery(pool)
 	fee, vcode, err := pool.txValidator.ValidateTx(tx, !tx.IsOnlyContractRequest())
-	log.Debugf("[%s]validate tx[%s] get result:%v", reqHash.ShortStr(), txHash.String(), vcode)
+	//log.Debugf("[%s]validate tx[%s] get result:%v", reqHash.ShortStr(), txHash.String(), vcode)
 	if err != nil && vcode != validator.TxValidationCode_ORPHAN {
 		//验证不通过，而且也不是孤儿
 		log.Warnf("[%s]validate tx[%s] get error:%s", reqHash.ShortStr(), txHash.String(), err.Error())
@@ -178,7 +178,7 @@ func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 	//否则，增加到正常交易池。
 	if tx.IsUserContract() && tx.IsOnlyContractRequest() {
 		//user contract request
-		log.Debugf("[%s]add tx[%s] to user contract request pool",reqHash.ShortStr() ,txHash.String())
+		log.Debugf("[%s]add tx[%s] to user contract request pool", reqHash.ShortStr(), txHash.String())
 		pool.userContractRequests[tx2.TxHash] = tx2
 		pool.txFeed.Send(modules.TxPreEvent{Tx: tx, IsOrphan: false})
 	} else { //不是用户合约请求
@@ -194,7 +194,7 @@ func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 			}
 		} else {
 			//3. process normal tx
-			log.Debugf("add tx[%s] to normal pool", tx2.TxHash.String())
+			log.Debugf("!%s!add tx[%s] to normal pool", reqHash.ShortStr(), tx2.TxHash.String())
 			err = pool.normals.AddTx(tx2)
 			if err != nil {
 				log.Errorf("add tx[%s] to normal pool error:%s", tx2.TxHash.String(), err.Error())
@@ -220,7 +220,13 @@ func (pool *TxPool) isBasedOnRequestPool(tx *txspool.TxPoolTransaction) bool {
 		if _, ok := pool.basedOnRequestOrphans[h]; ok {
 			return true
 		}
+		for _, tx := range pool.basedOnRequestOrphans {
+			if tx.ReqHash == h {
+				return true
+			}
+		}
 	}
+
 	return false
 }
 
