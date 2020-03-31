@@ -642,12 +642,19 @@ func (pool *TxPool) Status() (int, int, int) {
 			unpacked++
 		}
 	}
-	return unpacked, packed, len(pool.orphans)
+	return unpacked, packed, len(pool.orphans) + len(pool.basedOnRequestOrphans)
 }
 func (pool *TxPool) Content() (map[common.Hash]*txspool.TxPoolTransaction, map[common.Hash]*txspool.TxPoolTransaction) {
 	pool.RLock()
 	defer pool.RUnlock()
-	return pool.normals.GetAllTxs(), pool.orphans
+	otxs := make(map[common.Hash]*txspool.TxPoolTransaction)
+	for k, v := range pool.orphans {
+		otxs[k] = v
+	}
+	for k, v := range pool.basedOnRequestOrphans {
+		otxs[k] = v
+	}
+	return pool.normals.GetAllTxs(), otxs
 }
 
 //将交易状态改为已打包
