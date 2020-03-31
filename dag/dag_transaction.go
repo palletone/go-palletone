@@ -23,7 +23,6 @@ package dag
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"math/big"
 
