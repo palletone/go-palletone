@@ -941,7 +941,7 @@ func (tx *Transaction) IsSystemContract() bool {
 
 //是否是一个用户合约的交易
 func (tx *Transaction) IsUserContract() bool {
-	for _, msg := range tx.txdata.TxMessages {
+	for _, msg := range tx.Messages() {
 		if msg.App == APP_CONTRACT_INVOKE_REQUEST {
 			contractId := msg.Payload.(*ContractInvokeRequestPayload).ContractId
 			contractAddr := common.NewAddress(contractId, common.ContractHash)

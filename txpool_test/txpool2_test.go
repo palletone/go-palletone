@@ -430,4 +430,5 @@ func testGetSortTxs(t *testing.T, txs []*modules.Transaction, p1 *tp1.TxPool, p2
 	result2 := printTxPoolSortTxs(p2)
 	t.Log("p2 Add Tx A,C,B", result2)
 	assert.Equal(t, txs[0].Hash().String()+`;`+txs[2].Hash().String()+`;`+txs[1].Hash().String()+`;`, result2)
+	assert.Equal(t, result2, result1)
 }
