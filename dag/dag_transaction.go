@@ -23,6 +23,8 @@ package dag
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"math/big"
 
 	"github.com/palletone/go-palletone/common"
@@ -365,7 +367,7 @@ func (dag *Dag) CreateTokenTransaction(from, to common.Address, token *modules.A
 }
 
 // to build a vote mediator transaction
-func (dag *Dag) GenVoteMediatorTx(voter common.Address, mediators map[string]bool, enableGasFee bool) (*modules.Transaction, uint64, error) {
+func (dag *Dag) GenVoteMediatorTx(voter common.Address, mediators map[string]bool, enableGasFee bool,ks *keystore.KeyStore) (*modules.Transaction, uint64, error) {
 	// 1. 组装 message
 	msb, err := json.Marshal(mediators)
 	if err != nil {
@@ -386,16 +388,27 @@ func (dag *Dag) GenVoteMediatorTx(voter common.Address, mediators map[string]boo
 		App:     modules.APP_ACCOUNT_UPDATE,
 		Payload: accountUpdate,
 	}
-
-	// 2. 组装 tx
-	//fee := dag.CurrentFeeSchedule().AccountUpdateFee
-	fee := dag.GetChainParameters().AccountUpdateFee
-	tx, fee, err := dag.CreateGenericTransaction(voter, voter, 0, fee, nil, msg, enableGasFee)
+	if enableGasFee {
+		// 2. 组装 tx
+		//fee := dag.CurrentFeeSchedule().AccountUpdateFee
+		fee := dag.GetChainParameters().AccountUpdateFee
+		tx, fee, err := dag.CreateGenericTransaction(voter, voter, 0, fee, nil, msg, enableGasFee)
+		if err != nil {
+			return nil, 0, err
+		}
+		return tx, fee, nil
+	}
+	tx := modules.NewTransaction([]*modules.Message{msg})
+	pubKey, err := ks.GetPublicKey(voter)
 	if err != nil {
 		return nil, 0, err
 	}
-
-	return tx, fee, nil
+	sign, err := ks.SigData(tx, voter)
+	if err != nil {
+		return nil, 0, err
+	}
+	tx.AddMessage(modules.NewMessage(modules.APP_SIGNATURE, modules.NewSignaturePayload(pubKey, sign)))
+	return tx,0,nil
 }
 
 // 构建一个转ptn的转账交易

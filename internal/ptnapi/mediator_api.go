@@ -433,7 +433,7 @@ func (a *PrivateMediatorAPI) Vote(voterStr string, mediatorStrs []string) (*TxEx
 	}
 
 	// 创建交易
-	tx, fee, err := a.Dag().GenVoteMediatorTx(voter, mp,a.EnableGasFee())
+	tx, fee, err := a.Dag().GenVoteMediatorTx(voter, mp,a.EnableGasFee(),a.GetKeyStore())
 	if err != nil {
 		return nil, err
 	}
