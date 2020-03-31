@@ -187,6 +187,8 @@ func GenContractTransction(orgTx *modules.Transaction, msgs []*modules.Message) 
 
 	tx := modules.NewTransaction(org_msgs)
 	tx.SetCertId(orgTx.CertId())
+	tx.SetVersion(orgTx.Version())
+	tx.SetNonce(orgTx.Nonce())
 	tx.SetIllegal(orgTx.Illegal())
 	return tx, nil
 }

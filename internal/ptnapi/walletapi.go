@@ -67,7 +67,7 @@ func (s *PublicWalletAPI) CreateRawTransaction(ctx context.Context, from string,
 	if lockTime != 0 {
 		pay := tx.Messages()[0].Payload.(*modules.PaymentPayload)
 		pay.LockTime = lockTime
-		tx.UpdateMessage(0, modules.NewMessage(modules.APP_PAYMENT, pay))
+		tx.ModifiedMsg(0, modules.NewMessage(modules.APP_PAYMENT, pay))
 	}
 
 	mtxbt, err := rlp.EncodeToBytes(tx)
@@ -1779,7 +1779,7 @@ func (s *PrivateWalletAPI) buildRawTransferTx2(tokenId, from, to, gasFrom string
 	if err != nil {
 		return nil, nil, err
 	}
-	if !gasFee.IsPositive() && s.b.EnableGasFee(){
+	if !gasFee.IsPositive() && s.b.EnableGasFee() {
 		return nil, nil, fmt.Errorf("fee is ZERO ")
 	}
 	//
