@@ -238,6 +238,10 @@ web3._extend({
 			name: 'syncing',
 			getter: 'ptn_syncing'
 		}),
+		new web3._extend.Property({
+			name: 'startCorsSync',
+			getter: 'ptn_startCorsSync'
+		}),
 	]
 });
 `
