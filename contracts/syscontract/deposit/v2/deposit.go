@@ -611,14 +611,15 @@ func (d *DepositChaincode) IsInForfeitureList(stub shim.ChaincodeStubInterface, 
 }
 
 func (d *DepositChaincode) GetListForForfeitureApplication(stub shim.ChaincodeStubInterface) pb.Response {
-	list, err := stub.GetState(modules.ListForForfeiture)
+	list, err := getListForForfeiture(stub)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
 	if list == nil {
 		return shim.Success([]byte("{}"))
 	}
-	return shim.Success(list)
+	byte,_ := json.Marshal(list)
+	return shim.Success(byte)
 }
 
 func (d *DepositChaincode) IsInQuitList(stub shim.ChaincodeStubInterface, address string) bool {
@@ -638,14 +639,16 @@ func (d *DepositChaincode) IsInQuitList(stub shim.ChaincodeStubInterface, addres
 }
 
 func (d *DepositChaincode) GetQuitApplyList(stub shim.ChaincodeStubInterface) pb.Response {
-	list, err := stub.GetState(modules.ListForQuit)
+
+	list, err := getListForQuit(stub)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
 	if list == nil {
 		return shim.Success([]byte("{}"))
 	}
-	return shim.Success(list)
+	byte,_ := json.Marshal(list)
+	return shim.Success(byte)
 }
 
 func (d *DepositChaincode) IsInAgreeList(stub shim.ChaincodeStubInterface, address string) bool {
@@ -871,21 +874,17 @@ func (d DepositChaincode) GetAllNode(stub shim.ChaincodeStubInterface) pb.Respon
 }
 
 func (d DepositChaincode) GetAllJury(stub shim.ChaincodeStubInterface) pb.Response {
-	listb, err := stub.GetState(modules.JuryList)
+	listb, err := getList(stub,modules.JuryList)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
 	if listb == nil {
 		return shim.Success([]byte("{}"))
 	}
-	var allJurorAddrs map[string]bool
-	err = json.Unmarshal(listb, &allJurorAddrs)
-	if err != nil {
-		return shim.Error(err.Error())
-	}
+
 
 	jurynodes := make(map[string]*modules.JuryDepositJson)
-	for a := range allJurorAddrs {
+	for a := range listb {
 		balance, err := d.GetJuryDeposit(stub, a)
 		if err != nil {
 			return shim.Success([]byte(err.Error()))

@@ -150,7 +150,6 @@ func (rep *StateRepository) GetContractStateByVersion(id []byte,
 					return write.Value, nil
 				}
 			}
-			//}
 		}
 	}
 	return nil, errors.New("WriteSet not found")
@@ -212,11 +211,20 @@ func (rep *StateRepository) GetContractsByTpl(tplId []byte) ([]*modules.Contract
 }
 
 func (rep *StateRepository) GetContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
-	return rep.statedb.GetContractTpl(tplId)
+
+	tpl, err := rep.statedb.GetContractTpl(tplId)
+	if err != nil {
+		return rep.statedb.GetContractTplFromSysContract(tplId)
+	}
+	return tpl, nil
 }
 
 func (rep *StateRepository) GetContractTplCode(tplId []byte) ([]byte, error) {
-	return rep.statedb.GetContractTplCode(tplId)
+	code, err := rep.statedb.GetContractTplCode(tplId)
+	if err != nil {
+		return rep.statedb.GetContractTplCodeFromSysContract(tplId)
+	}
+	return code, nil
 }
 
 func (rep *StateRepository) RetrieveMediator(address common.Address) (*core.Mediator, error) {
@@ -429,7 +437,10 @@ func (rep *StateRepository) LookupMediatorInfo() []*modules.MediatorInfo2 {
 	for _, info := range infos {
 		hash, _ := rep.dagdb.GetHashByNumber(modules.NewChainIndex(gasToken, uint64(info.LastConfirmedUnitNum)))
 		header, _ := rep.dagdb.GetHeaderByHash(hash)
-		info2 := &modules.MediatorInfo2{MediatorInfo: *info, Version: string(header.Extra())}
+		info2 := &modules.MediatorInfo2{
+			MediatorInfo: *info,
+			Version:      string(header.Extra()),
+		}
 		result = append(result, info2)
 	}
 	return result
@@ -523,7 +534,18 @@ func (rep *StateRepository) GetContractJury(contractId []byte) (*modules.Electio
 	return rep.statedb.GetContractJury(contractId)
 }
 func (rep *StateRepository) GetAllContractTpl() ([]*modules.ContractTemplate, error) {
-	return rep.statedb.GetAllContractTpl()
+	tpls, err := rep.statedb.GetAllContractTpl()
+	if err != nil {
+		return nil, err
+	}
+	tpls2, err := rep.statedb.GetAllContractTplFromSysContract()
+	if err != nil {
+		return nil, err
+	}
+	for _, t := range tpls2 {
+		tpls = append(tpls, t)
+	}
+	return tpls, nil
 }
 
 func (rep *StateRepository) GetAccountVotedMediators(addr common.Address) map[string]bool {

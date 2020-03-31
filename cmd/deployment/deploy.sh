@@ -4,11 +4,11 @@ source ./modifyconfig.sh
 
 function ExecInit()
 {
-    count=1  
-    while [ $count -le $1 ] ;  
-    do  
+    count=1
+    while [ $count -le $1 ] ;
+    do
     #echo $count;
-    #ExecDeploy $count 
+    #ExecDeploy $count
     if [ $count -eq 1 ] ;then
     cd node$count
     cp ../init.sh .
@@ -37,8 +37,8 @@ function ExecInit()
         rm -rf log
         cd ../
     fi
-    let ++count;  
-    sleep 1;  
+    let ++count;
+    sleep 1;
     done
 
     length=${#initinfo}
@@ -49,7 +49,7 @@ function ExecInit()
     genesishash=${str:$pos:66}
     echo "Init OK GenesisHash="$genesishash
 
-    return 0;  
+    return 0;
 }
 
 
@@ -107,22 +107,24 @@ function ExecDeploy()
 
 
 
-function LoopDeploy()  
+function LoopDeploy()
 {
-    count=1;  
-    while [ $count -le $1 ] ;  
-    do  
+    count=1;
+    while [ $count -le $1 ] ;
+    do
     #echo $count;
     ExecDeploy $count $2
-    let ++count;  
-    sleep 1;  
-    done  
-    return 0;  
+    let ++count;
+    sleep 1;
+    done
+    return 0;
 }
-path=`echo $GOPATH`
-src=/src/github.com/palletone/go-palletone/build/bin/gptn
-fullpath=$path$src
-cp $fullpath .
+#path=`echo $GOPATH`
+#src=/src/github.com/palletone/go-palletone/build/bin/gptn
+#fullpath=$path$src
+#cp $fullpath .
+
+cp ../../gptn .
 
 n=
 if [ -n "$1" ]; then

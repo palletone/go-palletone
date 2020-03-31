@@ -31,7 +31,7 @@ import (
 	"github.com/palletone/go-palletone/validator"
 )
 
-type dags interface {
+type IDag interface {
 	GetDb() ptndb.Database
 	CurrentUnit(token modules.AssetId) *modules.Unit
 	GetUnitByHash(hash common.Hash) (*modules.Unit, error)
@@ -65,10 +65,11 @@ type dags interface {
 	GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error)
 	GetJurorByAddrHash(addrHash common.Hash) (*modules.JurorDeposit, error)
 	GetJurorReward(jurorAdd common.Address) common.Address
-
+	GetAddrUtxoAndReqMapping(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, map[common.Hash]common.Hash, error)
 	CheckReadSetValid(contractId []byte, readSet []modules.ContractReadSet) bool
 }
 
 type IValidator interface {
 	ValidateTx(tx *modules.Transaction, isFullTx bool) ([]*modules.Addition, validator.ValidationCode, error)
+	SetUtxoQuery(query validator.IUtxoQuery)
 }

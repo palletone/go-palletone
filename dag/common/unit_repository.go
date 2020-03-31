@@ -61,6 +61,7 @@ type IUnitRepository interface {
 	GetHeaderList(hash common.Hash, parentCount int) ([]*modules.Header, error)
 	SaveHeader(header *modules.Header) error
 	SaveNewestHeader(header *modules.Header) error
+	InitNewestHeader(header *modules.Header) error
 	SaveHeaders(headers []*modules.Header) error
 	GetHeaderByNumber(index *modules.ChainIndex) (*modules.Header, error)
 	GetHeadersByAuthor(authorAddr common.Address, startHeight, count uint64) ([]*modules.Header, error)
@@ -93,7 +94,8 @@ type IUnitRepository interface {
 	//UpdateHeadByBatch(hash common.Hash, number uint64) error
 
 	//GetHeaderRlp(hash common.Hash, index uint64) rlp.RawValue
-	GetFileInfo(filehash []byte) ([]*modules.FileInfo, error)
+	GetFileInfo(filehash []byte) ([]*modules.ProofOfExistencesInfo, error)
+	GetProofOfExistencesByMaindata(maindata []byte) ([]*modules.ProofOfExistencesInfo, error)
 
 	//获得某个分区上的最新不可逆单元
 	//GetLastIrreversibleUnit(assetID modules.AssetId) (*modules.Unit, error)
@@ -200,6 +202,7 @@ func (rep *UnitRepository) GetHeaderList(hash common.Hash, parentCount int) ([]*
 func (rep *UnitRepository) SaveHeader(header *modules.Header) error {
 	return rep.dagdb.SaveHeader(header)
 }
+
 func (rep *UnitRepository) SaveNewestHeader(header *modules.Header) error {
 	//要增加的Unit必须是NewestUnit后的一个单元，否则报错
 	//uHash, uIndex, _, err := rep.propdb.GetNewestUnit(header.GetAssetId())
@@ -232,6 +235,14 @@ func (rep *UnitRepository) SaveNewestHeader(header *modules.Header) error {
 	}
 	return rep.propdb.SetNewestUnit(header)
 }
+func (rep *UnitRepository) InitNewestHeader(header *modules.Header) error {
+	err := rep.dagdb.SaveHeader(header)
+	if err != nil {
+		return err
+	}
+	return rep.propdb.SetNewestUnit(header)
+}
+
 func (rep *UnitRepository) SaveHeaders(headers []*modules.Header) error {
 	return rep.dagdb.SaveHeaders(headers)
 }
@@ -1028,7 +1039,7 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 		switch msg.App {
 		case modules.APP_PAYMENT:
 			myTxHash := txHash
-			if tx.IsNewContractInvokeRequest() { //只是一个请求，TxHash还无法计算
+			if tx.IsOnlyContractRequest() { //只是一个请求，TxHash还无法计算
 				myTxHash = common.Hash{}
 			}
 			myReqHash := reqHash
@@ -1090,16 +1101,19 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 			return fmt.Errorf("Message type is not supported now: %v", msg.App)
 		}
 	}
+
 	// step6. save transaction
 	if err := rep.dagdb.SaveTransaction(tx); err != nil {
 		log.Info("Save transaction:", "error", err.Error())
 		return err
 	}
+
 	// step7. save tx lookup
 	if err := rep.dagdb.SaveTxLookupEntry(unitHash, unitHeight, uint64(unitTime), txIndex, tx); err != nil {
 		log.Errorf("save tx lookup failed,error: %s", err.Error())
 		return err
 	}
+
 	//Index
 	if dagconfig.DagConfig.AddrTxsIndex {
 		err = rep.saveAddrTxIndex(txHash, tx)
@@ -1107,8 +1121,10 @@ func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modu
 			return err
 		}
 	}
+
 	return nil
 }
+
 func (rep *UnitRepository) saveAddrTxIndex(txHash common.Hash, tx *modules.Transaction) error {
 
 	//Index TxId for to address
@@ -1375,7 +1391,7 @@ func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, t
 	}
 	v := ""
 	if len(templateId) != 0 {
-		temC, err := rep.statedb.GetContractTpl(templateId)
+		temC, err := rep.getContractTpl(templateId)
 		if err != nil {
 			log.Errorf("get contract template with id = %x, error:%s", templateId, err.Error())
 			return false
@@ -1405,6 +1421,14 @@ func (rep *UnitRepository) saveContractInitPayload(height *modules.ChainIndex, t
 		}
 	}
 	return true
+}
+
+func (rep *UnitRepository) getContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
+	tpl, err := rep.statedb.GetContractTpl(tplId)
+	if err != nil {
+		return rep.statedb.GetContractTplFromSysContract(tplId)
+	}
+	return tpl, nil
 }
 
 /**
@@ -1759,29 +1783,46 @@ func (rep *UnitRepository) GetAddrUtxoTxs(addr common.Address) ([]*modules.Trans
 	}
 	return txs, err
 }
-func (rep *UnitRepository) GetFileInfo(filehash []byte) ([]*modules.FileInfo, error) {
+func (rep *UnitRepository) GetFileInfo(filehash []byte) ([]*modules.ProofOfExistencesInfo, error) {
 	rep.lock.RLock()
 	defer rep.lock.RUnlock()
 	hashs, err := rep.idxdb.GetMainDataTxIds(filehash)
 	if err != nil {
 		return nil, err
 	}
-	mds0, err := rep.GetFileInfoByHash(hashs)
+	mds0, err := rep.GetMainDataByHash(hashs)
 	if hashs == nil {
 		hash := common.HexToHash(string(filehash))
 		hashs = append(hashs, hash)
-		mds1, err := rep.GetFileInfoByHash(hashs)
+		mds1, err := rep.GetMainDataByHash(hashs)
 		return mds1, err
 	}
 	return mds0, err
 }
 
-func (rep *UnitRepository) GetFileInfoByHash(hashs []common.Hash) ([]*modules.FileInfo, error) {
+func (rep *UnitRepository) GetProofOfExistencesByMaindata(maindata []byte) ([]*modules.ProofOfExistencesInfo, error) {
 	rep.lock.RLock()
 	defer rep.lock.RUnlock()
-	mds := make([]*modules.FileInfo, 0)
+	hashs, err := rep.idxdb.GetMainDataTxIds(maindata)
+	if err != nil {
+		return nil, err
+	}
+	mds0, err := rep.GetMainDataByHash(hashs)
+	if hashs == nil {
+		hash := common.HexToHash(string(maindata))
+		hashs = append(hashs, hash)
+		mds1, err := rep.GetMainDataByHash(hashs)
+		return mds1, err
+	}
+	return mds0, err
+}
+
+func (rep *UnitRepository) GetMainDataByHash(hashs []common.Hash) ([]*modules.ProofOfExistencesInfo, error) {
+	rep.lock.RLock()
+	defer rep.lock.RUnlock()
+	mds := make([]*modules.ProofOfExistencesInfo, 0)
 	for _, hash := range hashs {
-		var md modules.FileInfo
+		var md modules.ProofOfExistencesInfo
 
 		tx, err := rep.GetTransaction(hash)
 		if err != nil {

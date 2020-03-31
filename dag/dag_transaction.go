@@ -21,16 +21,15 @@
 package dag
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/big"
 
-	"encoding/json"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/constants"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/txspool"
 )
 
 type Txo4Greedy struct {
@@ -49,12 +48,11 @@ func newTxo4Greedy(outPoint modules.OutPoint, amount uint64) *Txo4Greedy {
 	}
 }
 
-func (dag *Dag) createBaseTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
-	txPool txspool.ITxPool) (*modules.Transaction, error) {
+func (dag *Dag) createBaseTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int) (*modules.Transaction, error) {
 	daoTotal := daoAmount + daoFee
 	// 1. 获取转出账户所有的PTN utxo
 	//allUtxos, err := dag.GetAddrUtxos(from)
-	coreUtxos, err := dag.getAddrCoreUtxos(from, txPool)
+	coreUtxos, err := dag.getAddrCoreUtxos(from)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +121,7 @@ func (dag *Dag) createBaseTransaction(from, to common.Address, daoAmount, daoFee
 }
 
 func (dag *Dag) createTokenTransaction(from, to common.Address, token *modules.Asset, daoAmountToken, daoFee uint64,
-	txPool txspool.ITxPool) (*modules.Transaction, error) {
+) (*modules.Transaction, error) {
 	// 条件判断
 	if daoFee == 0 {
 		return nil, fmt.Errorf("transaction fee cannot be 0")
@@ -135,7 +133,7 @@ func (dag *Dag) createTokenTransaction(from, to common.Address, token *modules.A
 	}
 
 	// 1. 获取转出账户所有的PTN utxo
-	coreUtxos, tokenUtxos, err := dag.getAddrCoreUtxosToken(from, token, txPool)
+	coreUtxos, tokenUtxos, err := dag.getAddrCoreUtxosToken(from, token)
 	if err != nil {
 		return nil, err
 	}
@@ -224,8 +222,7 @@ func (dag *Dag) getPayload(from, to common.Address, daoAmount, daoFee uint64,
 	return pload, nil
 }
 
-func (dag *Dag) getAddrCoreUtxos(addr common.Address,
-	txPool txspool.ITxPool) (map[modules.OutPoint]*modules.Utxo, error) {
+func (dag *Dag) getAddrCoreUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error) {
 	// todo 待优化
 	allTxos, err := dag.GetAddrUtxos(addr)
 	if err != nil {
@@ -245,9 +242,9 @@ func (dag *Dag) getAddrCoreUtxos(addr common.Address,
 			continue
 		}
 
-		if ok, _ := txPool.OutPointIsSpend(&outPoint); ok {
-			continue
-		}
+		//if ok, _ := txPool.OutPointIsSpend(&outPoint); ok {
+		//	continue
+		//}
 
 		coreUtxos[outPoint] = utxo
 	}
@@ -255,8 +252,7 @@ func (dag *Dag) getAddrCoreUtxos(addr common.Address,
 	return coreUtxos, nil
 }
 
-func (dag *Dag) getAddrCoreUtxosToken(addr common.Address, assetToken *modules.Asset,
-	txPool txspool.ITxPool) (map[modules.OutPoint]*modules.Utxo, map[modules.OutPoint]*modules.Utxo, error) {
+func (dag *Dag) getAddrCoreUtxosToken(addr common.Address, assetToken *modules.Asset) (map[modules.OutPoint]*modules.Utxo, map[modules.OutPoint]*modules.Utxo, error) {
 	// todo 待优化
 	allTxos, err := dag.GetAddrUtxos(addr)
 	if err != nil {
@@ -282,9 +278,9 @@ func (dag *Dag) getAddrCoreUtxosToken(addr common.Address, assetToken *modules.A
 			continue
 		}
 
-		if ok, _ := txPool.OutPointIsSpend(&outPoint); ok {
-			continue
-		}
+		//if ok, _ := txPool.OutPointIsSpend(&outPoint); ok {
+		//	continue
+		//}
 
 		if isPTN {
 			coreUtxos[outPoint] = utxo
@@ -304,12 +300,12 @@ func (dag *Dag) calculateDataFee(data interface{}) uint64 {
 }
 
 func (dag *Dag) CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
-	msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
+	msg *modules.Message) (*modules.Transaction, uint64, error) {
 	// 如果是 text，则增加费用，以防止用户任意增加文本，导致网络负担加重
 	if msg.App == modules.APP_DATA {
 		daoFee += dag.calculateDataFee(msg.Payload)
 	}
-	tx, err := dag.createBaseTransaction(from, to, daoAmount, daoFee, certID, txPool)
+	tx, err := dag.createBaseTransaction(from, to, daoAmount, daoFee, certID)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -320,12 +316,12 @@ func (dag *Dag) CreateGenericTransaction(from, to common.Address, daoAmount, dao
 
 // to build a transfer transactions by the token, from to fee
 func (dag *Dag) CreateTokenTransaction(from, to common.Address, token *modules.Asset, daoAmountToken, daoFee uint64,
-	msg *modules.Message, txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
+	msg *modules.Message) (*modules.Transaction, uint64, error) {
 	// 如果是 text，则增加费用，以防止用户任意增加文本，导致网络负担加重
 	if msg.App == modules.APP_DATA {
 		daoFee += dag.calculateDataFee(msg.Payload)
 	}
-	tx, err := dag.createTokenTransaction(from, to, token, daoAmountToken, daoFee, txPool)
+	tx, err := dag.createTokenTransaction(from, to, token, daoAmountToken, daoFee)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -335,8 +331,7 @@ func (dag *Dag) CreateTokenTransaction(from, to common.Address, token *modules.A
 }
 
 // to build a vote mediator transaction
-func (dag *Dag) GenVoteMediatorTx(voter common.Address, mediators map[string]bool,
-	txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
+func (dag *Dag) GenVoteMediatorTx(voter common.Address, mediators map[string]bool) (*modules.Transaction, uint64, error) {
 	// 1. 组装 message
 	msb, err := json.Marshal(mediators)
 	if err != nil {
@@ -361,7 +356,7 @@ func (dag *Dag) GenVoteMediatorTx(voter common.Address, mediators map[string]boo
 	// 2. 组装 tx
 	//fee := dag.CurrentFeeSchedule().AccountUpdateFee
 	fee := dag.GetChainParameters().AccountUpdateFee
-	tx, fee, err := dag.CreateGenericTransaction(voter, voter, 0, fee, nil, msg, txPool)
+	tx, fee, err := dag.CreateGenericTransaction(voter, voter, 0, fee, nil, msg)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -370,15 +365,14 @@ func (dag *Dag) GenVoteMediatorTx(voter common.Address, mediators map[string]boo
 }
 
 // 构建一个转ptn的转账交易
-func (dag *Dag) GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string,
-	txPool txspool.ITxPool) (*modules.Transaction, uint64, error) {
+func (dag *Dag) GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string) (*modules.Transaction, uint64, error) {
 	fee := dag.GetChainParameters().TransferPtnBaseFee
 	var tx *modules.Transaction
 	var err error
 
 	// 如果没有文本，或者文本为空
 	if text == nil || *text == "" {
-		tx, err = dag.createBaseTransaction(from, to, daoAmount, fee, nil, txPool)
+		tx, err = dag.createBaseTransaction(from, to, daoAmount, fee, nil)
 	} else {
 		// 1. 组装 message
 		msg := &modules.Message{
@@ -387,7 +381,7 @@ func (dag *Dag) GenTransferPtnTx(from, to common.Address, daoAmount uint64, text
 		}
 
 		// 2. 创建 tx
-		tx, fee, err = dag.CreateGenericTransaction(from, to, daoAmount, fee, nil, msg, txPool)
+		tx, fee, err = dag.CreateGenericTransaction(from, to, daoAmount, fee, nil, msg)
 	}
 
 	if err != nil {

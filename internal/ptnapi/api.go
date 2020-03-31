@@ -126,7 +126,7 @@ func (s *PublicTxPoolAPI) Content() map[string]map[string]*RPCTransaction {
 
 // Status returns the number of pending and queued transaction in the pool.
 func (s *PublicTxPoolAPI) Status() map[string]hexutil.Uint {
-	pending, queue, orphans := s.b.Stats()
+	pending, queue, orphans := s.b.Status()
 	return map[string]hexutil.Uint{
 		"pending": hexutil.Uint(pending),
 		"queued":  hexutil.Uint(queue),
@@ -270,7 +270,11 @@ func (s *PublicTransactionPoolAPI) GetAddrOutpoints(ctx context.Context, addr st
 	return string(result_json), nil
 }
 func (s *PublicTransactionPoolAPI) GetAddrUtxos(ctx context.Context, addr string) (string, error) {
-	items, err := s.b.GetAddrUtxos(addr)
+	address, err := common.StringToAddress(addr)
+	if err != nil {
+		return "", err
+	}
+	items, err := s.b.GetPoolAddrUtxos(address, nil)
 
 	if err != nil {
 		return "", err
@@ -602,7 +606,9 @@ func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, reqTxMa
 	inputsOutpoint := []modules.OutPoint{}
 	allUtxo := make(map[modules.OutPoint]*modules.Utxo)
 	for k, v := range dbUtxo {
-		if v.Asset.Equal(tokenAsset) {
+		if v.Asset.Equal(tokenAsset) && !v.IsSpent() {
+
+			v.Spend()
 			allUtxo[k] = v
 		}
 	}
@@ -636,6 +642,9 @@ func SelectUtxoFromDagAndPool(dbUtxo map[modules.OutPoint]*modules.Utxo, reqTxMa
 					}
 					if addr.String() == from {
 						allUtxo[op] = modules.NewUtxo(output, pay.LockTime, time.Now().Unix())
+					}
+					if tx.ReqHash != tx.TxHash {
+						reqTxMapping[tx.ReqHash] = tx.TxHash
 					}
 
 				}

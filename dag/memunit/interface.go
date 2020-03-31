@@ -25,7 +25,6 @@ import (
 	"github.com/palletone/go-palletone/common"
 	common2 "github.com/palletone/go-palletone/dag/common"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/txspool"
 )
 
 //不稳定单元和新单元的操作
@@ -35,7 +34,7 @@ type IMemDag interface {
 	////设置MemDag的稳定单元
 	//SetStableUnit(unit *modules.Unit, isGenesis bool)
 	//增加一个单元到MemDag
-	AddUnit(unit *modules.Unit, txpool txspool.ITxPool, isProd bool) (common2.IUnitRepository, common2.IUtxoRepository,
+	AddUnit(unit *modules.Unit, isProd bool) (common2.IUnitRepository, common2.IUtxoRepository,
 		common2.IStateRepository, common2.IPropRepository, common2.IUnitProduceRepository, error)
 	//保存Header
 	SaveHeader(header *modules.Header) error
@@ -51,7 +50,7 @@ type IMemDag interface {
 	GetUnstableRepositories() (common2.IUnitRepository, common2.IUtxoRepository, common2.IStateRepository,
 		common2.IPropRepository, common2.IUnitProduceRepository)
 	//设置一个单元的群签名，使得该单元稳定
-	SetUnitGroupSign(uHash common.Hash, groupSign []byte, txpool txspool.ITxPool) error
+	SetUnitGroupSign(uHash common.Hash, groupSign []byte) error
 	//通过Hash获得Header
 	GetHeaderByHash(hash common.Hash) (*modules.Header, error)
 	//通过高度获得Header
@@ -62,6 +61,10 @@ type IMemDag interface {
 	SubscribeSwitchMainChainEvent(ob SwitchMainChainEventFunc)
 	SubscribeToGroupSignEvent(ch chan<- modules.ToGroupSignEvent) event.Subscription
 	SubscribeSaveStableUnitEvent(ch chan<- modules.SaveUnitEvent) event.Subscription
+	SubscribeSaveUnitEvent(ch chan<- modules.SaveUnitEvent) event.Subscription
+
+	SubscribeRollbackUnitEvent(ch chan<- modules.RollbackUnitEvent) event.Subscription
+
 	//关闭
 	Close()
 }

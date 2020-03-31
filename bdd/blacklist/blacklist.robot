@@ -105,7 +105,7 @@ getBalance
     ${result}    post    wallet_getBalance    wallet_getBalance    ${two}
     log    ${result}
     ${len}    Get Length    ${result}
-    ${amount}    Set Variable If    ${len}==0    0    ${result["${assetId}"]}
+    ${amount}    Set Variable If    ${len} == 0    0    ${result["${assetId}"]}
     [Return]    ${amount}
 
 post

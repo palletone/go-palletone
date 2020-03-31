@@ -44,7 +44,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/dag/state"
-	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/light/les"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptnjson"
@@ -85,10 +84,10 @@ func (b *PtnApiBackend) GetKeyStore() *keystore.KeyStore {
 	return b.ptn.GetKeyStore()
 }
 
-func (b *PtnApiBackend) TransferPtn(from, to string, amount decimal.Decimal,
-	text *string) (*ptnapi.TxExecuteResult, error) {
-	return b.ptn.TransferPtn(from, to, amount, text)
-}
+//func (b *PtnApiBackend) TransferPtn(from, to string, amount decimal.Decimal,
+//	text *string) (*ptnapi.TxExecuteResult, error) {
+//	return b.ptn.TransferPtn(from, to, amount, text)
+//}
 
 //func (b *PtnApiBackend) ChainConfig() *configure.ChainConfig {
 //	return nil
@@ -132,75 +131,19 @@ func (b *PtnApiBackend) SendConsensus(ctx context.Context) error {
 	return nil
 }
 
-func (b *PtnApiBackend) SendTx(ctx context.Context, signedTx *modules.Transaction) error {
-	err := b.ptn.txPool.AddLocal(signedTx)
-	if err != nil {
-		return err
-	}
-	err = b.Dag().SaveLocalTx(signedTx)
-	if err != nil {
-		log.Errorf("Try to send tx[%s] get an error:%s", signedTx.Hash().String(), err.Error())
-	}
-	//先将状态改为交易池中
-	err = b.Dag().SaveLocalTxStatus(signedTx.Hash(), modules.TxStatus_InPool)
-	if err != nil {
-		log.Warnf("Save tx[%s] status to local err:%s", signedTx.Hash().String(), err.Error())
-	}
-	//更新Tx的状态到LocalDB
-	go func(txHash common.Hash) {
-		saveUnitCh := make(chan modules.SaveUnitEvent, 10)
-		defer close(saveUnitCh)
-		saveUnitSub := b.Dag().SubscribeSaveUnitEvent(saveUnitCh)
-		headCh := make(chan modules.SaveUnitEvent, 10)
-		defer close(headCh)
-		headSub := b.Dag().SubscribeSaveStableUnitEvent(headCh)
-		defer saveUnitSub.Unsubscribe()
-		defer headSub.Unsubscribe()
-		timeout := time.NewTimer(100 * time.Second)
-		for {
-			select {
-			case u := <-saveUnitCh:
-				log.Infof("SubscribeSaveUnitEvent received unit:%s", u.Unit.DisplayId())
-				for _, utx := range u.Unit.Transactions() {
-					if utx.Hash() == txHash || utx.RequestHash() == txHash {
-						log.Debugf("Change local tx[%s] status to unstable", txHash.String())
-						err = b.Dag().SaveLocalTxStatus(txHash, modules.TxStatus_Unstable)
-						if err != nil {
-							log.Warnf("Save tx[%s] status to local err:%s", txHash.String(), err.Error())
-						}
-					}
-				}
-			case u := <-headCh:
-				log.Infof("SubscribeSaveStableUnitEvent received unit:%s", u.Unit.DisplayId())
-				for _, utx := range u.Unit.Transactions() {
-					if utx.Hash() == txHash || utx.RequestHash() == txHash {
-						log.Debugf("Change local tx[%s] status to stable", txHash.String())
-						err = b.Dag().SaveLocalTxStatus(txHash, modules.TxStatus_Stable)
-						if err != nil {
-							log.Warnf("Save tx[%s] status to local err:%s", txHash.String(), err.Error())
-						}
-						return
-					}
-				}
-			case <-timeout.C:
-				log.Warnf("SubscribeSaveStableUnitEvent timeout for tx[%s]", txHash.String())
-				return
-			// Err() channel will be closed when unsubscribing.
-			case <-headSub.Err():
-				log.Debugf("SubscribeSaveStableUnitEvent err")
-				return
-			case <-saveUnitSub.Err():
-				log.Debugf("SubscribeSaveUnitEvent err")
-				return
-			}
-		}
-	}(signedTx.Hash())
-
-	return nil
+func (b *PtnApiBackend) SendTx(ctx context.Context, tx *modules.Transaction) error {
+	return b.ptn.contractPorcessor.AddLocalTx(tx)
 }
 
 func (b *PtnApiBackend) SendTxs(ctx context.Context, signedTxs []*modules.Transaction) []error {
-	return b.ptn.txPool.AddLocals(signedTxs)
+	result := []error{}
+	for _, tx := range signedTxs {
+		err := b.ptn.txPool.AddLocal(tx)
+		if err != nil {
+			result = append(result, err)
+		}
+	}
+	return result
 }
 
 func (b *PtnApiBackend) GetPoolTransactions() (modules.Transactions, error) {
@@ -218,7 +161,7 @@ func (b *PtnApiBackend) GetPoolTransactions() (modules.Transactions, error) {
 }
 
 func (b *PtnApiBackend) GetPoolTransaction(hash common.Hash) *modules.Transaction {
-	tx, _ := b.ptn.txPool.Get(hash)
+	tx, _ := b.ptn.txPool.GetTx(hash)
 	return tx.Tx
 }
 
@@ -257,8 +200,8 @@ func (b *PtnApiBackend) GetChainParameters() *core.ChainParameters {
 	return b.Dag().GetChainParameters()
 }
 
-func (b *PtnApiBackend) Stats() (int, int, int) {
-	return b.ptn.txPool.Stats()
+func (b *PtnApiBackend) Status() (int, int, int) {
+	return b.ptn.txPool.Status()
 }
 
 func (b *PtnApiBackend) TxPoolContent() (map[common.Hash]*txspool.TxPoolTransaction,
@@ -530,16 +473,21 @@ func (b *PtnApiBackend) GetTxPackInfo(txHash common.Hash) (*ptnjson.TxPackInfoJs
 
 // GetPoolTxByHash return a json of the tx in pool.
 func (b *PtnApiBackend) GetTxPoolTxByHash(hash common.Hash) (*ptnjson.TxPoolTxJson, error) {
-	tx, unit_hash := b.ptn.txPool.Get(hash)
-	if tx == nil {
+	tx, err := b.ptn.txPool.GetTx(hash)
+	if err != nil {
 		return nil, fmt.Errorf("the tx[%s] is not exist in txppol.", hash.String())
 	}
-	return ptnjson.ConvertTxPoolTx2Json(tx, unit_hash), nil
+	return ptnjson.ConvertTxPoolTx2Json(tx, tx.UnitHash), nil
 }
 
 func (b *PtnApiBackend) GetUnpackedTxsByAddr(addr string) ([]*txspool.TxPoolTransaction, error) {
-	tx, err := b.ptn.txPool.GetUnpackedTxsByAddr(addr)
+	address, _ := common.StringToAddress(addr)
+	tx, err := b.ptn.txPool.GetUnpackedTxsByAddr(address)
 	return tx, err
+}
+func (b *PtnApiBackend) GetPoolAddrUtxos(addr common.Address, token *modules.Asset) (
+	map[modules.OutPoint]*modules.Utxo, error) {
+	return b.ptn.txPool.GetAddrUtxos(addr, token)
 }
 
 func (b *PtnApiBackend) QueryProofOfExistenceByReference(ref string) ([]*ptnjson.ProofOfExistenceJson, error) {
@@ -566,11 +514,16 @@ func (b *PtnApiBackend) GetHeaderByNumber(number *modules.ChainIndex) (*modules.
 func (b *PtnApiBackend) GetPrefix(prefix string) map[string][]byte {
 	return b.ptn.dag.GetCommonByPrefix([]byte(prefix), false)
 } //getprefix
-
+func (b *PtnApiBackend) utxoQuery(outpoint *modules.OutPoint) (*modules.Utxo, error) {
+	preUtxo, err := b.ptn.txPool.GetUtxoFromAll(outpoint)
+	if err == nil {
+		return preUtxo, nil
+	}
+	return b.ptn.dag.GetUtxoEntry(outpoint)
+}
 func (b *PtnApiBackend) GetUtxoEntry(outpoint *modules.OutPoint) (*ptnjson.UtxoJson, error) {
-
 	//This function query from txpool first, not exist, then query from leveldb.
-	utxo, err := b.ptn.txPool.GetUtxoEntry(outpoint)
+	utxo, err := b.utxoQuery(outpoint)
 	if err != nil {
 		log.Errorf("Utxo not found in txpool and leveldb, key:%s", outpoint.String())
 		return nil, err
@@ -601,7 +554,7 @@ func (b *PtnApiBackend) GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Ad
 	return address, err
 }
 
-func (b *PtnApiBackend) GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error) {
+func (b *PtnApiBackend) GetDagAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error) {
 	address, err := common.StringToAddress(addr)
 	if err != nil {
 		return nil, err
@@ -951,8 +904,12 @@ func (b *PtnApiBackend) GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	return b.ptn.dag.GetTxHashByReqId(reqid)
 }
 
-func (b *PtnApiBackend) GetFileInfo(filehash string) ([]*modules.FileInfo, error) {
+func (b *PtnApiBackend) GetFileInfo(filehash string) ([]*modules.ProofOfExistencesInfo, error) {
 	return b.ptn.dag.GetFileInfo([]byte(filehash))
+}
+
+func (b *PtnApiBackend) GetProofOfExistencesByMaindata(maindata string) ([]*modules.ProofOfExistencesInfo, error) {
+	return b.ptn.dag.GetFileInfo([]byte(maindata))
 }
 
 //SPV

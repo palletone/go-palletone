@@ -46,10 +46,9 @@ import (
 	"github.com/palletone/go-palletone/dag/storage"
 	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/ptn/downloader"
-	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/tokenengine"
+	"github.com/palletone/go-palletone/txpool2"
 	"github.com/palletone/go-palletone/txspool"
-	"github.com/shopspring/decimal"
 )
 
 type LesServer interface {
@@ -83,7 +82,7 @@ type PalletOne struct {
 	networkId     uint64
 	netRPCService *ptnapi.PublicNetAPI
 
-	dag  dag.IDag
+	dag dag.IDag
 
 	// DB interfaces
 	unitDb ptndb.Database // Block chain database
@@ -166,8 +165,11 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
 	}
 	//val:=validator.NewValidate(ptn.dag,ptn.dag,ptn.dag,ptn.dag,cache)
-	ptn.txPool = txspool.NewTxPool(config.TxPool, cache, dag)
-
+	if config.TxPool.Version==2{
+		ptn.txPool = txpool2.NewTxPool(config.TxPool, cache, ptn.dag)
+	}else {
+		ptn.txPool = txspool.NewTxPool(config.TxPool, cache, ptn.dag)
+	}
 	//Test for P2P
 	ptn.engine = consensus.New(dag, ptn.txPool)
 
@@ -461,60 +463,60 @@ func (p *PalletOne) SignAndSendTransaction(addr common.Address, tx *modules.Tran
 }
 
 // @author Albert·Gou
-func (p *PalletOne) TransferPtn(from, to string, amount decimal.Decimal,
-	text *string) (*ptnapi.TxExecuteResult, error) {
-	// 参数检查
-	if from == to {
-		return nil, fmt.Errorf("please don't transfer ptn to yourself: %v", from)
-	}
-
-	if amount.Cmp(decimal.New(0, 0)) != 1 {
-		return nil, fmt.Errorf("the amount of the transfer must be greater than 0")
-	}
-
-	fromAdd, err := common.StringToAddress(from)
-	if err != nil {
-		return nil, fmt.Errorf("invalid account address: %v", from)
-	}
-
-	toAdd, err := common.StringToAddress(to)
-	if err != nil {
-		return nil, fmt.Errorf("invalid account address: %v", to)
-	}
-
-	// 判断本节点是否同步完成，数据是否最新
-	if !p.dag.IsSynced(false) {
-		return nil, fmt.Errorf("the data of this node is not synced, and can't transfer now")
-	}
-
-	// 1. 创建交易
-	tx, fee, err := p.dag.GenTransferPtnTx(fromAdd, toAdd, ptnjson.Ptn2Dao(amount), text, p.txPool)
-	if err != nil {
-		return nil, err
-	}
-
-	// 2. 签名和发送交易
-	err = p.SignAndSendTransaction(fromAdd, tx)
-	if err != nil {
-		return nil, err
-	}
-
-	// 3. 返回执行结果
-	textStr := ""
-	if text != nil {
-		textStr = *text
-	}
-
-	res := &ptnapi.TxExecuteResult{}
-	res.TxContent = fmt.Sprintf("Account(%v) transfer %vPTN to account(%v) with message: '%v'",
-		from, amount, to, textStr)
-	res.TxHash = tx.Hash()
-	res.TxSize = tx.Size().TerminalString()
-	res.TxFee = fmt.Sprintf("%vdao", fee)
-	res.Warning = ptnapi.DefaultResult
-
-	return res, nil
-}
+//func (p *PalletOne) TransferPtn(from, to string, amount decimal.Decimal,
+//	text *string) (*ptnapi.TxExecuteResult, error) {
+//	// 参数检查
+//	if from == to {
+//		return nil, fmt.Errorf("please don't transfer ptn to yourself: %v", from)
+//	}
+//
+//	if amount.Cmp(decimal.New(0, 0)) != 1 {
+//		return nil, fmt.Errorf("the amount of the transfer must be greater than 0")
+//	}
+//
+//	fromAdd, err := common.StringToAddress(from)
+//	if err != nil {
+//		return nil, fmt.Errorf("invalid account address: %v", from)
+//	}
+//
+//	toAdd, err := common.StringToAddress(to)
+//	if err != nil {
+//		return nil, fmt.Errorf("invalid account address: %v", to)
+//	}
+//
+//	// 判断本节点是否同步完成，数据是否最新
+//	if !p.dag.IsSynced(false) {
+//		return nil, fmt.Errorf("the data of this node is not synced, and can't transfer now")
+//	}
+//
+//	// 1. 创建交易
+//	tx, fee, err := p.dag.GenTransferPtnTx(fromAdd, toAdd, ptnjson.Ptn2Dao(amount), text, p.txPool)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	// 2. 签名和发送交易
+//	err = p.SignAndSendTransaction(fromAdd, tx)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	// 3. 返回执行结果
+//	textStr := ""
+//	if text != nil {
+//		textStr = *text
+//	}
+//
+//	res := &ptnapi.TxExecuteResult{}
+//	res.TxContent = fmt.Sprintf("Account(%v) transfer %vPTN to account(%v) with message: '%v'",
+//		from, amount, to, textStr)
+//	res.TxHash = tx.Hash()
+//	res.TxSize = tx.Size().TerminalString()
+//	res.TxFee = fmt.Sprintf("%vdao", fee)
+//	res.Warning = ptnapi.DefaultResult
+//
+//	return res, nil
+//}
 func initGenesisData(keys, values []string, db ptndb.Putter) error {
 	k := len(keys)
 

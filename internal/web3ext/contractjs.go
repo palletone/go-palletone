@@ -32,8 +32,8 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'ccinstalltx',
         	call: 'contract_ccinstalltx',
-        	params: 11, //from, to , daoAmount, daoFee , tplName, path, version，description，abi，language
-			inputFormatter: [null, null, null,null, null, null, null, null, null, null, null]
+        	params: 13, //from, to , daoAmount, daoFee , tplName, path, version，description，abi，language,[]juryAddr,password,timeout
+			inputFormatter: [null, null, null,null, null, null, null, null, null, null, null,null,null]
 		}),
 		new web3._extend.Method({
 			name: 'ccdeploytx',

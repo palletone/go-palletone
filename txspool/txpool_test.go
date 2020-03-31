@@ -203,6 +203,9 @@ func (ud *UnitDag4Test) GetTxFee(pay *modules.Transaction) (*modules.AmountAsset
 	return &modules.AmountAsset{}, nil
 }
 
+func (ud *UnitDag4Test) GetAddrUtxoAndReqMapping(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, map[common.Hash]common.Hash, error) {
+	return map[modules.OutPoint]*modules.Utxo{}, map[common.Hash]common.Hash{}, nil
+}
 func (ud *UnitDag4Test) GetTransactionOnly(hash common.Hash) (*modules.Transaction, error) {
 	return nil, nil
 }
@@ -320,12 +323,14 @@ func TestTransactionAddingTxs(t *testing.T) {
 	assert.Equal(t, 0, 0)
 	fmt.Println("addlocals over.... ", time.Now().Unix()-t0.Unix())
 	//  test GetSortedTxs{}
-	unit_hash := common.HexToHash("0x0e7e7e3bd7c1e9ce440089712d61de38f925eb039f152ae03c6688ed714af729")
-
+	//unit_hash := common.HexToHash("0x0e7e7e3bd7c1e9ce440089712d61de38f925eb039f152ae03c6688ed714af729")
 	defer func(p *TxPool) {
-		sortedtxs, total := p.GetSortedTxs(unit_hash, 1)
+		sortedtxs, _ := p.GetSortedTxs()
+		total := 0
+		for _, tx := range sortedtxs {
+			total += tx.Tx.SerializeSize()
+		}
 		log.Debugf(" total size is :%v ,the cout:%d ", total, len(txs))
-
 		//for i, tx := range sortedtxs {
 		//	if i < len(txs)-1 {
 		//		if sortedtxs[i].Priority_lvl < sortedtxs[i+1].Priority_lvl {
@@ -336,7 +341,7 @@ func TestTransactionAddingTxs(t *testing.T) {
 		//all = len(sortedtxs)
 
 		all = len(sortedtxs)
-		for i:=0; i< all-1; i++{
+		for i := 0; i < all-1; i++ {
 			txpl := sortedtxs[i].Priority_lvl
 			if txpl < sortedtxs[i+1].Priority_lvl {
 				t.Error("sorted failed.", i, txpl)
@@ -473,8 +478,7 @@ func TestGetProscerTx(t *testing.T) {
 
 		count := p.Count()
 		assert.Equal(t, 4, count)
-
-		sortedTxs, _ := pool.GetSortedTxs(common.BytesToHash([]byte("unit")), 1)
+		sortedTxs, _ := pool.GetSortedTxs()
 		for index, tx := range sortedTxs {
 			t.Logf("index:%d, hash:%s", index, tx.Tx.Hash().String())
 		}

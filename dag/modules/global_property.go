@@ -122,7 +122,7 @@ func NewDynGlobalProp() *DynamicGlobalProperty {
 
 		NextMaintenanceTime: 0,
 		LastMaintenanceTime: 0,
-		CurrentAbsoluteSlot:        0,
+		CurrentAbsoluteSlot: 0,
 
 		RecentSlotsFilled: uint128.MaxValue,
 

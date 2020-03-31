@@ -26,9 +26,9 @@ import (
 )
 
 func TestPledgeList_Reduce(t *testing.T) {
-	plist:=&PledgeList{}
-	plist.Add("P19H65zYHUSZbWU6eEBLEyKiB1qK5hoq7PA",365977798108856,211030306388)
-	result,err:= plist.Reduce("P19H65zYHUSZbWU6eEBLEyKiB1qK5hoq7PA",365766767000000)
-	assert.Nil(t,err)
+	plist := &PledgeList{}
+	plist.Add("P19H65zYHUSZbWU6eEBLEyKiB1qK5hoq7PA", 365977798108856, 211030306388)
+	result, err := plist.Reduce("P19H65zYHUSZbWU6eEBLEyKiB1qK5hoq7PA", 365766767000000)
+	assert.Nil(t, err)
 	t.Log(result)
 }

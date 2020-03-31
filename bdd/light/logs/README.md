@@ -1,1 +1,0 @@
-light bdd report

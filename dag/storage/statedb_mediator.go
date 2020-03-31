@@ -143,12 +143,22 @@ func (statedb *StateDb) GetCandidateMediatorList() (map[string]bool, error) {
 	if err != nil {
 		return nil, fmt.Errorf("mediator candidate list is nil")
 	}
-
-	candidateList := make(map[string]bool)
-	err = json.Unmarshal(val, &candidateList)
-	if err != nil {
-		return nil, err
+	if len(val) == 0 {
+		return nil, fmt.Errorf("mediator candidate list is nil")
 	}
-
+	sliceVals := []string{}
+	candidateList := make(map[string]bool)
+	err = json.Unmarshal(val, &sliceVals)
+	if err != nil {
+		//  兼容以前的数据
+		err = json.Unmarshal(val, &candidateList)
+		if err != nil {
+			return nil, err
+		}
+		return candidateList, nil
+	}
+	for _, v := range sliceVals {
+		candidateList[v] = true
+	}
 	return candidateList, nil
 }

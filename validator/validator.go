@@ -238,7 +238,7 @@ return all transactions' fee
 //	code := validate.validateTransactions(txs)
 //	return NewValidateError(code)
 //}
-
+//验证一个Tx是否满足被接受的条件，并返回该Tx的手续费分配情况，验证结果，如果验证结果不是Valid，则err有值
 func (validate *Validate) ValidateTx(tx *modules.Transaction, isFullTx bool) ([]*modules.Addition, ValidationCode, error) {
 	txId := tx.Hash()
 	has, add := validate.cache.HasTxValidateResult(txId)
@@ -320,3 +320,6 @@ func (validate *Validate) SetContractTxCheckFun(checkFun ContractTxCheckFunc) {
 //	v.buildTempDagFunc = buildFunc
 //	log.Debug("SetBuildTempContractDagFunc ok")
 //}
+func (validate *Validate) SetUtxoQuery(query IUtxoQuery) {
+	validate.utxoquery = query
+}

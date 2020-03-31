@@ -91,16 +91,16 @@ const (
 
 func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 	//log.Debugf("launch unitProductionLoop")
-
 	mp.wg.Add(1)
-	// 3. 继续循环生产计划
+
+	// 继续循环生产计划
 	defer mp.scheduleProductionLoop()
 	defer mp.wg.Done()
 
-	// 1. 尝试生产unit
+	// 尝试生产unit
 	result, detail := mp.maybeProduceUnit()
 
-	// 2. 打印尝试结果
+	// 打印尝试结果
 	switch result {
 	case Produced:
 		log.Infof("Generated unit(%v) #%v parent(%v) @%v signed by %v", detail["Hash"], detail["Num"],
@@ -249,7 +249,6 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 
 	// 异步向区块链网络广播新unit
 	go mp.newProducedUnitFeed.Send(NewProducedUnitEvent{Unit: newUnit})
-	log.Debugf("send NewProducedUnitEvent")
 
 	return Produced, detail
 }

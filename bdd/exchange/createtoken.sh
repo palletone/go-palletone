@@ -1,4 +1,4 @@
-#!/usr/bin/expect
+#!/usr/bin/expect -f
 #!/bin/bash
 #./test_case_setup.sh $1
 set tokenHolder [lindex $argv 0]

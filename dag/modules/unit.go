@@ -476,6 +476,18 @@ func (u *Unit) Transactions() []*Transaction {
 	return u.Txs
 }
 
+//除了Coinbase以外的其他所有普通交易
+func (u *Unit) TransactionsWithoutCoinbase() []*Transaction {
+	return u.Txs[1:]
+}
+func (u *Unit) TxHashes() []common.Hash {
+	hashes := make([]common.Hash, len(u.Txs))
+	for i, tx := range u.Txs {
+		hashes[i] = tx.Hash()
+	}
+	return hashes
+}
+
 // return transaction
 func (u *Unit) Transaction(hash common.Hash) *Transaction {
 	for _, transaction := range u.Txs {

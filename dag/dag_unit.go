@@ -50,84 +50,73 @@ func (dag *Dag) getBePackedTxs(txp txspool.ITxPool, cp *jury.Processor,
 	}
 	defer rwM.Close()
 
-	if err := cp.AddContractLoop(rwM, txp, producer, ks); err != nil {
-		log.Debugf("AddContractLoop err: %v", err.Error())
-	}
-	// close tx simulator (系统合约)
-
 	//广播节点选取签名请求事件
 	go cp.BroadcastElectionSigRequestEvent()
 
-	// 从TxPool抓取排序后的Tx，如果是系统合约请求，则执行
-	poolTxs, _ := txp.GetSortedTxs(common.Hash{}, unitNumber)
-	log.DebugDynamic(func() string {
-		txHash := ""
-		for _, tx := range poolTxs {
-			txHash += tx.Tx.Hash().String() + ";"
-		}
-		return "txpool GetSortedTxs return:" + txHash
-	})
-
-	//TODO Jay 这里的txpool.GetSortedTxs返回顺序有问题，所以再次排序
-	poolTxMap := make(map[common.Hash]*modules.Transaction)
-	for _, ptx := range poolTxs {
-		poolTxMap[ptx.Tx.Hash()] = ptx.Tx
-	}
-	sortedTxs, orphanTxs, dsTxs := modules.SortTxs(poolTxMap, dag.GetUtxoEntry)
-	log.DebugDynamic(func() string {
-		txHash := ""
-		for _, tx := range sortedTxs {
-			txHash += tx.Hash().String() + ";"
-		}
-		return "modules.SortTxs return:" + txHash
-	})
-	if len(orphanTxs) > 0 {
-		log.InfoDynamic(func() string {
-			otxHash := ""
-			for _, tx := range orphanTxs {
-				otxHash += tx.Hash().String() + ";"
-			}
-			return "modules.SortTxs find orphan txs:" + otxHash
-		})
-	}
-	if len(dsTxs) > 0 {
-		otxHash := ""
-		for _, tx := range dsTxs {
-			otxHash += tx.Hash().String() + ";"
-		}
-		log.Warnf("modules.SortTxs find double spend txs:%s", otxHash)
-	}
-
+	txHashStr := ""
+	startTime := time.Now() //计算打包花费的时间，以决定是否停止继续添加Tx
+	costSecond := dag.GetChainParameters().MediatorInterval * 2 / 3
+	endTime := startTime.Add(time.Duration(costSecond) * time.Second)
+	log.Debugf("expect max end time:%s", endTime.String())
+	unitSize := 1024 //计算Unit大小，以决定是否停止继续添加Tx,假设Header是1024 Bytes
+	unitMaxSize := int(dag.GetChainParameters().UnitMaxSize)
 	//创建TempDAG，用于临时存储Tx执行的结果
 	tempDag, err := dag.NewTemp()
 	log.Debug("create a new tempDag for generate unit")
 	if err != nil {
 		log.Errorf("Init temp dag error:%s", err.Error())
 	}
+
 	tx4Pack := []*modules.Transaction{}
-	for i, tx := range sortedTxs {
-		log.Debugf("pack tx[%s] into unit[#%d]", tx.RequestHash().String(), unitNumber)
-		if tx.IsSystemContract() && tx.IsNewContractInvokeRequest() { //是未执行的系统合约
-			signedTx, err := cp.RunAndSignTx(tx, rwM, tempDag, producer, ks)
+	i := 0
+	list, err := txp.GetSortedTxs()
+	if err != nil {
+		return nil, err
+	}
+	log.DebugDynamic(func() string {
+		txHashs := ""
+		for _, tx := range list {
+			txHashs += fmt.Sprintf("Tx[%s]-Req[%s];", tx.TxHash.String(), tx.ReqHash.String())
+		}
+		return fmt.Sprintf("Txpool prepare sorted txs:%s for unit[%d]", txHashs, unitNumber)
+	})
+	for _, ptx := range list {
+		txHashStr += ptx.Tx.Hash().String() + ";"
+		tx := ptx.Tx
+		i++ //第0条是Coinbase
+		log.Debugf("pack tx[%s]-req[%s] into unit[#%d]", tx.Hash().String(), tx.RequestHash().String(), unitNumber)
+		signedTx := tx
+		if tx.IsSystemContract() && tx.IsOnlyContractRequest() { //是未执行的系统合约
+			signedTx, err = cp.RunAndSignTx(tx, rwM, tempDag, producer)
 			if err != nil {
 				log.Errorf("run contract request[%s] fail:%s", tx.Hash().String(), err.Error())
-				continue
+				return nil, err
 			}
-			err = tempDag.SaveTransaction(signedTx, i+1) //第0条是Coinbase
-			if err != nil {
-				log.Errorf("save tx[%s] req[%s] get error:%s", signedTx.Hash().String(),
-					signedTx.RequestHash().String(), err.Error())
-			}
-			tx4Pack = append(tx4Pack, signedTx)
-		} else { //不需要执行，直接打包
-			err = tempDag.SaveTransaction(tx, i+1)
-			if err != nil {
-				log.Errorf("save tx[%s] req[%s] get error:%s", tx.Hash().String(),
-					tx.RequestHash().String(), err.Error())
-			}
-			tx4Pack = append(tx4Pack, tx)
 		}
+		unitSize += signedTx.SerializeSize()
+		if unitSize > unitMaxSize { // 判断Unit大小，决定是否继续增加Tx
+			log.Infof("Unit size is %d, stop add new tx to unit", unitSize)
+			break
+		}
+		err = tempDag.SaveTransaction(signedTx, i)
+		if err != nil {
+			log.Errorf("save tx[%s] req[%s] get error:%s", signedTx.Hash().String(),
+				signedTx.RequestHash().String(), err.Error())
+			return nil, err
+		}
+		tx4Pack = append(tx4Pack, signedTx)
+		// 判断时间，决定是否继续增加Tx
+		if time.Now().Unix() > endTime.Unix() {
+			log.Infof("only have %d second to pack unit", costSecond)
+			break
+		}
+
 	}
+
+	log.DebugDynamic(func() string {
+		return fmt.Sprintf("txpool GetSortedTxs cost:%s,count:%d,txs[%s]", time.Since(startTime).String(),
+			len(tx4Pack), txHashStr)
+	})
 
 	return tx4Pack, nil
 }
@@ -156,6 +145,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 		log.Debug(errStr)
 		return nil, fmt.Errorf(errStr)
 	}
+
 	if unsign_unit == nil || unsign_unit.IsEmpty() {
 		errStr := fmt.Sprintf("No unit need to be packaged for now.")
 		log.Debug(errStr)
@@ -176,7 +166,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 		sign_unit.UnitHeader.ParentHash()[0].String(), sign_unit.Txs.Len(), time.Since(t0).String())
 
 	// 将新单元添加到MemDag中
-	a, b, c, d, e, err := dag.Memdag.AddUnit(sign_unit, txp, true)
+	a, b, c, d, e, err := dag.Memdag.AddUnit(sign_unit, true)
 	if a != nil && err == nil {
 		if dag.unstableUnitProduceRep != e {
 			log.Debugf("send UnstableRepositoryUpdatedEvent")
@@ -197,14 +187,14 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	}
 	sign_unit.ReceivedAt = time.Now()
 
-	//4.PostChainEvents
+	// PostChainEvents
 	//TODO add PostChainEvents
 	go func() {
 		var (
 			events = make([]interface{}, 0, 2)
 		)
 		events = append(events, modules.ChainHeadEvent{Unit: sign_unit})
-		events = append(events, modules.SaveUnitEvent{Unit: sign_unit})
+		//events = append(events, modules.SaveUnitEvent{Unit: sign_unit})
 		events = append(events, modules.ChainEvent{Unit: sign_unit, Hash: sign_unit.Hash()})
 		dag.PostChainEvents(events)
 	}()

@@ -144,7 +144,11 @@ func (dag *Dag) InitStateDB(genesis *core.Genesis, head *modules.Header) error {
 	}
 
 	// 存储 initMediatorCandidates/JuryCandidates
-	imcB, err := json.Marshal(list)
+	sliceList := []string{}
+	for k := range list {
+		sliceList = append(sliceList, k)
+	}
+	imcB, err := json.Marshal(sliceList)
 	if err != nil {
 		log.Debugf(err.Error())
 		return err

@@ -22,12 +22,14 @@
 package txspool
 
 import (
-	"github.com/palletone/go-palletone/common/log"
 	"time"
+
+	"github.com/palletone/go-palletone/common/log"
 )
 
 // TxPoolConfig are the configuration parameters of the transaction pool.
 type TxPoolConfig struct {
+	Version   int
 	NoLocals  bool          // Whether local transaction handling should be disabled
 	Journal   string        // Journal of local transactions to survive node restarts
 	Rejournal time.Duration // Time interval to regenerate the local transaction journal
@@ -54,6 +56,7 @@ type TxPoolConfig struct {
 // DefaultTxPoolConfig contains the default configurations for the transaction
 // pool.
 var DefaultTxPoolConfig = TxPoolConfig{
+	Version:   2,
 	NoLocals:  false,
 	Journal:   "transactions.rlp",
 	Rejournal: time.Hour,

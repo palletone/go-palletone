@@ -55,7 +55,8 @@ import (
 // newTestProtocolManager creates a new protocol manager for testing purposes,
 // with the given number of blocks already known, and potential notification
 // channels for different events.
-func newTestProtocolManager(mode downloader.SyncMode, blocks int, idag dag.IDag, pro producer, newtx chan<- []*modules.Transaction) (*ProtocolManager, ptndb.Database, error) {
+func newTestProtocolManager(mode downloader.SyncMode, blocks int, idag dag.IDag, txpool txspool.ITxPool,
+	pro producer, newtx chan<- []*modules.Transaction) (*ProtocolManager, ptndb.Database, error) {
 	memdb, _ := ptndb.NewMemDatabase()
 	if idag == nil {
 		idag, _ = MakeDags(memdb, blocks)
@@ -89,7 +90,7 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, idag dag.IDag,
 	}
 	genesisUint, _ := idag.GetUnitByNumber(index0)
 
-	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, modules.NewPTNIdType(), &testTxPool{added: newtx}, idag, typemux, pro, genesisUint, nil, nil, nil, &utils.PalletOneDocker{DockerClient: nil})
+	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, modules.NewPTNIdType(), txpool, idag, typemux, pro, genesisUint, nil, nil, nil, &utils.PalletOneDocker{DockerClient: nil})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -104,8 +105,9 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, idag dag.IDag,
 // with the given number of blocks already known, and potential notification
 // channels for different events. In case of an error, the constructor force-
 // fails the test.
-func newTestProtocolManagerMust(t *testing.T, mode downloader.SyncMode, blocks int, dag dag.IDag, pro producer, newtx chan<- []*modules.Transaction, ju *jury.Processor) (*ProtocolManager, ptndb.Database) {
-	pm, db, err := newTestProtocolManager(mode, blocks /*generator,*/, dag, pro, newtx)
+func newTestProtocolManagerMust(t *testing.T, mode downloader.SyncMode, blocks int,
+	dag dag.IDag, txpool txspool.ITxPool, pro producer, newtx chan<- []*modules.Transaction, ju *jury.Processor) (*ProtocolManager, ptndb.Database) {
+	pm, db, err := newTestProtocolManager(mode, blocks /*generator,*/, dag, txpool, pro, newtx)
 	if err != nil {
 		t.Fatalf("Failed to create protocol manager: %v", err)
 	}
@@ -200,8 +202,8 @@ func (p *testTxPool) Content() (map[common.Hash]*txspool.TxPoolTransaction, map[
 	return nil, nil
 }
 
-func (p *testTxPool) Get(hash common.Hash) (*txspool.TxPoolTransaction, common.Hash) {
-	return nil, common.Hash{}
+func (p *testTxPool) Get(hash common.Hash) (*txspool.TxPoolTransaction, error) {
+	return nil, nil
 }
 
 func (p *testTxPool) GetPoolTxsByAddr(addr string) ([]*txspool.TxPoolTransaction, error) {
@@ -217,9 +219,11 @@ func (p *testTxPool) GetNonce(hash common.Hash) uint64 {
 func (p *testTxPool) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	return nil, nil
 }
-func (p *testTxPool) GetSortedTxs(hash common.Hash, index uint64) ([]*txspool.TxPoolTransaction, common.StorageSize) {
-	return nil, 0
+
+func (p *testTxPool) GetSortedTxs(processor txspool.ProcessorFunc) error {
+	return nil
 }
+
 func (p *testTxPool) SendStoredTxs(hashs []common.Hash) error {
 	return nil
 }
@@ -255,8 +259,8 @@ func (p *testTxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Sub
 	return p.txFeed.Subscribe(ch)
 }
 
-func (p *testTxPool) ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag txspool.Tag) ([]*txspool.TxDesc, error) {
-	return []*txspool.TxDesc{}, nil
+func (p *testTxPool) ProcessTransaction(tx *modules.Transaction) error {
+	return nil
 }
 func (p *testTxPool) AllTxpoolTxs() map[common.Hash]*txspool.TxPoolTransaction {
 	return nil

@@ -572,6 +572,7 @@ func (tx *Transaction) GetNewTxUtxoAndReqUtxos() map[OutPoint]*Utxo {
 //获取一个交易中花费了哪些OutPoint
 func (tx *Transaction) GetSpendOutpoints() []*OutPoint {
 	result := []*OutPoint{}
+	chongfu := false
 	for _, msg := range tx.txdata.TxMessages {
 		if msg.App != APP_PAYMENT {
 			continue
@@ -584,7 +585,18 @@ func (tx *Transaction) GetSpendOutpoints() []*OutPoint {
 					op := NewOutPoint(tx.Hash(), input.PreviousOutPoint.MessageIndex, input.PreviousOutPoint.OutIndex)
 					result = append(result, op)
 				} else {
-					result = append(result, input.PreviousOutPoint)
+					for _, v := range result {
+						if v.TxHash.String() == input.PreviousOutPoint.TxHash.String() {
+							if v.MessageIndex == input.PreviousOutPoint.MessageIndex && v.OutIndex == input.PreviousOutPoint.OutIndex {
+								chongfu = true
+							}
+						}
+					}
+					if chongfu == false {
+						result = append(result, input.PreviousOutPoint)
+					}
+					chongfu = false
+
 				}
 			}
 		}
@@ -617,10 +629,8 @@ func (tx *Transaction) GetRequestTx() *Transaction {
 	for _, msg := range msgs {
 		request.TxMessages = append(request.TxMessages, msg)
 		if msg.App.IsRequest() {
-
 			break
 		}
-
 	}
 	request.CertId = tx.CertId()
 	return &Transaction{txdata: request}
@@ -629,7 +639,6 @@ func (tx *Transaction) GetRequestTx() *Transaction {
 
 //获取一个被Jury执行完成后，但是还没有进行陪审员签名的交易
 func (tx *Transaction) GetResultRawTx() *Transaction {
-
 	sdw := transaction_sdw{}
 	isResultMsg := false
 	for _, msg := range tx.TxMessages() {
@@ -708,7 +717,7 @@ func (tx *Transaction) GetFromAddrs(queryUtxoFunc QueryUtxoFunc, getAddrFunc Get
 							out := msgs[input.PreviousOutPoint.MessageIndex].Payload.(*PaymentPayload).Outputs[input.PreviousOutPoint.OutIndex]
 							lockScript = out.PkScript
 						} else {
-							log.Errorf("Cannot find txo by:%s", input.PreviousOutPoint.String())
+							log.Errorf("[%s]Cannot find txo by:%s", tx.RequestHash().ShortStr(), input.PreviousOutPoint.String())
 							return nil, err
 						}
 					} else {
@@ -730,13 +739,36 @@ func (tx *Transaction) GetFromAddrs(queryUtxoFunc QueryUtxoFunc, getAddrFunc Get
 	}
 	return keys, nil
 }
+func (tx *Transaction) GetToAddrs(getAddrFunc GetAddressFromScriptFunc) ([]common.Address, error) {
+	resultMap := map[common.Address]int{}
+	msgs := tx.TxMessages()
+	for _, msg := range msgs {
+		if msg.App == APP_PAYMENT {
+			pay := msg.Payload.(*PaymentPayload)
+			for _, output := range pay.Outputs {
+				lockScript := output.PkScript
+				addr, _ := getAddrFunc(lockScript)
+				if _, ok := resultMap[addr]; !ok {
+					resultMap[addr] = 1
+				}
+			}
+		}
+	}
+
+	keys := make([]common.Address, 0, len(resultMap))
+	for k := range resultMap {
+		keys = append(keys, k)
+	}
+	return keys, nil
+}
 
 //获取该交易的发起人地址
 func (tx *Transaction) GetRequesterAddr(queryUtxoFunc QueryUtxoFunc, getAddrFunc GetAddressFromScriptFunc) (
 	common.Address, error) {
 	msg0 := tx.txdata.TxMessages[0]
 	if msg0.App != APP_PAYMENT {
-		return common.Address{}, errors.New("Coinbase or Invalid Tx, first message must be a payment")
+		return common.Address{}, fmt.Errorf("[%s]Coinbase or Invalid Tx, first message must be a payment",
+			tx.RequestHash().ShortStr())
 	}
 	pay := msg0.Payload.(*PaymentPayload)
 
@@ -898,17 +930,29 @@ func (tx *Transaction) IsSystemContract() bool {
 			//log.Debug("isSystemContract", "contract id", contractAddr, "len", len(contractAddr))
 			return contractAddr.IsSystemContractAddress() //, nil
 
-		} else if msg.App == APP_CONTRACT_TPL_REQUEST {
-			return true //todo  先期将install作为系统合约处理，只有Mediator可以安装，后期在扩展到所有节点
-		} else if msg.App >= APP_CONTRACT_DEPLOY_REQUEST {
-			return false //, nil
 		}
 	}
 	return false //没有Request，当然就不是系统合约
 }
 
+//是否是一个用户合约的交易
+func (tx *Transaction) IsUserContract() bool {
+	for _, msg := range tx.txdata.TxMessages {
+		if msg.App == APP_CONTRACT_INVOKE_REQUEST {
+			contractId := msg.Payload.(*ContractInvokeRequestPayload).ContractId
+			contractAddr := common.NewAddress(contractId, common.ContractHash)
+			//log.Debug("isSystemContract", "contract id", contractAddr, "len", len(contractAddr))
+			return !contractAddr.IsSystemContractAddress() //, nil
+
+		} else if msg.App == APP_CONTRACT_DEPLOY_REQUEST || msg.App == APP_CONTRACT_STOP_REQUEST {
+			return true //只有用户合约才有deploy和stop
+		}
+	}
+	return false //没有Request，当然就不是合约
+}
+
 //判断一个交易是否是一个合约请求交易，并且还没有被执行
-func (tx *Transaction) IsNewContractInvokeRequest() bool {
+func (tx *Transaction) IsOnlyContractRequest() bool {
 	lastMsg := tx.txdata.TxMessages[len(tx.txdata.TxMessages)-1]
 	return lastMsg.App.IsRequest()
 

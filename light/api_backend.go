@@ -118,11 +118,18 @@ func (b *LesApiBackend) GetChainParameters() *core.ChainParameters {
 	return nil
 }
 
-func (b *LesApiBackend) SendTx(ctx context.Context, signedTx *modules.Transaction) error {
-	return b.ptn.txPool.AddLocal(signedTx)
+func (b *LesApiBackend) SendTx(ctx context.Context, tx *modules.Transaction) error {
+	return b.ptn.txPool.AddLocal(tx)
 }
 func (b *LesApiBackend) SendTxs(ctx context.Context, signedTxs []*modules.Transaction) []error {
-	return b.ptn.txPool.AddLocals(signedTxs)
+	errs := []error{}
+	for _, tx := range signedTxs {
+		err := b.ptn.txPool.AddLocal(tx)
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return errs
 }
 
 func (b *LesApiBackend) RemoveTx(txHash common.Hash) {
@@ -144,7 +151,7 @@ func (b *LesApiBackend) GetPoolNonce(ctx context.Context, addr common.Address) (
 	return uint64(0), nil
 }
 
-func (b *LesApiBackend) Stats() (pending int, queued int, reserve int) {
+func (b *LesApiBackend) Status() (pending int, queued int, reserve int) {
 	//return b.ptn.txPool.Stats(), 0, 0
 	return 0, 0, 0
 }
@@ -343,7 +350,7 @@ func (b *LesApiBackend) GetAddrOutpoints(addr string) ([]modules.OutPoint, error
 func (b *LesApiBackend) GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error) {
 	return common.Address{}, nil
 }
-func (b *LesApiBackend) GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error) {
+func (b *LesApiBackend) GetDagAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error) {
 	address, err := common.StringToAddress(addr)
 	if err != nil {
 		return nil, err
@@ -358,6 +365,11 @@ func (b *LesApiBackend) GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error) {
 	}
 	return result, nil
 
+}
+
+func (b *LesApiBackend) GetPoolAddrUtxos(addr common.Address, token *modules.Asset) (
+	map[modules.OutPoint]*modules.Utxo, error) {
+	return b.ptn.txPool.GetAddrUtxos(addr, token)
 }
 func (b *LesApiBackend) GetAddrUtxos2(addr string) ([]*ptnjson.UtxoJson, error) {
 	return nil, nil
@@ -486,8 +498,7 @@ func (b *LesApiBackend) ContractQuery(id []byte, args [][]byte,
 }
 
 func (b *LesApiBackend) Dag() dag.IDag {
-	//return b.Dag()
-	return nil
+	return b.ptn.dag
 }
 
 func (b *LesApiBackend) TxPool() txspool.ITxPool {
@@ -514,7 +525,11 @@ func (b *LesApiBackend) GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 	return common.Hash{}, nil
 }
 
-func (b *LesApiBackend) GetFileInfo(filehash string) ([]*modules.FileInfo, error) {
+func (b *LesApiBackend) GetFileInfo(filehash string) ([]*modules.ProofOfExistencesInfo, error) {
+	return nil, nil
+}
+
+func (b *LesApiBackend) GetProofOfExistencesByMaindata(mainata string) ([]*modules.ProofOfExistencesInfo, error) {
 	return nil, nil
 }
 

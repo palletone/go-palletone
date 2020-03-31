@@ -98,17 +98,17 @@ func (repository *UtxoRepository) getUtxoEntry(outpoint *modules.OutPoint) (*mod
 	if err == nil {
 		return data, nil
 	}
-	log.Debugf("GetUtxoEntry(%s) not in TxUtxo, try ReqUtxo", outpoint.String())
+	//log.Debugf("GetUtxoEntry(%s) not in TxUtxo, try ReqUtxo", outpoint.String())
 	//Tx UTXO找不到，试着去Req UTXO 找
 	return repository.reqUtxodb.GetUtxoEntry(outpoint)
 }
 func (repository *UtxoRepository) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	data, err := repository.getUtxoEntry(outpoint)
-	if err != nil {
-		log.Warnf("GetUtxoEntry(%s) also not in ReqUtxo", outpoint.String())
-	} else {
-		log.Debugf("GetUtxoEntry(%s) from ReqUtxo, return value", outpoint.String())
-	}
+	//if err != nil {
+	//	log.Warnf("GetUtxoEntry(%s) also not in ReqUtxo", outpoint.String())
+	//} else {
+	//	log.Debugf("GetUtxoEntry(%s) from ReqUtxo, return value", outpoint.String())
+	//}
 	return data, err
 	//mapHash,err:= repository.txUtxodb.GetRequestAndTxMapping(outpoint.TxHash)
 	//if err != nil {//找不到Mapping

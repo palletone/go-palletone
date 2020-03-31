@@ -19,6 +19,7 @@
 package ptn
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ethereum/go-ethereum/event"
@@ -91,7 +92,17 @@ func (pm *ProtocolManager) saveStableUnitRecvLoop() {
 	for {
 		select {
 		case event := <-pm.saveStableUnitCh:
-			log.Debugf("receive saveStableUnitEvent")
+			log.Debugf("receive saveStableUnitEvent[%s]", event.Unit.DisplayId())
+			if len(event.Unit.Txs) > 1 {
+				log.DebugDynamic(func() string {
+					return fmt.Sprintf("discard txs %#x from txpool by stable unit[%s]",
+						event.Unit.TxHashes(), event.Unit.DisplayId())
+				})
+				err := pm.txpool.DiscardTxs(event.Unit.TransactionsWithoutCoinbase())
+				if err != nil {
+					log.Error(err.Error())
+				}
+			}
 			go pm.producer.ClearGroupSignBufs(event.Unit)
 			go pm.delayDiscPrecedingMediator(event.Unit)
 
@@ -100,6 +111,51 @@ func (pm *ProtocolManager) saveStableUnitRecvLoop() {
 			return
 		}
 	}
+}
+func (pm *ProtocolManager) saveUnitRecvLoop() {
+	for {
+		select {
+		case u := <-pm.saveUnitCh:
+			log.Debugf("SubscribeSaveUnitEvent received unit:%s", u.Unit.DisplayId())
+			if len(u.Unit.Txs) > 1 {
+				err := pm.txpool.SetPendingTxs(u.Unit.Hash(), u.Unit.NumberU64(), u.Unit.TransactionsWithoutCoinbase()) //UpdateTxStatusPacked
+				if err != nil {
+					log.Error(err.Error())
+				}
+			}
+
+		case err := <-pm.saveUnitSub.Err():
+			if err != nil {
+				log.Error(err.Error())
+			}
+			return
+		}
+
+	}
+
+}
+
+func (pm *ProtocolManager) rollbackUnitRecvLoop() {
+	for {
+		select {
+		case u := <-pm.rollbackUnitCh:
+			log.Infof("SubscribeRollbackUnitEvent received unit:%s", u.Unit.DisplayId())
+			if len(u.Unit.Txs) > 1 {
+				err := pm.txpool.ResetPendingTxs(u.Unit.TransactionsWithoutCoinbase()) //UpdateTxStatusUnpacked
+				if err != nil {
+					log.Error(err.Error())
+				}
+			}
+
+		case err := <-pm.rollbackUnitSub.Err():
+			if err != nil {
+				log.Error(err.Error())
+			}
+			return
+		}
+
+	}
+
 }
 
 func (pm *ProtocolManager) switchMediatorConnect(isChanged bool) {

@@ -65,16 +65,16 @@ type Backend interface {
 	//SubscribeChainSideEvent(ch chan<- coredata.ChainSideEvent) event.Subscription
 	GetUnstableUnits() []*ptnjson.UnitSummaryJson
 	// TxPool API
-	SendTx(ctx context.Context, signedTx *modules.Transaction) error
+	SendTx(ctx context.Context, tx *modules.Transaction) error
 	SendTxs(ctx context.Context, signedTxs []*modules.Transaction) []error
 	GetPoolTransactions() (modules.Transactions, error)
 	GetPoolTransaction(txHash common.Hash) *modules.Transaction
 	GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, error)
 	GetTxPoolTxByHash(hash common.Hash) (*ptnjson.TxPoolTxJson, error)
 	GetUnpackedTxsByAddr(addr string) ([]*txspool.TxPoolTransaction, error)
-
+	GetPoolAddrUtxos(addr common.Address, token *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	//GetPoolNonce(ctx context.Context, addr common.Address) (uint64, error)
-	Stats() (int, int, int)
+	Status() (int, int, int)
 	TxPoolContent() (map[common.Hash]*txspool.TxPoolTransaction, map[common.Hash]*txspool.TxPoolTransaction)
 	Queued() ([]*txspool.TxPoolTransaction, error)
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
@@ -127,7 +127,7 @@ type Backend interface {
 	//------- Get addr utxo start ------//
 	GetAddrOutpoints(addr string) ([]modules.OutPoint, error)
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
-	GetAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error)
+	GetDagAddrUtxos(addr string) ([]*ptnjson.UtxoJson, error)
 	GetAddrUtxoTxs(addr string) ([]*ptnjson.TxWithUnitInfoJson, error)
 	GetAddrUtxos2(addr string) ([]*ptnjson.UtxoJson, error)
 	GetAddrRawUtxos(addr string) (map[modules.OutPoint]*modules.Utxo, error)
@@ -180,13 +180,14 @@ type Backend interface {
 	SignAndSendTransaction(addr common.Address, tx *modules.Transaction) error
 	SignAndSendRequest(addr common.Address, tx *modules.Transaction) error
 
-	TransferPtn(from, to string, amount decimal.Decimal, text *string) (*TxExecuteResult, error)
+	//TransferPtn(from, to string, amount decimal.Decimal, text *string) (*TxExecuteResult, error)
 	GetKeyStore() *keystore.KeyStore
 
 	// get tx hash by req id
 	GetTxHashByReqId(reqid common.Hash) (common.Hash, error)
 
-	GetFileInfo(filehash string) ([]*modules.FileInfo, error)
+	GetFileInfo(maindata string) ([]*modules.ProofOfExistencesInfo, error)
+	GetProofOfExistencesByMaindata(maindata string) ([]*modules.ProofOfExistencesInfo, error)
 
 	GetAllContractTpl() ([]*ptnjson.ContractTemplateJson, error)
 	GetAllContracts() ([]*ptnjson.ContractJson, error)

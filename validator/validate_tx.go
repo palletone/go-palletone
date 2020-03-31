@@ -37,13 +37,6 @@ import (
 	"github.com/palletone/go-palletone/dag/rwset"
 )
 
-func shortId(id string) string {
-	if len(id) < 8 {
-		return id
-	}
-	return id[0:8]
-}
-
 /**
 验证某个交易，tx具有以下规则：
 Tx的第一条Msg必须是Payment
@@ -82,12 +75,12 @@ func (validate *Validate) validateTx(rwM rwset.TxManager, tx *modules.Transactio
 	}
 	// validate tx size
 	if tx.Size().Float64() > float64(modules.TX_MAXSIZE) {
-		log.Debugf("[%s]Tx size is to big.", shortId(reqId.String()))
+		log.Debugf("[%s]validateTx, Tx size is to big.", reqId.ShortStr())
 		return TxValidationCode_NOT_COMPARE_SIZE, txFee
 	}
 	//要求完整交易，但是tx只是一个Request
-	if validate.enableTxFullCheck && isFullTx && tx.IsNewContractInvokeRequest() {
-		log.Warnf("Tx[%s] is a request, don't have result message", tx.Hash().String())
+	if validate.enableTxFullCheck && isFullTx && tx.IsOnlyContractRequest() {
+		log.Warnf("[%s]validateTx,is a request, don't have result message", tx.Hash().String())
 		return TxValidationCode_INVALID_MSG, txFee
 	}
 	//合约的执行结果必须有Jury签名
@@ -103,13 +96,13 @@ func (validate *Validate) validateTx(rwM rwset.TxManager, tx *modules.Transactio
 			if validate.contractCheckFun != nil {
 				pass := validate.contractCheckFun(tx, rwM, validate.contractDb)
 				if !pass {
-					log.Debugf("[%s]ContractTxCheck fail", shortId(reqId.String()))
+					log.Debugf("[%s]validateTx, ContractTxCheck fail", reqId.ShortStr())
 					return TxValidationCode_INVALID_CONTRACT, txFee
 				}
 			} else {
-				log.Warnf("contract request[%s] cannot validate since contractCheckFun is null", reqId.String())
+				log.Warnf("[%s]validateTx, cannot validate since contractCheckFun is null", reqId.ShortStr())
 			}
-			log.Debugf("validate contract request[%s] pass", tx.RequestHash().String())
+			log.Debugf("[%s]validateTx, validate contract pass", reqId.ShortStr())
 		}
 		isResultMsg := false
 		hasSignMsg := false
@@ -123,7 +116,7 @@ func (validate *Validate) validateTx(rwM rwset.TxManager, tx *modules.Transactio
 			}
 		}
 		if !hasSignMsg {
-			log.Warnf("[%s]tx is an user contract invoke, but don't have jury signature", shortId(reqId.String()))
+			log.Warnf("[%s]validateTx, tx is an user contract invoke, but don't have jury signature", reqId.ShortStr())
 			return TxValidationCode_INVALID_CONTRACT_SIGN, txFee
 		}
 	}
@@ -153,7 +146,7 @@ func (validate *Validate) validateTx(rwM rwset.TxManager, tx *modules.Transactio
 			}
 			//如果是合约执行结果中的Payment，只有是完整交易的情况下才检查解锁脚本
 			if msgIdx > requestMsgIndex && !isFullTx {
-				log.Debugf("[%s]tx is processing tx, don't need validate result payment", shortId(reqId.String()))
+				log.Debugf("[%s]validateTx, tx is processing tx, don't need validate result payment", reqId.ShortStr())
 			} else {
 				validateCode := validate.validatePaymentPayload(tx, msgIdx, payment, usedUtxo)
 				if validateCode != TxValidationCode_VALID {
@@ -165,7 +158,7 @@ func (validate *Validate) validateTx(rwM rwset.TxManager, tx *modules.Transactio
 				}
 				//检查一个Tx是否包含了发币的Payment，如果有，那么检查是否是系统合约调用的结果
 				if msgIdx != 0 && payment.IsCoinbase() && !isSysContractCall {
-					log.Errorf("[%s]Invalid Coinbase message", shortId(reqId.String()))
+					log.Errorf("[%s]validateTx, Invalid Coinbase message", reqId.ShortStr())
 					return TxValidationCode_INVALID_COINBASE, txFee
 				}
 			}
@@ -337,28 +330,14 @@ func (validate *Validate) ValidateTxFeeEnough(tx *modules.Transaction, extSize f
 	txSize := tx.Size().Float64()
 
 	if validate.propquery == nil || validate.utxoquery == nil {
-		log.Warnf("[%s]ValidateTxFeeEnough, Cannot validate tx fee, your validate utxoquery or propquery not set", shortId(reqId.String()))
+		log.Warnf("[%s]ValidateTxFeeEnough, Cannot validate tx fee, your validate utxoquery or propquery not set", reqId.ShortStr())
 		return TxValidationCode_VALID //todo ?
 	}
-	//check orphan
-	//for _,msg:=range tx.Messages(){
-	//	if msg.App==modules.APP_PAYMENT{
-	//		payment:=msg.Payload.(*modules.PaymentPayload)
-	//		for _,input:=range payment.Inputs{
-	//			 u,err:=validate.utxoquery.GetUtxoEntry(input.PreviousOutPoint)
-	//			 if err!=nil{ //not found in utxo
-	//			 	s,err2:=validate.utxoquery.GetStxoEntry(input.PreviousOutPoint)
-	//			 	if err2!=nil{ //also not found in stxo
-	//			 		return TxValidationCode_ORPHAN
-	//				}
-	//			 }
-	//		}
-	//	}
-	//}
+
 	fees, err := tx.GetTxFee(validate.utxoquery.GetUtxoEntry) //validate.dagquery.GetTxFee(tx)
 	if err != nil {
-		log.Errorf("[%s]validateTxFeeEnough, GetTxFee err:%s", shortId(reqId.String()), err.Error())
-		return TxValidationCode_ORPHAN //todo ?
+		log.Warnf("[%s]validateTxFeeEnough return ORPHAN since GetTxFee err:%s", reqId.ShortStr(), err.Error())
+		return TxValidationCode_ORPHAN
 	}
 
 	cp := validate.propquery.GetChainParameters()
@@ -398,13 +377,13 @@ func (validate *Validate) ValidateTxFeeEnough(tx *modules.Transaction, extSize f
 	if !val {
 		log.Errorf("[%s]validateTxFeeEnough invalid, fee amount[%f]-fees[%f] (%f + %f + %f + %f), "+
 			"txSize[%f], timeout[%d], extSize[%f], extTime[%f]",
-			shortId(reqId.String()), float64(fees.Amount), allFee, sizeFee, timeFee, accountUpdateFee, appDataFee,
+			reqId.ShortStr(), float64(fees.Amount), allFee, sizeFee, timeFee, accountUpdateFee, appDataFee,
 			txSize, timeout, extSize, extTime)
 	}
 
 	log.Debugf("[%s]validateTxFeeEnough is %v, fee amount[%f]-fees[%f](%f + %f + %f + %f), "+
 		"txSize[%f], timeout[%d], extSize[%f], extTime[%f]",
-		shortId(reqId.String()), val, float64(fees.Amount), allFee, sizeFee, timeFee, accountUpdateFee, appDataFee,
+		reqId.ShortStr(), val, float64(fees.Amount), allFee, sizeFee, timeFee, accountUpdateFee, appDataFee,
 		txSize, timeout, extSize, extTime)
 	if val {
 		return TxValidationCode_VALID
@@ -421,7 +400,7 @@ func (validate *Validate) validateTxFeeValid(tx *modules.Transaction) (Validatio
 	}
 	reqId := tx.RequestHash()
 	if validate.utxoquery == nil {
-		log.Warnf("[%s]validateTxFeeValid, Cannot validate tx fee, your validate utxoquery not set", shortId(reqId.String()))
+		log.Warnf("[%s]validateTxFeeValid, Cannot validate tx fee, your validate utxoquery not set", reqId.ShortStr())
 		return TxValidationCode_VALID, nil
 	}
 
@@ -436,14 +415,14 @@ func (validate *Validate) validateTxFeeValid(tx *modules.Transaction) (Validatio
 		feeAllocate, err := tx.GetTxFeeAllocate(validate.utxoquery.GetUtxoEntry,
 			validate.tokenEngine.GetScriptSigners, common.Address{}, validate.statequery.GetJurorReward)
 		if err != nil {
-			log.Warnf("[%s]validateTxFeeValid, compute tx[%s] fee error:%s", shortId(reqId.String()), tx.Hash().String(), err.Error())
+			log.Warnf("[%s]validateTxFeeValid, compute tx[%s] fee error:%s", reqId.ShortStr(), tx.Hash().String(), err.Error())
 			return TxValidationCode_INVALID_FEE, nil
 		}
 		//check fee type is ok
 
 		for _, feeAsset := range feeAllocate {
 			if feeAsset.Asset.String() != assetId.String() {
-				log.Warnf("[%s]validateTxFeeValid, assetId is not equal, feeAsset:%s, cfg asset:%s", shortId(reqId.String()),
+				log.Warnf("[%s]validateTxFeeValid, assetId is not equal, feeAsset:%s, cfg asset:%s", reqId.ShortStr(),
 					feeAsset.Asset.String(), assetId.String())
 				return TxValidationCode_INVALID_FEE, feeAllocate
 			}
@@ -454,13 +433,13 @@ func (validate *Validate) validateTxFeeValid(tx *modules.Transaction) (Validatio
 		feeAllocate, err := tx.GetTxFeeAllocateLegacyV1(validate.utxoquery.GetUtxoEntry,
 			validate.tokenEngine.GetScriptSigners, common.Address{})
 		if err != nil {
-			log.Warnf("[%s]validateTxFeeValid, compute tx[%s] fee error:%s", shortId(reqId.String()), tx.Hash().String(), err.Error())
+			log.Warnf("[%s]validateTxFeeValid, compute tx[%s] fee error:%s", reqId.ShortStr(), tx.Hash().String(), err.Error())
 			return TxValidationCode_INVALID_FEE, nil
 		}
 		//check fee type is ok
 		for _, feeAsset := range feeAllocate {
 			if feeAsset.Asset.String() != assetId.String() {
-				log.Warnf("[%s]validateTxFeeValid, assetId is not equal, feeAsset:%s, cfg asset:%s", shortId(reqId.String()),
+				log.Warnf("[%s]validateTxFeeValid, assetId is not equal, feeAsset:%s, cfg asset:%s", reqId.ShortStr(),
 					feeAsset.Asset.String(), assetId.String())
 				return TxValidationCode_INVALID_FEE, feeAllocate
 			}
@@ -534,6 +513,8 @@ func validateMessageType(app modules.MessageType, payload interface{}) bool {
 func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modules.Addition) ValidationCode {
 	contractId := syscontract.CoinbaseContractAddress.Bytes()
 	msgs := tx.TxMessages()
+	txHash := tx.Hash()
+	reqHash := tx.RequestHash()
 	if msgs[0].App == modules.APP_PAYMENT { //到达一定高度，Account转UTXO
 
 		//在Coinbase合约的StateDB中保存每个Mediator和Jury的奖励值，
@@ -555,7 +536,6 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 		}
 		//附加最新的奖励
 		for _, ad := range ads {
-
 			reward, ok := rewards[ad.Addr]
 			if !ok {
 				reward = []modules.AmountAsset{}
@@ -566,11 +546,11 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 		//Check payment output is correct
 		payment := msgs[0].Payload.(*modules.PaymentPayload)
 		if !validate.compareRewardAndOutput(rewards, payment.Outputs) {
-			log.Errorf("Coinbase tx[%s] Output not match", tx.Hash().String())
+			log.Errorf("[%s]Coinbase tx[%s] Output not match", reqHash.ShortStr(), txHash.String())
 			log.DebugDynamic(func() string {
 				rjson, _ := json.Marshal(rewards)
 				ojson, _ := json.Marshal(payment)
-				return fmt.Sprintf("Data for help debug: \r\nRewards:%s \r\nPayment:%s", string(rjson), string(ojson))
+				return fmt.Sprintf("[%s]Data for help debug: \r\nRewards:%s \r\nPayment:%s", reqHash.ShortStr(), string(rjson), string(ojson))
 			})
 			// panic("Coinbase Output not match")
 			return TxValidationCode_INVALID_COINBASE
@@ -579,15 +559,15 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 		if len(addrMap) > 0 {
 			clearStateInvoke := msgs[1].Payload.(*modules.ContractInvokePayload)
 			if !bytes.Equal(clearStateInvoke.ContractId, contractId) {
-				log.Errorf("Coinbase tx[%s] contract id not correct", tx.Hash().String())
+				log.Errorf("[%s]Coinbase tx[%s] contract id not correct", reqHash.ShortStr(), txHash.String())
 				return TxValidationCode_INVALID_COINBASE
 			}
 			if !validate.compareRewardAndStateClear(rewards, clearStateInvoke.WriteSet) {
 				rjson, _ := json.Marshal(rewards)
 				ojson, _ := json.Marshal(clearStateInvoke)
-				data := fmt.Sprintf("Data for help debug: \r\nRewards:%s \r\nInvoke result:%s", string(rjson), string(ojson))
-				log.Errorf("Coinbase tx[%s] Clear statedb not match, detail data:%s",
-					tx.Hash().String(), data)
+				data := fmt.Sprintf("[%s]Data for help debug: \r\nRewards:%s \r\nInvoke result:%s", reqHash.ShortStr(), string(rjson), string(ojson))
+				log.Errorf("[%s]Coinbase tx[%s] Clear statedb not match, detail data:%s",
+					reqHash.ShortStr(), tx.Hash().String(), data)
 				return TxValidationCode_INVALID_COINBASE
 			}
 		}
@@ -614,7 +594,7 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 		//比对reward和writeset是否一致
 		invoke := msgs[0].Payload.(*modules.ContractInvokePayload)
 		if !bytes.Equal(invoke.ContractId, contractId) {
-			log.Errorf("Coinbase tx[%s] contract id not correct", tx.Hash().String())
+			log.Errorf("[%s]Coinbase tx[%s] contract id not correct", reqHash.ShortStr(), txHash.String())
 			return TxValidationCode_INVALID_COINBASE
 		}
 		if validate.compareRewardAndWriteset(rewards, invoke.WriteSet) {
@@ -625,11 +605,11 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 			var dbAa []modules.AmountAsset
 			rlp.DecodeBytes(invoke.WriteSet[0].Value, &dbAa)
 			aajson, _ := json.Marshal(dbAa)
-			debugData := fmt.Sprintf("Data for help debug: \r\nRewards:%s \r\nInvoke result:%s, Writeset:%s",
-				string(rjson), string(ojson), string(aajson))
+			debugData := fmt.Sprintf("[%s]Data for help debug: \r\nRewards:%s \r\nInvoke result:%s, Writeset:%s",
+				reqHash.ShortStr(), string(rjson), string(ojson), string(aajson))
 
-			log.Errorf("Coinbase tx[%s] contract write set not correct, %s",
-				tx.Hash().String(), debugData)
+			log.Errorf("[%s]Coinbase tx[%s] contract write set not correct, %s",
+				reqHash.ShortStr(), txHash.String(), debugData)
 			return TxValidationCode_INVALID_COINBASE
 		}
 	}
