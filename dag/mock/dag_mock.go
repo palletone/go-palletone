@@ -11,6 +11,7 @@ import (
 	discover "github.com/palletone/go-palletone/common/p2p/discover"
 	ptndb "github.com/palletone/go-palletone/common/ptndb"
 	core "github.com/palletone/go-palletone/core"
+	keystore "github.com/palletone/go-palletone/core/accounts/keystore"
 	dboperation "github.com/palletone/go-palletone/dag/dboperation"
 	modules "github.com/palletone/go-palletone/dag/modules"
 	big "math/big"
@@ -1547,9 +1548,9 @@ func (mr *MockIDagMockRecorder) RefreshAddrTxIndex() *gomock.Call {
 }
 
 // GenVoteMediatorTx mocks base method
-func (m *MockIDag) GenVoteMediatorTx(voter common.Address, mediators map[string]bool, enableGasFee bool) (*modules.Transaction, uint64, error) {
+func (m *MockIDag) GenVoteMediatorTx(voter common.Address, mediators map[string]bool, enableGasFee bool, ks *keystore.KeyStore) (*modules.Transaction, uint64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GenVoteMediatorTx", voter, mediators, enableGasFee)
+	ret := m.ctrl.Call(m, "GenVoteMediatorTx", voter, mediators, enableGasFee, ks)
 	ret0, _ := ret[0].(*modules.Transaction)
 	ret1, _ := ret[1].(uint64)
 	ret2, _ := ret[2].(error)
@@ -1557,9 +1558,9 @@ func (m *MockIDag) GenVoteMediatorTx(voter common.Address, mediators map[string]
 }
 
 // GenVoteMediatorTx indicates an expected call of GenVoteMediatorTx
-func (mr *MockIDagMockRecorder) GenVoteMediatorTx(voter, mediators, enableGasFee interface{}) *gomock.Call {
+func (mr *MockIDagMockRecorder) GenVoteMediatorTx(voter, mediators, enableGasFee, ks interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenVoteMediatorTx", reflect.TypeOf((*MockIDag)(nil).GenVoteMediatorTx), voter, mediators, enableGasFee)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenVoteMediatorTx", reflect.TypeOf((*MockIDag)(nil).GenVoteMediatorTx), voter, mediators, enableGasFee, ks)
 }
 
 // GetDynGlobalProp mocks base method

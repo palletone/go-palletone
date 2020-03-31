@@ -397,7 +397,7 @@ func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token 
 	var tx *modules.Transaction
 	var err error
 	//如没有GasFee，而且to address不是合约地址，则不构建Payment，直接InvokeRequest+Signature
-	if s.b.EnableGasFee() || toAddr == contractAddr {
+	if s.b.EnableGasFee() || toAddr == contractAddr || fromAddr != toAddr {
 		var usedUtxo []*modules.UtxoWithOutPoint
 		tx, usedUtxo, err = buildRawTransferTx(s.b, token, from, to, amountToken, fee, password)
 		if err != nil {
