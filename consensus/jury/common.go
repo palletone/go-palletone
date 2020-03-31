@@ -253,6 +253,7 @@ func runContractCmd(ctx *contracts.ContractProcessContext, tx *modules.Transacti
 	if tx == nil || len(tx.Messages()) <= 0 {
 		return nil, errors.New("runContractCmd transaction or msg is nil")
 	}
+	reqId := tx.RequestHash()
 	for _, msg := range tx.TxMessages() {
 		switch msg.App {
 		case modules.APP_CONTRACT_TPL_REQUEST:
@@ -316,7 +317,7 @@ func runContractCmd(ctx *contracts.ContractProcessContext, tx *modules.Transacti
 					txid:     tx.RequestHash().String(),
 					timeout:  time.Duration(reqPay.Timeout) * time.Second,
 				}
-				log.Debugf("process message 0 and arg1 for req[%s]", tx.Hash().String())
+				log.Debugf("[%s]process message 0 and arg1 ", reqId.ShortStr())
 				fullArgs, err := handleMsg0(tx, ctx.Dag, ctx.TxPool, req.args)
 				if err != nil {
 					return nil, err
@@ -327,7 +328,7 @@ func runContractCmd(ctx *contracts.ContractProcessContext, tx *modules.Transacti
 					return nil, err
 				}
 				req.args = newFullArgs
-				log.Debug("start ContractProcess")
+				log.Debugf("[%s]start ContractProcess", reqId.ShortStr())
 				invokeResult, err := ContractProcess(ctx, req)
 				if err != nil {
 					return genContractErrorMsg(tx, err, ctx.ErrMsgEnable)
@@ -378,8 +379,7 @@ func runContractCmd(ctx *contracts.ContractProcessContext, tx *modules.Transacti
 			}
 		}
 	}
-
-	return nil, errors.New(fmt.Sprintf("runContractCmd err, txid=%s", tx.RequestHash().String()))
+	return nil, errors.New(fmt.Sprintf("runContractCmd err, tx request hash[%s]", reqId.ShortStr()))
 }
 
 func contractPayBack(tx *modules.Transaction, addr []byte) []*modules.Message {
@@ -486,7 +486,6 @@ func handleMsg0(tx *modules.Transaction, dag dboperation.IContractDag, txPool tx
 			return nil, err
 		}
 		txArgs = append(txArgs, invokeInfoBytes)
-
 	} else {
 		invokeInfoBytes, err := json.Marshal(invokeInfo)
 		if err != nil {

@@ -538,6 +538,8 @@ func validateMessageType(app modules.MessageType, payload interface{}) bool {
 func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modules.Addition) ValidationCode {
 	contractId := syscontract.CoinbaseContractAddress.Bytes()
 	msgs := tx.TxMessages()
+	txHash := tx.Hash()
+	reqHash := tx.RequestHash()
 	if msgs[0].App == modules.APP_PAYMENT { //到达一定高度，Account转UTXO
 
 		//在Coinbase合约的StateDB中保存每个Mediator和Jury的奖励值，
@@ -559,7 +561,6 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 		}
 		//附加最新的奖励
 		for _, ad := range ads {
-
 			reward, ok := rewards[ad.Addr]
 			if !ok {
 				reward = []modules.AmountAsset{}
@@ -570,11 +571,11 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 		//Check payment output is correct
 		payment := msgs[0].Payload.(*modules.PaymentPayload)
 		if !validate.compareRewardAndOutput(rewards, payment.Outputs) {
-			log.Errorf("Coinbase tx[%s] Output not match", tx.Hash().String())
+			log.Errorf("[%s]Coinbase tx[%s] Output not match", reqHash.ShortStr(), txHash.String())
 			log.DebugDynamic(func() string {
 				rjson, _ := json.Marshal(rewards)
 				ojson, _ := json.Marshal(payment)
-				return fmt.Sprintf("Data for help debug: \r\nRewards:%s \r\nPayment:%s", string(rjson), string(ojson))
+				return fmt.Sprintf("[%s]Data for help debug: \r\nRewards:%s \r\nPayment:%s", reqHash.ShortStr(), string(rjson), string(ojson))
 			})
 			// panic("Coinbase Output not match")
 			return TxValidationCode_INVALID_COINBASE
@@ -583,15 +584,15 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 		if len(addrMap) > 0 {
 			clearStateInvoke := msgs[1].Payload.(*modules.ContractInvokePayload)
 			if !bytes.Equal(clearStateInvoke.ContractId, contractId) {
-				log.Errorf("Coinbase tx[%s] contract id not correct", tx.Hash().String())
+				log.Errorf("[%s]Coinbase tx[%s] contract id not correct", reqHash.ShortStr(), txHash.String())
 				return TxValidationCode_INVALID_COINBASE
 			}
 			if !validate.compareRewardAndStateClear(rewards, clearStateInvoke.WriteSet) {
 				rjson, _ := json.Marshal(rewards)
 				ojson, _ := json.Marshal(clearStateInvoke)
-				data := fmt.Sprintf("Data for help debug: \r\nRewards:%s \r\nInvoke result:%s", string(rjson), string(ojson))
-				log.Errorf("Coinbase tx[%s] Clear statedb not match, detail data:%s",
-					tx.Hash().String(), data)
+				data := fmt.Sprintf("[%s]Data for help debug: \r\nRewards:%s \r\nInvoke result:%s", reqHash.ShortStr(), string(rjson), string(ojson))
+				log.Errorf("[%s]Coinbase tx[%s] Clear statedb not match, detail data:%s",
+					reqHash.ShortStr(), tx.Hash().String(), data)
 				return TxValidationCode_INVALID_COINBASE
 			}
 		}
@@ -618,7 +619,7 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 		//比对reward和writeset是否一致
 		invoke := msgs[0].Payload.(*modules.ContractInvokePayload)
 		if !bytes.Equal(invoke.ContractId, contractId) {
-			log.Errorf("Coinbase tx[%s] contract id not correct", tx.Hash().String())
+			log.Errorf("[%s]Coinbase tx[%s] contract id not correct", reqHash.ShortStr(), txHash.String())
 			return TxValidationCode_INVALID_COINBASE
 		}
 		if validate.compareRewardAndWriteset(rewards, invoke.WriteSet) {
@@ -629,11 +630,11 @@ func (validate *Validate) validateCoinbase(tx *modules.Transaction, ads []*modul
 			var dbAa []modules.AmountAsset
 			rlp.DecodeBytes(invoke.WriteSet[0].Value, &dbAa)
 			aajson, _ := json.Marshal(dbAa)
-			debugData := fmt.Sprintf("Data for help debug: \r\nRewards:%s \r\nInvoke result:%s, Writeset:%s",
-				string(rjson), string(ojson), string(aajson))
+			debugData := fmt.Sprintf("[%s]Data for help debug: \r\nRewards:%s \r\nInvoke result:%s, Writeset:%s",
+				reqHash.ShortStr(), string(rjson), string(ojson), string(aajson))
 
-			log.Errorf("Coinbase tx[%s] contract write set not correct, %s",
-				tx.Hash().String(), debugData)
+			log.Errorf("[%s]Coinbase tx[%s] contract write set not correct, %s",
+				reqHash.ShortStr(), txHash.String(), debugData)
 			return TxValidationCode_INVALID_COINBASE
 		}
 	}

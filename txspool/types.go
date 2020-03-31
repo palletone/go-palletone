@@ -60,6 +60,15 @@ func (tx *TxPoolTransaction) IsFineToNormal(hash common.Hash) bool {
 	}
 	return true
 }
+func (tx *TxPoolTransaction) IsDependOnTx(hash common.Hash) bool {
+	for h := range tx.DependOnTxs {
+		if h == hash {
+			return true
+		}
+	}
+	return false
+}
+
 func (tx *TxPoolTransaction) IsFrom(addr common.Address) bool {
 	for _, a := range tx.FromAddr {
 		if a == addr {
