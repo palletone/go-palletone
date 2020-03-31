@@ -209,7 +209,7 @@ func GetProposal(propBytes []byte) (*peer.PtnProposal, error) {
 }
 
 // GetPayload Get Payload from Envelope message
-func GetPayload(e *common.Envelope) (*common.PtnPayload, error) {
+func GetPayload(e *common.PtnEnvelope) (*common.PtnPayload, error) {
 	payload := &common.PtnPayload{}
 	err := proto.Unmarshal(e.Payload, payload)
 	return payload, err

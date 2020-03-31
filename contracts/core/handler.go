@@ -319,7 +319,7 @@ func (handler *Handler) enterGetSystemConfig(e *fsm.Event) {
 				shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
 			handler.serialSendAsync(serialSendMsg, nil)
 		}()
-		keyForSystemConfig := &pb.KeyForSystemConfig{}
+		keyForSystemConfig := &pb.PtnKeyForSystemConfig{}
 		unmarshalErr := proto.Unmarshal(msg.Payload, keyForSystemConfig)
 		if unmarshalErr != nil {
 			serialSendMsg = &pb.PtnChaincodeMessage{Type: pb.PtnChaincodeMessage_ERROR, Payload: []byte(unmarshalErr.Error()),
@@ -797,7 +797,7 @@ func (handler *Handler) handleGetStateByPrefix(msg *pb.PtnChaincodeMessage) {
 			//serialSendMsg = &pb.PtnChaincodeMessage{Type: pb.PtnChaincodeMessage_ERROR, Payload: []byte("No ledger context for GetState. Sending error"), Txid: msg.Txid, ChannelId: msg.ChannelId}
 			//return
 		}
-		getState := &pb.GetStateByPrefix{}
+		getState := &pb.PtnGetStateByPrefix{}
 		unmarshalErr := proto.Unmarshal(msg.Payload, getState)
 		if unmarshalErr != nil {
 			serialSendMsg = &pb.PtnChaincodeMessage{Type: pb.PtnChaincodeMessage_ERROR, Payload: []byte(unmarshalErr.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}
@@ -906,7 +906,7 @@ func (handler *Handler) handleGetTokenBalance(msg *pb.PtnChaincodeMessage) {
 			//serialSendMsg = &pb.PtnChaincodeMessage{Type: pb.PtnChaincodeMessage_ERROR, Payload: []byte("No ledger context for GetState. Sending error"), Txid: msg.Txid, ChannelId: msg.ChannelId}
 			//return
 		}
-		getBalance := &pb.GetTokenBalance{}
+		getBalance := &pb.PtnGetTokenBalance{}
 		unmarshalErr := proto.Unmarshal(msg.Payload, getBalance)
 		if unmarshalErr != nil {
 			serialSendMsg = &pb.PtnChaincodeMessage{Type: pb.PtnChaincodeMessage_ERROR, Payload: []byte(unmarshalErr.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}
@@ -1011,7 +1011,7 @@ func (handler *Handler) handleGetStableTransactionByHash(msg *pb.PtnChaincodeMes
 			//serialSendMsg = &pb.PtnChaincodeMessage{Type: pb.PtnChaincodeMessage_ERROR, Payload: []byte("No ledger context for GetState. Sending error"), Txid: msg.Txid, ChannelId: msg.ChannelId}
 			//return
 		}
-		getStableTX := &pb.GetStableTransaction{}
+		getStableTX := &pb.PtnGetStableTransaction{}
 		unmarshalErr := proto.Unmarshal(msg.Payload, getStableTX)
 		if unmarshalErr != nil {
 			serialSendMsg = &pb.PtnChaincodeMessage{Type: pb.PtnChaincodeMessage_ERROR, Payload: []byte(unmarshalErr.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}
@@ -1097,7 +1097,7 @@ func (handler *Handler) handleGetStableUnit(msg *pb.PtnChaincodeMessage) {
 			//serialSendMsg = &pb.PtnChaincodeMessage{Type: pb.PtnChaincodeMessage_ERROR, Payload: []byte("No ledger context for GetState. Sending error"), Txid: msg.Txid, ChannelId: msg.ChannelId}
 			//return
 		}
-		getStableUnit := &pb.GetStableUnit{}
+		getStableUnit := &pb.PtnGetStableUnit{}
 		unmarshalErr := proto.Unmarshal(msg.Payload, getStableUnit)
 		if unmarshalErr != nil {
 			serialSendMsg = &pb.PtnChaincodeMessage{Type: pb.PtnChaincodeMessage_ERROR, Payload: []byte(unmarshalErr.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}
@@ -1183,7 +1183,7 @@ func (handler *Handler) handlePayOutToken(msg *pb.PtnChaincodeMessage) {
 			//serialSendMsg = &pb.PtnChaincodeMessage{Type: pb.PtnChaincodeMessage_ERROR, Payload: []byte("No ledger context for GetState. Sending error"), Txid: msg.Txid, ChannelId: msg.ChannelId}
 			//return
 		}
-		payout := &pb.PayOutToken{}
+		payout := &pb.PtnPayOutToken{}
 		unmarshalErr := proto.Unmarshal(msg.Payload, payout)
 		if unmarshalErr != nil {
 			serialSendMsg = &pb.PtnChaincodeMessage{Type: pb.PtnChaincodeMessage_ERROR, Payload: []byte(unmarshalErr.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}
@@ -1255,7 +1255,7 @@ func (handler *Handler) handleDefineToken(msg *pb.PtnChaincodeMessage) {
 			//serialSendMsg = &pb.PtnChaincodeMessage{Type: pb.PtnChaincodeMessage_ERROR, Payload: []byte("No ledger context for GetState. Sending error"), Txid: msg.Txid, ChannelId: msg.ChannelId}
 			//return
 		}
-		payout := &pb.DefineToken{}
+		payout := &pb.PtnDefineToken{}
 		unmarshalErr := proto.Unmarshal(msg.Payload, payout)
 		if unmarshalErr != nil {
 			serialSendMsg = &pb.PtnChaincodeMessage{Type: pb.PtnChaincodeMessage_ERROR, Payload: []byte(unmarshalErr.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}
@@ -1326,7 +1326,7 @@ func (handler *Handler) handleSupplyToken(msg *pb.PtnChaincodeMessage) {
 			//serialSendMsg = &pb.PtnChaincodeMessage{Type: pb.PtnChaincodeMessage_ERROR, Payload: []byte("No ledger context for GetState. Sending error"), Txid: msg.Txid, ChannelId: msg.ChannelId}
 			//return
 		}
-		payout := &pb.SupplyToken{}
+		payout := &pb.PtnSupplyToken{}
 		unmarshalErr := proto.Unmarshal(msg.Payload, payout)
 		if unmarshalErr != nil {
 			serialSendMsg = &pb.PtnChaincodeMessage{Type: pb.PtnChaincodeMessage_ERROR, Payload: []byte(unmarshalErr.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}
@@ -1487,7 +1487,7 @@ func (handler *Handler) handleGetTimestamp(msg *pb.PtnChaincodeMessage) {
 			//serialSendMsg = &pb.PtnChaincodeMessage{Type: pb.PtnChaincodeMessage_ERROR, Payload: []byte("No ledger context for GetState. Sending error"), Txid: msg.Txid, ChannelId: msg.ChannelId}
 			//return
 		}
-		getTimestamp := &pb.GetTimestamp{}
+		getTimestamp := &pb.PtnGetTimestamp{}
 		unmarshalErr := proto.Unmarshal(msg.Payload, getTimestamp)
 		if unmarshalErr != nil {
 			serialSendMsg = &pb.PtnChaincodeMessage{Type: pb.PtnChaincodeMessage_ERROR, Payload: []byte(unmarshalErr.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}
@@ -1833,7 +1833,7 @@ func (handler *Handler) enterOutChainCall(e *fsm.Event) {
 		}
 
 		key := string(msg.Payload)
-		outChainCall := &pb.OutChainCall{}
+		outChainCall := &pb.PtnOutChainCall{}
 		unmarshalErr := proto.Unmarshal(msg.Payload, outChainCall)
 		if unmarshalErr != nil {
 			serialSendMsg = &pb.PtnChaincodeMessage{Type: pb.PtnChaincodeMessage_ERROR, Payload: []byte(unmarshalErr.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}
@@ -1908,7 +1908,7 @@ func (handler *Handler) enterSendJury(e *fsm.Event) {
 		}
 
 		key := string(msg.Payload)
-		sendJury := &pb.SendJury{}
+		sendJury := &pb.PtnSendJury{}
 		unmarshalErr := proto.Unmarshal(msg.Payload, sendJury)
 		if unmarshalErr != nil {
 			serialSendMsg = &pb.PtnChaincodeMessage{Type: pb.PtnChaincodeMessage_ERROR, Payload: []byte(unmarshalErr.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}
@@ -1995,7 +1995,7 @@ func (handler *Handler) enterRecvJury(e *fsm.Event) {
 		}
 
 		key := string(msg.Payload)
-		recvJury := &pb.RecvJury{}
+		recvJury := &pb.PtnRecvJury{}
 		unmarshalErr := proto.Unmarshal(msg.Payload, recvJury)
 		if unmarshalErr != nil {
 			serialSendMsg = &pb.PtnChaincodeMessage{Type: pb.PtnChaincodeMessage_ERROR, Payload: []byte(unmarshalErr.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}
@@ -2200,7 +2200,7 @@ func (handler *Handler) enterGetCertByID(e *fsm.Event) {
 				shorttxid(serialSendMsg.Txid), serialSendMsg.Type)
 			handler.serialSendAsync(serialSendMsg, nil)
 		}()
-		keyForSystemConfig := &pb.KeyForSystemConfig{}
+		keyForSystemConfig := &pb.PtnKeyForSystemConfig{}
 		unmarshalErr := proto.Unmarshal(msg.Payload, keyForSystemConfig)
 		if unmarshalErr != nil {
 			serialSendMsg = &pb.PtnChaincodeMessage{Type: pb.PtnChaincodeMessage_ERROR, Payload: []byte(unmarshalErr.Error()), Txid: msg.Txid, ChannelId: msg.ChannelId}

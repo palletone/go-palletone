@@ -92,11 +92,11 @@ message PtnGetState {
     string collection = 2;
     bytes contractId=3;
 }
-message GetStateByPrefix {
+message PtnGetStateByPrefix {
     string prefix = 1;
     bytes contractId=2;
 }
-message GetTimestamp {
+message PtnGetTimestamp {
     uint32 rangeNumber = 1;
     string collection = 2;
 }
@@ -146,66 +146,66 @@ message PtnQueryResponse {
     string id = 3;
 }
 
-message OutChainCall {
+message PtnOutChainCall {
     string OutChainName = 1;
     string method = 2;
     bytes params = 3;
     string collection = 4;
 }
 
-message GetCertState {
+message PtnGetCertState {
     string key = 1;
     string collection = 2;
 }
 
-message SendJury {
+message PtnSendJury {
     uint32 msgType =1;
     bytes consultContent = 2;
     bytes myAnswer = 3;
     string collection = 4;
 }
-message RecvJury {
+message PtnRecvJury {
     uint32 msgType =1;
     bytes consultContent = 2;
     uint32 timeout =3;
     string collection = 4;
 }
 
-message GetTokenBalance {
+message PtnGetTokenBalance {
     string address = 1;
     string asset = 2;
 }
 
-message GetStableTransaction {
+message PtnGetStableTransaction {
     string txHash = 1;
 }
 
-message GetStableUnit {
+message PtnGetStableUnit {
     string unitHash = 1;
     uint64 unitNumber = 2;
 }
 
-message PayOutToken {
+message PtnPayOutToken {
     bytes asset = 1;
     uint64 amount = 2;
     uint32 locktime =3;
     string address = 4;
 }
-message DefineToken{
+message PtnDefineToken{
     int32 tokenType=1 ;
     bytes define=2;
     string creator = 3;
 }
-message SupplyToken{
+message PtnSupplyToken{
     bytes assetId=1;
     bytes uniqueId=2;
     uint64 amount=3;
     string creator = 4;
 }
-message KeyForSystemConfig{
+message PtnKeyForSystemConfig{
     string key = 1;
 }
-message GetStateByPrefixKv {
+message PtnGetStateByPrefixKv {
     string key = 1;
     bytes resultBytes = 2;
 }

@@ -440,7 +440,7 @@ func (handler *Handler) handelGetStateByPrefix(prefix string, contractId []byte,
 	txid string) ([]*modules.KeyValue, error) {
 	// Construct payload for GET_STATE
 
-	payloadBytes, _ := proto.Marshal(&pb.GetStateByPrefix{ContractId: contractId, Prefix: prefix})
+	payloadBytes, _ := proto.Marshal(&pb.PtnGetStateByPrefix{ContractId: contractId, Prefix: prefix})
 
 	msg := &pb.PtnChaincodeMessage{Type: pb.PtnChaincodeMessage_GET_STATE_BY_PREFIX, Payload: payloadBytes, Txid: txid,
 		ChannelId: channelId, ContractId: contractId}
@@ -477,7 +477,7 @@ func (handler *Handler) handleGetTimestamp(collection string, rangeNumber uint32
 	channelId string, txid string) ([]byte, error) {
 	// Construct payload for GET_STATE
 
-	payloadBytes, _ := proto.Marshal(&pb.GetTimestamp{Collection: collection, RangeNumber: rangeNumber})
+	payloadBytes, _ := proto.Marshal(&pb.PtnGetTimestamp{Collection: collection, RangeNumber: rangeNumber})
 
 	msg := &pb.PtnChaincodeMessage{Type: pb.PtnChaincodeMessage_GET_TIMESTAMP, Payload: payloadBytes, Txid: txid,
 		ChannelId: channelId, ContractId: contractid}
@@ -507,7 +507,7 @@ func (handler *Handler) handleGetTimestamp(collection string, rangeNumber uint32
 
 func (handler *Handler) handleGetTokenBalance(address string, token *modules.Asset, contractid []byte,
 	channelId string, txid string) ([]*modules.InvokeTokens, error) {
-	par := &pb.GetTokenBalance{Address: address}
+	par := &pb.PtnGetTokenBalance{Address: address}
 	if token != nil {
 		par.Asset = token.String()
 	}
@@ -549,7 +549,7 @@ func (handler *Handler) handleGetTokenBalance(address string, token *modules.Ass
 
 func (handler *Handler) handleGetStableTransactionByHash(txHash string, contractid []byte,
 	channelId string, txid string) (*modules.Transaction, error) {
-	par := &pb.GetStableTransaction{TxHash: txHash}
+	par := &pb.PtnGetStableTransaction{TxHash: txHash}
 	payloadBytes, _ := proto.Marshal(par)
 
 	msg := &pb.PtnChaincodeMessage{Type: pb.PtnChaincodeMessage_GET_STABLE_TRANSACTION, Payload: payloadBytes, Txid: txid,
@@ -588,7 +588,7 @@ func (handler *Handler) handleGetStableTransactionByHash(txHash string, contract
 
 func (handler *Handler) handleGetStableUnit(unitHash string, unitNumber uint64, contractid []byte,
 	channelId string, txid string) (*modules.Unit, error) {
-	par := &pb.GetStableUnit{UnitHash: unitHash, UnitNumber: unitNumber}
+	par := &pb.PtnGetStableUnit{UnitHash: unitHash, UnitNumber: unitNumber}
 	payloadBytes, _ := proto.Marshal(par)
 
 	msg := &pb.PtnChaincodeMessage{Type: pb.PtnChaincodeMessage_GET_STABLE_UNIT, Payload: payloadBytes, Txid: txid,
@@ -630,7 +630,7 @@ func (handler *Handler) handlePayOutToken(collection string, addr string, invoke
 	log.Debugf("collection %s", collection)
 	// Construct payload for PAY_OUT_TOKEN
 	//TODO Devin
-	payloadBytes, _ := proto.Marshal(&pb.PayOutToken{Asset: invokeTokens.Asset.Bytes(), Amount: invokeTokens.Amount,
+	payloadBytes, _ := proto.Marshal(&pb.PtnPayOutToken{Asset: invokeTokens.Asset.Bytes(), Amount: invokeTokens.Amount,
 		Address: addr, Locktime: lockTime})
 
 	msg := &pb.PtnChaincodeMessage{Type: pb.PtnChaincodeMessage_PAY_OUT_TOKEN, Payload: payloadBytes, Txid: txid,
@@ -661,7 +661,7 @@ func (handler *Handler) handlePayOutToken(collection string, addr string, invoke
 
 func (handler *Handler) handleDefineToken(tokenType byte, define []byte, creator string, contractid []byte,
 	channelId string, txid string) error {
-	par := &pb.DefineToken{TokenType: int32(tokenType), Define: define, Creator: creator}
+	par := &pb.PtnDefineToken{TokenType: int32(tokenType), Define: define, Creator: creator}
 	payloadBytes, _ := proto.Marshal(par)
 
 	msg := &pb.PtnChaincodeMessage{Type: pb.PtnChaincodeMessage_DEFINE_TOKEN, Payload: payloadBytes, Txid: txid,
@@ -695,7 +695,7 @@ func (handler *Handler) handleDefineToken(tokenType byte, define []byte, creator
 }
 func (handler *Handler) handleSupplyToken(assetId []byte, uniqueId []byte, amt uint64, creator string,
 	contractid []byte, channelId string, txid string) error {
-	par := &pb.SupplyToken{AssetId: assetId, UniqueId: uniqueId, Amount: amt, Creator: creator}
+	par := &pb.PtnSupplyToken{AssetId: assetId, UniqueId: uniqueId, Amount: amt, Creator: creator}
 	payloadBytes, _ := proto.Marshal(par)
 
 	msg := &pb.PtnChaincodeMessage{Type: pb.PtnChaincodeMessage_SUPPLY_TOKEN, Payload: payloadBytes, Txid: txid,
@@ -769,7 +769,7 @@ func (handler *Handler) handlePutState(collection string, contractId []byte, key
 func (handler *Handler) handleOutCall(collection string, outChainName string, method string, params []byte,
 	channelId string, txid string) ([]byte, error) {
 	// Construct payload for ChaincodeMessage_OUTCHAIN_CALL
-	payloadBytes, _ := proto.Marshal(&pb.OutChainCall{Collection: collection, OutChainName: outChainName,
+	payloadBytes, _ := proto.Marshal(&pb.PtnOutChainCall{Collection: collection, OutChainName: outChainName,
 		Method: method, Params: params})
 
 	msg := &pb.PtnChaincodeMessage{Type: pb.PtnChaincodeMessage_OUTCHAIN_CALL, Payload: payloadBytes, Txid: txid,
@@ -804,7 +804,7 @@ func (handler *Handler) handleOutCall(collection string, outChainName string, me
 func (handler *Handler) handleSendJury(collection string, msgType uint32, consultContent []byte, myAnswer []byte,
 	channelId string, txid string) ([]byte, error) {
 	// Construct payload for PUT_STATE
-	payloadBytes, _ := proto.Marshal(&pb.SendJury{Collection: collection, MsgType: msgType,
+	payloadBytes, _ := proto.Marshal(&pb.PtnSendJury{Collection: collection, MsgType: msgType,
 		ConsultContent: consultContent, MyAnswer: myAnswer})
 
 	msg := &pb.PtnChaincodeMessage{Type: pb.PtnChaincodeMessage_SEND_JURY, Payload: payloadBytes, Txid: txid,
@@ -840,7 +840,7 @@ func (handler *Handler) handleSendJury(collection string, msgType uint32, consul
 func (handler *Handler) handleRecvJury(collection string, msgType uint32, consultContent []byte, timeout uint32,
 	channelId string, txid string) ([]byte, error) {
 	// Construct payload for PUT_STATE
-	payloadBytes, _ := proto.Marshal(&pb.RecvJury{Collection: collection, MsgType: msgType,
+	payloadBytes, _ := proto.Marshal(&pb.PtnRecvJury{Collection: collection, MsgType: msgType,
 		ConsultContent: consultContent, Timeout: timeout})
 
 	msg := &pb.PtnChaincodeMessage{Type: pb.PtnChaincodeMessage_RECV_JURY, Payload: payloadBytes, Txid: txid,
@@ -910,8 +910,8 @@ func (handler *Handler) handleDelState(collection string, contractId []byte, key
 func (handler *Handler) handleGetSystemConfig(channelId, txid string) (*modules.GlobalProperty, error) {
 	//func (handler *Handler) handleGetSystemConfig(key, channelId, txid string) (string, error) {
 	// Construct payload for PUT_STATE
-	//payloadBytes, _ := proto.Marshal(&pb.KeyForSystemConfig{Key: key})
-	payloadBytes, _ := proto.Marshal(&pb.KeyForSystemConfig{})
+	//payloadBytes, _ := proto.Marshal(&pb.PtnKeyForSystemConfig{Key: key})
+	payloadBytes, _ := proto.Marshal(&pb.PtnKeyForSystemConfig{})
 	msg := &pb.PtnChaincodeMessage{Type: pb.PtnChaincodeMessage_GET_SYSTEM_CONFIG_REQUEST, Payload: payloadBytes,
 		ChannelId: channelId, Txid: txid}
 	log.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.PtnChaincodeMessage_GET_SYSTEM_CONFIG_REQUEST)
@@ -1058,7 +1058,7 @@ func (handler *Handler) handleMessage(msg *pb.PtnChaincodeMessage) error {
 // 根据证书ID获得证书字节数据
 func (handler *Handler) handleGetCertState(key string, channelId string, txid string) (certBytes []byte, err error) {
 	// Construct payload for PUT_STATE
-	payloadBytes, _ := proto.Marshal(&pb.KeyForSystemConfig{Key: key})
+	payloadBytes, _ := proto.Marshal(&pb.PtnKeyForSystemConfig{Key: key})
 	msg := &pb.PtnChaincodeMessage{Type: pb.PtnChaincodeMessage_GET_CERT_STATE, Payload: payloadBytes, ChannelId: channelId,
 		Txid: txid}
 	log.Debugf("[%s]Sending %s", shorttxid(msg.Txid), pb.PtnChaincodeMessage_GET_CERT_STATE)

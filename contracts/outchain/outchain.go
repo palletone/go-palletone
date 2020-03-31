@@ -84,6 +84,10 @@ var DefaultConfig = Config{
 				ChaincodeKeys: map[string][]byte{},
 				AddressKeys:   map[string][]byte{},
 			},
+			"fab": {
+				ChaincodeKeys: map[string][]byte{},
+				AddressKeys:   map[string][]byte{},
+			},
 		},
 	},
 }

@@ -139,7 +139,7 @@ message PtnPayload {
 }
 
 // Envelope wraps a Payload with a signature so that the message may be authenticated
-message Envelope {
+message PtnEnvelope {
     // A marshaled Payload
     bytes payload = 1;
 
@@ -151,7 +151,7 @@ message Envelope {
 // Note that the BlockHeader chains to the previous BlockHeader, and the BlockData hash is embedded
 // in the BlockHeader.  This makes it natural and obvious that the Data is included in the hash, but
 // the Metadata is not.
-message Block {
+message PtnBlock {
     PtnBlockHeader header = 1;
     PtnBlockData data = 2;
     PtnBlockMetadata metadata = 3;

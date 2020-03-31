@@ -70,7 +70,7 @@ func GetFabricAdaptor() adaptor.ICryptoCurrency {
 	return &fabAdaptor
 }
 
-func ProcessOutChainCall(chaincodeID string, outChainCall *pb.OutChainCall) (result string, err error) {
+func ProcessOutChainCall(chaincodeID string, outChainCall *pb.PtnOutChainCall) (result string, err error) {
 	log.Infof("Get Request method : %s %s", outChainCall.Method, cfg.Ada.Eth.Rawurl)
 
 	defer func() {
