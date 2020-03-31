@@ -133,13 +133,15 @@ type TxPool struct {
 	txValidator IValidator
 	journal     *txJournal // Journal of local transaction to back up to disk
 
-	all             sync.Map          // All transactions to allow lookups
-	priority_sorted *txPrioritiedList // All transactions sorted by price and priority
-	outpoints       sync.Map          // utxo标记池  map[modules.OutPoint]*TxPoolTransaction
-	orphans         sync.Map          // 孤儿交易缓存池
-	outputs         sync.Map          // 缓存 交易的outputs
-	reqOutputs      sync.Map          // 缓存 交易的outputs
-	sequenTxs       *SequeueTxPoolTxs
+	all                   sync.Map          // All transactions to allow lookups
+	priority_sorted       *txPrioritiedList // All transactions sorted by price and priority
+	outpoints             sync.Map          // utxo标记池  map[modules.OutPoint]*TxPoolTransaction
+	orphans               sync.Map          // 孤儿交易缓存池
+	outputs               sync.Map          // 缓存 交易的outputs
+	reqOutputs            sync.Map          // 缓存 交易的outputs
+	sequenTxs             *SequeueTxPoolTxs
+	userContractRequests  map[common.Hash]*TxPoolTransaction //用户合约请求，只参与utxo运算，不会被打包
+	basedOnRequestOrphans map[common.Hash]*TxPoolTransaction //依赖于userContractRequests的孤儿交易池
 
 	mu             sync.RWMutex
 	wg             sync.WaitGroup // for shutdown sync
@@ -167,17 +169,19 @@ func NewTxPool4DI(config TxPoolConfig, cachedb palletcache.ICache, unit IDag,
 	config = (&config).sanitize()
 	// Create the transaction pool with its initial settings
 	pool := &TxPool{
-		config:         config,
-		unit:           unit,
-		all:            sync.Map{},
-		sequenTxs:      new(SequeueTxPoolTxs),
-		outpoints:      sync.Map{},
-		nextExpireScan: time.Now().Add(config.OrphanTTL),
-		orphans:        sync.Map{},
-		outputs:        sync.Map{},
-		reqOutputs:     sync.Map{},
-		cache:          cachedb,
-		tokenEngine:    tokenEngine,
+		config:                config,
+		unit:                  unit,
+		all:                   sync.Map{},
+		sequenTxs:             new(SequeueTxPoolTxs),
+		outpoints:             sync.Map{},
+		nextExpireScan:        time.Now().Add(config.OrphanTTL),
+		orphans:               sync.Map{},
+		outputs:               sync.Map{},
+		reqOutputs:            sync.Map{},
+		basedOnRequestOrphans: make(map[common.Hash]*TxPoolTransaction),
+		userContractRequests:  make(map[common.Hash]*TxPoolTransaction),
+		cache:                 cachedb,
+		tokenEngine:           tokenEngine,
 	}
 	pool.mu = sync.RWMutex{}
 	pool.priority_sorted = newTxPrioritiedList(&pool.all)
@@ -465,10 +469,6 @@ func (pool *TxPool) local() map[common.Hash]*TxPoolTransaction {
 func (pool *TxPool) validateTx(tx *modules.Transaction, local bool) ([]*modules.Addition,
 	validator.ValidationCode, error) {
 
-	// todo 以后备用
-	//if local {
-	//}
-
 	return pool.txValidator.ValidateTx(tx, !tx.IsOnlyContractRequest())
 }
 func (pool *TxPool) getTxFeeAllocate(tx *modules.Transaction) ([]*modules.Addition, error) {
@@ -508,27 +508,18 @@ func TxtoTxpoolTx(tx *modules.Transaction) *TxPoolTransaction {
 	txpool_tx.CreationDate = time.Now()
 	return txpool_tx
 }
-func (pool *TxPool) add_journalTx(ptx *TxPoolTransaction, local bool) error {
+func (pool *TxPool) add_journalTx(ptx *TxPoolTransaction) error {
 	hash := ptx.Tx.Hash()
-	exitsInDb, err := pool.unit.IsTransactionExist(hash)
-	if err != nil {
-		return err
-	}
+	reqHash := ptx.Tx.RequestHash()
+	exitsInDb, _ := pool.unit.IsTransactionExist(hash)
 	if exitsInDb {
 		log.Infof("Tx[%s] already exist in db", hash.String())
 		return nil
 	}
-	if id, err := pool.unit.GetTxHashByReqId(ptx.Tx.RequestHash()); err == nil {
-		log.Infof("Request[%s] already exist in db,txhash[%s]", hash.String(), id.String())
+	if id, err := pool.unit.GetTxHashByReqId(reqHash); err == nil {
+		log.Infof("Request[%s] already exist in db,txhash[%s]", reqHash.String(), id.String())
 		return nil
 	}
-
-	msgs := ptx.Tx.Messages()
-	if msgs[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
-		txCoinbasePrometheus.Add(1)
-		return nil
-	}
-
 	// Don't accept the transaction if it already in the pool .
 	if _, has := pool.all.Load(hash); has {
 		txAlreadyPrometheus.Add(1)
@@ -540,13 +531,74 @@ func (pool *TxPool) add_journalTx(ptx *TxPoolTransaction, local bool) error {
 		return fmt.Errorf("know orphanTx: %s", hash.String())
 	}
 
-	ptx = pool.convertBaseTx(ptx.Tx)
-	go pool.priority_sorted.Put(ptx)
-	pool.all.Store(hash, ptx)
-	pool.addCache(ptx)
-	txValidPrometheus.Add(1)
-	// We've directly injected a replacement transaction, notify subsystems
-	go pool.txFeed.Send(modules.TxPreEvent{Tx: ptx.Tx})
+	if ptx.Tx.IsSystemContract() && !ptx.Tx.IsOnlyContractRequest() {
+		log.Infof("[%s]tx[%s] is a full system contract invoke tx, don't support", reqHash.ShortStr(), hash.String())
+		return errors.New("txpool: not support")
+	}
+	var deletedReq *TxPoolTransaction
+	if ptx.Tx.IsUserContract() && !ptx.Tx.IsOnlyContractRequest() { //FullTx about user contract
+		//delete request
+		var ok bool
+		deletedReq, ok = pool.userContractRequests[reqHash]
+		if ok {
+			delete(pool.userContractRequests, reqHash)
+			log.Debugf("[%s]delete user contract request by hash:%s", reqHash.ShortStr(), hash.String())
+		}
+	}
+	reverseDeleteReq := func() {
+		if deletedReq != nil {
+			pool.userContractRequests[deletedReq.TxHash] = deletedReq
+			log.Debugf("[%s]reverse delete request %s", reqHash.ShortStr(), deletedReq.TxHash.String())
+		}
+	}
+
+	// If the transaction pool is full, discard underpriced transactions
+	length := pool.AllLength()
+	if uint64(length) >= pool.config.GlobalSlots+pool.config.GlobalQueue {
+		// If the new transaction is underpriced, don't accept it
+		if pool.priority_sorted.Underpriced(ptx) {
+			log.Trace("Discarding underpriced transaction", "hash", hash, "price", ptx.GetTxFee().Int64())
+			return ErrUnderpriced
+		}
+		// New transaction is better than our worse ones, make room for it
+		count := length - int(pool.config.GlobalSlots+pool.config.GlobalQueue-1)
+		if count > 0 {
+			drop := pool.priority_sorted.Discard(count)
+			for _, tx := range drop {
+				log.Trace("Discarding freshly underpriced transaction", "hash", hash, "price", tx.GetTxFee().Int64())
+				pool.removeTransaction(tx, true)
+				pool.removeTx(tx.Tx.Hash())
+			}
+		}
+	}
+	if ptx.Tx.IsUserContract() && ptx.Tx.IsOnlyContractRequest() {
+		//user contract request
+		log.Debugf("[%s]add tx[%s] to user contract request pool", reqHash.ShortStr(), hash.String())
+		pool.userContractRequests[ptx.TxHash] = ptx
+		pool.txFeed.Send(modules.TxPreEvent{Tx: ptx.Tx, IsOrphan: false})
+	} else { //不是用户合约请求
+		//有可能是连续的用户合约请求R1,R2，但是R2先被执行完，这个时候R1还在RequestPool里面，没办法被打包，所以R2应该被扔到basedOnReqOrphanPool
+		//父交易还是Request，所以本Tx是Orphan
+		if pool.isBasedOnRequestPool(ptx) {
+			log.Debugf("Tx[%s]'s parent or ancestor is a request, not a full tx, add it to based on request pool",
+				ptx.TxHash.String())
+			if err := pool.addBasedOnReqOrphanTx(ptx); err != nil {
+				log.Errorf("add tx[%s] to based on request pool error:%s", ptx.TxHash.String(), err.Error())
+				reverseDeleteReq()
+				return err
+			}
+		} else {
+			//3. process normal tx
+			go pool.priority_sorted.Put(ptx)
+
+			pool.all.Store(hash, ptx)
+			pool.addCache(ptx)
+			txValidPrometheus.Add(1)
+			// We've directly injected a replacement transaction, notify subsystems
+			pool.txFeed.Send(modules.TxPreEvent{Tx: ptx.Tx, IsOrphan: false})
+		}
+	}
+
 	// 更新一次孤儿交易池数据。
 	pool.reflashOrphanTxs(ptx.Tx, pool.AllOrphanTxs())
 	return nil
@@ -562,25 +614,21 @@ func (pool *TxPool) add_journalTx(ptx *TxPoolTransaction, local bool) error {
 // the pool due to pricing constraints.
 func (pool *TxPool) add(tx *modules.Transaction, local bool) (bool, error) {
 	hash := tx.Hash()
-	exitsInDb, err := pool.unit.IsTransactionExist(hash)
-	if err != nil {
-		return false, err
-	}
-	if exitsInDb {
-		log.Infof("Tx[%s] already exist in db", hash.String())
-		return false, nil
-	}
-	if id, err := pool.unit.GetTxHashByReqId(tx.RequestHash()); err == nil {
-		log.Infof("Request[%s] already exist in db,txhash[%s]", hash.String(), id.String())
-		return false, nil
-	}
-
+	reqHash := tx.RequestHash()
 	msgs := tx.Messages()
 	if msgs[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
 		txCoinbasePrometheus.Add(1)
 		return true, nil
 	}
-
+	exitsInDb, _ := pool.unit.IsTransactionExist(hash)
+	if exitsInDb {
+		log.Infof("Tx[%s] already exist in db", hash.String())
+		return false, nil
+	}
+	if id, err := pool.unit.GetTxHashByReqId(reqHash); err == nil {
+		log.Infof("Request[%s] already exist in db,txhash[%s]", reqHash.String(), id.String())
+		return false, nil
+	}
 	// Don't accept the transaction if it already in the pool .
 	if _, has := pool.all.Load(hash); has {
 		txAlreadyPrometheus.Add(1)
@@ -591,9 +639,32 @@ func (pool *TxPool) add(tx *modules.Transaction, local bool) (bool, error) {
 		txOrphanKnownPrometheus.Add(1)
 		return false, fmt.Errorf("know orphanTx: %s", hash.String())
 	}
+
+	if tx.IsSystemContract() && !tx.IsOnlyContractRequest() {
+		log.Infof("[%s]tx[%s] is a full system contract invoke tx, don't support", reqHash.ShortStr(), hash.String())
+		return false, errors.New("txpool: not support")
+	}
+	var deletedReq *TxPoolTransaction
+	if tx.IsUserContract() && !tx.IsOnlyContractRequest() { //FullTx about user contract
+		//delete request
+		var ok bool
+		deletedReq, ok = pool.userContractRequests[reqHash]
+		if ok {
+			delete(pool.userContractRequests, reqHash)
+			log.Debugf("[%s]delete user contract request by hash:%s", reqHash.ShortStr(), hash.String())
+		}
+	}
+	reverseDeleteReq := func() {
+		if deletedReq != nil {
+			pool.userContractRequests[deletedReq.TxHash] = deletedReq
+			log.Debugf("[%s]reverse delete request %s", reqHash.ShortStr(), deletedReq.TxHash.String())
+		}
+	}
+
 	// If the transaction fails basic validation, discard it
-	addition, code, err := pool.validateTx(tx, local)
+	addition, code, err := pool.validateTx(tx, !tx.IsOnlyContractRequest())
 	if err != nil && code != validator.TxValidationCode_ORPHAN {
+		reverseDeleteReq()
 		return false, validator.NewValidateError(code)
 	}
 	if code == validator.TxValidationCode_ORPHAN {
@@ -608,12 +679,12 @@ func (pool *TxPool) add(tx *modules.Transaction, local bool) (bool, error) {
 		code = validator.TxValidationCode_VALID
 	}
 	if code != validator.TxValidationCode_VALID {
+		reverseDeleteReq()
 		return false, validator.NewValidateError(code)
 	}
 	ptx := pool.convertTx(tx, addition)
 	// 计算优先级
 	pool.setPriorityLvl(ptx)
-
 	// If the transaction pool is full, discard underpriced transactions
 	length := pool.AllLength()
 	if uint64(length) >= pool.config.GlobalSlots+pool.config.GlobalQueue {
@@ -633,14 +704,36 @@ func (pool *TxPool) add(tx *modules.Transaction, local bool) (bool, error) {
 			}
 		}
 	}
-	go pool.priority_sorted.Put(ptx)
-	go pool.journalTx(ptx)
+	if tx.IsUserContract() && tx.IsOnlyContractRequest() {
+		//user contract request
+		log.Debugf("[%s]add tx[%s] to user contract request pool", reqHash.ShortStr(), hash.String())
+		pool.userContractRequests[ptx.TxHash] = ptx
+		pool.txFeed.Send(modules.TxPreEvent{Tx: tx, IsOrphan: false})
+	} else { //不是用户合约请求
+		//有可能是连续的用户合约请求R1,R2，但是R2先被执行完，这个时候R1还在RequestPool里面，没办法被打包，所以R2应该被扔到basedOnReqOrphanPool
+		//父交易还是Request，所以本Tx是Orphan
+		if pool.isBasedOnRequestPool(ptx) {
+			log.Debugf("Tx[%s]'s parent or ancestor is a request, not a full tx, add it to based on request pool",
+				ptx.TxHash.String())
+			if err := pool.addBasedOnReqOrphanTx(ptx); err != nil {
+				log.Errorf("add tx[%s] to based on request pool error:%s", ptx.TxHash.String(), err.Error())
+				reverseDeleteReq()
+				return false, err
+			}
+		} else {
+			//3. process normal tx
+			go pool.priority_sorted.Put(ptx)
+			if local {
+				go pool.journalTx(ptx)
+			}
+			pool.all.Store(hash, ptx)
+			pool.addCache(ptx)
+			txValidPrometheus.Add(1)
+			// We've directly injected a replacement transaction, notify subsystems
+			pool.txFeed.Send(modules.TxPreEvent{Tx: tx, IsOrphan: false})
+		}
+	}
 
-	pool.all.Store(hash, ptx)
-	pool.addCache(ptx)
-	txValidPrometheus.Add(1)
-	// We've directly injected a replacement transaction, notify subsystems
-	go pool.txFeed.Send(modules.TxPreEvent{Tx: tx})
 	// 更新一次孤儿交易池数据。
 	pool.reflashOrphanTxs(tx, pool.AllOrphanTxs())
 	return true, nil
@@ -697,15 +790,10 @@ func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 	return pool.addTx(tx, !pool.config.NoLocals)
 }
 func (pool *TxPool) addJournalTx(ptx *TxPoolTransaction) error {
-	pool.mu.RLock()
-	defer pool.mu.RUnlock()
+	pool.mu.Lock()
+	defer pool.mu.Unlock()
 	// Try to inject the transaction and update any state
-	err := pool.add_journalTx(ptx, !pool.config.NoLocals)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return pool.add_journalTx(ptx)
 }
 
 // AddRemote enqueues a single transaction into the pool if it is valid. If the
@@ -715,7 +803,7 @@ func (pool *TxPool) AddRemote(tx *modules.Transaction) error {
 	if tx.TxMessages()[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
 		return nil
 	}
-	return pool.addTx(tx, false)
+	return pool.addTx(tx, !pool.config.NoLocals)
 }
 
 // AddLocals enqueues a batch of transactions into the pool if they are valid,
@@ -838,8 +926,8 @@ func (pool *TxPool) maybeAcceptTransaction(tx *modules.Transaction) error {
 		log.Info("txpool check coinbase tx.", "info", str)
 		return nil
 	}
-	pool.mu.RLock()
-	defer pool.mu.RUnlock()
+	pool.mu.Lock()
+	defer pool.mu.Unlock()
 
 	err = pool.checkPoolDoubleSpend(tx)
 	if err != nil {
@@ -855,8 +943,8 @@ func (pool *TxPool) maybeAcceptTransaction(tx *modules.Transaction) error {
 
 // addTx enqueues a single transaction into the pool if it is valid.
 func (pool *TxPool) addTx(tx *modules.Transaction, local bool) error {
-	pool.mu.RLock()
-	defer pool.mu.RUnlock()
+	pool.mu.Lock()
+	defer pool.mu.Unlock()
 	// Try to inject the transaction and update any state
 	replace, err := pool.add(tx, local)
 	if err != nil {
@@ -871,8 +959,8 @@ func (pool *TxPool) addTx(tx *modules.Transaction, local bool) error {
 
 // addTxs attempts to queue a batch of transactions if they are valid.
 func (pool *TxPool) addTxs(txs []*modules.Transaction, local bool) []error {
-	pool.mu.RLock()
-	defer pool.mu.RUnlock()
+	pool.mu.Lock()
+	defer pool.mu.Unlock()
 
 	return pool.addTxsLocked(txs, local)
 }
@@ -943,19 +1031,11 @@ func (pool *TxPool) GetTx(hash common.Hash) (*TxPoolTransaction, error) {
 	interTx, has := pool.all.Load(hash)
 	if has {
 		tx := interTx.(*TxPoolTransaction)
-		if tx.Tx.Hash() != hash {
-			pool.all.Delete(hash)
-			pool.priority_sorted.Removed()
-			return nil, errors.New("not found")
-		}
-		if tx.Pending {
-			log.Debug("get tx info by hash in txpool... tx in unit hash:", "unit_hash", tx.UnitHash, "p_tx", tx)
-			return tx, nil
-		}
+		log.Debug("get tx info by hash in txpool... ", "unit_hash", tx.UnitHash, "p_tx", tx)
 		return tx, nil
 	} else {
-		if itx, exist := pool.orphans.Load(hash); exist {
-			tx := itx.(*TxPoolTransaction)
+		if otx, exist := pool.orphans.Load(hash); exist {
+			tx := otx.(*TxPoolTransaction)
 			log.Debug("get tx info by hash in orphan txpool... ", "txhash", tx.Tx.Hash(), "info", tx)
 			return tx, nil
 		}
@@ -1385,8 +1465,8 @@ func (pool *TxPool) addCache(tx *TxPoolTransaction) {
 	}
 }
 func (pool *TxPool) ResetPendingTxs(txs []*modules.Transaction) error {
-	pool.mu.RLock()
-	defer pool.mu.RUnlock()
+	pool.mu.Lock()
+	defer pool.mu.Unlock()
 	for i, tx := range txs {
 		if i == 0 { //coinbase
 			continue
@@ -1934,4 +2014,24 @@ func (pool *TxPool) convertTx(tx *modules.Transaction, fee []*modules.Addition) 
 	tx2.TxFee = fee
 	tx2.FromAddr = fromAddr
 	return tx2
+}
+
+func (pool *TxPool) isBasedOnRequestPool(tx *TxPoolTransaction) bool {
+	for h := range tx.DependOnTxs {
+		if _, ok := pool.userContractRequests[h]; ok {
+			return true
+		}
+		if _, ok := pool.basedOnRequestOrphans[h]; ok {
+			return true
+		}
+	}
+	return false
+}
+
+func (pool *TxPool) addBasedOnReqOrphanTx(tx *TxPoolTransaction) error {
+	log.Debugf("add tx[%s] to based on request orphan pool", tx.TxHash.String())
+	tx.Status = TxPoolTxStatus_Orphan
+	pool.basedOnRequestOrphans[tx.TxHash] = tx
+	pool.txFeed.Send(modules.TxPreEvent{Tx: tx.Tx, IsOrphan: false})
+	return nil
 }
