@@ -588,7 +588,6 @@ func (tx *Transaction) GetSpendOutpoints() []*OutPoint {
 					for _, v := range result {
 						if v.TxHash.String() == input.PreviousOutPoint.TxHash.String() {
 							if v.MessageIndex == input.PreviousOutPoint.MessageIndex && v.OutIndex == input.PreviousOutPoint.OutIndex {
-
 								chongfu = true
 							}
 						}
@@ -632,7 +631,6 @@ func (tx *Transaction) GetRequestTx() *Transaction {
 		if msg.App.IsRequest() {
 			break
 		}
-
 	}
 	request.CertId = tx.CertId()
 	return &Transaction{txdata: request}
@@ -641,7 +639,6 @@ func (tx *Transaction) GetRequestTx() *Transaction {
 
 //获取一个被Jury执行完成后，但是还没有进行陪审员签名的交易
 func (tx *Transaction) GetResultRawTx() *Transaction {
-
 	sdw := transaction_sdw{}
 	isResultMsg := false
 	for _, msg := range tx.TxMessages() {
@@ -755,7 +752,6 @@ func (tx *Transaction) GetToAddrs(getAddrFunc GetAddressFromScriptFunc) ([]commo
 					resultMap[addr] = 1
 				}
 			}
-
 		}
 	}
 

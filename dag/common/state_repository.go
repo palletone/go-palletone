@@ -150,7 +150,6 @@ func (rep *StateRepository) GetContractStateByVersion(id []byte,
 					return write.Value, nil
 				}
 			}
-			//}
 		}
 	}
 	return nil, errors.New("WriteSet not found")

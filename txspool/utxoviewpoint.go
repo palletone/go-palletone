@@ -117,30 +117,33 @@ func (view *UtxoViewpoint) FetchUnitUtxos(db utxoBaseGetOp, unit *modules.Unit) 
 		// than the actual position of the transaction within
 		// the block due to skipping the coinbase.
 		for j, msgcopy := range tx.TxMessages() {
-			if msgcopy.App == modules.APP_PAYMENT {
-				if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
-					for _, txIn := range msg.Inputs {
-						//TODO for download sync
-						if txIn == nil {
-							continue
-						}
-						originHash := &txIn.PreviousOutPoint.TxHash
-						if inFlightIndex, ok := txInFlight[*originHash]; ok &&
-							i >= inFlightIndex {
-
-							originTx := transactions[inFlightIndex]
-							view.AddTxOut(originTx, uint32(i), uint32(j))
-							continue
-						}
-
-						// Don't request entries that are already in the view
-						// from the database.
-						if _, ok := view.entries[*txIn.PreviousOutPoint]; ok {
-							continue
-						}
-						neededSet[*txIn.PreviousOutPoint] = struct{}{}
-					}
+			if msgcopy.App != modules.APP_PAYMENT {
+				continue
+			}
+			msg, ok := msgcopy.Payload.(*modules.PaymentPayload)
+			if !ok {
+				continue
+			}
+			for _, txIn := range msg.Inputs {
+				//TODO for download sync
+				if txIn == nil {
+					continue
 				}
+				originHash := &txIn.PreviousOutPoint.TxHash
+				if inFlightIndex, ok := txInFlight[*originHash]; ok &&
+					i >= inFlightIndex {
+
+					originTx := transactions[inFlightIndex]
+					view.AddTxOut(originTx, uint32(i), uint32(j))
+					continue
+				}
+
+				// Don't request entries that are already in the view
+				// from the database.
+				if _, ok := view.entries[*txIn.PreviousOutPoint]; ok {
+					continue
+				}
+				neededSet[*txIn.PreviousOutPoint] = struct{}{}
 			}
 		}
 	}
@@ -218,19 +221,21 @@ func (view *UtxoViewpoint) AddTxOut(tx *modules.Transaction, msgIdx, txoutIdx ui
 func (view *UtxoViewpoint) AddTxOuts(tx *modules.Transaction) {
 	preout := modules.OutPoint{TxHash: tx.Hash()}
 	for i, msgcopy := range tx.TxMessages() {
-		if msgcopy.App == modules.APP_PAYMENT {
-			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
-				msgIdx := uint32(i)
-				preout.MessageIndex = msgIdx
-				for j, output := range msg.Outputs {
-					txoutIdx := uint32(j)
-					preout.OutIndex = txoutIdx
-					txout := &modules.TxOut{Value: int64(output.Value), PkScript: output.PkScript, Asset: output.Asset}
-					view.addTxOut(preout, txout, false)
-				}
-			}
+		if msgcopy.App != modules.APP_PAYMENT {
+			continue
 		}
-
+		msg, ok := msgcopy.Payload.(*modules.PaymentPayload)
+		if !ok {
+			continue
+		}
+		msgIdx := uint32(i)
+		preout.MessageIndex = msgIdx
+		for j, output := range msg.Outputs {
+			txoutIdx := uint32(j)
+			preout.OutIndex = txoutIdx
+			txout := &modules.TxOut{Value: int64(output.Value), PkScript: output.PkScript, Asset: output.Asset}
+			view.addTxOut(preout, txout, false)
+		}
 	}
 }
 
@@ -320,12 +325,13 @@ func CheckTransactionSanity(tx *modules.Transaction) error {
 		// Check for duplicate transaction inputs.
 		existingTxOut := make(map[modules.OutPoint]struct{})
 		for _, txIn := range payload.Inputs {
-			if txIn.PreviousOutPoint != nil {
-				if _, exists := existingTxOut[*txIn.PreviousOutPoint]; exists {
-					return errors.New("transaction " + "contains duplicate inputs")
-				}
-				existingTxOut[*txIn.PreviousOutPoint] = struct{}{}
+			if txIn.PreviousOutPoint == nil {
+				continue
 			}
+			if _, exists := existingTxOut[*txIn.PreviousOutPoint]; exists {
+				return errors.New("transaction " + "contains duplicate inputs")
+			}
+			existingTxOut[*txIn.PreviousOutPoint] = struct{}{}
 		}
 	}
 	return nil
