@@ -381,10 +381,9 @@ func (mp *MediatorPlugin) UpdateMediatorsDKG(isRenew bool) {
 	mp.dkgLock.Unlock()
 
 	// 判断是否重新 初始化DKG 和 VSS 协议
-	// todo albert 待优化
-	//if !isRenew {
-	//	return
-	//}
+	if !isRenew {
+		return
+	}
 
 	// 初始化当前节点控制的活跃mediator对应的DKG, 以及初始化完成vss相关的buf
 	mp.newDKGAndInitVSSBuf()

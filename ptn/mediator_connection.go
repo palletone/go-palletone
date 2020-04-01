@@ -112,6 +112,7 @@ func (pm *ProtocolManager) saveStableUnitRecvLoop() {
 		}
 	}
 }
+
 func (pm *ProtocolManager) saveUnitRecvLoop() {
 	for {
 		select {
@@ -161,29 +162,37 @@ func (pm *ProtocolManager) rollbackUnitRecvLoop() {
 func (pm *ProtocolManager) switchMediatorConnect(isChanged bool) {
 	log.Debug("switchMediatorConnect", "isChanged", isChanged)
 
+	dag := pm.dag
 	// 防止重复接收消息
-	if !(pm.dag.LastMaintenanceTime() > pm.lastMaintenanceTime) {
+	if !(dag.LastMaintenanceTime() > pm.lastMaintenanceTime) {
 		return
 	}
 
 	// 若干数据还没同步完成，则忽略本次切换，继续同步
-	if !pm.dag.IsSynced(true) {
+	if !dag.IsSynced(true) {
 		log.Debugf(errStr)
 		return
 	}
 
-	// todo albert 待优化
-	//if !isChanged {
-	//	go pm.producer.UpdateMediatorsDKG(false)
-	//	return
-	//}
+	headNum := dag.HeadUnitNum()
+	stableNum := dag.StableUnitNum()
+	isRenew := true
+	// 如果 活跃mediator没有发生变化，并且群签名功能已生效，则不再重新做vss协议
+	if !isChanged && !(headNum-stableNum > 1) {
+		isRenew = false
+	}
 
-	// 和新的活跃mediator节点相连
-	go pm.connectWitchActiveMediators()
+	// 更新相关标记
+	pm.lastMaintenanceTime = pm.dag.LastMaintenanceTime()
+
+	if !isRenew {
+		// 和新的活跃mediator节点相连
+		go pm.connectWitchActiveMediators()
+	}
 
 	// 检查是否连接和同步，并更新DKG和VSS
 	//go pm.checkConnectedAndSynced()
-	go pm.producer.UpdateMediatorsDKG(true)
+	go pm.producer.UpdateMediatorsDKG(isRenew)
 
 	// 在其他地方当unit稳定后再关闭连接
 	//// 延迟关闭和旧活跃mediator节点的连接
@@ -191,9 +200,6 @@ func (pm *ProtocolManager) switchMediatorConnect(isChanged bool) {
 }
 
 func (pm *ProtocolManager) connectWitchActiveMediators() {
-	// 更新相关标记
-	pm.lastMaintenanceTime = pm.dag.LastMaintenanceTime()
-
 	// 判断本节点是否是活跃mediator
 	log.Debugf("to connected with all active mediator nodes")
 	if !pm.producer.LocalHaveActiveMediator() {

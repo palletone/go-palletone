@@ -1229,9 +1229,6 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte) error {
 	// 群签之后， 更新memdag，将该unit和它的父单元们稳定存储。
 	d.Memdag.SetUnitGroupSign(unitHash, groupSign)
 
-	//TODO albert 待合并
-	// 状态更新
-	//go d.updateGlobalPropDependGroupSign(unitHash)
 	return nil
 }
 

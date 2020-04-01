@@ -422,6 +422,7 @@ func (s *PublicDagAPI) GetUnitSummaryByNumber(ctx context.Context, height Int) s
 func (s *PublicDagAPI) GetUnstableUnits() []*ptnjson.UnitSummaryJson {
 	return s.b.GetUnstableUnits()
 }
+
 func (s *PublicDagAPI) GetUnitTxsInfo(ctx context.Context, hashHex string) (string, error) {
 	hash := common.HexToHash(hashHex)
 	if item, err := s.b.GetUnitTxsInfo(hash); err != nil {
@@ -455,6 +456,7 @@ func (s *PublicDagAPI) GetTxByHash(ctx context.Context, hashHex string) (string,
 		return string(result_json), nil
 	}
 }
+
 func (s *PublicDagAPI) GetTxByReqId(ctx context.Context, hashHex string) (string, error) {
 	hash := common.HexToHash(hashHex)
 	if item, err := s.b.GetTxByReqId(hash); err != nil {
@@ -465,6 +467,7 @@ func (s *PublicDagAPI) GetTxByReqId(ctx context.Context, hashHex string) (string
 		return string(result_json), nil
 	}
 }
+
 func (s *PublicDagAPI) GetTxPackInfo(ctx context.Context, txHash string) (*ptnjson.TxPackInfoJson, error) {
 	hash := common.HexToHash(txHash)
 	return s.b.GetTxPackInfo(hash)
@@ -605,8 +608,7 @@ func (s *PublicDagAPI) HeadUnitNum() uint64 {
 func (s *PublicDagAPI) StableUnitNum() uint64 {
 	dag := s.b.Dag()
 	if dag != nil {
-		gasToken := dagconfig.DagConfig.GetGasToken()
-		return dag.GetIrreversibleUnitNum(gasToken)
+		return dag.StableUnitNum()
 	}
 	return uint64(0)
 }
