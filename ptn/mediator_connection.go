@@ -178,7 +178,7 @@ func (pm *ProtocolManager) switchMediatorConnect(isChanged bool) {
 	stableNum := dag.StableUnitNum()
 	isRenew := true
 	// 如果 活跃mediator没有发生变化，并且群签名功能已生效，则不再重新做vss协议
-	if !isChanged && !(headNum-stableNum > 1) {
+	if !isChanged && !(headNum-stableNum > 1) && stableNum != 0 {
 		isRenew = false
 	}
 
