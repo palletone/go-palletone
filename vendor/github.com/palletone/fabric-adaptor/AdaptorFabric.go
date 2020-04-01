@@ -653,6 +653,7 @@ func (afab *AdaptorFabric) CreateContractInvokeTx(input *adaptor.CreateContractI
 	}
 	var output adaptor.CreateContractInvokeTxOutput // todo
 	output.RawTransaction = resultJSON
+	output.Extra = []byte(rsp.TransactionID)
 	return &output, nil
 }
 
@@ -695,7 +696,7 @@ func (afab *AdaptorFabric) GetContractInvokeTx(input *adaptor.GetContractInvokeT
 	argsJSON,_:=json.Marshal(txDetails.Args)
 	output.TxRawData = argsJSON
 
-	if 200 == rsp.ValidationCode {
+	if 0 == rsp.ValidationCode {
 		output.IsSuccess = true
 	} else {
 		output.IsSuccess = false

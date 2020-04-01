@@ -286,10 +286,8 @@ github.com/palletone/digital-identity v0.6.1-0.20190729063546-3dca665105bb/go.mo
 github.com/palletone/eth-adaptor v1.1.0/go.mod h1:g9jTKBCiofy0AmP5rmuCZGm91Z8sTTnjzyBg8oPcas0=
 github.com/palletone/eth-adaptor v1.1.1-0.20200114040401-8226d1a11f3f h1:gR0Wb+HsPqR5efdo/tLfln4WrnhXiwtADAfv3ObMS6k=
 github.com/palletone/eth-adaptor v1.1.1-0.20200114040401-8226d1a11f3f/go.mod h1:i7Eq3JTzzDJTMuLBUKDw2w6WgU4DI1YHtRohFkeAQK0=
-github.com/palletone/fabric-adaptor v0.0.0-20200326145905-1bc66935ad67 h1:6Ntna6mC6lrF1VbTDD/VRVEBbucjM2U/2/JPdNUahgY=
-github.com/palletone/fabric-adaptor v0.0.0-20200326145905-1bc66935ad67/go.mod h1:T69hXyDMLq0AD4AJwYroxnUzstQ5WS1dn9pc15caZb8=
-github.com/palletone/fabric-adaptor v0.0.0-20200327133758-e7f247ade38e h1:ppSisJLobGFKNVoDs8UlLcOB9ibf0rh2O6l7mz4Y/Lk=
-github.com/palletone/fabric-adaptor v0.0.0-20200327133758-e7f247ade38e/go.mod h1:T69hXyDMLq0AD4AJwYroxnUzstQ5WS1dn9pc15caZb8=
+github.com/palletone/fabric-adaptor v0.0.0-20200331153353-6319b6f26aa4 h1:HAr0hP3TbCEQnlK1WaPNFZCAO4PhPuCrBrbXik+/2U4=
+github.com/palletone/fabric-adaptor v0.0.0-20200331153353-6319b6f26aa4/go.mod h1:JAeFd9y2FIEEHd2v7nu+w2S8FB9JW/YisDVkU+hATEI=
 github.com/palletone/go-palletone v1.0.4/go.mod h1:kkJ40TJ3ii7ZqP+Hc3Mwneb5MUK3hgDu7fWIIupoIkU=
 github.com/pborman/uuid v1.2.0 h1:J7Q5mO4ysT1dv8hyrUGHb9+ooztCXu1D8MY8DZYsu3g=
 github.com/pborman/uuid v1.2.0/go.mod h1:X/NO0urCmaxf9VXbdlT7C2Yzkj2IKimNn4k+gtPdI/k=

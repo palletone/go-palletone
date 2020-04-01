@@ -231,8 +231,6 @@ github.com/mattn/go-isatty
 github.com/matttproud/golang_protobuf_extensions/pbutil
 # github.com/mitchellh/mapstructure v1.2.2
 github.com/mitchellh/mapstructure
-# github.com/naoina/go-stringutil v0.1.0
-github.com/naoina/go-stringutil
 # github.com/naoina/toml v0.0.0-20170410220130-ac014c6b6502
 github.com/naoina/toml
 github.com/naoina/toml/ast
@@ -255,7 +253,7 @@ github.com/palletone/digital-identity/config
 github.com/palletone/eth-adaptor
 github.com/palletone/eth-adaptor/bind
 github.com/palletone/eth-adaptor/ethclient
-# github.com/palletone/fabric-adaptor v0.0.0-20200327133758-e7f247ade38e
+# github.com/palletone/fabric-adaptor v0.0.0-20200331153353-6319b6f26aa4
 github.com/palletone/fabric-adaptor
 github.com/palletone/fabric-adaptor/pkg/client/channel
 github.com/palletone/fabric-adaptor/pkg/client/ledger
@@ -654,9 +652,6 @@ gopkg.in/karalabe/cookiejar.v2/collections/prque
 gopkg.in/natefinch/lumberjack.v2
 # gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce
 gopkg.in/natefinch/npipe.v2
-# gopkg.in/sourcemap.v1 v1.0.5
-gopkg.in/sourcemap.v1
-gopkg.in/sourcemap.v1/base64vlq
 # gopkg.in/urfave/cli.v1 v1.20.0
 gopkg.in/urfave/cli.v1
 # gopkg.in/yaml.v2 v2.2.2

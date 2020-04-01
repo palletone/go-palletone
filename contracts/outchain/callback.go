@@ -113,7 +113,11 @@ func SignTransaction(chaincodeID string, chainName string, params []byte) (strin
 	//
 	priKey, err := GetJuryKeyInfo(chaincodeID, chainName, params, adaptorObj)
 	if err != nil {
-		return "", err
+		if "fabric" == chainName {
+			priKey = []byte{}
+		} else {
+			return "", err
+		}
 	}
 	//
 	var input adaptor.SignTransactionInput
@@ -149,7 +153,11 @@ func SignMessage(chaincodeID string, chainName string, params []byte) (string, e
 	//
 	priKey, err := GetJuryKeyInfo(chaincodeID, chainName, params, adaptorObj)
 	if err != nil {
-		return "", err
+		if "fabric" == chainName {
+			priKey = []byte{}
+		} else {
+			return "", err
+		}
 	}
 	//fmt.Printf("prikey : %x\n", priKey)
 	//

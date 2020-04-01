@@ -37,7 +37,7 @@ require (
 	github.com/palletone/btc-adaptor v1.0.1-0.20191224041536-3348ea137f6e
 	github.com/palletone/digital-identity v0.6.1-0.20190729063546-3dca665105bb
 	github.com/palletone/eth-adaptor v1.1.1-0.20200114040401-8226d1a11f3f
-	github.com/palletone/fabric-adaptor v0.0.0-20200327133758-e7f247ade38e
+	github.com/palletone/fabric-adaptor v0.0.0-20200331153353-6319b6f26aa4
 	github.com/pborman/uuid v1.2.0
 	github.com/peterh/liner v0.0.0-20170902204657-a37ad3984311
 	github.com/pkg/errors v0.8.1
