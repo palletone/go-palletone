@@ -1169,7 +1169,6 @@ func (pool *TxPool) removeTransaction(tx *TxPoolTransaction, removeRedeemers boo
 			}
 		}
 	}
-POOLLOAD:
 	// Remove the transaction if needed.
 	_, has := pool.all.Load(hash)
 	if !has {
@@ -1187,7 +1186,6 @@ POOLLOAD:
 	}
 	tx.Discarded = true
 	pool.all.Store(hash, tx)
-
 }
 
 func (pool *TxPool) checkPoolDoubleSpend(tx *modules.Transaction) error {
@@ -1197,8 +1195,13 @@ func (pool *TxPool) checkPoolDoubleSpend(tx *modules.Transaction) error {
 			if !ok {
 				continue
 			}
-			if _, err := pool.OutPointIsSpend(input.PreviousOutPoint); err != nil {
-				return err
+			for _, input := range inputs.Inputs {
+				if input == nil {
+					break
+				}
+				if _, err := pool.OutPointIsSpend(input.PreviousOutPoint); err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -1399,21 +1402,13 @@ func (pool *TxPool) DiscardTxs(txs []*modules.Transaction) error {
 func (pool *TxPool) discardTx(hash common.Hash) error {
 	// in all pool
 	interTx, has := pool.all.Load(hash)
-	if has {
-		tx := interTx.(*TxPoolTransaction)
-		tx.Discarded = true
-		pool.deletePoolUtxos(tx.Tx)
-		pool.all.Store(hash, tx)
-	}
-	// in all pool
-	interTx, has := pool.all.Load(hash)
 	if !has {
 		return nil
 	}
 	tx := interTx.(*TxPoolTransaction)
 	tx.Discarded = true
+	pool.deletePoolUtxos(tx.Tx)
 	pool.all.Store(hash, tx)
-	// not in pool
 	return nil
 }
 func (pool *TxPool) SetPendingTxs(unit_hash common.Hash, num uint64, txs []*modules.Transaction) error {
@@ -1570,12 +1565,6 @@ func (pool *TxPool) GetSortedTxs() ([]*TxPoolTransaction, error) {
 					}
 				}
 			}
-			map_pretxs[p_tx.Tx.Hash()] = len(list)
-			if p_tx.Pending {
-				continue
-			}
-			list = append(list, p_tx)
-			total += p_tx.Tx.Size()
 		}
 	}
 	//  验证孤儿交易
@@ -1700,37 +1689,24 @@ func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs map[common.Has
 							queue_tx = otx
 							break poolloop
 						}
-						payment := msg.Payload.(*modules.PaymentPayload)
-						for j := range payment.Outputs {
-							if op.OutIndex == uint32(j) && op.MessageIndex == uint32(i) {
-								queue_tx = otx
-								break poolloop
-							}
-						}
 					}
 				}
 
 			}
 		}
-		if queue_tx != nil {
-			//if find precusor tx  ,and go on to find its
-			if !queue_tx.Pending {
-				list := pool.getPrecusorTxs(queue_tx, poolTxs)
-				for _, p_tx := range list {
-					pretxs = append(pretxs, p_tx)
-					delete(poolTxs, p_tx.Tx.Hash())
-				}
-			}
+		if queue_tx != nil || queue_tx.Pending {
+			continue
 		}
 		//if find precusor tx  ,and go on to find its
 		log.Info("find in precusor tx.", "hash", queue_tx.Tx.Hash().String(), "ohash", op.TxHash.String(),
 			"pending", tx.Pending)
-		_, list := pool.getPrecusorTxs(queue_tx, poolTxs, orphanTxs)
+		list := pool.getPrecusorTxs(queue_tx, poolTxs)
 		for _, p_tx := range list {
 			pretxs = append(pretxs, p_tx)
 			delete(poolTxs, p_tx.Tx.Hash())
 		}
 	}
+
 	pretxs = append(pretxs, tx)
 	return pretxs
 }
