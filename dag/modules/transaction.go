@@ -588,7 +588,6 @@ func (tx *Transaction) GetSpendOutpoints() []*OutPoint {
 					for _, v := range result {
 						if v.TxHash.String() == input.PreviousOutPoint.TxHash.String() {
 							if v.MessageIndex == input.PreviousOutPoint.MessageIndex && v.OutIndex == input.PreviousOutPoint.OutIndex {
-
 								chongfu = true
 							}
 						}
@@ -630,10 +629,8 @@ func (tx *Transaction) GetRequestTx() *Transaction {
 	for _, msg := range msgs {
 		request.TxMessages = append(request.TxMessages, msg)
 		if msg.App.IsRequest() {
-
 			break
 		}
-
 	}
 	request.CertId = tx.CertId()
 	return &Transaction{txdata: request}
@@ -642,7 +639,6 @@ func (tx *Transaction) GetRequestTx() *Transaction {
 
 //获取一个被Jury执行完成后，但是还没有进行陪审员签名的交易
 func (tx *Transaction) GetResultRawTx() *Transaction {
-
 	sdw := transaction_sdw{}
 	isResultMsg := false
 	for _, msg := range tx.TxMessages() {
@@ -721,7 +717,7 @@ func (tx *Transaction) GetFromAddrs(queryUtxoFunc QueryUtxoFunc, getAddrFunc Get
 							out := msgs[input.PreviousOutPoint.MessageIndex].Payload.(*PaymentPayload).Outputs[input.PreviousOutPoint.OutIndex]
 							lockScript = out.PkScript
 						} else {
-							log.Errorf("Cannot find txo by:%s", input.PreviousOutPoint.String())
+							log.Errorf("[%s]Cannot find txo by:%s", tx.RequestHash().ShortStr(), input.PreviousOutPoint.String())
 							return nil, err
 						}
 					} else {
@@ -756,7 +752,6 @@ func (tx *Transaction) GetToAddrs(getAddrFunc GetAddressFromScriptFunc) ([]commo
 					resultMap[addr] = 1
 				}
 			}
-
 		}
 	}
 
@@ -772,7 +767,8 @@ func (tx *Transaction) GetRequesterAddr(queryUtxoFunc QueryUtxoFunc, getAddrFunc
 	common.Address, error) {
 	msg0 := tx.txdata.TxMessages[0]
 	if msg0.App != APP_PAYMENT {
-		return common.Address{}, errors.New("Coinbase or Invalid Tx, first message must be a payment")
+		return common.Address{}, fmt.Errorf("[%s]Coinbase or Invalid Tx, first message must be a payment",
+			tx.RequestHash().ShortStr())
 	}
 	pay := msg0.Payload.(*PaymentPayload)
 
@@ -934,7 +930,7 @@ func (tx *Transaction) IsSystemContract() bool {
 			//log.Debug("isSystemContract", "contract id", contractAddr, "len", len(contractAddr))
 			return contractAddr.IsSystemContractAddress() //, nil
 
-		} 
+		}
 	}
 	return false //没有Request，当然就不是系统合约
 }
