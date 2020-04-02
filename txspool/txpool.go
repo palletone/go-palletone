@@ -37,7 +37,6 @@ import (
 	"github.com/palletone/go-palletone/dag/palletcache"
 	"github.com/palletone/go-palletone/dag/parameter"
 	"github.com/palletone/go-palletone/tokenengine"
-
 	"github.com/prometheus/client_golang/prometheus"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
@@ -736,7 +735,7 @@ func (pool *TxPool) add(tx *modules.Transaction, local bool) (bool, error) {
 			pool.txFeed.Send(modules.TxPreEvent{Tx: tx, IsOrphan: false})
 		}
 	}
-	err = pool.checkBasedOnReqOrphanTxToNormal()
+	err = pool.checkBasedOnReqOrphanTxToNormal(hash, reqHash)
 	if err != nil {
 		return true, err
 	}
@@ -1384,7 +1383,7 @@ func (pool *TxPool) DiscardTxs(txs []*modules.Transaction) error {
 			if _, ok := pool.userContractRequests[requestHash]; ok {
 				log.Debugf("Request[%s] already packed into unit, delete it from request pool", requestHash.String())
 				delete(pool.userContractRequests, requestHash)
-				pool.checkBasedOnReqOrphanTxToNormal()
+				pool.checkBasedOnReqOrphanTxToNormal(tx.Hash(), requestHash)
 
 			}
 			pool.orphans.Delete(requestHash)
@@ -1952,19 +1951,16 @@ func (pool *TxPool) deletePoolUtxos(tx *modules.Transaction) {
 		}
 	}
 }
-func (pool *TxPool) checkBasedOnReqOrphanTxToNormal() error {
-	readyTx := []*modules.Transaction{}
+func (pool *TxPool) checkBasedOnReqOrphanTxToNormal(ori_hash, ori_reqhash common.Hash) error {
 	for hash, otx := range pool.basedOnRequestOrphans {
-		if !pool.isBasedOnRequestPool(otx) { //满足Normal的条件了
+		if !pool.isBasedOnRequestPool(otx) && (otx.IsDependOnTx(ori_hash) || otx.IsDependOnTx(ori_reqhash)) {
+			//满足Normal的条件了
 			log.Debugf("move tx[%s] from based on request orphans to normals", otx.TxHash.String())
-			delete(pool.basedOnRequestOrphans, hash) //从孤儿池删除
-			readyTx = append(readyTx, otx.Tx)
-		}
-	}
-	for _, tx := range readyTx {
-		err := pool.addTx(tx, !pool.config.NoLocals) //因为之前孤儿交易没有手续费，UTXO等，所以需要重新计算
-		if err != nil {
-			log.Warnf("add tx[%s] to pool fail:%s", tx.Hash().String(), err.Error())
+			delete(pool.basedOnRequestOrphans, hash)         //从孤儿池删除
+			err := pool.addTx(otx.Tx, !pool.config.NoLocals) //因为之前孤儿交易没有手续费，UTXO等，所以需要重新计算
+			if err != nil {
+				log.Warnf("add tx[%s] to pool fail:%s", hash.String(), err.Error())
+			}
 		}
 	}
 	return nil
