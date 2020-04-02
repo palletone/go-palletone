@@ -42,7 +42,7 @@ var DefaultConfig = Config{
 	TrieCache:      256,
 	TrieTimeout:    5 * time.Minute,
 	CryptoLib:      []byte{0, 0},
-	EnableGasFee:   false,
+	EnableGasFee:   true,
 	TxPool:         txspool.DefaultTxPoolConfig,
 	Dag:            dagconfig.DagConfig,
 	MediatorPlugin: mediatorplugin.DefaultConfig,

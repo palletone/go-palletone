@@ -1,0 +1,7 @@
+*** Settings ***
+Resource          publicParams.txt
+
+*** Keywords ***
+mediatorListAll
+    ${result}    创建公用的POST请求    mediator_listAll    mediator_listAll    ""
+    [Return]    ${result}

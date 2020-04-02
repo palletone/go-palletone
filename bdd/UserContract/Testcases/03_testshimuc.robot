@@ -201,6 +201,7 @@ Check all invoke info
     Dictionary Should Contain Key    ${payload}    GetInvokeTokens
     ${GetInvokeTokens} =    Get From Dictionary    ${payload}    GetInvokeTokens
     # => GetInvokeFees
+    #    Dictionary Should Contain Key    ${payload}    GetInvokeFees
     #    ${payload}    GetInvokeFees
     #    Get From Dictionary    ${payload}    GetInvokeFees
     #    Get From Dictionary    ${GetInvokeFees}    amount

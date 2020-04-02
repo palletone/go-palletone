@@ -1,0 +1,9 @@
+*** Settings ***
+Resource          publicParams.txt
+
+*** Keywords ***
+getAllJury
+    ${one}    Create List    GetAllJury
+    ${two}    Create List    ${one}
+    ${result}    创建公用的POST请求    ${depositContractQuery}    GetAllJury    ${two}
+    log    ${result}

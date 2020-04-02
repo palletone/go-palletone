@@ -49,7 +49,7 @@ Business_01
     log    ${result}
     ${amount}    getBalance    ${mediatorAddr_01}    PTN    #499999992
     log    ${amount}
-    Should Be Equal As Numbers    ${amount}    10000
+    Should Be Equal As Numbers    ${amount}    9998
     ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
     log    ${amount}    #0
     Should Be Equal As Numbers    ${amount}    0
@@ -60,7 +60,7 @@ Business_01
     log    ${result}
     ${amount}    getBalance    ${mediatorAddr_01}    PTN
     log    ${amount}    #999949941
-    Should Be Equal As Numbers    ${amount}    9950
+    Should Be Equal As Numbers    ${amount}    9947
     ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
     log    ${amount}    #0
     Should Be Equal As Numbers    ${amount}    50
@@ -84,7 +84,7 @@ Business_01
     log    ${result}
     ${amount}    getBalance    ${mediatorAddr_01}    PTN    #99,999,970‬
     log    ${amount}
-    Should Be Equal As Numbers    ${amount}    10000
+    Should Be Equal As Numbers    ${amount}    9996
     ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
     log    ${amount}    #0
     Should Be Equal As Numbers    ${amount}    0
@@ -286,7 +286,7 @@ Business_07
     ...    DPT+10102JC6CQU8OK204BXA
     ${amount}    getBalance    ${mediatorAddr_02}    PTN
     log    ${amount}
-    Should Be Equal As Numbers    ${amount}    9950
+    Should Be Equal As Numbers    ${amount}    9948
     ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
     log    ${amount}    #0
     Should Be Equal As Numbers    ${amount}    0
@@ -306,7 +306,7 @@ Business_07
     Should Be Equal As Numbers    ${amount}    1000
     ${amount}    getBalance    ${mediatorAddr_02}    PTN
     log    ${amount}
-    Should Be Equal As Numbers    ${amount}    9950
+    Should Be Equal As Numbers    ${amount}    9946
     ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
     log    ${amount}    #0
     Should Be Equal As Numbers    ${amount}    0
@@ -357,26 +357,26 @@ Business_09
     log    jury
     ${amount}    getBalance    ${juryAddr_01}    PTN
     log    ${amount}
-    Should Be Equal As Numbers    ${amount}    10000
+    Should Be Equal As Numbers    ${amount}    9998
     sleep    1
     ${resul}    juryPayToDepositContract    ${juryAddr_01}    11    ${juryAddr_01_pubkey}    #应该是10，但是为11
     log    ${resul}
     sleep    5
     ${amount}    getBalance    ${juryAddr_01}    PTN
     log    ${amount}
-    Should Be Equal As Numbers    ${amount}    10000
+    Should Be Equal As Numbers    ${amount}    9997
     log    dev
     sleep    1
     ${amount}    getBalance    ${developerAddr_01}    PTN
     log    ${amount}
-    Should Be Equal As Numbers    ${amount}    10000
+    Should Be Equal As Numbers    ${amount}    9998
     sleep    1
     ${resul}    developerPayToDepositContract    ${developerAddr_01}    2    #应该为1，但是为2
     log    ${resul}
     sleep    5
     ${amount}    getBalance    ${developerAddr_01}    PTN
     log    ${amount}
-    Should Be Equal As Numbers    ${amount}    10000
+    Should Be Equal As Numbers    ${amount}    9997
     sleep    1
     ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
     log    ${amount}
@@ -412,7 +412,7 @@ Business_10
     Dictionary Should Not Contain Key    ${result}    ${juryAddr_01}
     ${amount}    getBalance    ${juryAddr_01}    PTN
     log    ${amount}    #9985
-    Should Be Equal As Numbers    ${amount}    9990
+    Should Be Equal As Numbers    ${amount}    9985
     ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
     log    ${amount}    #108.66235，866,235,000是质押增发的，没有变化
 
@@ -443,7 +443,7 @@ Business_11
     Dictionary Should Not Contain Key    ${result}    ${developerAddr_01}
     ${amount}    getBalance    ${developerAddr_01}    PTN
     log    ${amount}
-    Should Be Equal As Numbers    ${amount}    9999
+    Should Be Equal As Numbers    ${amount}    9994
     ${result}    getCandidateBalanceWithAddr    ${developerAddr_01}    #获取该地址保证金账户详情
     log    ${result}
     Should Not Be Equal    ${result}    balance is nil
@@ -468,7 +468,7 @@ Business_12
     log    ${resul}
     ${amount}    getBalance    ${juryAddr_01}    PTN
     log    ${amount}
-    Should Be Equal As Numbers    ${amount}    9990
+    Should Be Equal As Numbers    ${amount}    9985
     ${result}    getListForForfeitureApplication
     log    ${result}
     log    dev
@@ -487,7 +487,7 @@ Business_12
     log    ${resul}
     ${amount}    getBalance    ${developerAddr_01}    PTN
     log    ${amount}
-    Should Be Equal As Numbers    ${amount}    9999
+    Should Be Equal As Numbers    ${amount}    9994
     ${result}    getListForForfeitureApplication
     log    ${result}
     ${amount}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
@@ -1093,13 +1093,13 @@ PledgeTest02
     log    ${result}
     ${result}    getBalance    ${votedAddress01}    PTN
     log    ${result}
-    Should Be Equal As Numbers    ${result}    9800
+    Should Be Equal As Numbers    ${result}    9792.99
     ${res}    addBlacklist    ${votedAddress01}    lsls
     log    ${res}
     sleep    5
     ${b}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DRdWEXJF    PTN
     log    ${b}
-    Should Be Equal As Numbers    ${b}    10001.947627
+    Should Be Equal As Numbers    ${b}    9994.93762699
     ${result}    getBalance    ${votedAddress01}    PTN
     log    ${result}
     ${res}    getBlacklistRecords
@@ -1125,7 +1125,7 @@ PledgeTest02
     sleep    5
     ${b}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DRdWEXJF    PTN
     log    ${b}
-    Should Be Equal As Numbers    ${b}    10001.947627
+    Should Be Equal As Numbers    ${b}    9994.93762699
     ${result}    queryPledgeStatusByAddr    ${votedAddress01}    #查看某地址的质押结果
     log    ${result}
     ${resultJson}    To Json    ${result}
@@ -1195,7 +1195,7 @@ Business_08
     log    ${mDeposit}
     ${amount}    getBalance    ${mediatorAddr_01}    PTN
     log    ${amount}
-    Should Be Equal As Numbers    ${amount}    10000
+    Should Be Equal As Numbers    ${amount}    9996
     ${result}    mediatorPayToDepositContract    ${mediatorAddr_01}    50
     log    ${result}
     sleep    5
@@ -1203,7 +1203,7 @@ Business_08
     log    ${mDeposit}
     ${amount}    getBalance    ${mediatorAddr_01}    PTN
     log    ${amount}
-    Should Be Equal As Numbers    ${amount}    9950
+    Should Be Equal As Numbers    ${amount}    9945
     ${depositOne}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DR32W9vM    PTN
     log    ${depositOne}
     ${addressMap3}    getListForMediatorCandidate
@@ -1216,7 +1216,7 @@ Business_08
     log    ${mDeposit}
     ${amount}    getBalance    ${mediatorAddr_02}    PTN
     log    ${amount}
-    Should Be Equal As Numbers    ${amount}    9950
+    Should Be Equal As Numbers    ${amount}    9946
     ${result}    mediatorPayToDepositContract    ${mediatorAddr_02}    50
     log    ${result}
     sleep    5
@@ -1224,7 +1224,7 @@ Business_08
     log    ${mDeposit}
     ${amount}    getBalance    ${mediatorAddr_02}    PTN
     log    ${amount}
-    Should Be Equal As Numbers    ${amount}    9900
+    Should Be Equal As Numbers    ${amount}    9895
     ${addressMap3}    getListForMediatorCandidate
     log    ${addressMap3}
     Dictionary Should Contain Key    ${addressMap3}    ${mediatorAddr_02}
