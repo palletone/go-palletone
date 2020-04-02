@@ -364,7 +364,7 @@ packet5
     Should Be Equal As Strings    ${result["BalanceCount"]}    0
     getPacketAllocationHistory    ${tokenHolderPubKey}
     ${amount}    getBalance    ${twoAddr}
-    Should Be Equal As Numbers    ${amount}    10000
+    Should Be Equal As Numbers    ${amount}    9998
     sign    ${twoAddr}    1
     sleep    3
     pullPacket    ${tokenHolder}    1    ${signature}    ${tokenHolder}    0
