@@ -281,9 +281,9 @@ func (pm *ProtocolManager) newPeer(pv int, nv uint64, p *p2p.Peer, rw p2p.MsgRea
 // this function terminates, the peer is disconnected.
 func (pm *ProtocolManager) handle(p *peer) error {
 	// Ignore maxPeers if this is a trusted peer
-	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
-		return p2p.DiscTooManyPeers
-	}
+	//if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
+	//	return p2p.DiscTooManyPeers
+	//}
 
 	log.Debug("Enter Cors Palletone peer connected", "id", p.ID())
 	defer log.Debug("End Cors Palletone peer connected", "id", p.ID())
