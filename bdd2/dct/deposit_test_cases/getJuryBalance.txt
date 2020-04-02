@@ -1,0 +1,10 @@
+*** Settings ***
+Resource          publicParams.txt
+
+*** Keywords ***
+getJuryBalance
+    [Arguments]    ${nodeAddr}
+    ${one}    Create List    GetJuryDeposit    ${nodeAddr}
+    ${two}    Create List    ${one}
+    ${result}    创建公用的POST请求    ${depositContractQuery}    GetJuryDeposit    ${two}
+    [Return]    ${result}

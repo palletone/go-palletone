@@ -1,0 +1,9 @@
+*** Settings ***
+Library           RequestsLibrary
+
+*** Keywords ***
+GetAllMediators
+    ${one}    Create List    GetAllMediator
+    ${two}    Create List    ${one}
+    ${result}    创建公用的POST请求    ${depositContractQuery}    GetAllMediator    ${two}
+    log    ${result}

@@ -268,7 +268,7 @@ func (p *peer) sendReceiveHandshake(sendList keyValueList) (keyValueList, error)
 // Handshake executes the les protocol handshake, negotiating version number,
 // network IDs, difficulties, head and genesis blocks.
 func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, headhash common.Hash, assetId modules.AssetId,
-	pcs []*modules.PartitionChain) error {
+	ccis []corsChainsInfo) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
@@ -276,6 +276,8 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, headha
 	send = send.add("protocolVersion", uint64(p.version))
 	send = send.add("networkId", p.network)
 	send = send.add("headNum", *number)
+	//send = send.add("index",number.Index)
+	//send = send.add("assetID",number.AssetID.String())
 	send = send.add("headHash", headhash)
 	send = send.add("genesisHash", genesis)
 	send = send.add("gastoken", assetId)
@@ -287,8 +289,9 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, headha
 	recv := recvList.decode()
 
 	var rGenesis, rHash common.Hash
-	var rVersion, rNetwork uint64
+	var rVersion, rNetwork ,index uint64
 	var rNum modules.ChainIndex
+	var assetID string
 	var rGastoken modules.AssetId
 
 	if err := recv.get("protocolVersion", &rVersion); err != nil {
@@ -300,9 +303,16 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, headha
 	if err := recv.get("headHash", &rHash); err != nil {
 		return err
 	}
+
 	if err := recv.get("headNum", &rNum); err != nil {
 		return err
 	}
+	//if err := recv.get("index", &index); err != nil {
+	//	return err
+	//}
+	//if err := recv.get("assetID", &assetID); err != nil {
+	//	return err
+	//}
 	if err := recv.get("genesisHash", &rGenesis); err != nil {
 		return err
 	}
@@ -310,12 +320,16 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, headha
 		return err
 	}
 
-	if pcs != nil {
+
+	log.Debug("Cors PalletOne ProtocolManager handle","assetID",assetID,"index",index)
+	rNum.AssetID.SetBytes([]byte(assetID))
+	rNum.Index = index
+	
+	if len(ccis) >0 {
 		flag := 0
-		for _, pc := range pcs {
-			pcHash := pc.GetGenesisHeader().Hash()
-			if rGenesis != pcHash {
-				log.Debugf("ErrGenesisBlockMismatch , %x (!= %x)", rGenesis[:8], pcHash[:8])
+		for _, pc := range ccis {
+			if rGenesis != pc.Genesishash {
+				log.Debugf("ErrGenesisBlockMismatch , %x (!= %x)", rGenesis[:8], pc.Genesishash[:8])
 				continue
 			}
 			if rNetwork != pc.NetworkId {
@@ -339,7 +353,7 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, headha
 			}
 			break
 		}
-		if flag != 1 && len(pcs) > 0 {
+		if flag != 1 && len(ccis) > 0 {
 			return errResp(ErrRequestRejected, "Not Accessed,p.id:%v", p.id)
 		}
 	} else {

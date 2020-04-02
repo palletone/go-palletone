@@ -12,12 +12,13 @@ import (
 )
 
 type ContractSupportRepository struct {
-	db          ptndb.Database
-	unitRep     dagcommon.IUnitRepository
-	propRep     dagcommon.IPropRepository
-	stateRep    dagcommon.IStateRepository
-	utxoRep     dagcommon.IUtxoRepository
-	tokenEngine tokenengine.ITokenEngine
+	db           ptndb.Database
+	unitRep      dagcommon.IUnitRepository
+	propRep      dagcommon.IPropRepository
+	stateRep     dagcommon.IStateRepository
+	utxoRep      dagcommon.IUtxoRepository
+	tokenEngine  tokenengine.ITokenEngine
+	enableGasFee bool
 }
 
 func (c *ContractSupportRepository) GetContractsWithJuryAddr(addr common.Hash) []*modules.Contract {
@@ -40,23 +41,24 @@ func (c *ContractSupportRepository) NewTemp() (dboperation.IContractDag, error) 
 		return nil, err
 	}
 	log.Debug("New temp ContractSupportRepository")
-	tempDag := NewContractSupportRepository(tempdb)
+	tempDag := NewContractSupportRepository(tempdb, c.enableGasFee)
 	return tempDag, nil
 }
 
-func NewContractSupportRepository(db ptndb.Database) *ContractSupportRepository {
+func NewContractSupportRepository(db ptndb.Database, enableGasFee bool) *ContractSupportRepository {
 	tokenEngine := tokenengine.Instance
-	unitRep := dagcommon.NewUnitRepository4Db(db, tokenEngine)
+	unitRep := dagcommon.NewUnitRepository4Db(db, tokenEngine, enableGasFee)
 	utxoRep := dagcommon.NewUtxoRepository4Db(db, tokenEngine)
 	stateRep := dagcommon.NewStateRepository4Db(db)
 	propRep := dagcommon.NewPropRepository4Db(db)
 	return &ContractSupportRepository{
-		db:          db,
-		unitRep:     unitRep,
-		propRep:     propRep,
-		stateRep:    stateRep,
-		utxoRep:     utxoRep,
-		tokenEngine: tokenEngine,
+		db:           db,
+		unitRep:      unitRep,
+		propRep:      propRep,
+		stateRep:     stateRep,
+		utxoRep:      utxoRep,
+		tokenEngine:  tokenEngine,
+		enableGasFee: enableGasFee,
 	}
 }
 func (c *ContractSupportRepository) GetDb() ptndb.Database {

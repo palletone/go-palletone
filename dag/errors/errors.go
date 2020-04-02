@@ -32,6 +32,7 @@ var (
 	ErrNotFound        = New(LDB_NOT_FOUND)
 	ErrNumberNotFound  = New("dag: header's number not found")
 	ErrUtxoNotFound    = New("utxo: not found")
+	ErrMessageNotFound = errors.New("message: not found")
 	ErrUnitExist       = New("unit: exist")
 	ErrNullPoint       = New("null point")
 	ErrUnknownAncestor = errors.New("unknown ancestor")

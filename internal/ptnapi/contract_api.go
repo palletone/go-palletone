@@ -333,6 +333,22 @@ func (s *PrivateContractAPI) Ccinvoketx(ctx context.Context, from, to string, am
 	return s.CcinvokeToken(ctx, from, to, dagconfig.DagConfig.GasToken, amount, fee, contractAddress, param, password, timeout)
 }
 
+//创建没有Payment的ccinvoketx
+func (s *PrivateContractAPI) buildCcinvokeTxWithoutGasFee(b Backend, from,
+	contractAddr common.Address, args [][]byte, pwd string, exeTimeout uint32) (*modules.Transaction, error) {
+	msgReq := &modules.Message{
+		App: modules.APP_CONTRACT_INVOKE_REQUEST,
+		Payload: &modules.ContractInvokeRequestPayload{
+			ContractId: contractAddr.Bytes(),
+			Args:       args,
+			Timeout:    exeTimeout,
+		},
+	}
+	tx := modules.NewTransaction([]*modules.Message{msgReq})
+
+	return signRawNoGasTx(b, tx, from, pwd)
+}
+
 func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token string, amountToken, fee decimal.Decimal,
 	contractAddress string, param []string, pwd *string, timeout *Int) (*ContractInvokeRsp, error) {
 
@@ -354,27 +370,39 @@ func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token 
 		args[i] = []byte(arg)
 		log.Infof("      index[%d], value[%s]\n", i, arg)
 	}
+	exeTimeout := timeout.Uint32()
 	s.b.Lock()
 	defer s.b.Unlock()
-	tx, usedUtxo, err := buildRawTransferTx(s.b, token, from, to, amountToken, fee, password)
-	if err != nil {
-		return nil, err
-	}
-	exeTimeout := timeout.Uint32()
+	var tx *modules.Transaction
+	var err error
+	//如没有GasFee，而且to address不是合约地址，则不构建Payment，直接InvokeRequest+Signature
+	if s.b.EnableGasFee() || toAddr == contractAddr || fromAddr != toAddr {
+		var usedUtxo []*modules.UtxoWithOutPoint
+		tx, usedUtxo, err = buildRawTransferTx(s.b, token, from, to, amountToken, fee, password)
+		if err != nil {
+			return nil, err
+		}
 
-	msgReq := &modules.Message{
-		App: modules.APP_CONTRACT_INVOKE_REQUEST,
-		Payload: &modules.ContractInvokeRequestPayload{
-			ContractId: contractAddr.Bytes(),
-			Args:       args,
-			Timeout:    exeTimeout,
-		},
-	}
-	tx.AddMessage(msgReq)
-	//3. sign
-	err = signRawTransaction(s.b, tx, from, password, timeout, 1, usedUtxo)
-	if err != nil {
-		return nil, err
+		msgReq := &modules.Message{
+			App: modules.APP_CONTRACT_INVOKE_REQUEST,
+			Payload: &modules.ContractInvokeRequestPayload{
+				ContractId: contractAddr.Bytes(),
+				Args:       args,
+				Timeout:    exeTimeout,
+			},
+		}
+		tx.AddMessage(msgReq)
+		//3. sign
+		err = signRawTransaction(s.b, tx, from, password, timeout, 1, usedUtxo)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		log.Infof("Disabled gas fee, to address[%s],amount[%s] and fee[%s] will ignore.", to, amountToken.String(), fee.String())
+		tx, err = s.buildCcinvokeTxWithoutGasFee(s.b, fromAddr, contractAddr, args, password, exeTimeout)
+		if err != nil {
+			return nil, err
+		}
 	}
 	//4. send
 	reqId, err := submitTransaction(ctx, s.b, tx)

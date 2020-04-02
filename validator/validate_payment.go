@@ -124,15 +124,15 @@ func (validate *Validate) validatePaymentPayload(tx *modules.Transaction, msgIdx
 			}
 
 			//check token status
-			if msgIdx != 0 {
-				if !statusValid && asset.AssetId != gasToken {
-					ret := validate.checkTokenStatus(asset)
-					if TxValidationCode_VALID != ret {
-						return ret
-					}
-					statusValid = true
+			//if msgIdx != 0 {
+			if !statusValid && asset.AssetId != gasToken {
+				ret := validate.checkTokenStatus(asset)
+				if TxValidationCode_VALID != ret {
+					return ret
 				}
+				statusValid = true
 			}
+			//}
 			fromAddr, _ := validate.tokenEngine.GetAddressFromScript(utxo.PkScript)
 			if _, isIn := blacklistAddress[fromAddr]; isIn {
 				log.Infof("address[%s] is in blacklist", fromAddr.String())

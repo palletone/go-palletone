@@ -1,0 +1,13 @@
+*** Settings ***
+Resource          publicParams.txt
+
+*** Variables ***
+
+*** Keywords ***
+applyQuitMediator
+    [Arguments]    ${mediatorAddr}    ${apply}
+    ${one}    Create List    ${apply}
+    ${two}    Create List    ${mediatorAddr}    ${mediatorAddr}    ${amount}    ${fee}    ${one}
+    ${result}    创建公用的POST请求    ${depositContractInvoke}    ${apply}    ${two}
+    sleep    6
+    [Return]    ${result}

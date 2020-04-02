@@ -1,0 +1,10 @@
+*** Settings ***
+Library           RequestsLibrary
+Resource          publicParams.txt
+
+*** Keywords ***
+GetAllNodes
+    ${one}    Create List    GetAllNode
+    ${two}    Create List    ${one}
+    ${result}    创建公用的POST请求    ${depositContractQuery}    GetAllNode    ${two}
+    log    ${result}
