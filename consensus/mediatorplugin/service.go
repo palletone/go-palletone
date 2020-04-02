@@ -71,7 +71,7 @@ type iDag interface {
 	IsActiveMediator(add common.Address) bool
 
 	GenerateUnit(when time.Time, producer common.Address, groupPubKey []byte, ks *keystore.KeyStore,
-		txp txspool.ITxPool, cp *jury.Processor) (*modules.Unit, error)
+		txp txspool.ITxPool, cp *jury.Processor, allowedNoTxs bool) (*modules.Unit, error)
 
 	IsPrecedingMediator(add common.Address) bool
 	IsIrreversibleUnit(hash common.Hash) (bool, error)
@@ -132,6 +132,8 @@ type MediatorPlugin struct {
 	requiredParticipation uint32
 	// 群签名功能开启标记
 	groupSigningEnabled bool
+	// 生产无交易区块的开启标记
+	idledProduceEnabled bool
 
 	// Mediator`s info controlled by this node, 本节点配置的mediator信息
 	mediators map[common.Address]*MediatorAccount
@@ -304,6 +306,7 @@ func NewMediatorPlugin( /*ctx *node.ServiceContext, */ cfg *Config, ptn PalletOn
 		consecutiveProduceEnabled: cfg.EnableConsecutiveProduction,
 		requiredParticipation:     cfg.RequiredParticipation * core.PalletOne1Percent,
 		groupSigningEnabled:       cfg.EnableGroupSigning,
+		idledProduceEnabled:       cfg.EnableIdledProduction,
 
 		suite:               core.Suite,
 		activeDKGs:          make(map[common.Address]*dkg.DistKeyGenerator),
