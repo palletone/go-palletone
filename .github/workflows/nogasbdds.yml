@@ -43,7 +43,7 @@ jobs:
       - name: Run blacklist bdd
         run: |
             cd bdd/blacklist;
-            ./blacklist_test.sh 2 
+            ./blacklist_test.sh 2
 
       - name: Run exchange bdd
         if: always()
@@ -54,7 +54,7 @@ jobs:
 
       - name: Run contract testcases bdd
         if: always()
-        run: | 
+        run: |
             cd bdd/contract/testcases
             chmod +x ./test_start.sh
             ./test_start.sh
@@ -115,13 +115,13 @@ jobs:
             cd bdd
             chmod +x ./upload2Ftp.sh ./targz_node.sh
             ./targz_node.sh oneNode
-            ./upload2Ftp.sh ${{secrets.FTP_PWD}} "NoGas-"${GITHUB_REF##*/} ${GITHUB_RUN_NUMBER} $PWD/logs 
-            
+            ./upload2Ftp.sh ${{secrets.FTP_PWD}} "NoGas-"${GITHUB_REF##*/} ${GITHUB_RUN_NUMBER} $PWD/logs
+
       - name: Upload artifact
         if: always()
         uses: actions/upload-artifact@v1
         with:
-          name: bddLogs
+          name: nogasbddLogs
           path: bdd/logs
 
   packetbdd:
@@ -179,7 +179,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v1
         with:
-          name: packetbddLogs
+          name: nogaspacketbddLogs
           path: bdd/logs
 
   depositbdd:
@@ -205,7 +205,7 @@ jobs:
             sudo -H apt-get install expect
             sudo -H apt-get install lftp
 
-      - name: Build and run gptn 
+      - name: Build and run gptn
         run: |
             cp -r bdd2/* bdd/
             go build -mod=vendor ./cmd/gptn
@@ -238,7 +238,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v1
         with:
-          name: depositbddLogs
+          name: nogasdepositbddLogs
           path: bdd/logs
 
   applicationbdd:
@@ -295,7 +295,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v1
       with:
-        name: applicationLogs
+        name: nogasapplicationLogs
         path: bdd/logs
 
   mediatorbdd:
@@ -352,7 +352,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v1
       with:
-        name: mediatorLogs
+        name: nogasmediatorLogs
         path: bdd/logs
 
   multiplenodesbdd:
@@ -366,7 +366,7 @@ jobs:
 
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
- 
+
     - name: Install dependencies
       run: |
           sudo -H pip install --upgrade pip
@@ -402,7 +402,7 @@ jobs:
         cd bdd/light
         chmod +x ./bddstart.sh
         ./bddstart.sh
-        
+
     - name: Upload to ftp
       if: always()
       run: |
@@ -418,7 +418,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v1
       with:
-        name: multipleLogs
+        name: nogasmultipleLogs
         path: bdd/logs
 
   contractpaybdd:
@@ -481,18 +481,18 @@ jobs:
       if: always()
       run: |
           killall -9 gptn
-          cd $HOME/gopath/src/github.com/palletone/go-palletone 
+          cd $HOME/gopath/src/github.com/palletone/go-palletone
           zip -j bdd/logs/uc3-3_reports_contractpay.zip bdd/logs/contractpay/*
           zip -r -l -o bdd/logs/uc3-3_logs_contractpay.zip cmd/deployment/node1/log cmd/deployment/node1/nohup.out cmd/deployment/node2/log cmd/deployment/node2/nohup.out cmd/deployment/node3/log cmd/deployment/node3/nohup.out
           cd bdd
-          chmod +x ./upload2Ftp.sh 
+          chmod +x ./upload2Ftp.sh
           ./upload2Ftp.sh ${{secrets.FTP_PWD}} "NoGas-"${GITHUB_REF##*/} ${GITHUB_RUN_NUMBER} $PWD/logs
 
     - name: Upload artifact
       if: always()
       uses: actions/upload-artifact@v1
       with:
-        name: contractpayLogs
+        name: nogascontractpayLogs
         path: /home/runner/gopath/src/github.com/palletone/go-palletone/bdd/logs
 
   testshimuc1bdd:
@@ -559,14 +559,14 @@ jobs:
           zip -j bdd/logs/uc3-3_reports_testshimuc1.zip bdd/logs/testshimuc1/*
           zip -r -l -o bdd/logs/uc3-3_logs_testshimuc1.zip cmd/deployment/node1/log cmd/deployment/node1/nohup.out cmd/deployment/node2/log cmd/deployment/node2/nohup.out cmd/deployment/node3/log cmd/deployment/node3/nohup.out
           cd bdd
-          chmod +x ./upload2Ftp.sh 
+          chmod +x ./upload2Ftp.sh
           ./upload2Ftp.sh ${{secrets.FTP_PWD}} "NoGas-"${GITHUB_REF##*/} ${GITHUB_RUN_NUMBER} $PWD/logs
 
     - name: Upload artifact
       if: always()
       uses: actions/upload-artifact@v1
       with:
-        name: testshimuc1Logs
+        name: nogastestshimuc1Logs
         path: /home/runner/gopath/src/github.com/palletone/go-palletone/bdd/logs
 
   tracebdd:
@@ -633,12 +633,12 @@ jobs:
           zip -j bdd/logs/uc3-3_reports_tract.zip bdd/logs/trace/*
           zip -r -l -o bdd/logs/uc3-3_logs_trace.zip cmd/deployment/node1/log cmd/deployment/node1/nohup.out cmd/deployment/node2/log cmd/deployment/node2/nohup.out cmd/deployment/node3/log cmd/deployment/node3/nohup.out
           cd bdd
-          chmod +x ./upload2Ftp.sh 
+          chmod +x ./upload2Ftp.sh
           ./upload2Ftp.sh ${{secrets.FTP_PWD}} "NoGas-"${GITHUB_REF##*/} ${GITHUB_RUN_NUMBER} $PWD/logs
 
     - name: Upload artifact
       if: always()
       uses: actions/upload-artifact@v1
       with:
-        name: traceLogs
+        name: nogastraceLogs
         path: /home/runner/gopath/src/github.com/palletone/go-palletone/bdd/logs
