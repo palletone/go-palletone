@@ -42,7 +42,6 @@ import (
 	"github.com/palletone/go-palletone/contracts/syscontract/sysconfigcc"
 	"github.com/palletone/go-palletone/contracts/ucc"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -346,28 +345,8 @@ func (s *PrivateContractAPI) buildCcinvokeTxWithoutGasFee(b Backend, from,
 		},
 	}
 	tx := modules.NewTransaction([]*modules.Message{msgReq})
-	//no gas fee, enable nonce
-	tx.SetNonce(uint64(time.Now().Unix()))
-	tx.SetVersion(1)
-	keystore := b.GetKeyStore()
-	if !keystore.IsUnlock(from) {
-		keystore.Unlock(accounts.Account{Address: from}, pwd)
-	}
-	sign, err := keystore.SigData(tx, from)
-	if err != nil {
-		return nil, err
-	}
-	pubKey, err := keystore.GetPublicKey(from)
-	if err != nil {
-		return nil, err
-	}
-	ss := modules.SignatureSet{
-		PubKey:    pubKey,
-		Signature: sign,
-	}
-	signature := &modules.SignaturePayload{Signatures: []modules.SignatureSet{ss}}
-	tx.AddMessage(modules.NewMessage(modules.APP_SIGNATURE, signature))
-	return tx, nil
+
+	return signRawNoGasTx(b, tx, from, pwd)
 }
 
 func (s *PrivateContractAPI) CcinvokeToken(ctx context.Context, from, to, token string, amountToken, fee decimal.Decimal,

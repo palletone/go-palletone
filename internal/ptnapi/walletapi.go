@@ -1399,9 +1399,28 @@ func (s *PrivateWalletAPI) CreateTxWithOutFee(ctx context.Context, asset, fromSt
 		Errors:   signErrors,
 	}, err
 }
-
+func (s *PrivateWalletAPI) buildNoGasPoETx(addr string,
+	mainData, extraData, reference string, password string) (*modules.Transaction, error) {
+	textPayload := new(modules.DataPayload)
+	textPayload.MainData = []byte(mainData)
+	textPayload.ExtraData = []byte(extraData)
+	textPayload.Reference = []byte(reference)
+	tx := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_DATA, textPayload)})
+	address, err := common.StringToAddress(addr)
+	if err != nil {
+		return nil, err
+	}
+	return signRawNoGasTx(s.b, tx, address, password)
+}
 func (s *PrivateWalletAPI) CreateProofOfExistenceTx(ctx context.Context, addr string,
 	mainData, extraData, reference string, password string) (common.Hash, error) {
+	if !s.b.EnableGasFee() {
+		tx, err := s.buildNoGasPoETx(addr, mainData, extraData, reference, password)
+		if err != nil {
+			return common.Hash{}, err
+		}
+		return submitTransaction(ctx, s.b, tx)
+	}
 	gasToken := dagconfig.DagConfig.GasToken
 	ptn1 := decimal.New(1, -2)
 	rawTx, usedUtxo, err := buildRawTransferTx(s.b, gasToken, addr, addr, decimal.New(0, 0), ptn1, password)

@@ -287,3 +287,27 @@ func (d *Int) UnmarshalJSON(iBytes []byte) error {
 	d.i = input
 	return nil
 }
+func signRawNoGasTx(b Backend, tx *modules.Transaction, addr common.Address, pwd string) (*modules.Transaction, error) {
+	//no gas fee, enable nonce
+	tx.SetNonce(uint64(time.Now().Unix()))
+	tx.SetVersion(1)
+	keystore := b.GetKeyStore()
+	if !keystore.IsUnlock(addr) {
+		keystore.Unlock(accounts.Account{Address: addr}, pwd)
+	}
+	sign, err := keystore.SigData(tx, addr)
+	if err != nil {
+		return nil, err
+	}
+	pubKey, err := keystore.GetPublicKey(addr)
+	if err != nil {
+		return nil, err
+	}
+	ss := modules.SignatureSet{
+		PubKey:    pubKey,
+		Signature: sign,
+	}
+	signature := &modules.SignaturePayload{Signatures: []modules.SignatureSet{ss}}
+	tx.AddMessage(modules.NewMessage(modules.APP_SIGNATURE, signature))
+	return tx, nil
+}
