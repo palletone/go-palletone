@@ -86,6 +86,7 @@ const (
 	LowParticipation
 	Lag
 	Consecutive
+	NoTransaction
 	ExceptionProducing
 )
 
@@ -125,6 +126,9 @@ func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 	case LowParticipation:
 		log.Infof("Not producing unit because node appears to be on a minority fork with only %v "+
 			"mediator participation.", detail["ParticipationRate"])
+	case NoTransaction:
+		log.Infof("Not producing unit because we have no pending transactions." +
+			" Disable this check with --idledProducing option.")
 	case ExceptionProducing:
 		log.Infof("Exception producing unit: %v", detail["Msg"])
 	default:
@@ -194,20 +198,22 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 		return NotUnlocked, detail
 	}
 
-	if dag.IsConsecutiveMediator(scheduledMediator) {
-		if mp.consecutiveProduceEnabled {
-			// 连续产块的特权只能使用一次
-			mp.consecutiveProduceEnabled = false
-		} else {
-			detail["Mediator"] = scheduledMediator.Str()
-			return Consecutive, detail
+	if mp.idledProduceEnabled {
+		if dag.IsConsecutiveMediator(scheduledMediator) {
+			if mp.consecutiveProduceEnabled {
+				// 连续产块的特权只能使用一次
+				mp.consecutiveProduceEnabled = false
+			} else {
+				detail["Mediator"] = scheduledMediator.Str()
+				return Consecutive, detail
+			}
 		}
-	}
 
-	pRate := dag.MediatorParticipationRate()
-	if pRate < mp.requiredParticipation {
-		detail["ParticipationRate"] = fmt.Sprint(pRate / core.PalletOne1Percent)
-		return LowParticipation, detail
+		pRate := dag.MediatorParticipationRate()
+		if pRate < mp.requiredParticipation {
+			detail["ParticipationRate"] = fmt.Sprint(pRate / core.PalletOne1Percent)
+			return LowParticipation, detail
+		}
 	}
 
 	// todo 由于当前代码更新数据库没有加锁，可能如下情况：
@@ -230,10 +236,14 @@ func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]st
 	}
 
 	newUnit, err := dag.GenerateUnit(scheduledTime, scheduledMediator, groupPubKey, ks,
-		mp.ptn.TxPool(), mp.ptn.ContractProcessor())
+		mp.ptn.TxPool(), mp.ptn.ContractProcessor(), mp.idledProduceEnabled)
 	if err != nil {
 		detail["Msg"] = fmt.Sprintf("GenerateUnit err: %v", err.Error())
 		return ExceptionProducing, detail
+	}
+
+	if !mp.idledProduceEnabled && newUnit.Txs.Len() == 0 {
+		return NoTransaction, detail
 	}
 
 	unitHash := newUnit.Hash()
