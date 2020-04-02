@@ -69,7 +69,7 @@ func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFe
 	if err != nil {
 		return nil, nil, err
 	}
-	if !gasFee.IsPositive() {
+	if !gasFee.IsPositive() && b.EnableGasFee() {
 		return nil, nil, fmt.Errorf("fee is ZERO ")
 	}
 	//
@@ -91,7 +91,7 @@ func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFe
 	if tokenId == gasToken {
 		ptnAmount = gasAsset.Uint64Amount(amount)
 	}
-
+	tx := modules.NewTransaction([]*modules.Message{})
 	//构造转移PTN的Message0
 	//var dbUtxos map[modules.OutPoint]*modules.Utxo
 	//var reqTxMapping map[common.Hash]common.Hash
@@ -123,18 +123,22 @@ func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFe
 	//	return "txpool unpacked tx:" + txHashs
 	//})
 	//utxosPTN, err := SelectUtxoFromDagAndPool(dbUtxos, reqTxMapping, poolTxs, from, gasToken)
-	utxosPTN, err := b.GetPoolAddrUtxos(fromAddr, gasAsset.ToAsset())
-	if err != nil {
-		return nil, nil, fmt.Errorf("SelectUtxoFromDagAndPool utxo err:%s", err.Error())
-	}
-	feeAmount := gasAsset.Uint64Amount(gasFee)
-	pay1, usedUtxo1, err := createPayment(fromAddr, toAddr, ptnAmount, feeAmount, utxosPTN)
-	if err != nil {
-		return nil, nil, err
-	}
-	tx := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_PAYMENT, pay1)})
-	if tokenId == gasToken {
-		return tx, usedUtxo1, nil
+	usedUtxo1 := []*modules.UtxoWithOutPoint{}
+	if b.EnableGasFee() {
+		utxosPTN, err := b.GetPoolAddrUtxos(fromAddr, gasAsset.ToAsset())
+		if err != nil {
+			return nil, nil, fmt.Errorf("SelectUtxoFromDagAndPool utxo err:%s", err.Error())
+		}
+		feeAmount := gasAsset.Uint64Amount(gasFee)
+		var pay1 *modules.PaymentPayload
+		pay1, usedUtxo1, err = createPayment(fromAddr, toAddr, ptnAmount, feeAmount, utxosPTN)
+		if err != nil {
+			return nil, nil, err
+		}
+		tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay1))
+		if tokenId == gasToken {
+			return tx, usedUtxo1, nil
+		}
 	}
 	log.Debugf("gas token[%s], transfer token[%s], start build payment1", gasToken, tokenId)
 	//构造转移Token的Message1
@@ -193,6 +197,11 @@ func createPayment(fromAddr, toAddr common.Address, amountToken uint64, feePTN u
 
 func signRawTransaction(b Backend, rawTx *modules.Transaction, fromStr, password string, timeout *Int, hashType uint32,
 	usedUtxo []*modules.UtxoWithOutPoint) error {
+	if !b.EnableGasFee() {
+		//no gas fee, enable nonce
+		rawTx.SetNonce(uint64(time.Now().Unix()))
+		rawTx.SetVersion(1)
+	}
 	ks := b.GetKeyStore()
 	//lockscript
 	getPubKeyFn := func(addr common.Address) ([]byte, error) {
@@ -277,4 +286,28 @@ func (d *Int) UnmarshalJSON(iBytes []byte) error {
 	}
 	d.i = input
 	return nil
+}
+func signRawNoGasTx(b Backend, tx *modules.Transaction, addr common.Address, pwd string) (*modules.Transaction, error) {
+	//no gas fee, enable nonce
+	tx.SetNonce(uint64(time.Now().Unix()))
+	tx.SetVersion(1)
+	keystore := b.GetKeyStore()
+	if !keystore.IsUnlock(addr) {
+		keystore.Unlock(accounts.Account{Address: addr}, pwd)
+	}
+	sign, err := keystore.SigData(tx, addr)
+	if err != nil {
+		return nil, err
+	}
+	pubKey, err := keystore.GetPublicKey(addr)
+	if err != nil {
+		return nil, err
+	}
+	ss := modules.SignatureSet{
+		PubKey:    pubKey,
+		Signature: sign,
+	}
+	signature := &modules.SignaturePayload{Signatures: []modules.SignatureSet{ss}}
+	tx.AddMessage(modules.NewMessage(modules.APP_SIGNATURE, signature))
+	return tx, nil
 }

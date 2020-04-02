@@ -1,0 +1,16 @@
+*** Settings ***
+Resource          publicParams.txt
+
+*** Keywords ***
+基金会处理没收请求所需参数
+    [Arguments]    ${foundationAddr}    ${addr}    ${isAgree}
+    ${1}    Create List    HandleForForfeitureApplication    ${addr}    ${isAgree}
+    ${one}    Create List    ${foundationAddr}    ${foundationAddr}    ${amount}    ${fee}    ${1}
+    [Return]    ${one}
+
+handleForForfeitureApplication
+    [Arguments]    ${foundationAddr}    ${addr}    ${isAgree}
+    ${基金会处理没收请求所需参数}    基金会处理没收请求所需参数    ${foundationAddr}    ${addr}    ${isAgree}
+    ${result}    创建公用的POST请求    ${depositContractInvoke}    HandleForForfeitureApplication    ${基金会处理没收请求所需参数}
+    sleep    6
+    [Return]    ${result}

@@ -58,6 +58,11 @@ func (b *LesApiBackend) Lock() {
 func (b *LesApiBackend) Unlock() {
 	b.mutex.Unlock()
 }
+
+func (b *LesApiBackend) EnableGasFee() bool {
+	return b.ptn.config.EnableGasFee
+}
+
 func (b *LesApiBackend) SignAndSendRequest(addr common.Address, tx *modules.Transaction) error {
 	return nil
 }

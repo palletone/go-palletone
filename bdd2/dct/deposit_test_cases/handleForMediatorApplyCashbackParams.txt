@@ -1,0 +1,16 @@
+*** Settings ***
+Resource          publicParams.txt
+
+*** Keywords ***
+基金会处理mediator申请退还保证金所需参数
+    [Arguments]    ${foundationAddr}    ${mediatorAddr}    ${isAgree}
+    ${1}    Create List    HandleForMediatorApplyCashback    ${mediatorAddr}    ${isAgree}
+    ${one}    Create List    ${foundationAddr}    ${foundationAddr}    ${amount}    ${fee}    ${1}
+    [Return]    ${one}
+
+handleForMediatorApplyCashback
+    [Arguments]    ${foundationAddr}    ${mediatorAddr}    ${isAgree}
+    ${基金会处理mediator申请退还保证金所需参数}    基金会处理mediator申请退还保证金所需参数    ${foundationAddr}    ${mediatorAddr}    ${isAgree}
+    ${result}    创建公用的POST请求    ${depositContractInvoke}    HandleForApplyCashback    ${基金会处理mediator申请退还保证金所需参数}
+    sleep    6
+    [Return]    ${result}

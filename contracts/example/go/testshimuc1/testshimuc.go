@@ -157,17 +157,17 @@ func (t *SimpleChaincode) test_GetInvokeInfo(stub shim.ChaincodeStubInterface) p
 	}
 	resMap["GetInvokeTokens"] = sinvoketokens
 	// GetInvokeFees
-	invokeFees, err := stub.GetInvokeFees()
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-	oneFee := map[string]interface{}{}
-	oneFee["assetId"] = invokeFees.Asset.AssetId.String()
-	oneFee["uniqueId"] = invokeFees.Asset.UniqueId.String()
-	oneFee["amount"] = invokeFees.Amount
-	resMap["GetInvokeFees"] = oneFee
+	//invokeFees, err := stub.GetInvokeFees()
+	//if err != nil {
+	//	return shim.Error(err.Error())
+	//}
+	//oneFee := map[string]interface{}{}
+	//oneFee["assetId"] = invokeFees.Asset.AssetId.String()
+	//oneFee["uniqueId"] = invokeFees.Asset.UniqueId.String()
+	//oneFee["amount"] = invokeFees.Amount
+	//resMap["GetInvokeFees"] = oneFee
 	// GetInvokeParameters
-	invokeAddr, invokeTokens, invokeFees, funcName, params, err := stub.GetInvokeParameters()
+	invokeAddr, invokeTokens, _, funcName, params, err := stub.GetInvokeParameters()
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -185,9 +185,9 @@ func (t *SimpleChaincode) test_GetInvokeInfo(stub shim.ChaincodeStubInterface) p
 	}
 	GIP["invokeTokens"] = gipt
 	gipf := map[string]interface{}{}
-	gipf["assetId"] = invokeFees.Asset.AssetId.String()
-	gipf["uniqueId"] = invokeFees.Asset.UniqueId.String()
-	gipf["amount"] = invokeFees.Amount
+	//gipf["assetId"] = invokeFees.Asset.AssetId.String()
+	//gipf["uniqueId"] = invokeFees.Asset.UniqueId.String()
+	//gipf["amount"] = invokeFees.Amount
 	GIP["invokeFees"] = gipf
 	GIP["invokeParams"] = params
 	resMap["GetInvokeParameters"] = GIP

@@ -53,7 +53,7 @@ type IUnitRepository interface {
 	SaveUnit(unit *modules.Unit, isGenesis bool) error
 	SaveTransaction(tx *modules.Transaction, txIndex int) error
 	CreateUnit(mediatorReward common.Address, txs []*modules.Transaction, when time.Time,
-		propdb IPropRepository, getJurorRewardFunc modules.GetJurorRewardAddFunc) (*modules.Unit, error)
+		propdb IPropRepository, getJurorRewardFunc modules.GetJurorRewardAddFunc, enableGasFee bool) (*modules.Unit, error)
 	IsGenesis(hash common.Hash) bool
 	GetAddrTransactions(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
 	GetAddrUtxoTxs(addr common.Address) ([]*modules.TransactionWithUnitInfo, error)
@@ -101,7 +101,7 @@ type IUnitRepository interface {
 	//GetLastIrreversibleUnit(assetID modules.AssetId) (*modules.Unit, error)
 
 	//GetTxFromAddress(tx *modules.Transaction) ([]common.Address, error)
-	GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
+	//GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
 	//根据现有Tx数据，重新构建地址和Tx的关系索引
 	RefreshAddrTxIndex() error
 	GetAssetReference(asset []byte) ([]*modules.ProofOfExistence, error)
@@ -122,6 +122,7 @@ type UnitRepository struct {
 	tokenEngine    tokenengine.ITokenEngine
 	lock           sync.RWMutex
 	observers      []AfterSysContractStateChangeEventFunc
+	enableGasFee   bool
 }
 
 //type Observer interface {
@@ -133,7 +134,7 @@ type AfterSysContractStateChangeEventFunc func(event *modules.SysContractStateCh
 func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb,
 	txutxodb storage.IUtxoDb, requtxodb storage.IUtxoDb, statedb storage.IStateDb,
 	propdb storage.IPropertyDb,
-	engine tokenengine.ITokenEngine) *UnitRepository {
+	engine tokenengine.ITokenEngine, enableGasFee bool) *UnitRepository {
 	utxoRep := NewUtxoRepository(txutxodb, requtxodb, idxdb, statedb, propdb, engine)
 
 	return &UnitRepository{
@@ -144,10 +145,11 @@ func NewUnitRepository(dagdb storage.IDagDb, idxdb storage.IIndexDb,
 		utxoRepository: utxoRep,
 		propdb:         propdb,
 		tokenEngine:    engine,
+		enableGasFee:   enableGasFee,
 	}
 }
 
-func NewUnitRepository4Db(db ptndb.Database, tokenEngine tokenengine.ITokenEngine) *UnitRepository {
+func NewUnitRepository4Db(db ptndb.Database, tokenEngine tokenengine.ITokenEngine, enableGasFee bool) *UnitRepository {
 	dagdb := storage.NewDagDb(db)
 	txutxodb := storage.NewUtxoDb(db, tokenEngine, false)
 	requtxodb := storage.NewUtxoDb(db, tokenEngine, true)
@@ -163,6 +165,7 @@ func NewUnitRepository4Db(db ptndb.Database, tokenEngine tokenengine.ITokenEngin
 		propdb:         propdb,
 		utxoRepository: utxoRep,
 		tokenEngine:    tokenEngine,
+		enableGasFee:   enableGasFee,
 	}
 }
 func (rep *UnitRepository) GetDb() ptndb.Database {
@@ -536,7 +539,7 @@ create common unit
 return: correct if error is nil, and otherwise is incorrect
 */
 func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txs2 []*modules.Transaction,
-	when time.Time, propdb IPropRepository, getJurorRewardFunc modules.GetJurorRewardAddFunc) (*modules.Unit, error) {
+	when time.Time, propdb IPropRepository, getJurorRewardFunc modules.GetJurorRewardAddFunc, enableGasFee bool) (*modules.Unit, error) {
 	log.Debug("create unit lock unitRepository.")
 	rep.lock.RLock()
 	defer rep.lock.RUnlock()
@@ -579,40 +582,42 @@ func (rep *UnitRepository) CreateUnit(mediatorReward common.Address, txs2 []*mod
 	//for _, tx := range poolTxs {
 	//	txs2 = append(txs2, tx.Tx)
 	//}
-	ads, err := rep.ComputeTxFeesAllocate(mediatorReward, txs2, getJurorRewardFunc)
-	if err != nil {
-		txs2Ids := ""
-		for _, tx := range txs2 {
-			txs2Ids += tx.Hash().String() + ","
+	txs := make(modules.Transactions, 0)
+	if enableGasFee { //计算手续费和Coinbase
+		ads, err := rep.ComputeTxFeesAllocate(mediatorReward, txs2, getJurorRewardFunc)
+		if err != nil {
+			txs2Ids := ""
+			for _, tx := range txs2 {
+				txs2Ids += tx.Hash().String() + ","
+			}
+
+			//pooltxStatusStr := ""
+			//for txid, pooltx := range txpool.AllTxpoolTxs() {
+			//	pooltxStatusStr += txid.String() + ":UnitHash[" + pooltx.UnitHash.String() + "];"
+			//}
+			log.Error("CreateUnit", "ComputeTxFees is failed, error", err.Error(), "txs in this unit", txs2Ids)
+			return nil, err
 		}
 
-		//pooltxStatusStr := ""
-		//for txid, pooltx := range txpool.AllTxpoolTxs() {
-		//	pooltxStatusStr += txid.String() + ":UnitHash[" + pooltx.UnitHash.String() + "];"
-		//}
-		log.Error("CreateUnit", "ComputeTxFees is failed, error", err.Error(), "txs in this unit", txs2Ids)
-		return nil, err
-	}
+		//出块奖励
+		rewardAd := rep.ComputeGenerateUnitReward(mediatorReward, assetId.ToAsset())
+		if rewardAd != nil && rewardAd.Amount > 0 {
+			ads = append(ads, rewardAd)
+		}
 
-	//出块奖励
-	rewardAd := rep.ComputeGenerateUnitReward(mediatorReward, assetId.ToAsset())
-	if rewardAd != nil && rewardAd.Amount > 0 {
-		ads = append(ads, rewardAd)
-	}
+		outAds := arrangeAdditionFeeList(ads)
 
-	outAds := arrangeAdditionFeeList(ads)
+		coinbase, rewards, err := rep.CreateCoinbase(outAds, chainIndex.Index)
+		if err != nil {
+			log.Error(err.Error())
+			return nil, err
+		}
 
-	coinbase, rewards, err := rep.CreateCoinbase(outAds, chainIndex.Index)
-	if err != nil {
-		log.Error(err.Error())
-		return nil, err
+		if len(outAds) > 0 {
+			log.Debug("rewards && coinbase tx: ", "amount", rewards, "hash", coinbase.Hash().String())
+			txs = append(txs, coinbase)
+		}
 	}
-	txs := make(modules.Transactions, 0)
-	if len(outAds) > 0 {
-		log.Debug("rewards && coinbase tx: ", "amount", rewards, "hash", coinbase.Hash().String())
-		txs = append(txs, coinbase)
-	}
-
 	illegalTxs := make([]uint16, 0)
 	// step6 get unit's txs in txpool's txs
 	//TODO must recover
@@ -935,23 +940,23 @@ func (rep *UnitRepository) updateAccountInfo(msg *modules.Message, account commo
 }
 
 //Get who send this transaction
-func (rep *UnitRepository) GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error) {
-	msg0 := tx.TxMessages()[0]
-	if msg0.App != modules.APP_PAYMENT {
-		errStr := "Invalid Tx, first message must be a payment"
-		log.Debug(errStr)
-		return common.Address{}, errors.New(errStr)
-	}
-	pay := msg0.Payload.(*modules.PaymentPayload)
-
-	utxo, err := rep.utxoRepository.GetUtxoEntry(pay.Inputs[0].PreviousOutPoint)
-	if err != nil {
-		log.Debug(err.Error())
-		return common.Address{}, err
-	}
-	return rep.tokenEngine.GetAddressFromScript(utxo.PkScript)
-
-}
+//func (rep *UnitRepository) GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error) {
+//	msg0 := tx.TxMessages()[0]
+//	if msg0.App != modules.APP_PAYMENT {
+//		errStr := "Invalid Tx, first message must be a payment"
+//		log.Debug(errStr)
+//		return common.Address{}, errors.New(errStr)
+//	}
+//	pay := msg0.Payload.(*modules.PaymentPayload)
+//
+//	utxo, err := rep.utxoRepository.GetUtxoEntry(pay.Inputs[0].PreviousOutPoint)
+//	if err != nil {
+//		log.Debug(err.Error())
+//		return common.Address{}, err
+//	}
+//	return rep.tokenEngine.GetAddressFromScript(utxo.PkScript)
+//
+//}
 
 /**
 保存单元数据，如果单元的结构基本相同
@@ -1012,11 +1017,13 @@ func (rep *UnitRepository) SaveTransaction(tx *modules.Transaction, txIndex int)
 func (rep *UnitRepository) saveTx4Unit(unit *modules.Unit, txIndex int, tx *modules.Transaction) error {
 	var requester common.Address
 	var err error
-	if txIndex > 0 { //coinbase don't have requester
-		requester, err = rep.GetTxRequesterAddress(tx)
-		if err != nil {
+	if txIndex > 0 || !rep.enableGasFee { //coinbase don't have requester
+		//requester, err = rep.GetTxRequesterAddress(tx)
+		addrs, err := tx.GetFromAddrs(rep.utxoRepository.GetUtxoEntry, rep.tokenEngine.GetAddressFromScript)
+		if err != nil || len(addrs) == 0 {
 			return err
 		}
+		requester = addrs[0]
 	}
 
 	txHash := tx.Hash()
