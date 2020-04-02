@@ -203,7 +203,9 @@ func (b *PtnApiBackend) GetChainParameters() *core.ChainParameters {
 func (b *PtnApiBackend) Status() (int, int, int) {
 	return b.ptn.txPool.Status()
 }
-
+func (b *PtnApiBackend) TxPoolClear() {
+	b.ptn.TxPool().Clear()
+}
 func (b *PtnApiBackend) TxPoolContent() (map[common.Hash]*txspool.TxPoolTransaction,
 	map[common.Hash]*txspool.TxPoolTransaction) {
 	return b.ptn.TxPool().Content()

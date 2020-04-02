@@ -208,9 +208,14 @@ func (pool *TxPool) GetUtxoFromAll(outpoint *modules.OutPoint) (*modules.Utxo, e
 	return pool.GetUtxoEntry(outpoint)
 }
 
-//func (pool *TxPool) GetUtxoFromFree(outpoint *modules.OutPoint) (*modules.Utxo, error) {
-//	return pool.GetUtxoEntry(outpoint)
-//}
+func (pool *TxPool) Clear() {
+	pool.all = sync.Map{}
+	pool.sequenTxs = new(SequeueTxPoolTxs)
+	pool.outpoints = sync.Map{}
+	pool.orphans = sync.Map{}
+	pool.outputs = sync.Map{}
+	pool.reqOutputs = sync.Map{}
+}
 func (pool *TxPool) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	if inter, ok := pool.outputs.Load(*outpoint); ok {
 		utxo := inter.(*modules.Utxo)

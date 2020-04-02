@@ -755,3 +755,12 @@ func (pool *TxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subs
 	//return pool.txFeed.Subscribe(ch)
 	return pool.scope.Track(pool.txFeed.Subscribe(ch))
 }
+func (pool *TxPool) Clear() {
+	pool.Lock()
+	defer pool.Unlock()
+	pool.normals = newTxList()
+	pool.orphans = make(map[common.Hash]*txspool.TxPoolTransaction)
+	pool.basedOnRequestOrphans = make(map[common.Hash]*txspool.TxPoolTransaction)
+	pool.userContractRequests = make(map[common.Hash]*txspool.TxPoolTransaction)
+	log.Info("Cleared all txpool cache data.")
+}

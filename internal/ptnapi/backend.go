@@ -75,6 +75,7 @@ type Backend interface {
 	GetPoolAddrUtxos(addr common.Address, token *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	//GetPoolNonce(ctx context.Context, addr common.Address) (uint64, error)
 	Status() (int, int, int)
+	TxPoolClear()
 	TxPoolContent() (map[common.Hash]*txspool.TxPoolTransaction, map[common.Hash]*txspool.TxPoolTransaction)
 	Queued() ([]*txspool.TxPoolTransaction, error)
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription

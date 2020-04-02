@@ -161,6 +161,9 @@ func (b *LesApiBackend) TxPoolContent() (map[common.Hash]*txspool.TxPoolTransact
 	return nil, nil
 	//return b.ptn.txPool.Content()
 }
+func (b *LesApiBackend) TxPoolClear() {
+	b.ptn.TxPool().Clear()
+}
 func (b *LesApiBackend) Queued() ([]*txspool.TxPoolTransaction, error) {
 	return nil, nil
 }
