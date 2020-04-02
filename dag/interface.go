@@ -162,6 +162,7 @@ type IDag interface {
 	HeadUnitNum() uint64
 	HeadUnitHash() common.Hash
 	GetIrreversibleUnitNum(id modules.AssetId) uint64
+	StableUnitNum() uint64
 	StableHeadUnitProperty(asset modules.AssetId) (*modules.UnitProperty, error)
 	UnstableHeadUnitProperty(asset modules.AssetId) (*modules.UnitProperty, error)
 
