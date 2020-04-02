@@ -73,11 +73,18 @@ func (dag *Dag) getBePackedTxs(txp txspool.ITxPool, cp *jury.Processor,
 	if err != nil {
 		return nil, err
 	}
+	log.DebugDynamic(func() string {
+		txHashs := ""
+		for _, tx := range list {
+			txHashs += fmt.Sprintf("Tx[%s]-Req[%s];", tx.TxHash.String(), tx.ReqHash.String())
+		}
+		return fmt.Sprintf("Txpool prepare sorted txs:%s for unit[%d]", txHashs, unitNumber)
+	})
 	for _, ptx := range list {
 		txHashStr += ptx.Tx.Hash().String() + ";"
 		tx := ptx.Tx
 		i++ //第0条是Coinbase
-		log.Debugf("pack tx[%s] into unit[#%d]", tx.RequestHash().String(), unitNumber)
+		log.Debugf("pack tx[%s]-req[%s] into unit[#%d]", tx.Hash().String(), tx.RequestHash().String(), unitNumber)
 		signedTx := tx
 		if tx.IsSystemContract() && tx.IsOnlyContractRequest() { //是未执行的系统合约
 			signedTx, err = cp.RunAndSignTx(tx, rwM, tempDag, producer)
@@ -116,7 +123,7 @@ func (dag *Dag) getBePackedTxs(txp txspool.ITxPool, cp *jury.Processor,
 
 // GenerateUnit, generate unit
 func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKey []byte, ks *keystore.KeyStore,
-	txp txspool.ITxPool, cp *jury.Processor) (*modules.Unit, error) {
+	txp txspool.ITxPool, cp *jury.Processor, allowedNoTxs bool) (*modules.Unit, error) {
 	t0 := time.Now()
 	defer func(start time.Time) {
 		log.Debugf("GenerateUnit cost time: %v", time.Since(start))
@@ -143,6 +150,11 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 		errStr := fmt.Sprintf("No unit need to be packaged for now.")
 		log.Debug(errStr)
 		return nil, fmt.Errorf(errStr)
+	}
+
+	// 特殊返回条件，不是错误
+	if !allowedNoTxs && unsign_unit.Txs.Len() == 0 {
+		return unsign_unit, nil
 	}
 
 	sign_unit, err := dagcommon.GetUnitWithSig(unsign_unit, ks, producer)

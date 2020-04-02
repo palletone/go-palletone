@@ -106,6 +106,8 @@ func NewMigrations(db ptndb.Database) map[string]IMigration {
 
 	m_106_beta := NewNothingMigration("1.0.6-alpha", "1.0.6-beta")
 	migrations[m_106_beta.FromVersion()] = m_106_beta
+	m_107_beta := NewNothingMigration("1.0.6-beta", "1.0.7-beta")
+	migrations[m_107_beta.FromVersion()] = m_107_beta
 	return migrations
 }
 

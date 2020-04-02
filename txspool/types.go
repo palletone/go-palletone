@@ -60,6 +60,15 @@ func (tx *TxPoolTransaction) IsFineToNormal(hash common.Hash) bool {
 	}
 	return true
 }
+func (tx *TxPoolTransaction) IsDependOnTx(hash common.Hash) bool {
+	for h := range tx.DependOnTxs {
+		if h == hash {
+			return true
+		}
+	}
+	return false
+}
+
 func (tx *TxPoolTransaction) IsFrom(addr common.Address) bool {
 	for _, a := range tx.FromAddr {
 		if a == addr {
@@ -232,18 +241,18 @@ func (seqTxs *SequeueTxPoolTxs) AddPriority(newPoolTx *TxPoolTransaction) {
 	defer seqTxs.mu.Unlock()
 	if seqTxs.Len() == 0 {
 		(*seqTxs).seqtxs = append((*seqTxs).seqtxs, newPoolTx)
-		return
-	}
-	added := false
-	for i, item := range (*seqTxs).seqtxs {
-		if newPoolTx.GetPriorityfloat64() > item.GetPriorityfloat64() {
-			(*seqTxs).seqtxs = append((*seqTxs).seqtxs[:i], append([]*TxPoolTransaction{newPoolTx}, (*seqTxs).seqtxs[i:]...)...)
-			added = true
-			break
+	} else {
+		added := false
+		for i, item := range (*seqTxs).seqtxs {
+			if newPoolTx.GetPriorityfloat64() > item.GetPriorityfloat64() {
+				(*seqTxs).seqtxs = append((*seqTxs).seqtxs[:i], append([]*TxPoolTransaction{newPoolTx}, (*seqTxs).seqtxs[i:]...)...)
+				added = true
+				break
+			}
 		}
-	}
-	if !added {
-		(*seqTxs).seqtxs = append((*seqTxs).seqtxs, newPoolTx)
+		if !added {
+			(*seqTxs).seqtxs = append((*seqTxs).seqtxs, newPoolTx)
+		}
 	}
 }
 

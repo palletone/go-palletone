@@ -202,20 +202,19 @@ func (view *UtxoViewpoint) AddTxOut(tx *modules.Transaction, msgIdx, txoutIdx ui
 	}
 
 	for i, msgcopy := range msgs {
-		if (uint32(i) != msgIdx) || (msgcopy.App != modules.APP_PAYMENT) {
-			continue
+
+		if (uint32(i) == msgIdx) && (msgcopy.App == modules.APP_PAYMENT) {
+			if msg, ok := msgcopy.Payload.(*modules.PaymentPayload); ok {
+				if txoutIdx >= uint32(len(msg.Outputs)) {
+					return
+				}
+				preout := modules.OutPoint{TxHash: tx.Hash(), MessageIndex: msgIdx, OutIndex: txoutIdx}
+				output := msg.Outputs[txoutIdx]
+				txout := &modules.TxOut{Value: int64(output.Value), PkScript: output.PkScript, Asset: output.Asset}
+				view.addTxOut(preout, txout, false)
+			}
 		}
-		msg, ok := msgcopy.Payload.(*modules.PaymentPayload)
-		if !ok {
-			continue
-		}
-		if txoutIdx >= uint32(len(msg.Outputs)) {
-			return
-		}
-		preout := modules.OutPoint{TxHash: tx.Hash(), MessageIndex: msgIdx, OutIndex: txoutIdx}
-		output := msg.Outputs[txoutIdx]
-		txout := &modules.TxOut{Value: int64(output.Value), PkScript: output.PkScript, Asset: output.Asset}
-		view.addTxOut(preout, txout, false)
+
 	}
 }
 
