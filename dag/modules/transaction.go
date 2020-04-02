@@ -1056,8 +1056,12 @@ func (tx *Transaction) IsOnlyContractRequest() bool {
 		return lastMsg.App.IsRequest()
 	}
 	//no gas fee 判断第一个SignaturePayload是不是最后一个Message
+	hasRequestPayload := false
 	for i, msg := range tx.txdata.TxMessages {
-		if msg.App == APP_SIGNATURE {
+		if msg.App.IsRequest() {
+			hasRequestPayload = true
+		}
+		if msg.App == APP_SIGNATURE && hasRequestPayload {
 			if i == len(tx.txdata.TxMessages)-1 {
 				return true
 			} else { //SignaturePayload下面还有其他Message
