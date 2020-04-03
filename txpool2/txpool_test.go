@@ -52,6 +52,7 @@ func TestTxPool_GetSortTxs(t *testing.T) {
 		}
 		return nil, ErrNotFound
 	}).AnyTimes()
+	mdag.EXPECT().IsTransactionExist(gomock.Any()).Return(false, nil).AnyTimes()
 	pool := mockTxPool(mdag)
 
 	txA := mockPaymentTx(Hash("Dag"), 0, 0)
@@ -108,6 +109,7 @@ func BenchmarkTxPool_AddLocal(b *testing.B) {
 		}
 		return nil, ErrNotFound
 	}).AnyTimes()
+	mdag.EXPECT().IsTransactionExist(gomock.Any()).Return(false, nil).AnyTimes()
 	pool := mockTxPool(mdag)
 
 	txA := mockPaymentTx(Hash("Dag"), 0, 0)
@@ -140,6 +142,7 @@ func TestTxpoolByRealData(t *testing.T) {
 		}
 		return nil, ErrNotFound
 	}).AnyTimes()
+	mdag.EXPECT().IsTransactionExist(gomock.Any()).Return(false, nil).AnyTimes()
 	pool := mockTxPool(mdag)
 
 	pool.AddLocal(tx14f4)
@@ -172,7 +175,7 @@ func TestTxPool_AddSysContractTx(t *testing.T) {
 			return nil, ErrNotFound
 		}).AnyTimes()
 	pool := mockTxPool(mdag)
-
+	mdag.EXPECT().IsTransactionExist(gomock.Any()).Return(false, nil).AnyTimes()
 	req := mockContractInvokeRequest(Hash("dag"), 0, 0, syscontract.TestContractAddress.Bytes())
 	err := pool.AddLocal(req)
 	assert.Nil(t, err)
@@ -199,6 +202,7 @@ func TestTxPool_AddUserContractTx(t *testing.T) {
 			}
 			return nil, ErrNotFound
 		}).AnyTimes()
+	mdag.EXPECT().IsTransactionExist(gomock.Any()).Return(false, nil).AnyTimes()
 	pool := mockTxPool(mdag)
 
 	req := mockContractInvokeRequest(Hash("dag"), 0, 0, []byte("user contract"))
@@ -231,6 +235,7 @@ func TestAddContractInstallTx(t *testing.T) {
 		func(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 			return &modules.Utxo{Amount: 123}, nil
 		}).AnyTimes()
+	mdag.EXPECT().IsTransactionExist(gomock.Any()).Return(false, nil).AnyTimes()
 	pool := mockTxPool(mdag)
 	err := pool.AddLocal(installTx)
 	t.Log(err)
@@ -250,6 +255,7 @@ func TestTxPool_GetUnpackedTxsByAddr(t *testing.T) {
 			}
 			return nil, ErrNotFound
 		}).AnyTimes()
+	mdag.EXPECT().IsTransactionExist(gomock.Any()).Return(false, nil).AnyTimes()
 	pool := mockTxPool(mdag)
 	pay1 := mockPaymentTx(Hash("dag"), 0, 0)
 	pool.AddLocal(pay1)
@@ -286,6 +292,7 @@ func TestTxPool_SubscribeTxPreEvent(t *testing.T) {
 		}
 		return nil, ErrNotFound
 	}).AnyTimes()
+	mdag.EXPECT().IsTransactionExist(gomock.Any()).Return(false, nil).AnyTimes()
 	pool := mockTxPool(mdag)
 	txpoolAddTxCh := make(chan modules.TxPreEvent, 50)
 	txpoolAddTxSub := pool.SubscribeTxPreEvent(txpoolAddTxCh)
@@ -346,6 +353,7 @@ func TestTxPool_AddUserContractAndTransferTx(t *testing.T) {
 			}
 			return nil, ErrNotFound
 		}).AnyTimes()
+	mdag.EXPECT().IsTransactionExist(gomock.Any()).Return(false, nil).AnyTimes()
 	pool := mockTxPool(mdag)
 
 	reqA := mockContractInvokeRequest(Hash("dag"), 0, 0, []byte("user contract"))
@@ -400,6 +408,7 @@ func TestTxpoolByRealUserContractTx(t *testing.T) {
 		}
 		return nil, ErrNotFound
 	}).AnyTimes()
+	mdag.EXPECT().IsTransactionExist(gomock.Any()).Return(false, nil).AnyTimes()
 	pool := mockTxPool(mdag)
 
 	//真实的几条交易，从前到后是依赖关系
@@ -464,6 +473,7 @@ func TestTxpoolByRealUserContractTx2(t *testing.T) {
 		}
 		return nil, ErrNotFound
 	}).AnyTimes()
+	mdag.EXPECT().IsTransactionExist(gomock.Any()).Return(false, nil).AnyTimes()
 	pool := mockTxPool(mdag)
 
 	//真实的几条交易，从前到后是依赖关系
