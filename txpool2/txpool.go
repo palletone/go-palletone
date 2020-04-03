@@ -110,6 +110,10 @@ func (pool *TxPool) AddRemote(tx *modules.Transaction) error {
 	return nil
 }
 func (pool *TxPool) checkDuplicateAdd(txHash common.Hash) error {
+	if exist, _ := pool.dag.IsTransactionExist(txHash); exist {
+		log.Infof("ignore add dag exist tx[%s] to tx pool", txHash.String())
+		return ErrDuplicate
+	}
 	if _, err := pool.normals.GetTx(txHash); err == nil { //found tx
 		log.Infof("ignore add duplicate tx[%s] to tx pool", txHash.String())
 		return ErrDuplicate
