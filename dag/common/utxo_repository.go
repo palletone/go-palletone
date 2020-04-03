@@ -91,6 +91,7 @@ type IUtxoRepository interface {
 	ClearAddrUtxo(addr common.Address) error
 	SaveUtxoView(view map[modules.OutPoint]*modules.Utxo) error
 	//SaveUtxoEntity(outpoint *modules.OutPoint, utxo *modules.Utxo) error
+	ComputeTxFee(tx *modules.Transaction) (*modules.AmountAsset, error)
 }
 
 func (repository *UtxoRepository) getUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
@@ -519,6 +520,11 @@ func (rep *UtxoRepository) DeleteUtxo(outpoint *modules.OutPoint, spentTxId comm
 		}
 	}
 	return nil
+}
+
+//计算一笔Tx中包含多少手续费
+func (repository *UtxoRepository) ComputeTxFee(tx *modules.Transaction) (*modules.AmountAsset, error) {
+	return tx.GetTxFee(repository.txUtxodb.GetUtxoEntry)
 }
 
 /**

@@ -171,22 +171,24 @@ type ProtocolManager struct {
 
 	lastMaintenanceTime    int64
 	isConnectedNewMediator bool
+	enableGasFee           bool
 }
 
 // NewProtocolManager returns a new PalletOne sub protocol manager. The PalletOne sub protocol manages peers capable
 // with the PalletOne network.
 func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken modules.AssetId, txpool txspool.ITxPool,
 	dag dag.IDag, mux *event.TypeMux, producer producer, genesis *modules.Unit,
-	contractProc consensus.ContractInf, engine core.ConsensusEngine, contract *contracts.Contract, pDocker *utils.PalletOneDocker) (*ProtocolManager, error) {
+	contractProc consensus.ContractInf, engine core.ConsensusEngine, contract *contracts.Contract,
+	pDocker *utils.PalletOneDocker, enableGasFee bool) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
-		networkId: networkId,
-		dag:       dag,
-		//protocolName: protocolName,
-		txpool:     txpool,
-		eventMux:   mux,
-		consEngine: engine,
-		peers:      newPeerSet(),
+		networkId:    networkId,
+		dag:          dag,
+		enableGasFee: enableGasFee,
+		txpool:       txpool,
+		eventMux:     mux,
+		consEngine:   engine,
+		peers:        newPeerSet(),
 		//lightPeers:   newPeerSet(),
 		newPeerCh:      make(chan *peer),
 		noMorePeers:    make(chan struct{}),

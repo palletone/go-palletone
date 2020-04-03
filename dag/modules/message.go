@@ -25,6 +25,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 )
 
@@ -554,6 +555,11 @@ type ContractStopPayload struct {
 	ErrMsg     ContractError      `json:"contract_error"` // contract error message
 }
 
+func NewSignaturePayload(pubKey, signature []byte) *SignaturePayload {
+	ss := SignatureSet{PubKey: pubKey, Signature: signature}
+	return &SignaturePayload{Signatures: []SignatureSet{ss}}
+}
+
 //contract invoke result
 type ContractInvokeResult struct {
 	ContractId  []byte             `json:"contract_id"` // contract id
@@ -570,6 +576,14 @@ type ContractInvokeResult struct {
 
 type SignaturePayload struct {
 	Signatures []SignatureSet `json:"signature_set"` // the array of signature
+}
+
+func (s *SignaturePayload) SignAddress() []common.Address {
+	addrs := []common.Address{}
+	for _, sig := range s.Signatures {
+		addrs = append(addrs, crypto.PubkeyBytesToAddress(sig.PubKey))
+	}
+	return addrs
 }
 
 type SignatureSet struct {

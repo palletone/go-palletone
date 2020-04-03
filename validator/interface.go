@@ -49,4 +49,5 @@ type Validator interface {
 }
 type ValidatorBuilderFunc func(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery, propquery IPropQuery,
 	contractDag dboperation.IContractDag,
-	cache palletcache.ICache, light bool) Validator
+	cache palletcache.ICache, light bool,
+	enableGasFee bool) Validator

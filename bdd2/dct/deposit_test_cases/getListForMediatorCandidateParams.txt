@@ -1,0 +1,12 @@
+*** Settings ***
+Resource          publicParams.txt
+
+*** Variables ***
+
+*** Keywords ***
+getListForMediatorCandidate
+    ${one}    Create List    GetListForMediatorCandidate
+    ${two}    Create List    ${one}
+    ${result}    创建公用的POST请求    ${depositContractQuery}    GetListForMediatorCandidate    ${two}
+    ${addressMap}    To Json    ${result}
+    [Return]    ${addressMap}

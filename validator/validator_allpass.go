@@ -32,7 +32,7 @@ type ValidatorAllPass struct {
 
 func NewValidatorAllPass(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery, propquery IPropQuery,
 	contractDag dboperation.IContractDag,
-	cache palletcache.ICache, light bool) Validator {
+	cache palletcache.ICache, light ,enableGasFee bool) Validator {
 	return &ValidatorAllPass{}
 }
 

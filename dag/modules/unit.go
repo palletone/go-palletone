@@ -329,6 +329,8 @@ func (u *Unit) CopyBody(txs Transactions) Transactions {
 				copy(sdw.TxMessages, msgs)
 			}
 			sdw.CertId = pTx.CertId()
+			sdw.Version = pTx.Version()
+			sdw.AccountNonce = pTx.Nonce()
 			sdw.Illegal = pTx.Illegal()
 			u.Txs[i] = &Transaction{txdata: sdw}
 		}

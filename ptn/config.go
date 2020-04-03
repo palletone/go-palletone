@@ -33,16 +33,16 @@ import (
 
 // DefaultConfig contains default settings for use on the PalletOne main net.
 var DefaultConfig = Config{
-	SyncMode:      downloader.FastSync,
-	NetworkId:     1,
-	LightServ:     10,
-	LightPeers:    25,
-	CorsPeers:     0,
-	DatabaseCache: 768,
-	TrieCache:     256,
-	TrieTimeout:   5 * time.Minute,
-	CryptoLib:     []byte{0, 0},
-
+	SyncMode:       downloader.FastSync,
+	NetworkId:      1,
+	LightServ:      10,
+	LightPeers:     25,
+	CorsPeers:      0,
+	DatabaseCache:  768,
+	TrieCache:      256,
+	TrieTimeout:    5 * time.Minute,
+	CryptoLib:      []byte{0, 0},
+	EnableGasFee:   true,
 	TxPool:         txspool.DefaultTxPoolConfig,
 	Dag:            dagconfig.DagConfig,
 	MediatorPlugin: mediatorplugin.DefaultConfig,
@@ -97,7 +97,8 @@ type Config struct {
 	MinerThreads int    `toml:",omitempty"`
 	ExtraData    []byte `toml:",omitempty"`
 	CryptoLib    []byte
-
+	//是否启用Gas手续费
+	EnableGasFee bool
 	// Transaction pool options
 	TxPool txspool.TxPoolConfig `toml:"-"`
 

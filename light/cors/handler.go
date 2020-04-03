@@ -33,6 +33,7 @@ import (
 	dagerrors "github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn/downloader"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 )
 
 const (
@@ -51,6 +52,13 @@ var (
 	errBadPeer            = errors.New("action from bad peer ignored")
 	errTimeout            = errors.New("timeout")
 )
+
+type corsChainsInfo struct {
+	Genesishash common.Hash
+	NetworkId        uint64
+	Version          uint64
+	Peers            []string  //pnode://publickey@IP:port format string
+}
 
 func errResp(code errCode, format string, v ...interface{}) error {
 	return fmt.Errorf("%v - %v", code, fmt.Sprintf(format, v...))
@@ -281,9 +289,9 @@ func (pm *ProtocolManager) newPeer(pv int, nv uint64, p *p2p.Peer, rw p2p.MsgRea
 // this function terminates, the peer is disconnected.
 func (pm *ProtocolManager) handle(p *peer) error {
 	// Ignore maxPeers if this is a trusted peer
-	if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
-		return p2p.DiscTooManyPeers
-	}
+	//if pm.peers.Len() >= pm.maxPeers && !p.Peer.Info().Network.Trusted {
+	//	return p2p.DiscTooManyPeers
+	//}
 
 	log.Debug("Enter Cors Palletone peer connected", "id", p.ID())
 	defer log.Debug("End Cors Palletone peer connected", "id", p.ID())
@@ -291,7 +299,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	// Execute the Cors handshake
 	genesis, err := pm.dag.GetGenesisUnit()
 	if err != nil {
-		log.Error("Light PalletOne New", "get genesis err:", err)
+		log.Error("Cors PalletOne New", "get genesis err:", err)
 		return err
 	}
 
@@ -304,12 +312,41 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		headhash = head.Hash()
 	}
 
-	pcs, err := pm.dag.GetPartitionChains()
-	if err != nil {
-		log.Debug("Cors PalletOne ProtocolManager handle GetPartitionChains", "err", err)
+	token:=dagconfig.DagConfig.GetGasToken()
+	log.Debug("Cors PalletOne ProtocolManager","gastoken",token)
+	ccis :=[]corsChainsInfo{}
+	if token!=modules.PTNCOIN{
+		if chains, err := pm.dag.GetMainChain();err!=nil{
+			log.Error("Cors PalletOne ProtocolManager", "GetMainChain err:", err)
+			return err
+		}else{
+			cci  :=corsChainsInfo{}
+			cci.Version = chains.Version
+			cci.NetworkId = chains.NetworkId
+			cci.Genesishash = chains.GetGenesisHeader().Hash()
+			cci.Peers = chains.Peers
+			ccis = append(ccis,cci)
+		}
+
+	}else {
+		if chains, err := pm.dag.GetPartitionChains();err!=nil{
+			log.Error("Cors PalletOne ProtocolManager", "GetPartitionChains err:", err)
+			return err
+		}else{
+			for _,chain:=range chains{
+				cci:=corsChainsInfo{}
+				cci.Version = chain.Version
+				cci.NetworkId = chain.NetworkId
+				cci.Genesishash = chain.GetGenesisHeader().Hash()
+				cci.Peers = chain.Peers
+				ccis = append(ccis,cci)
+			}
+		}
 	}
 
-	if err := p.Handshake(number, genesis.Hash(), headhash, pm.assetId, pcs); err != nil {
+	log.Debug("Cors PalletOne ProtocolManager handle", "ccis", ccis,"number",*number)
+
+	if err := p.Handshake(number, genesis.Hash(), headhash, pm.assetId, ccis); err != nil {
 		log.Debug("Cors PalletOne handshake failed", "err", err)
 		return err
 	}

@@ -51,7 +51,7 @@ type IDagQuery interface {
 	IsTransactionExist(hash common.Hash) (bool, error)
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
 	CheckReadSetValid(contractId []byte, readSet []modules.ContractReadSet) bool
-	GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
+	//GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
 }
 
 type IPropQuery interface {

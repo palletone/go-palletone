@@ -18,12 +18,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/palletone/go-palletone/tokenengine"
 	"testing"
+
+	dag2 "github.com/palletone/go-palletone/dag"
 
 	//"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
-	"github.com/palletone/go-palletone/dag/common"
 )
 
 var customGenesisTests = []struct {
@@ -120,13 +120,15 @@ func TestGenesisGet(t *testing.T) {
 		fmt.Println("Connect to db error.")
 		return
 	}
+	dag, _ := dag2.NewDagForTest(dbconn)
+	unit, err := dag.GetGenesisUnit()
 	//l := log.NewTestLog()
-	unitrep := common.NewUnitRepository4Db(dbconn, tokenengine.Instance)
-	if unitrep == nil {
-		t.Error("new unit rep error.")
-	}
-	// get genesis unit by index
-	unit, err := unitrep.GetGenesisUnit()
+	//unitrep := common.NewUnitRepository4Db(dbconn, tokenengine.Instance,true)
+	//if unitrep == nil {
+	//	t.Error("new unit rep error.")
+	//}
+	//// get genesis unit by index
+	//unit, err := unitrep.GetGenesisUnit()
 	fmt.Println("error", err, "Genesis unit:", unit)
 	// get account balance
 	// get all global configures

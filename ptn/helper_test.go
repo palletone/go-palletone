@@ -90,7 +90,7 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, idag dag.IDag,
 	}
 	genesisUint, _ := idag.GetUnitByNumber(index0)
 
-	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, modules.NewPTNIdType(), txpool, idag, typemux, pro, genesisUint, nil, nil, nil, &utils.PalletOneDocker{DockerClient: nil})
+	pm, err := NewProtocolManager(mode, DefaultConfig.NetworkId, modules.NewPTNIdType(), txpool, idag, typemux, pro, genesisUint, nil, nil, nil, &utils.PalletOneDocker{DockerClient: nil}, true)
 	if err != nil {
 		return nil, nil, err
 	}

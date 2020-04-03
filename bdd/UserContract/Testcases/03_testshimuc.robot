@@ -201,12 +201,13 @@ Check all invoke info
     Dictionary Should Contain Key    ${payload}    GetInvokeTokens
     ${GetInvokeTokens} =    Get From Dictionary    ${payload}    GetInvokeTokens
     # => GetInvokeFees
-    Dictionary Should Contain Key    ${payload}    GetInvokeFees
-    ${GetInvokeFees} =    Get From Dictionary    ${payload}    GetInvokeFees
-    ${amount}=    Get From Dictionary    ${GetInvokeFees}    amount
-    ${symbol}=    Get From Dictionary    ${GetInvokeFees}    assetId
-    Should Be Equal    ${amount}    ${10000000000}
-    Should Be Equal    ${symbol}    PTN
+    #    Dictionary Should Contain Key    ${payload}    GetInvokeFees
+    #    ${payload}    GetInvokeFees
+    #    Get From Dictionary    ${payload}    GetInvokeFees
+    #    Get From Dictionary    ${GetInvokeFees}    amount
+    #    Get From Dictionary    ${GetInvokeFees}    assetId
+    #    ${amount}    ${10000000000}
+    #    ${symbol}    PTN
     # => GetContractID
     Dictionary Should Contain Key    ${payload}    GetContractID
     ${GetContractID} =    Get From Dictionary    ${payload}    GetContractID
@@ -218,8 +219,8 @@ Check all invoke info
     Should Be Equal    ${exceptedFuncName}    ${funcName}
     ${invokeAddress}=    Get From Dictionary    ${GetInvokeParameters}    invokeAddress
     Should Be Equal    ${invokeAddress}    ${tokenHolder}
-    ${invokeFees}=    Get From Dictionary    ${GetInvokeParameters}    invokeFees
-    Dictionaries Should Be Equal    ${GetInvokeFees}    ${invokeFees}
+    #    Get From Dictionary    ${GetInvokeParameters}    invokeFees
+    #    ${GetInvokeFees}    ${invokeFees}
     ${invokeParams}=    Get From Dictionary    ${GetInvokeParameters}    invokeParams
     List Should Contain Sub List    ${invokeParams}    ${args}
     ${invokeTokens}=    Get From Dictionary    ${GetInvokeParameters}    invokeTokens

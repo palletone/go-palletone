@@ -147,14 +147,15 @@ type TxPool struct {
 	nextExpireScan time.Time
 	cache          palletcache.ICache
 	tokenEngine    tokenengine.ITokenEngine
+	enableGasFee   bool
 }
 
 // NewTxPool creates a new transaction pool to gather, sort and filter inbound
 // transactions from the network.
-func NewTxPool(config TxPoolConfig, cachedb palletcache.ICache, unit IDag) *TxPool {
+func NewTxPool(config TxPoolConfig, cachedb palletcache.ICache, unit IDag, enableGasFee bool) *TxPool {
 	tokenEngine := tokenengine.Instance
-	pool := NewTxPool4DI(config, cachedb, unit, tokenEngine, nil)
-	val := validator.NewValidate(unit, pool, unit, unit, nil, cachedb, false)
+	pool := NewTxPool4DI(config, cachedb, unit, tokenEngine, nil, enableGasFee)
+	val := validator.NewValidate(unit, pool, unit, unit, nil, cachedb, false, enableGasFee)
 	pool.txValidator = val
 	pool.startJournal(config)
 	return pool
@@ -162,7 +163,7 @@ func NewTxPool(config TxPoolConfig, cachedb palletcache.ICache, unit IDag) *TxPo
 
 //构造函数的依赖注入，主要用于UT
 func NewTxPool4DI(config TxPoolConfig, cachedb palletcache.ICache, unit IDag,
-	tokenEngine tokenengine.ITokenEngine, validator IValidator) *TxPool { // chainconfig *params.ChainConfig,
+	tokenEngine tokenengine.ITokenEngine, validator IValidator, enableGasFee bool) *TxPool { // chainconfig *params.ChainConfig,
 	// Sanitize the input to ensure no vulnerable gas prices are set
 	config = (&config).sanitize()
 	// Create the transaction pool with its initial settings
@@ -178,6 +179,7 @@ func NewTxPool4DI(config TxPoolConfig, cachedb palletcache.ICache, unit IDag,
 		reqOutputs:     sync.Map{},
 		cache:          cachedb,
 		tokenEngine:    tokenEngine,
+		enableGasFee:   enableGasFee,
 	}
 	pool.mu = sync.RWMutex{}
 	pool.priority_sorted = newTxPrioritiedList(&pool.all)
