@@ -27,7 +27,7 @@ import (
 
 type ITxPool interface {
 	Stop()
-
+	Clear()
 	AddLocal(tx *modules.Transaction) error
 	//AddLocals(txs []*modules.Transaction) []error
 	//AddSequenTx(tx *modules.Transaction) error

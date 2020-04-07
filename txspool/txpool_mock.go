@@ -47,6 +47,18 @@ func (mr *MockITxPoolMockRecorder) Stop() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockITxPool)(nil).Stop))
 }
 
+// Clear mocks base method
+func (m *MockITxPool) Clear() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Clear")
+}
+
+// Clear indicates an expected call of Clear
+func (mr *MockITxPoolMockRecorder) Clear() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Clear", reflect.TypeOf((*MockITxPool)(nil).Clear))
+}
+
 // AddLocal mocks base method
 func (m *MockITxPool) AddLocal(tx *modules.Transaction) error {
 	m.ctrl.T.Helper()

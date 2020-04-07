@@ -110,6 +110,10 @@ func (pool *TxPool) AddRemote(tx *modules.Transaction) error {
 	return nil
 }
 func (pool *TxPool) checkDuplicateAdd(txHash common.Hash) error {
+	if exist, _ := pool.dag.IsTransactionExist(txHash); exist {
+		log.Infof("ignore add dag exist tx[%s] to tx pool", txHash.String())
+		return ErrDuplicate
+	}
 	if _, err := pool.normals.GetTx(txHash); err == nil { //found tx
 		log.Infof("ignore add duplicate tx[%s] to tx pool", txHash.String())
 		return ErrDuplicate
@@ -754,4 +758,13 @@ func (pool *TxPool) GetTx(hash common.Hash) (*txspool.TxPoolTransaction, error) 
 func (pool *TxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subscription {
 	//return pool.txFeed.Subscribe(ch)
 	return pool.scope.Track(pool.txFeed.Subscribe(ch))
+}
+func (pool *TxPool) Clear() {
+	pool.Lock()
+	defer pool.Unlock()
+	pool.normals = newTxList()
+	pool.orphans = make(map[common.Hash]*txspool.TxPoolTransaction)
+	pool.basedOnRequestOrphans = make(map[common.Hash]*txspool.TxPoolTransaction)
+	pool.userContractRequests = make(map[common.Hash]*txspool.TxPoolTransaction)
+	log.Info("Cleared all txpool cache data.")
 }
