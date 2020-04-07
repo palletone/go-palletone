@@ -1,6 +1,7 @@
 # Supported tags and respective Dockerfile links
 
 - [latest](https://github.com/palletone/go-palletone/blob/testnet/images/node/Dockerfile)
+- [1.0.7](https://github.com/palletone/go-palletone/blob/testnet/images/node/Dockerfile)
 - [1.0.6](https://github.com/palletone/go-palletone/blob/testnet/images/node/Dockerfile)
 - [1.0.5](https://github.com/palletone/go-palletone/blob/testnet/images/node/Dockerfile)
 - [1.0.4](https://github.com/palletone/go-palletone/blob/testnet/images/node/Dockerfile)
@@ -19,7 +20,7 @@ gptn is used as the base image for the go-palletone node,such as the main networ
 
 - ### 普通全节点、超级节点或者陪审员节点且不需要挂载文件
 
-  - 启动容器：docker run -d --network gptn-net --name mainnetgptn palletone/gptn:1.0.6
+  - 启动容器：docker run -d --network gptn-net --name mainnetgptn palletone/gptn:1.0.7
 
   - 进入容器：docker exec -it mainnetgptn bash
 
@@ -29,11 +30,11 @@ gptn is used as the base image for the go-palletone node,such as the main networ
 
     - 若提示：docker: Error response from daemon: network gptn-net not found，需要创建该网络，使用命令：**docker network create gptn-net**
     - 如果是作为超级节点或者是陪审员节点，使用以下命令开启容器
-      - docker run -d --network gptn-net --name mainnetgptn -v /var/run/docker.sock:/var/run/docker.sock palletone/gptn:1.0.6
+      - docker run -d --network gptn-net --name mainnetgptn -v /var/run/docker.sock:/var/run/docker.sock palletone/gptn:1.0.7
 
 - ### 普通全节点、超级节点或者陪审员节点且需要挂载文件
 
-  - 启动容器：docker run -d --network gptn-net --name mainnetgptn -v host_absolute_path/palletone:/go-palletone/palletone -v host_absolute_path/ptn-config.toml:/go-palletone/ptn-config.toml palletone/gptn:1.0.6
+  - 启动容器：docker run -d --network gptn-net --name mainnetgptn -v host_absolute_path/palletone:/go-palletone/palletone -v host_absolute_path/ptn-config.toml:/go-palletone/ptn-config.toml palletone/gptn:1.0.7
 
   - 进入容器：docker exec -it mainnetgptn bash
 
@@ -43,7 +44,7 @@ gptn is used as the base image for the go-palletone node,such as the main networ
 
     - 若提示：docker: Error response from daemon: network gptn-net not found，需要创建该网络，使用命令：**docker network create gptn-net**
     - 如果是作为超级节点或者是陪审员节点，使用以下命令开启容器
-      - docker run -d --network gptn-net --name mainnetgptn -v host_absolute_path/palletone:/go-palletone/palletone -v host_absolute_path/ptn-config.toml:/go-palletone/ptn-config.toml -v /var/run/docker.sock:/var/run/docker.sock palletone/gptn:1.0.6
+      - docker run -d --network gptn-net --name mainnetgptn -v host_absolute_path/palletone:/go-palletone/palletone -v host_absolute_path/ptn-config.toml:/go-palletone/ptn-config.toml -v /var/run/docker.sock:/var/run/docker.sock palletone/gptn:1.0.7
 
   ------
 
@@ -51,7 +52,7 @@ gptn is used as the base image for the go-palletone node,such as the main networ
 
 - ### 普通全节点、超级节点或者陪审员节点且不需要挂载文件
 
-  - 启动容器：docker run -d --network gptn-net --name testnetgptn palletone/gptn:1.0.6 --testnet
+  - 启动容器：docker run -d --network gptn-net --name testnetgptn palletone/gptn:1.0.7 --testnet
 
   - 进入容器：docker exec -it testnetgptn bash
 
@@ -61,11 +62,11 @@ gptn is used as the base image for the go-palletone node,such as the main networ
 
     - 若提示：docker: Error response from daemon: network gptn-net not found，需要创建该网络，使用命令：**docker network create gptn-net**
     - 如果是作为超级节点或者是陪审员节点，使用以下命令开启容器
-      - docker run -d --network gptn-net --name testnetgptn -v /var/run/docker.sock:/var/run/docker.sock palletone/gptn:1.0.6 --testnet
+      - docker run -d --network gptn-net --name testnetgptn -v /var/run/docker.sock:/var/run/docker.sock palletone/gptn:1.0.7 --testnet
 
 - ### 普通全节点、超级节点或者陪审员节点且需要挂载文件
 
-  - 启动容器：docker run -d --network gptn-net --name testnetgptn  -v host_absolute_path/palletone:/go-palletone/palletone -v host_absolute_path/ptn-config.toml:/go-palletone/ptn-config.toml palletone/gptn:1.0.6 --testnet
+  - 启动容器：docker run -d --network gptn-net --name testnetgptn  -v host_absolute_path/palletone:/go-palletone/palletone -v host_absolute_path/ptn-config.toml:/go-palletone/ptn-config.toml palletone/gptn:1.0.7 --testnet
 
   - 进入容器：docker exec -it testnetgptn bash
 
@@ -75,7 +76,7 @@ gptn is used as the base image for the go-palletone node,such as the main networ
 
     - 若提示：docker: Error response from daemon: network gptn-net not found，需要创建该网络，使用命令：**docker network create gptn-net**
     - 如果是作为超级节点或者是陪审员节点，使用以下命令开启容器
-      - docker run -d --network gptn-net --name testnetgptn -v host_absolute_path/palletone:/go-palletone/palletone -v host_absolute_path/ptn-config.toml:/go-palletone/ptn-config.toml -v /var/run/docker.sock:/var/run/docker.sock palletone/gptn:1.0.6 --testnet
+      - docker run -d --network gptn-net --name testnetgptn -v host_absolute_path/palletone:/go-palletone/palletone -v host_absolute_path/ptn-config.toml:/go-palletone/ptn-config.toml -v /var/run/docker.sock:/var/run/docker.sock palletone/gptn:1.0.7 --testnet
 
 - ## 作为本地搭建私有链节点
 
