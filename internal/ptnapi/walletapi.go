@@ -1421,6 +1421,9 @@ func (s *PrivateWalletAPI) CreateProofOfExistenceTx(ctx context.Context, addr st
 		}
 		return submitTransaction(ctx, s.b, tx)
 	}
+	//无GasFee时，不需要加锁，可以并发创建
+	s.b.Lock()
+	defer s.b.Unlock()
 	gasToken := dagconfig.DagConfig.GasToken
 	ptn1 := decimal.New(1, -2)
 	rawTx, usedUtxo, err := buildRawTransferTx(s.b, gasToken, addr, addr, decimal.New(0, 0), ptn1, password)
