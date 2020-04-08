@@ -19,10 +19,10 @@ jobs:
           cd ./fabric-samples/scripts
           ./bootstrap.sh -b
           docker images
-          cd $GOPATH/src/github.com/hyperledger
+          cd $HOME/gopath/src/github.com/hyperledger
           wget https://github.com/hyperledger/fabric/releases/download/v1.4.0/hyperledger-fabric-linux-amd64-1.4.0.tar.gz
           tar zxvf hyperledger-fabric-linux-amd64-1.4.0.tar.gz
-          export PATH=$PATH:/home/pallet/work/src/github.com/hyperledger/bin
+          export PATH=$PATH:$HOME/gopath/src/github.com/hyperledger/bin
           peer version
 
 
