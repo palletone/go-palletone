@@ -13,16 +13,24 @@ jobs:
           mkdir gopath
           cd gopath
           export GOPATH=$pwd
+          # create hyperledger directory
           mkdir -p src/github.com/hyperledger
           cd src/github.com/hyperledger
-          git clone -b v1.4.0 https://github.com/hyperledger/fabric-samples
-          cd ./fabric-samples/scripts
-          ./bootstrap.sh -b
-          docker images
-          cd $HOME/gopath/src/github.com/hyperledger
+          # download fabric
           wget https://github.com/hyperledger/fabric/releases/download/v1.4.0/hyperledger-fabric-linux-amd64-1.4.0.tar.gz
           tar zxvf hyperledger-fabric-linux-amd64-1.4.0.tar.gz
           export PATH=$PATH:$HOME/gopath/src/github.com/hyperledger/bin
-          peer version
+          peer version #test
+          # download fabric-samples
+          git clone -b v1.4.0 https://github.com/hyperledger/fabric-samples
+          # pull docker images
+          cd $HOME/gopath/src/github.com/hyperledger/fabric-samples/scripts
+          ./bootstrap.sh -b
+          docker images
+          # start balance-transfer network
+          cd $HOME/gopath/src/github.com/hyperledger/fabric-samples/balance-transfer
+          nohup ./runApp.sh >> ./nohup.out &
+          sleep 10
+          docker ps
 
 
