@@ -69,6 +69,12 @@ func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFe
 	if err != nil {
 		return nil, nil, err
 	}
+	deci := tokenAsset.GetDecimal()
+	dnumber_slice := strings.Split(fmt.Sprintf("%v", amount), ".")
+	if len(dnumber_slice) > 1 && len(dnumber_slice[1]) > int(deci) {
+		return nil, nil, fmt.Errorf("Asset Deimal is error")
+	}
+
 	if !gasFee.IsPositive() && b.EnableGasFee() {
 		return nil, nil, fmt.Errorf("fee is ZERO ")
 	}
