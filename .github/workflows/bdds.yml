@@ -102,7 +102,7 @@ jobs:
           git clone https://github.com/palletone/fabric-adaptor.git
           cd fabric-adaptor
           git checkout 87b853bf450ad77449f45fe688dbafc8a4afc625
-          result=`go run ./testadaptor/main.go`
+          result=`go run ./testadaptor/main.go -mod=vendor`
           txid=`echo ${result##* }`
           balance=`docker exec cli peer chaincode query -C mychannel -n chaincode_example02 -c '{"Function": "query", "Args": ["B"]}'`
           echo $balance
