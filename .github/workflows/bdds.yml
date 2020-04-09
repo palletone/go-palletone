@@ -38,6 +38,57 @@ jobs:
           sleep 10
           docker exec cli peer chaincode query -C mychannel -n chaincode_example02 -c '{"Function": "query", "Args": ["B"]}'
 
+    - name: Install dependencies
+      run: |
+        sudo -H pip install --upgrade pip
+        sudo -H pip install robotframework==2.8.5
+        sudo -H pip install requests
+        sudo -H pip install robotframework-requests
+        sudo -H pip install demjson
+        sudo -H pip install pexpect
+        sudo -H apt-get install expect
+        sudo -H apt-get install lftp
+
+    - name: Build and run gptn
+      run: |
+          cd $HOME
+          mkdir -p gopath
+          cd gopath
+          export GOPATH=$pwd
+          mkdir -p src/github.com/palletone
+          cd src/github.com/palletone
+          git clone -b ${GITHUB_REF##*/} https://github.com/palletone/go-palletone.git
+          cd go-palletone
+          sudo mkdir -p /home/runner/go/src/github.com/palletone/go-palletone
+          sudo cp -r * /home/runner/go/src/github.com/palletone/go-palletone/
+          go build -mod=vendor ./cmd/gptn
+          docker images
+          gptnVersion=`./gptn version|grep ^Version|awk '{print $2}'|awk -F '-' '{print $1}'`
+          cat /proc/sys/net/ipv4/ip_forward
+          sudo ./jurySec.sh
+          sudo cat /etc/docker/daemon.json
+          cd ./cmd/deployment
+          chmod +x ./deploy.sh
+          chmod +x ./start.sh
+          chmod +x editConfig.sh
+          docker network create gptn-net
+          docker pull palletone/goimg
+          docker tag palletone/goimg palletone/goimg:$gptnVersion
+          docker network ls
+          docker images
+          ./deploy.sh 3 3
+          ./editConfig.sh 3 3
+          #fabric msp and connection config file
+          cp -rf $HOME/gopath/src/github.com/hyperledger/fabric-samples/basic-network/crypto-config .
+          wget https://github.com/palletone/fabric-adaptor/blob/6319b6f26aa42b4c9b1526194f575d2ea9586495/connection.yaml
+          sed -i "s/ConfigFile = \"\"/ConfigFile = \".\/connection.yaml\"/" outchain.toml 
+          sed -i "s/UserName = \"\"/UserName = \"User1\"/" outchain.toml 
+          sed -i "s/ChannelID = \"\"/ChannelID = \"mychannel\"/" outchain.toml 
+          sed -i "s/OrgAdmin = \"\"/OrgAdmin = \"Admin\"/" outchain.toml 
+          sed -i "s/OrgName = \"\"/OrgName = \"org1\"/" outchain.toml 
+          sed -i "s/OrgID = \"\"/OrgID = \"Org1MSP\"/" outchain.toml 
+          ./start.sh 3
+          sleep 30
 
     - name: Run fabric contract bdd
       run: |
@@ -54,4 +105,12 @@ jobs:
           result=`GO111Module=off go run ./testadaptor/main.go -mod=vendor`
           txid=`echo ${result##* }`
           echo $txid
+          balance=`docker exec cli peer chaincode query -C mychannel -n chaincode_example02 -c '{"Function": "query", "Args": ["B"]}'`
+          echo $balance
+          # run bdd
+          cd $HOME/gopath/src/github.com/palletone/go-palletone
+          python -m robot.run -v fabricTxID:$txid -d ./bdd/logs/fabric -i fabric ./bdd/UserContract/Testcases
+          # check B balance
+          balance=`docker exec cli peer chaincode query -C mychannel -n chaincode_example02 -c '{"Function": "query", "Args": ["B"]}'`
+          if [ ${balance} -ne "900" ]; then echo "ne" && exit 1;fi
 
