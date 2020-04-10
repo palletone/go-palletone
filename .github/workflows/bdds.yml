@@ -89,6 +89,7 @@ jobs:
           sed -i "s/OrgName = \"\"/OrgName = \"org1\"/" outchain.toml 
           sed -i "s/OrgID = \"\"/OrgID = \"Org1MSP\"/" outchain.toml 
           ./start.sh 3
+          docker ps -a
           sleep 30
 
     - name: Run fabric contract bdd
@@ -97,6 +98,7 @@ jobs:
           export GO111MODULE=on
           go env
           cd $HOME/gopath/src/github.com/palletone
+          docker ps -a
           # get invoke txid
           git clone https://github.com/palletone/fabric-adaptor.git
           cd fabric-adaptor
