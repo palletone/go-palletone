@@ -291,7 +291,7 @@ func (s *PublicWalletAPI) SendRawTransaction(ctx context.Context, signedTxHex st
 	//	outpoint_txhash = payload.Inputs[0].PreviousOutPoint.TxHash
 	//}
 	//log.Debugf("Tx outpoint tx hash:%s", outpoint_txhash.String())
-	return submitTransaction(ctx, s.b, tx)
+	return submitTransaction(s.b, tx)
 }
 
 func (s *PublicWalletAPI) SendJsonTransaction(ctx context.Context, params string) (common.Hash, error) {
@@ -328,7 +328,7 @@ func (s *PublicWalletAPI) SendJsonTransaction(ctx context.Context, params string
 		outpoint_txhash = payload.Inputs[0].PreviousOutPoint.TxHash
 	}
 	log.Infof("Tx outpoint tx hash:%s", outpoint_txhash.String())
-	return submitTransaction(ctx, s.b, tx)
+	return submitTransaction(s.b, tx)
 }
 func (s *PublicWalletAPI) SendRlpTransaction(ctx context.Context, encodedTx string) (common.Hash, error) {
 	//transaction inputs
@@ -358,7 +358,7 @@ func (s *PublicWalletAPI) SendRlpTransaction(ctx context.Context, encodedTx stri
 			outAmount += txout.Value
 		}
 	}
-	return submitTransaction(ctx, s.b, tx)
+	return submitTransaction(s.b, tx)
 }
 
 //func (s *PrivateWalletAPI) CreateProofTransaction(ctx context.Context, params string, password string) (common.Hash, error) {
@@ -937,7 +937,7 @@ func (s *PrivateWalletAPI) GetPtnTestCoin(ctx context.Context, from string, to s
 	log.Info("--------------------------send tx ----------------------------", "txOutAmount", outAmount)
 
 	log.Debugf("Tx outpoint tx hash:%s", s_msgs[0].Payload.(*modules.PaymentPayload).Inputs[0].PreviousOutPoint.TxHash.String())
-	return submitTransaction(ctx, s.b, stx)
+	return submitTransaction(s.b, stx)
 }
 
 func RandFromString(value string) (decimal.Decimal, error) {
@@ -1080,7 +1080,7 @@ func (s *PrivateWalletAPI) TransferToken(ctx context.Context, asset string, from
 
 	log.Debugf("sign raw tx spend:%v", time.Since(start))
 	//4. send
-	txHash, err := submitTransaction(ctx, s.b, rawTx)
+	txHash, err := submitTransaction(s.b, rawTx)
 	if err != nil {
 		log.Error("submitTransaction error:" + err.Error())
 		return common.Hash{}, err
@@ -1121,7 +1121,7 @@ func (s *PrivateWalletAPI) TransferTokenSync(ctx context.Context, asset string, 
 	}
 	log.Infof("TransferTokenSync generate tx[%s]", tx.Hash().String())
 
-	_, err = submitTransaction(ctx, s.b, tx)
+	_, err = submitTransaction(s.b, tx)
 	s.lock.Unlock()
 	log.Infof("Generate and send tx[%s] spend time:%s", tx.Hash().String(), time.Since(start).String())
 	if err != nil {
@@ -1283,7 +1283,7 @@ func (s *PrivateWalletAPI) TransferToken2(ctx context.Context, asset string, fro
 	txJson, _ := json.Marshal(rawTx)
 	log.DebugDynamic(func() string { return "SignedTx:" + string(txJson) })
 	//4.
-	return submitTransaction(ctx, s.b, rawTx)
+	return submitTransaction(s.b, rawTx)
 }
 
 func (s *PrivateWalletAPI) CreateTxWithOutFee(ctx context.Context, asset, fromStr, toStr string, amount decimal.Decimal, pwd *string, duration *Int) (ptnjson.SignRawTransactionResult, error) {
@@ -1419,7 +1419,7 @@ func (s *PrivateWalletAPI) CreateProofOfExistenceTx(ctx context.Context, addr st
 		if err != nil {
 			return common.Hash{}, err
 		}
-		return submitTransaction(ctx, s.b, tx)
+		return submitTransaction(s.b, tx)
 	}
 	//无GasFee时，不需要加锁，可以并发创建
 	s.b.Lock()
@@ -1467,7 +1467,7 @@ func (s *PrivateWalletAPI) CreateProofOfExistenceTx(ctx context.Context, addr st
 	}
 	log.DebugDynamic(func() string { return "SignedTx:" + rawTx.String() })
 	//4.
-	return submitTransaction(ctx, s.b, rawTx)
+	return submitTransaction(s.b, rawTx)
 }
 
 //创建一笔溯源交易，调用721合约
@@ -1529,7 +1529,7 @@ func (s *PrivateWalletAPI) CreateTraceability(ctx context.Context, addr, uid, sy
 
 	log.DebugDynamic(func() string { return "SignedTx:" + rawTx.String() })
 	//4.
-	return submitTransaction(ctx, s.b, rawTx)
+	return submitTransaction(s.b, rawTx)
 }
 
 //
@@ -1736,7 +1736,7 @@ func (s *PrivateWalletAPI) AggregateUtxo(ctx context.Context,
 				return nil, err
 			}
 			log.Infof("Try to send aggregate UTXO tx[%s]", tx.Hash().String())
-			err = s.b.SendTx(ctx, tx)
+			err = s.b.SendTx(tx)
 			inputAmtSum = 0
 			payment = nil
 			if err != nil {
@@ -1755,7 +1755,7 @@ func (s *PrivateWalletAPI) AggregateUtxo(ctx context.Context,
 			return nil, err
 		}
 		log.Infof("Try to send aggregate UTXO tx[%s]", tx.Hash().String())
-		err = s.b.SendTx(ctx, tx)
+		err = s.b.SendTx(tx)
 		if err != nil {
 			return nil, err
 		}

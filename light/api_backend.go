@@ -123,10 +123,10 @@ func (b *LesApiBackend) GetChainParameters() *core.ChainParameters {
 	return nil
 }
 
-func (b *LesApiBackend) SendTx(ctx context.Context, tx *modules.Transaction) error {
+func (b *LesApiBackend) SendTx(tx *modules.Transaction) error {
 	return b.ptn.txPool.AddLocal(tx)
 }
-func (b *LesApiBackend) SendTxs(ctx context.Context, signedTxs []*modules.Transaction) []error {
+func (b *LesApiBackend) SendTxs(signedTxs []*modules.Transaction) []error {
 	errs := []error{}
 	for _, tx := range signedTxs {
 		err := b.ptn.txPool.AddLocal(tx)

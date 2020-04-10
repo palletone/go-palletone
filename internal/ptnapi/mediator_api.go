@@ -29,7 +29,6 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/shopspring/decimal"
 )
 
@@ -280,7 +279,7 @@ func (a *PrivateMediatorAPI) Apply(args modules.MediatorCreateArgs, fee decimal.
 	// 调用系统合约
 	//reqId, err := a.ContractInvokeReqTx(addr, addr, 0, daofee, nil,
 	//	syscontract.DepositContractAddress, cArgs, 0)
-	result, err := a.contractApi.Ccinvoketx(nil, addr.String(), addr.String(), decimal.Zero, fee,
+	result, err := a.contractApi.Ccinvoketx(addr.String(), addr.String(), decimal.Zero, fee,
 		syscontract.DepositContractAddress.String(), cArgs, nil, nil)
 	if err != nil {
 		return nil, err
@@ -333,16 +332,18 @@ func (a *PrivateMediatorAPI) PayDeposit(from string, amount decimal.Decimal, fee
 	//if a.Dag().IsMediator(fromAdd) {
 	//	return nil, fmt.Errorf("account %v is already a mediator", from)
 	//}
-
-	inFee := ptnjson.Ptn2Dao(fee)
-	if inFee == 0 {
-		inFee = cp.TransferPtnBaseFee
+	if fee.IsZero() {
+		fee = dagconfig.DagConfig.GetGasToken().DisplayAmount(cp.TransferPtnBaseFee)
 	}
+	//inFee := ptnjson.Ptn2Dao(fee)
+	//if inFee == 0 {
+	//	inFee = cp.TransferPtnBaseFee
+	//}
 	// 调用系统合约
 	cArgs := []string{modules.MediatorPayDeposit}
 	//reqId, err := a.ContractInvokeReqTx(fromAdd, syscontract.DepositContractAddress, ptnjson.Ptn2Dao(amount),
 	//	inFee, nil, syscontract.DepositContractAddress, cArgs, 0)
-	result, err := a.contractApi.Ccinvoketx(nil, from, syscontract.DepositContractAddress.String(), amount, fee,
+	result, err := a.contractApi.Ccinvoketx(from, syscontract.DepositContractAddress.String(), amount, fee,
 		syscontract.DepositContractAddress.String(), cArgs, nil, nil)
 	if err != nil {
 		return nil, err
@@ -380,13 +381,16 @@ func (a *PrivateMediatorAPI) Quit(medAddStr string, fee decimal.Decimal) (*TxExe
 	// 调用系统合约
 	cArgs := []string{modules.MediatorApplyQuit}
 
-	inFee := ptnjson.Ptn2Dao(fee)
-	if inFee == 0 {
-		inFee = a.b.Dag().GetChainParameters().TransferPtnBaseFee
+	if fee.IsZero() {
+		fee = dagconfig.DagConfig.GetGasToken().DisplayAmount(a.b.Dag().GetChainParameters().TransferPtnBaseFee)
 	}
+	//inFee := ptnjson.Ptn2Dao(fee)
+	//if inFee == 0 {
+	//	inFee = a.b.Dag().GetChainParameters().TransferPtnBaseFee
+	//}
 	//reqId, err := a.ContractInvokeReqTx(medAdd, medAdd, 0, inFee,
 	//	nil, syscontract.DepositContractAddress, cArgs, 0)
-	result, err := a.contractApi.Ccinvoketx(nil, medAddStr, medAddStr, decimal.Zero, fee, syscontract.DepositContractAddress.String(), cArgs, nil, nil)
+	result, err := a.contractApi.Ccinvoketx(medAddStr, medAddStr, decimal.Zero, fee, syscontract.DepositContractAddress.String(), cArgs, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -488,13 +492,16 @@ func (a *PrivateMediatorAPI) Update(args modules.MediatorUpdateArgs, fee decimal
 	cArgs := []string{modules.UpdateMediatorInfo, string(argsB)}
 
 	// 调用系统合约
-	inFee := ptnjson.Ptn2Dao(fee)
-	if inFee == 0 {
-		inFee = a.b.Dag().GetChainParameters().TransferPtnBaseFee
+	//inFee := ptnjson.Ptn2Dao(fee)
+	//if inFee == 0 {
+	//	inFee = a.b.Dag().GetChainParameters().TransferPtnBaseFee
+	//}
+	if fee.IsZero() {
+		fee = dagconfig.DagConfig.GetGasToken().DisplayAmount(a.b.Dag().GetChainParameters().TransferPtnBaseFee)
 	}
 	//reqId, err := a.ContractInvokeReqTx(addr, addr, 0, inFee, nil,
 	//	syscontract.DepositContractAddress, cArgs, 0)
-	result, err := a.contractApi.Ccinvoketx(nil, addr.String(), addr.String(), decimal.Zero, fee, syscontract.DepositContractAddress.String(), cArgs, nil, nil)
+	result, err := a.contractApi.Ccinvoketx(addr.String(), addr.String(), decimal.Zero, fee, syscontract.DepositContractAddress.String(), cArgs, nil, nil)
 	if err != nil {
 		return nil, err
 	}

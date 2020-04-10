@@ -136,11 +136,11 @@ func (b *PtnApiBackend) SendConsensus(ctx context.Context) error {
 	return nil
 }
 
-func (b *PtnApiBackend) SendTx(ctx context.Context, tx *modules.Transaction) error {
+func (b *PtnApiBackend) SendTx(tx *modules.Transaction) error {
 	return b.ptn.contractPorcessor.AddLocalTx(tx)
 }
 
-func (b *PtnApiBackend) SendTxs(ctx context.Context, signedTxs []*modules.Transaction) []error {
+func (b *PtnApiBackend) SendTxs(signedTxs []*modules.Transaction) []error {
 	result := []error{}
 	for _, tx := range signedTxs {
 		err := b.ptn.txPool.AddLocal(tx)
