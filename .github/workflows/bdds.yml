@@ -43,16 +43,6 @@ jobs:
           cd $HOME/gopath/src/github.com/hyperledger/fabric-samples/scripts
           ./bootstrap.sh -b
           docker images
-          # start base-network
-          cd $HOME/gopath/src/github.com/hyperledger/fabric-samples/basic-network
-          ./start.sh
-          docker-compose -f ./docker-compose.yml up -d cli
-          docker ps -a
-          # deploy chaincode_example02
-          docker exec -e "CORE_PEER_LOCALMSPID=Org1MSP" -e "CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp" cli peer chaincode install -n chaincode_example02 -v 1.0 -p "github.com/chaincode_example02/go" -l "golang"
-          docker exec -e "CORE_PEER_LOCALMSPID=Org1MSP" -e "CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp" cli peer chaincode instantiate -o orderer.example.com:7050 -C mychannel -n chaincode_example02 -l "golang" -v 1.0 -c '{"Args":["init","A","100000","B","1000"]}' -P "OR ('Org1MSP.member','Org2MSP.member')"
-          sleep 10
-          docker exec cli peer chaincode query -C mychannel -n chaincode_example02 -c '{"Function": "query", "Args": ["B"]}'
 
     - name: Build and run gptn
       run: |
@@ -89,7 +79,6 @@ jobs:
           sed -i "s/OrgName = \"\"/OrgName = \"org1\"/" outchain.toml 
           sed -i "s/OrgID = \"\"/OrgID = \"Org1MSP\"/" outchain.toml 
           ./start.sh 3
-          docker ps -a
           sleep 30
 
     - name: Run fabric contract bdd
@@ -97,9 +86,19 @@ jobs:
           export GOPATH=$HOME/gopath
           export GO111MODULE=on
           go env
-          cd $HOME/gopath/src/github.com/palletone
+          # start base-network
+          cd $HOME/gopath/src/github.com/hyperledger/fabric-samples/basic-network
+          ./start.sh
+          docker-compose -f ./docker-compose.yml up -d cli
+          docker ps -a
+          # deploy chaincode_example02
+          docker exec -e "CORE_PEER_LOCALMSPID=Org1MSP" -e "CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp" cli peer chaincode install -n chaincode_example02 -v 1.0 -p "github.com/chaincode_example02/go" -l "golang"
+          docker exec -e "CORE_PEER_LOCALMSPID=Org1MSP" -e "CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp" cli peer chaincode instantiate -o orderer.example.com:7050 -C mychannel -n chaincode_example02 -l "golang" -v 1.0 -c '{"Args":["init","A","100000","B","1000"]}' -P "OR ('Org1MSP.member','Org2MSP.member')"
+          sleep 10
+          docker exec cli peer chaincode query -C mychannel -n chaincode_example02 -c '{"Function": "query", "Args": ["B"]}'
           docker ps -a
           # get invoke txid
+          cd $HOME/gopath/src/github.com/palletone
           git clone https://github.com/palletone/fabric-adaptor.git
           cd fabric-adaptor
           git checkout 87b853bf450ad77449f45fe688dbafc8a4afc625
