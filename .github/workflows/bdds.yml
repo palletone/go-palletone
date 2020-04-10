@@ -72,7 +72,14 @@ jobs:
           #fabric msp and connection config file
           cp -rf $HOME/gopath/src/github.com/hyperledger/fabric-samples/basic-network/crypto-config .
           wget https://github.com/palletone/fabric-adaptor/blob/6319b6f26aa42b4c9b1526194f575d2ea9586495/connection.yaml
-          sed -i "s/ConfigFile = \"\"/ConfigFile = \".\/connection.yaml\"/" outchain.toml 
+          connPath=$HOME/gopath/src/github.com/palletone/go-palletone/cmd/deployment/connection.yaml
+          array=(${connPath//\// })
+          result=''
+          for var in ${array[@]}
+          do
+             result=$result'\/'$var
+          done
+          sed -i "s/ConfigFile = \"\"/ConfigFile = \"$result\"/" outchain.toml 
           sed -i "s/UserName = \"\"/UserName = \"User1\"/" outchain.toml 
           sed -i "s/ChannelID = \"\"/ChannelID = \"mychannel\"/" outchain.toml 
           sed -i "s/OrgAdmin = \"\"/OrgAdmin = \"Admin\"/" outchain.toml 
