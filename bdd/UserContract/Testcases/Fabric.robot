@@ -26,10 +26,11 @@ Payout
     Given Unlock token holder succeed
     When User transfer PTN to contract
     And Wait for transaction being packaged
-    When Invoke contract to set fabricChaincode
-    And Wait for transaction being packaged
     And Query contract balance
-    ${newAddr}    ${reqId}=    And Use contract to transfer PTN to user2
+    ${reqId} =    Invoke contract to set fabricChaincode
+    sleep    10
+    GetTxByReqId    ${reqId}
+    ${newAddr}    ${reqId}=    And Invoke contract to payout PTN to user2
     And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
     Then Query user2 balance    ${newAddr}
 
@@ -50,7 +51,7 @@ Query contract balance
     Should Be Equal    ${amount}    10000
     Log    ${amount}
 
-Use contract to transfer PTN to user2
+Invoke contract to payout PTN to user2
     # create account
     ${newAddr}=    newAccount
     Log    ${newAddr}
@@ -60,6 +61,18 @@ Use contract to transfer PTN to user2
     ${result}=    Get From Dictionary    ${respJson}    result
     ${reqId}=    Get From Dictionary    ${result}    request_id
     [Return]    ${newAddr}    ${reqId}
+
+GetTxByReqId
+    [Arguments]    ${reqId}
+    ${params}    Create List    ${reqId}
+    ${respJson}=    sendRpcPost    ${host}    dag_getTxByReqId    ${params}    GetTxByReqId
+    Dictionary Should Contain Key    ${respJson}    result
+    ${result}=    Get From Dictionary    ${respJson}    result
+    log    ${respJson}
+    ${errCode}=    Evaluate    re.findall('\"error_code\":(\\d*)', '${result}')    re
+    ${errMsg}=    Evaluate    re.findall('\"error_message\":\"([^"]*)\"', '${result}')    re
+    log    ${errCode}=
+    log    ${errMsg}=
 
 Invoke contract to set fabricChaincode
     ${args}=    Create List    setFabChaincodeID    chaincode_example02
