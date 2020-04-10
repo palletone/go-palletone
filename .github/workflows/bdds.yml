@@ -30,6 +30,7 @@ jobs:
           export GO111MODULE=on
           export GOPROXY=https://goproxy.cn,direct
           go env
+          go env
           # create hyperledger directory
           mkdir -p src/github.com/hyperledger
           cd src/github.com/hyperledger
@@ -94,6 +95,10 @@ jobs:
 
     - name: Run fabric contract bdd
       run: |
+          export GOPATH=$HOME/gopath
+          export GO111MODULE=on
+          export GOPROXY=https://goproxy.cn,direct
+          go env
           go env
           cd $HOME/gopath/src/github.com/palletone
           # get invoke txid
