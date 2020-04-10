@@ -109,6 +109,7 @@ jobs:
           balance=`docker exec cli peer chaincode query -C mychannel -n chaincode_example02 -c '{"Function": "query", "Args": ["B"]}'`
           echo $balance
           # run bdd
+          ps aux | grep gptn
           cd $HOME/gopath/src/github.com/palletone/go-palletone
           python -m robot.run -v fabricTxID:$txid -d ./bdd/logs/fabric -i fabric ./bdd/UserContract/Testcases
           # check B balance
