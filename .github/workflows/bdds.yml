@@ -85,6 +85,7 @@ jobs:
           sed -i "s/OrgAdmin = \"\"/OrgAdmin = \"Admin\"/" outchain.toml 
           sed -i "s/OrgName = \"\"/OrgName = \"org1\"/" outchain.toml 
           sed -i "s/OrgID = \"\"/OrgID = \"Org1MSP\"/" outchain.toml 
+          cat outchain.toml
           ./start.sh 3
           sleep 30
 
