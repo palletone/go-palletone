@@ -104,6 +104,7 @@ jobs:
           result=`go run ./testadaptor/main.go`
           txid=`echo ${result##* }`
           echo $txid
+          docker ps -a
           balance=`docker exec cli peer chaincode query -C mychannel -n chaincode_example02 -c '{"Function": "query", "Args": ["B"]}'`
           echo $balance
           # run bdd
