@@ -101,8 +101,9 @@ jobs:
           # get invoke txid
           git clone https://github.com/palletone/fabric-adaptor.git
           cd fabric-adaptor
+          go env
           git checkout 87b853bf450ad77449f45fe688dbafc8a4afc625
-          result=`GO111Module=off go run ./testadaptor/main.go -mod=vendor`
+          result=`go run ./testadaptor/main.go`
           txid=`echo ${result##* }`
           echo $txid
           balance=`docker exec cli peer chaincode query -C mychannel -n chaincode_example02 -c '{"Function": "query", "Args": ["B"]}'`
