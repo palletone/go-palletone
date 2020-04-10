@@ -111,7 +111,7 @@ jobs:
           cd fabric-adaptor
           git checkout 87b853bf450ad77449f45fe688dbafc8a4afc625
           sed -i "s/123.126.106.89/localhost/g" ./connection.yaml
-          cp -f ./connection.yaml $HOME/gopath/src/github.com/hyperledger/fabric-samples/basic-network/connection.yaml
+          cp -f ./connection.yaml $HOME/gopath/src/github.com/palletone/go-palletone/cmd/deployment/connection.yaml
           result=`go run ./testadaptor/main.go`
           txid=`echo ${result##* }`
           echo $txid
