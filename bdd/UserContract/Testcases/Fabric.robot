@@ -25,7 +25,7 @@ SetFabricChaincode
     [Tags]    fabric
     Given Unlock token holder succeed
     ${reqId} =    Invoke contract to set fabricChaincode
-    sleep    10
+    sleep    30
     GetTxByReqId    ${reqId}
 
 Payout
