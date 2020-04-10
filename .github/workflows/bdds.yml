@@ -28,8 +28,8 @@ jobs:
           cd gopath
           export GOPATH=$PWD
           export GO111MODULE=on
-          export GOPROXY=https://goproxy.cn,direct
-          go env
+          #export GOPROXY=https://goproxy.cn,direct
+          #go env
           go env
           # create hyperledger directory
           mkdir -p src/github.com/hyperledger
