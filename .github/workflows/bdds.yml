@@ -15,7 +15,7 @@ jobs:
           cd $HOME
           mkdir -p gopath
           cd gopath
-          export GOPATH=$pwd
+          export GOPATH=$PWD
           export GO111MODULE=on
           # create hyperledger directory
           mkdir -p src/github.com/hyperledger
@@ -42,25 +42,10 @@ jobs:
           sleep 10
           docker exec cli peer chaincode query -C mychannel -n chaincode_example02 -c '{"Function": "query", "Args": ["B"]}'
 
-    - name: Install dependencies
-      run: |
-        sudo -H pip install --upgrade pip
-        sudo -H pip install robotframework==2.8.5
-        sudo -H pip install requests
-        sudo -H pip install robotframework-requests
-        sudo -H pip install demjson
-        sudo -H pip install pexpect
-        sudo -H apt-get install expect
-        sudo -H apt-get install lftp
-
     - name: Build and run gptn
       run: |
-          cd $HOME
-          mkdir -p gopath
-          cd gopath
-          export GOPATH=$pwd
-          mkdir -p src/github.com/palletone
-          cd src/github.com/palletone
+          mkdir -p $HOME/gopath/src/github.com/palletone
+          cd $HOME/gopath/src/github.com/palletone
           git clone -b ${GITHUB_REF##*/} https://github.com/palletone/go-palletone.git
           cd go-palletone
           sudo mkdir -p /home/runner/go/src/github.com/palletone/go-palletone
@@ -96,19 +81,11 @@ jobs:
 
     - name: Run fabric contract bdd
       run: |
-          cd $HOME
-          mkdir -p gopath
-          cd gopath
-          export GOPATH=$PWD
-          export GO111MODULE=on
-          go env -w GOPROXY=https://goproxy.cn,direct
-          go env -w GOPATH=$PWD
-          mkdir -p src/github.com/palletone
-          cd src/github.com/palletone
+          go env
+          cd $HOME/gopath/src/github.com/palletone
           # get invoke txid
           git clone https://github.com/palletone/fabric-adaptor.git
           cd fabric-adaptor
-          go env
           git checkout 87b853bf450ad77449f45fe688dbafc8a4afc625
           result=`go run ./testadaptor/main.go`
           txid=`echo ${result##* }`
