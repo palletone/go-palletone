@@ -21,15 +21,19 @@ DeployContract
     ${reqId} =    When User deploys contract
     Then Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
 
+SetFabricChaincode
+    [Tags]    fabric
+    Given Unlock token holder succeed
+    ${reqId} =    Invoke contract to set fabricChaincode
+    sleep    10
+    GetTxByReqId    ${reqId}
+
 Payout
     [Tags]    fabric
     Given Unlock token holder succeed
     When User transfer PTN to contract
     And Wait for transaction being packaged
     And Query contract balance
-    ${reqId} =    Invoke contract to set fabricChaincode
-    sleep    10
-    GetTxByReqId    ${reqId}
     ${newAddr}    ${reqId}=    And Invoke contract to payout PTN to user2
     And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
     Then Query user2 balance    ${newAddr}
