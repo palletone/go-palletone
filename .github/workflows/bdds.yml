@@ -6,13 +6,17 @@ jobs:
     name: UserContract-fabricbdd
     runs-on: ubuntu-latest
     steps:
-
+    - name: Set up Go 1.12
+      uses: actions/setup-go@v1
+      with:
+       go-version: 1.12
     - name: Prepare fabric
       run: |
           cd $HOME
           mkdir -p gopath
           cd gopath
           export GOPATH=$pwd
+          export GO111MODULE=on
           # create hyperledger directory
           mkdir -p src/github.com/hyperledger
           cd src/github.com/hyperledger
@@ -96,6 +100,7 @@ jobs:
           mkdir -p gopath
           cd gopath
           export GOPATH=$pwd
+          export GO111MODULE=on
           mkdir -p src/github.com/palletone
           cd src/github.com/palletone
           # get invoke txid
