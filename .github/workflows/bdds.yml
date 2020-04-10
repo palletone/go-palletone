@@ -99,8 +99,10 @@ jobs:
           cd $HOME
           mkdir -p gopath
           cd gopath
-          export GOPATH=$pwd
+          export GOPATH=$PWD
           export GO111MODULE=on
+          go env -w GOPROXY=https://goproxy.cn,direct
+          go env -w GOPATH=$PWD
           mkdir -p src/github.com/palletone
           cd src/github.com/palletone
           # get invoke txid
