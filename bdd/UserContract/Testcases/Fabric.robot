@@ -26,6 +26,8 @@ Payout
     Given Unlock token holder succeed
     When User transfer PTN to contract
     And Wait for transaction being packaged
+    When Invoke contract to set fabricChaincode
+    And Wait for transaction being packaged
     And Query contract balance
     ${newAddr}    ${reqId}=    And Use contract to transfer PTN to user2
     And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
@@ -37,11 +39,6 @@ Invoke
     When Invoke contract to invoke fabricChaincode
     And Wait for transaction being packaged
 
-Stop contract
-    [Tags]    fabric
-    Given Unlock token holder succeed
-    ${reqId}=    Then stopContract    ${tokenHolder}    ${tokenHolder}    100    100    ${gContractId}
-    And Wait for unit about contract to be confirmed by unit height    ${reqId}    ${true}
 
 *** Keywords ***
 User transfer PTN to contract
@@ -64,6 +61,14 @@ Use contract to transfer PTN to user2
     ${reqId}=    Get From Dictionary    ${result}    request_id
     [Return]    ${newAddr}    ${reqId}
 
+Invoke contract to set fabricChaincode
+    ${args}=    Create List    setFabChaincodeID    chaincode_example02
+    ${respJson}=    invokeContract    ${tokenHolder}    ${gContractId}    0    1    ${gContractId}
+    ...    ${args}
+    ${result}=    Get From Dictionary    ${respJson}    result
+    ${reqId}=    Get From Dictionary    ${result}    request_id
+    [Return]    ${reqId}
+
 Invoke contract to invoke fabricChaincode
     ${args}=    Create List    invokeFabChaincode
     ${respJson}=    invokeContract    ${tokenHolder}    ${gContractId}    0.000002    1    ${gContractId}
@@ -78,4 +83,3 @@ Query user2 balance
     ${amount}=    getBalance    ${addr}    PTN
     Should Be Equal    ${amount}    0.000001
     Log    ${amount}
-
