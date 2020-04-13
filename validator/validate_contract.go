@@ -115,7 +115,7 @@ func (validate *Validate) validateContractSignature(signatures []modules.Signatu
 				}
 			}
 			if !find { //签名者不是合法的陪审员
-				log.Warnf("Tx[%s] signature payload pubKey[%x] is not a valid juror", txHash, s.PubKey)
+				log.Warnf("Tx[%s] signature payload addr[%s] is not a valid juror", txHash, crypto.PubkeyBytesToAddress(s.PubKey).String())
 				return TxValidationCode_INVALID_CONTRACT_SIGN
 			}
 		}
