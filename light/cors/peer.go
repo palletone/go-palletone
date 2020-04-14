@@ -22,6 +22,8 @@ import (
 	//"encoding/binary"
 	"errors"
 	"fmt"
+	"sync"
+
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -29,7 +31,6 @@ import (
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn"
-	"sync"
 )
 
 var (
@@ -275,7 +276,7 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, headha
 	var send keyValueList
 	send = send.add("protocolVersion", uint64(p.version))
 	send = send.add("networkId", p.network)
-	send = send.add("headNum", *number)
+	send = send.add("headNum", number)
 	//send = send.add("index",number.Index)
 	//send = send.add("assetID",number.AssetID.String())
 	send = send.add("headHash", headhash)
@@ -289,7 +290,7 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, headha
 	recv := recvList.decode()
 
 	var rGenesis, rHash common.Hash
-	var rVersion, rNetwork ,index uint64
+	var rVersion, rNetwork, index uint64
 	var rNum modules.ChainIndex
 	var assetID string
 	var rGastoken modules.AssetId
@@ -320,12 +321,11 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, headha
 		return err
 	}
 
-
-	log.Debug("Cors PalletOne ProtocolManager handle","assetID",assetID,"index",index)
+	log.Debug("Cors PalletOne ProtocolManager handle", "assetID", assetID, "index", index)
 	rNum.AssetID.SetBytes([]byte(assetID))
 	rNum.Index = index
-	
-	if len(ccis) >0 {
+
+	if len(ccis) > 0 {
 		flag := 0
 		for _, pc := range ccis {
 			if rGenesis != pc.Genesishash {
