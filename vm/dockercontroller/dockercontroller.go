@@ -406,7 +406,8 @@ func (vm *DockerVM) Start(_ context.Context, ccid ccintf.CCID,
 		})
 
 		if err != nil {
-			return fmt.Errorf("Error uploading files to the container instance %s: %s", containerID, err)
+			log.Errorf("Error uploading files to the container instance %s: %s", containerID, err.Error())
+			return fmt.Errorf("Error uploading files to the container: %s", err.Error())
 		}
 	}
 
@@ -429,7 +430,8 @@ func (vm *DockerVM) Start(_ context.Context, ccid ccintf.CCID,
 		NoOverwriteDirNonDir: false,
 	})
 	if err != nil {
-		return fmt.Errorf("Error uploading files to the container instance %s: %s", containerID, err)
+		log.Errorf("Error uploading files to the container instance %s: %s", containerID, err.Error())
+		return fmt.Errorf("Error uploading files to the container: %s",  err.Error())
 	}
 	// start container with HostConfig was deprecated since v1.10 and removed in v1.2
 	err = client.StartContainer(containerID, nil)
