@@ -39,11 +39,11 @@ import (
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/gen"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/dboperation"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/txspool"
 	"github.com/palletone/go-palletone/validator"
@@ -116,7 +116,7 @@ type iDag interface {
 	//nouse
 	GetPtnBalance(addr common.Address) uint64
 	GetPayload(from, to common.Address, daoAmount, daoFee uint64,
-	utxos map[modules.OutPoint]*modules.Utxo) (*modules.PaymentPayload, error)
+		utxos map[modules.OutPoint]*modules.Utxo) (*modules.PaymentPayload, error)
 	GetNewestUnitTimestamp(token modules.AssetId) (int64, error)
 	GetScheduledMediator(slotNum uint32) common.Address
 	GetSlotAtTime(when time.Time) uint32
@@ -862,14 +862,9 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 	}
 	return false
 }
-
-
-func (p *Processor) createContractTxReqToken(contractId, from, to common.Address, token *modules.Asset,
-	daoAmountToken, daoFee uint64, msg *modules.Message) (common.Hash, *modules.Transaction, error) {
-	//tx, _, err := p.dag.CreateTokenTransaction(from, to, token, daoAmountToken, daoFee, msg)
-	//if err != nil {
-	//	return common.Hash{}, nil, err
-	//}
+func (p *Processor) CreateTokenTransaction(from, to common.Address, token *modules.Asset, daoAmountToken, daoFee uint64,
+	msg *modules.Message) (*modules.Transaction, uint64, error) {
+	
 	if msg.App == modules.APP_DATA {
 		size := float64(modules.CalcDateSize(msg.Payload))
 		pricePerKByte := p.dag.GetChainParameters().TransferPtnPricePerKByte
@@ -878,36 +873,37 @@ func (p *Processor) createContractTxReqToken(contractId, from, to common.Address
 	tx := &modules.Transaction{}
 	// 1. 获取转出账户所有的PTN utxo
 	assetId := dagconfig.DagConfig.GetGasToken()
-	coreUtxos, err := p.ptn.TxPool().GetAddrUtxos(from,assetId.ToAsset())
+	coreUtxos, err := p.ptn.TxPool().GetAddrUtxos(from, assetId.ToAsset())
 	if err != nil {
-		return common.Hash{}, nil, err
+		return nil, 0, err
 	}
 	if len(coreUtxos) == 0 {
-		return common.Hash{}, nil, err
+		return nil, 0, err
 	}
 	//if p.ptn.EnableGasFee() {
-		// must pay gasfee
+	// must pay gasfee
 	if daoFee == 0 {
-		return common.Hash{}, nil, fmt.Errorf("transaction fee cannot be 0")
+		return nil, 0, fmt.Errorf("transaction fee cannot be 0")
 	}
 	daoTotal := daoAmountToken + daoFee
 	if daoTotal > p.dag.GetPtnBalance(from) {
-		return common.Hash{}, nil,fmt.Errorf("the ptn balance of the account is not enough %v", daoTotal)
+		return nil, 0, fmt.Errorf("the ptn balance of the account is not enough %v", daoTotal)
 	}
 	//2. 获取 PaymentPayload
 	ploadPTN, err := p.dag.GetPayload(from, to, daoAmountToken, daoFee, coreUtxos)
 	if err != nil {
-		return common.Hash{},nil, err
+		return nil, 0, err
 	}
 	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, ploadPTN))
-	//}
-	//ploadToken, err := p.dag.GetPayload(from, to, daoAmountToken, 0, tokenUtxos)
-	//if err != nil {
-	//	return common.Hash{},nil, err
-	//}
-	// 3. 构建Transaction
-	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, ploadPTN))
+	return tx, daoFee, nil
+}
 
+func (p *Processor) createContractTxReqToken(contractId, from, to common.Address, token *modules.Asset,
+	daoAmountToken, daoFee uint64, msg *modules.Message) (common.Hash, *modules.Transaction, error) {
+	tx, _, err := p.CreateTokenTransaction(from, to, token, daoAmountToken, daoFee, msg)
+	if err != nil {
+		return common.Hash{}, nil, err
+	}
 	log.Debugf("[%s]createContractTxReqToken,contractId[%s],tx[%v]",
 		tx.RequestHash().ShortStr(), contractId.String(), tx)
 	return p.signGenericTx(contractId, from, tx)
