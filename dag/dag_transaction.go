@@ -52,6 +52,7 @@ func newTxo4Greedy(outPoint modules.OutPoint, amount uint64) *Txo4Greedy {
 func (dag *Dag) createBaseTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
 	enableGasFee bool) (*modules.Transaction, error) {
 	//daoTotal := daoAmount + daoFee
+	// 20200412  wzhyuan  
 	daoTotal := daoAmount
 	if from.Equal(to) {
 		if enableGasFee {
@@ -72,11 +73,15 @@ func (dag *Dag) createBaseTransaction(from, to common.Address, daoAmount, daoFee
 	}
 	// 1. 获取转出账户所有的PTN utxo
 	//allUtxos, err := dag.GetAddrUtxos(from)
+	//  20200412   wzhyuan  
 	coreUtxos, err := dag.getAddrCoreUtxos(from)
 	if err != nil {
 		return nil, err
 	}
-
+    //coreUtxos, err := b.GetPoolAddrUtxos(fromAddr, gasAsset.ToAsset())
+	//if err != nil {
+	//	return nil,  fmt.Errorf("GetPoolAddrUtxos err:%s", err.Error())
+	//}
 	if len(coreUtxos) == 0 {
 		return nil, fmt.Errorf("%v 's utxo is empty", from.Str())
 	}
@@ -255,9 +260,70 @@ func (dag *Dag) getPayload(from, to common.Address, daoAmount, daoFee uint64,
 	}
 	return pload, nil
 }
+func (dag *Dag) GetPayload(from, to common.Address, daoAmount, daoFee uint64,
+	utxos map[modules.OutPoint]*modules.Utxo) (*modules.PaymentPayload, error) {
+	// 1. 利用贪心算法得到指定额度的utxo集合
+	greedyUtxos := core.Utxos{}
+	for outPoint, utxo := range utxos {
+		tg := newTxo4Greedy(outPoint, utxo.Amount)
+		greedyUtxos = append(greedyUtxos, tg)
+	}
 
+	daoTotal := daoAmount + daoFee
+	selUtxos, change, err := core.Select_utxo_Greedy(greedyUtxos, daoTotal)
+	if err != nil {
+		return nil, fmt.Errorf("getPayload Select_utxo_Greedy utxo err")
+	}
+
+	// 2. 构建PaymentPayload的Inputs
+	pload := new(modules.PaymentPayload)
+	pload.LockTime = 0
+
+	for _, selTxo := range selUtxos {
+		tg := selTxo.(*Txo4Greedy)
+		txInput := modules.NewTxIn(&tg.OutPoint, []byte{})
+		pload.AddTxIn(txInput)
+	}
+
+	// 3. 构建PaymentPayload的Outputs
+	// 为了保证顺序， 将map改为结构体数组
+	type OutAmount struct {
+		addr   common.Address
+		amount uint64
+	}
+
+	outAmounts := make([]*OutAmount, 1, 2)
+	outAmount := &OutAmount{to, daoAmount}
+	outAmounts[0] = outAmount
+
+	if change > 0 {
+		// 处理from和to是同一个地址的特殊情况
+		if from.Equal(to) {
+			outAmount.amount = outAmount.amount + change
+			outAmounts[0] = outAmount
+		} else {
+			outAmounts = append(outAmounts, &OutAmount{from, change})
+		}
+	}
+
+	var asset modules.Asset
+	for _, utxo := range utxos {
+		if utxo != nil {
+			asset.AssetId = utxo.Asset.AssetId
+			asset.UniqueId = utxo.Asset.UniqueId
+			break
+		}
+	}
+
+	for _, outAmount := range outAmounts {
+		pkScript := dag.tokenEngine.GenerateLockScript(outAmount.addr)
+		txOut := modules.NewTxOut(outAmount.amount, pkScript, &asset)
+		pload.AddTxOut(txOut)
+	}
+	return pload, nil
+}
 func (dag *Dag) getAddrCoreUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error) {
-	// todo 待优化
+	// todo 待优化20200412  wzhyuan 
 	allTxos, err := dag.GetAddrUtxos(addr)
 	if err != nil {
 		return nil, err

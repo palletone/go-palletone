@@ -120,7 +120,6 @@ func (c *Contract) Install(channelId, ccName, ccPath, ccVersion, ccDescription, 
 		return test.Install(channelId, ccName, ccPath, ccVersion, ccDescription, ccAbi, ccLanguage)
 	}
 	return cc.Install(c.dag, channelId, ccName, ccPath, ccVersion, ccLanguage)
-
 }
 
 // Deploy 将指定的合约模板部署到本地，生成对应Docker镜像及启动带有初始化合约参数的容器，用于合约的执行。

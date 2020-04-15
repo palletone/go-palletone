@@ -85,7 +85,9 @@ type iDag interface {
 	IsConsecutiveMediator(nextMediator common.Address) bool
 	MediatorParticipationRate() uint32
 	UnstableHeadUnitProperty(asset modules.AssetId) (*modules.UnitProperty, error)
-
+    GetPtnBalance(addr common.Address) uint64
+    GetPayload(from, to common.Address, daoAmount, daoFee uint64,
+	utxos map[modules.OutPoint]*modules.Utxo) (*modules.PaymentPayload, error)
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error)
 	GetStableTransactionOnly(hash common.Hash) (*modules.Transaction, error)
