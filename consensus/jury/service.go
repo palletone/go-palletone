@@ -1066,12 +1066,15 @@ func (p *Processor) AddLocalTx(tx *modules.Transaction) error {
 			log.Errorf("[%s]AddLocalTx, AddLocal err:%s", reqId.ShortStr(), err.Error())
 			return err
 		}
+	}else{
+		log.Errorf("[%s]AddLocalTx, known transaction", reqId.ShortStr())
+	    return fmt.Errorf("know transaction: %x", txHash)
 	}
 
 	isExist, _ := p.dag.IsTransactionExist(txHash)
 	if isExist {
 		log.Debugf("[%s]AddLocalTx,tx already exist dag", reqId.ShortStr())
-		return nil
+		return fmt.Errorf("know transaction: %x", txHash)
 	}
 
 	err := p.dag.SaveLocalTx(tx)

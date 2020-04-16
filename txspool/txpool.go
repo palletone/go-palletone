@@ -574,6 +574,9 @@ func (pool *TxPool) add(tx *TxPoolTransaction, local bool) (bool, error) {
 		txOrphanKnownPrometheus.Add(1)
 		return false, fmt.Errorf("know orphanTx: %s", hash.String())
 	}
+	if has, _ := pool.unit.IsTransactionExist(hash); has {
+		return false, fmt.Errorf("the transactionx: %s has been packaged.", hash.String())
+	}
 	// If the transaction fails basic validation, discard it
 	if addition, code, err := pool.validateTx(tx, local); err != nil {
 		if code == validator.TxValidationCode_ORPHAN {
