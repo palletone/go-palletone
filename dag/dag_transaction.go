@@ -178,13 +178,13 @@ func (dag *Dag) createTokenTransaction(from, to common.Address, token *modules.A
 		//	return nil, fmt.Errorf("%v 's  utxo of this Token is empty", from.Str())
 		//}
 		//2. 获取 PaymentPayload
-		ploadPTN, err := dag.getPayload(from, to, daoAmountToken, daoFee, coreUtxos)
+		ploadPTN, err := dag.GetPayload(from, to, daoAmountToken, daoFee, coreUtxos)
 		if err != nil {
 			return nil, err
 		}
 		tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, ploadPTN))
 	}
-	ploadToken, err := dag.getPayload(from, to, daoAmountToken, 0, tokenUtxos)
+	ploadToken, err := dag.GetPayload(from, to, daoAmountToken, 0, tokenUtxos)
 	if err != nil {
 		return nil, err
 	}
