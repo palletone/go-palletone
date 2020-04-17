@@ -193,7 +193,7 @@ func (dag *Dag) createTokenTransaction(from, to common.Address, token *modules.A
 	return tx, nil
 }
 
-func (dag *Dag) getPayload(from, to common.Address, daoAmount, daoFee uint64,
+func (dag *Dag) GetPayload(from, to common.Address, daoAmount, daoFee uint64,
 	utxos map[modules.OutPoint]*modules.Utxo) (*modules.PaymentPayload, error) {
 	// 1. 利用贪心算法得到指定额度的utxo集合
 	greedyUtxos := core.Utxos{}
