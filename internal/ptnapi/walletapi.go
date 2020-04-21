@@ -1028,6 +1028,48 @@ func (s *PrivateWalletAPI) TransferToken2(ctx context.Context, asset string, fro
 	return submitTransaction(s.b, rawTx)
 }
 
+//构建转移给多个地址Token的交易
+//addrAndAmountJson 为 Address:Amount的Map
+func (s *PrivateWalletAPI) TransferToken2MultiAddr(asset string, from string, addrAndAmountJson string,
+	fee decimal.Decimal, password string) (common.Hash, error) {
+	addrAmount := make(map[string]decimal.Decimal)
+	err := json.Unmarshal([]byte(addrAndAmountJson), &addrAmount)
+	if err != nil {
+		return common.Hash{}, err
+	}
+	s.b.Lock()
+	defer s.b.Unlock()
+	//1. build payment tx
+	start := time.Now()
+	rawTx, usedUtxo, err := buildRawTransferTx2(s.b, asset, from, addrAmount, fee, password)
+	if err != nil {
+		log.Error("buildRawTransferTx error:" + err.Error())
+		return common.Hash{}, err
+	}
+	log.Debugf("build raw tx spend:%v", time.Since(start))
+
+	//3. sign
+	start = time.Now()
+	err = signRawTransaction(s.b, rawTx, from, password, nil, 1, usedUtxo)
+	if err != nil {
+		data, _ := json.Marshal(rawTx)
+		log.Debug(string(data))
+		data, _ = json.Marshal(usedUtxo)
+		log.Debugf("used utxo:%s", string(data))
+		log.Error("signRawTransaction error:" + err.Error())
+		return common.Hash{}, err
+	}
+
+	log.Debugf("sign raw tx spend:%v", time.Since(start))
+	//4. send
+	txHash, err := submitTransaction(s.b, rawTx)
+	if err != nil {
+		log.Error("submitTransaction error:" + err.Error())
+		return common.Hash{}, err
+	}
+	return txHash, nil
+}
+
 func (s *PrivateWalletAPI) CreateTxWithOutFee(ctx context.Context, asset, fromStr, toStr string, amount decimal.Decimal, pwd *string, duration *Int) (ptnjson.SignRawTransactionResult, error) {
 	password := ""
 	if pwd != nil {

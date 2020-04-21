@@ -1,15 +1,17 @@
 package ptnapi
 
 import (
-	"fmt"
 	//        "strings"
 	"encoding/json"
+	"fmt"
+	"testing"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/ptnjson/walletjson"
 	"github.com/palletone/go-palletone/tokenengine"
-	"testing"
+	"github.com/shopspring/decimal"
 )
 
 func TestSimpleSignHash(t *testing.T) {
@@ -86,4 +88,11 @@ func TestJsSign(t *testing.T) {
 	sign := tokenengine.GenerateP2PKHUnlockScript(signature, pubKeyBytes)
 	hs := hexutil.Encode(sign)
 	t.Log(hs)
+}
+func TestMultiAddr(t *testing.T) {
+	m := make(map[string]decimal.Decimal)
+	m["P1Hv2QBF7JExtirFn7kVpLqCYv4jFfxDZkG"] = decimal.NewFromFloat(100)
+	m["P14VZ8LoGovQSjZEZGBujEQrnno1EqK4ynT"] = decimal.NewFromFloat(10)
+	data, _ := json.Marshal(m)
+	t.Log(string(data))
 }

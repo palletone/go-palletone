@@ -115,6 +115,12 @@ const Wallet_JS = `
 			inputFormatter: [null,null,null,null,null,null,null,null]
 		}),
 		new web3._extend.Method({
+			name: 'transferToken2MultiAddr',
+			call: 'wallet_transferToken2MultiAddr',
+			params: 5,
+			inputFormatter: [null,null,null,null,null]
+		}),
+		new web3._extend.Method({
 			name: 'transferTokenSync',
 			call: 'wallet_transferTokenSync',
 			params: 8,

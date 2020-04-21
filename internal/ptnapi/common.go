@@ -200,6 +200,119 @@ func createPayment(fromAddr, toAddr common.Address, amountToken uint64, feePTN u
 	return payPTN, usedUtxo, nil
 }
 
+func buildRawTransferTx2(b Backend, tokenId, fromStr string, toAddrStr map[string]decimal.Decimal, gasFee decimal.Decimal, password string) (
+	*modules.Transaction, []*modules.UtxoWithOutPoint, error) {
+	//参数检查
+	tokenAsset, err := modules.StringToAsset(tokenId)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if !gasFee.IsPositive() && b.EnableGasFee() {
+		return nil, nil, fmt.Errorf("fee is ZERO ")
+	}
+	//
+	fromAddr, err := parseAddressStr(fromStr, b.GetKeyStore(), password)
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, nil, err
+	}
+	gasToken := dagconfig.DagConfig.GasToken
+	gasAsset := dagconfig.DagConfig.GetGasToken()
+	ptnAmount := uint64(0)
+	toAddrAmt := make(map[common.Address]uint64)
+	for toStr, toAmt := range toAddrStr {
+		toAddr, err := parseAddressStr(toStr, b.GetKeyStore(), password)
+		if err != nil {
+			return nil, nil, err
+		}
+		amt := gasAsset.Uint64Amount(toAmt)
+		toAddrAmt[toAddr] = amt
+		if tokenId == gasToken {
+			ptnAmount += amt
+		}
+	}
+	tx := modules.NewTransaction([]*modules.Message{})
+
+	usedUtxo1 := []*modules.UtxoWithOutPoint{}
+	if b.EnableGasFee() {
+		utxosPTN, err := b.GetPoolAddrUtxos(fromAddr, gasAsset.ToAsset())
+		if err != nil {
+			return nil, nil, fmt.Errorf("SelectUtxoFromDagAndPool utxo err:%s", err.Error())
+		}
+		feeAmount := gasAsset.Uint64Amount(gasFee)
+		var pay1 *modules.PaymentPayload
+		if ptnAmount == 0 {
+			pay1, usedUtxo1, err = createPayment(fromAddr, fromAddr, ptnAmount, feeAmount, utxosPTN)
+		} else {
+			pay1, usedUtxo1, err = createPayment2(fromAddr, toAddrAmt, feeAmount, utxosPTN)
+		}
+		if err != nil {
+			return nil, nil, err
+		}
+		tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay1))
+		if tokenId == gasToken {
+			return tx, usedUtxo1, nil
+		}
+	}
+	log.Debugf("gas token[%s], transfer token[%s], start build payment1", gasToken, tokenId)
+	//构造转移Token的Message1 m'k
+	//utxosToken, err := SelectUtxoFromDagAndPool(dbUtxos, reqTxMapping, poolTxs, from, tokenId)
+	utxosToken, err := b.GetPoolAddrUtxos(fromAddr, tokenAsset)
+	if err != nil {
+		return nil, nil, fmt.Errorf("SelectUtxoFromDagAndPool token utxo err:%s", err.Error())
+	}
+	pay2, usedUtxo2, err := createPayment2(fromAddr, toAddrAmt, 0, utxosToken)
+	if err != nil {
+		return nil, nil, err
+	}
+	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay2))
+	usedUtxo1 = append(usedUtxo1, usedUtxo2...)
+
+	return tx, usedUtxo1, nil
+}
+
+func createPayment2(fromAddr common.Address, toAddr map[common.Address]uint64, feePTN uint64,
+	utxosPTN map[modules.OutPoint]*modules.Utxo) (*modules.PaymentPayload, []*modules.UtxoWithOutPoint, error) {
+
+	if len(utxosPTN) == 0 {
+		log.Errorf("No PTN Utxo or No Token Utxo for %s", fromAddr.String())
+		return nil, nil, fmt.Errorf("No Utxo found for %s", fromAddr.String())
+	}
+
+	//PTN
+	utxoPTNView, asset := convertUtxoMap2Utxos(utxosPTN)
+	amountToken := uint64(0)
+	for _, amt := range toAddr {
+		amountToken += amt
+	}
+	utxosPTNTaken, change, err := core.Select_utxo_Greedy(utxoPTNView, amountToken+feePTN)
+	if err != nil {
+		return nil, nil, fmt.Errorf("createPayment Select_utxo_Greedy utxo err:%s", err.Error())
+	}
+	usedUtxo := []*modules.UtxoWithOutPoint{}
+	//ptn payment
+	payPTN := &modules.PaymentPayload{}
+	//ptn inputs
+	for _, u := range utxosPTNTaken {
+		utxo := u.(*modules.UtxoWithOutPoint)
+		usedUtxo = append(usedUtxo, utxo)
+		prevOut := &utxo.OutPoint // modules.NewOutPoint(txHash, utxo.MessageIndex, utxo.OutIndex)
+		txInput := modules.NewTxIn(prevOut, []byte{})
+		payPTN.AddTxIn(txInput)
+	}
+
+	//ptn outputs
+	if amountToken > 0 {
+		for addr, amt := range toAddr {
+			payPTN.AddTxOut(modules.NewTxOut(amt, tokenengine.Instance.GenerateLockScript(addr), asset))
+		}
+	}
+	if change > 0 {
+		payPTN.AddTxOut(modules.NewTxOut(change, tokenengine.Instance.GenerateLockScript(fromAddr), asset))
+	}
+	return payPTN, usedUtxo, nil
+}
 func signRawTransaction(b Backend, rawTx *modules.Transaction, fromStr, password string, timeout *Int, hashType uint32,
 	usedUtxo []*modules.UtxoWithOutPoint) error {
 	if !b.EnableGasFee() {
