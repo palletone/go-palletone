@@ -204,7 +204,9 @@ func signRawTransaction(b Backend, rawTx *modules.Transaction, fromStr, password
 	usedUtxo []*modules.UtxoWithOutPoint) error {
 	if !b.EnableGasFee() {
 		//no gas fee, enable nonce
-		rawTx.SetNonce(uint64(time.Now().Unix()))
+		if rawTx.Nonce() == 0 {
+			rawTx.SetNonce(uint64(time.Now().UnixNano()))
+		}
 		rawTx.SetVersion(1)
 	}
 	ks := b.GetKeyStore()
@@ -294,7 +296,9 @@ func (d *Int) UnmarshalJSON(iBytes []byte) error {
 }
 func signRawNoGasTx(b Backend, tx *modules.Transaction, addr common.Address, pwd string) (*modules.Transaction, error) {
 	//no gas fee, enable nonce
-	tx.SetNonce(uint64(time.Now().Unix()))
+	if tx.Nonce() == 0 {
+		tx.SetNonce(uint64(time.Now().UnixNano()))
+	}
 	tx.SetVersion(1)
 	keystore := b.GetKeyStore()
 	if !keystore.IsUnlock(addr) {
