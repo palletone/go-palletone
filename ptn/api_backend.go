@@ -51,6 +51,7 @@ import (
 	"github.com/palletone/go-palletone/tokenengine"
 	"github.com/palletone/go-palletone/txspool"
 	"github.com/shopspring/decimal"
+	"strings"
 )
 
 const channelId = "palletone"
@@ -267,12 +268,37 @@ func (b *PtnApiBackend) ServiceFilter(ctx context.Context, session *bloombits.Ma
 //}
 //
 
+//in = contractId1:v1;contractId2:v2;contractId3:v3
+func getContractSysVersion(contractAddr common.Address, in string) string { //contractId []byte
+	cvs := strings.Split(in, ";")
+	log.Debugf("cvs len[%d]:%v, adr:%s", len(cvs), cvs, contractAddr.String())
+	for _, ls := range cvs {
+		cv := strings.Split(ls, ":")
+		if len(cv) > 1 {
+			if contractAddr.String() == cv[0] {
+				log.Debugf("getContractSysVersion ok, version:%s", cv[1])
+				return cv[1]
+			}
+		}
+	}
+	return ""
+}
+
 // GetContract
 func (b *PtnApiBackend) GetContract(addr common.Address) (*ptnjson.ContractJson, error) {
 	contract, err := b.ptn.dag.GetContract(addr.Bytes())
 	if err != nil {
 		return nil, err
 	}
+	contractAddr := common.NewAddress(contract.ContractId, common.ContractHash)
+	if contractAddr.IsSystemContractAddress() {
+		contractVersion := getContractSysVersion(contractAddr, b.ptn.dag.GetChainParameters().ContractSystemVersion)
+		if contractVersion == "" {
+			contractVersion = "ptn01"
+		}
+		contract.Version = contractVersion
+	}
+
 	cjson := ptnjson.ConvertContract2Json(contract)
 	cjson.Template = ptnjson.GetSysContractABI(addr.String())
 	if nil == cjson.Template {
@@ -729,7 +755,7 @@ func (b *PtnApiBackend) GetContractInvokeHistory(addr string) ([]*ptnjson.Contra
 	return txjs, nil
 }
 func (b *PtnApiBackend) ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi,
-	ccLanguage string) ([]byte, error) {
+ccLanguage string) ([]byte, error) {
 	//channelId := "palletone"
 	payload, err := b.ptn.contract.Install(channelId, ccName, ccPath, ccVersion, ccDescription, ccAbi, ccLanguage)
 	if err != nil {
@@ -774,7 +800,7 @@ func (b *PtnApiBackend) SignAndSendRequest(addr common.Address, tx *modules.Tran
 
 //
 func (b *PtnApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName,
-	path, version string, description, abi, language string, addrs []common.Address) (reqId common.Hash,
+path, version string, description, abi, language string, addrs []common.Address) (reqId common.Hash,
 	tplId []byte, err error) {
 	return b.ptn.contractPorcessor.ContractInstallReq(from, to, daoAmount, daoFee, tplName, path,
 		version, description, abi, language, true, addrs)
@@ -814,7 +840,7 @@ func (b *PtnApiBackend) ContractStopReqTx(from, to common.Address, daoAmount, da
 }
 
 func (b *PtnApiBackend) ContractInstallReqTxFee(from, to common.Address, daoAmount, daoFee uint64, tplName,
-	path, version string, description, abi, language string, addrs []common.Address) (fee float64, size float64, tm uint32,
+path, version string, description, abi, language string, addrs []common.Address) (fee float64, size float64, tm uint32,
 	err error) {
 	return b.ptn.contractPorcessor.ContractInstallReqFee(from, to, daoAmount, daoFee, tplName, path,
 		version, description, abi, language, true, addrs)
@@ -1016,6 +1042,15 @@ func (b *PtnApiBackend) GetAllContracts() ([]*ptnjson.ContractJson, error) {
 	}
 	jsons := []*ptnjson.ContractJson{}
 	for _, c := range contracts {
+		contractAddr := common.NewAddress(c.ContractId, common.ContractHash)
+		if contractAddr.IsSystemContractAddress() {
+			contractVersion := getContractSysVersion(contractAddr, b.ptn.dag.GetChainParameters().ContractSystemVersion)
+			if contractVersion == "" {
+				contractVersion = "ptn01"
+			}
+			c.Version = contractVersion
+		}
+
 		jsons = append(jsons, ptnjson.ConvertContract2Json(c))
 	}
 	return jsons, nil
