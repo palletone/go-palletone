@@ -21,7 +21,6 @@ package txpool_test
 
 import (
 	"encoding/hex"
-	"log"
 	"strings"
 	"testing"
 
@@ -281,15 +280,15 @@ func TestTxPool1_AddUserContractAndTransferTx(t *testing.T) {
 	pool := mockTxPool1(mdag)
 
 	reqA := mockContractInvokeRequest(Hash("dag"), 0, 0, []byte("user contract"))
-	log.Println("reqA:", reqA.Hash().String())
+	t.Log("reqA:", reqA.Hash().String())
 	err := pool.AddLocal(reqA)
 	assert.Nil(t, err)
 	txB := mockPaymentTx(reqA.Hash(), 0, 0)
-	log.Println("txB:", txB.Hash().String())
+	t.Log("txB:", txB.Hash().String())
 	err = pool.AddLocal(txB)
 	assert.Nil(t, err)
 	reqC := mockContractInvokeRequest(txB.Hash(), 0, 0, []byte("user contract"))
-	log.Println("reqC:", reqC.Hash().String())
+	t.Log("reqC:", reqC.Hash().String())
 	err = pool.AddLocal(reqC)
 	assert.Nil(t, err)
 	txs, _ := pool.GetUnpackedTxsByAddr(addr)
@@ -299,23 +298,26 @@ func TestTxPool1_AddUserContractAndTransferTx(t *testing.T) {
 
 	//pool.AddLocals([]*modules.Transaction{reqA, txB, reqC})
 	fullTxA := mockContractInvokeFullTx(Hash("dag"), 0, 0, []byte("user contract"))
-	log.Println("fullA:", fullTxA.Hash().String())
+	t.Log("fullA:", fullTxA.Hash().String())
 	err = pool.AddLocal(fullTxA)
 	assert.Nil(t, err)
 	sortedTx, err = pool.GetSortedTxs()
+	for _, tx := range sortedTx {
+		t.Logf("sorted:%s", tx.Tx.Hash().String())
+	}
 	assert.Equal(t, 2, len(sortedTx))
 	txs, _ = pool.GetUnpackedTxsByAddr(addr)
 	assert.Equal(t, 3, len(txs))
 
 	//第二种情形，ReqA，B，B先完成FullTx
-	log.Println("-------------------")
+	t.Log("-------------------")
 	pl := mockTxPool1(mdag)
 	pl.AddLocal(reqA)
 	reqB := mockContractInvokeRequest(reqA.Hash(), 0, 0, []byte("user contract"))
-	log.Println("reqB:", reqB.Hash().String())
+	t.Log("reqB:", reqB.Hash().String())
 	pl.AddLocal(reqB)
 	fullTxB := mockContractInvokeFullTx(reqA.Hash(), 0, 0, []byte("user contract"))
-	log.Println("fullB:", fullTxB.Hash().String())
+	t.Log("fullB:", fullTxB.Hash().String())
 	err = pl.AddLocal(fullTxB)
 	assert.Nil(t, err)
 	sortedTx, _ = pl.GetSortedTxs()

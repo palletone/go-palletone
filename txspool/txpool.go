@@ -689,11 +689,11 @@ func (pool *TxPool) add(tx *modules.Transaction, local bool) (bool, error) {
 			if err := pool.addBasedOnReqOrphanTx(ptx); err != nil {
 				log.Errorf("add tx[%s] to based on request pool error:%s", ptx.TxHash.String(), err.Error())
 				reverseDeleteReq()
-				return false, err
+				return true, err
 			}
 		} else {
 			//3. process normal tx
-			go pool.priority_sorted.Put(ptx)
+			pool.priority_sorted.Put(ptx)
 			if local {
 				go pool.journalTx(ptx)
 			}
