@@ -762,7 +762,7 @@ func (pool *TxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subs
 func (pool *TxPool) Clear() {
 	pool.Lock()
 	defer pool.Unlock()
-	pool.normals = newTxList()
+	pool.normals = NewTxList()
 	pool.orphans = make(map[common.Hash]*txspool.TxPoolTransaction)
 	pool.basedOnRequestOrphans = make(map[common.Hash]*txspool.TxPoolTransaction)
 	pool.userContractRequests = make(map[common.Hash]*txspool.TxPoolTransaction)
