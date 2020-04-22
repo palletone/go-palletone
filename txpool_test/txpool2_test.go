@@ -72,7 +72,7 @@ func mockdag2(t *testing.T, mockCtrl *gomock.Controller, hash common.Hash) tp1.I
 func mockTxPool1(mdag tp1.IDag) *tp1.TxPool {
 	val := &mockValidator{query: mdag.GetUtxoEntry}
 	tp1.DefaultTxPoolConfig.NoLocals = true
-	return tp1.NewTxPool4DI(tp1.DefaultTxPoolConfig, freecache.NewCache(10000), mdag, tokenengine.Instance, val)
+	return tp1.NewTxPool4DI(tp1.DefaultTxPoolConfig, freecache.NewCache(10000), mdag, tokenengine.Instance, val, false)
 }
 func mockTxPool2(mdag tp1.IDag) *tp2.TxPool {
 	val := &mockValidator{query: mdag.GetUtxoEntry}
