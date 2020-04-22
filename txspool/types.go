@@ -229,10 +229,11 @@ func (seqTxs *SequeueTxPoolTxs) Len() int {
 	defer seqTxs.mu.RUnlock()
 	return len((*seqTxs).seqtxs)
 }
-func (seqTxs *SequeueTxPoolTxs) Add(newPoolTx *TxPoolTransaction) {
+func (seqTxs *SequeueTxPoolTxs) Add(pool_tx *TxPoolTransaction) {
 	seqTxs.mu.Lock()
 	defer seqTxs.mu.Unlock()
-	(*seqTxs).seqtxs = append((*seqTxs).seqtxs, newPoolTx)
+
+	(*seqTxs).seqtxs = append((*seqTxs).seqtxs, pool_tx)
 }
 
 // add priority

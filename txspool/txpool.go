@@ -212,9 +212,6 @@ func (pool *TxPool) GetUtxoFromAll(outpoint *modules.OutPoint) (*modules.Utxo, e
 	return pool.GetUtxoEntry(outpoint)
 }
 
-//func (pool *TxPool) GetUtxoFromFree(outpoint *modules.OutPoint) (*modules.Utxo, error) {
-//	return pool.GetUtxoEntry(outpoint)
-//}
 func (pool *TxPool) GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	if inter, ok := pool.outputs.Load(*outpoint); ok {
 		utxo := inter.(*modules.Utxo)
@@ -262,7 +259,6 @@ func (pool *TxPool) loop() {
 	orphanExpireScan := time.NewTicker(orphanExpireScanInterval)
 	defer orphanExpireScan.Stop()
 
-	// TODO 分区后 按token类型 loop 交易池。
 	// Keep waiting for and reacting to the various events
 	for {
 		select {
@@ -386,22 +382,6 @@ func (pool *TxPool) Queued() ([]*TxPoolTransaction, error) {
 	return queue, nil
 }
 
-// AllHashs returns a slice of hashes for all of the transactions in the txpool.
-func (pool *TxPool) AllHashs() []*common.Hash {
-	hashs := make([]common.Hash, 0)
-	pool.all.Range(func(k, v interface{}) bool {
-		hash := k.(common.Hash)
-		hashs = append(hashs, hash)
-		return true
-	})
-	phashs := make([]*common.Hash, 0)
-	for _, hash := range hashs {
-		var p common.Hash
-		p.SetBytes(hash.Bytes())
-		phashs = append(phashs, &p)
-	}
-	return phashs
-}
 func (pool *TxPool) AllLength() int {
 	var count int
 	pool.all.Range(func(k, v interface{}) bool {
@@ -433,19 +413,6 @@ func (pool *TxPool) AllOrphanTxs() map[common.Hash]*TxPoolTransaction {
 		return true
 	})
 	return txs
-}
-
-//
-func (pool *TxPool) AllTxs() []*modules.Transaction {
-	txs := make([]*modules.Transaction, 0)
-	pooltxs := pool.AllTxpoolTxs()
-	for _, txcopy := range pooltxs {
-		txs = append(txs, txcopy.Tx)
-	}
-	return txs
-}
-func (pool *TxPool) Count() int {
-	return pool.AllLength()
 }
 
 // local retrieves all currently known local transactions, groupped by origin
@@ -500,14 +467,6 @@ func (pool *TxPool) setPriorityLvl(tx *TxPoolTransaction) {
 	tx.Priority_lvl = tx.GetPriorityLvl()
 }
 
-// 交易池缓存时需要将tx转化为PoolTx
-func TxtoTxpoolTx(tx *modules.Transaction) *TxPoolTransaction {
-	txpool_tx := new(TxPoolTransaction)
-	txpool_tx.Tx = tx
-
-	txpool_tx.CreationDate = time.Now()
-	return txpool_tx
-}
 func (pool *TxPool) add_journalTx(ptx *TxPoolTransaction) error {
 	hash := ptx.Tx.Hash()
 	reqHash := ptx.Tx.RequestHash()
@@ -810,84 +769,6 @@ func (pool *TxPool) AddRemote(tx *modules.Transaction) error {
 	return pool.addTx(tx, !pool.config.NoLocals)
 }
 
-// AddLocals enqueues a batch of transactions into the pool if they are valid,
-// marking the senders as a local ones in the mean time, ensuring they go around
-// the local pricing constraints.
-func (pool *TxPool) AddLocals(txs []*modules.Transaction) []error {
-	return pool.addTxs(txs, !pool.config.NoLocals)
-}
-
-// AddRemotes enqueues a batch of transactions into the pool if they are valid.
-// If the senders are not among the locally tracked ones, full pricing constraints
-// will apply.
-func (pool *TxPool) AddRemotes(txs []*modules.Transaction) []error {
-	return pool.addTxs(txs, false)
-}
-func (pool *TxPool) AddSequenTx(tx *modules.Transaction) error {
-	pool.mu.Lock()
-	defer pool.mu.Unlock()
-	return pool.addSequenTx(tx)
-}
-func (pool *TxPool) AddSequenTxs(txs []*modules.Transaction) error {
-	pool.mu.Lock()
-	defer pool.mu.Unlock()
-	for _, tx := range txs {
-		if err := pool.addSequenTx(tx); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-func (pool *TxPool) addSequenTx(tx *modules.Transaction) error {
-	// Don't accept the transaction if it already in the pool .
-	hash := tx.Hash()
-	if has, _ := pool.unit.IsTransactionExist(hash); has {
-		log.Infof("the transactionx: %s has been packaged.", hash.String())
-		return nil
-	}
-	if _, has := pool.all.Load(hash); has {
-		log.Infof("know sequen transaction: %s", hash.String())
-		return nil
-	}
-	if pool.isOrphanInPool(hash) {
-		log.Infof("know sequen orphan transaction: %s", hash.String())
-		return nil
-	}
-	// If the transaction fails basic validation, discard it
-	addition, err := pool.getTxFeeAllocate(tx)
-	if err != nil {
-		return err
-	}
-	ptx := pool.convertTx(tx, addition)
-
-	if err := pool.checkPoolDoubleSpend(tx); err != nil {
-		return err
-	}
-
-	// 计算优先级
-	pool.setPriorityLvl(ptx)
-
-	// Add the transaction to the pool  and mark the referenced outpoints as spent by the pool.
-	log.Debugf("Add Tx[%s] to sequen txpool.", ptx.Tx.Hash().String())
-	pool.sequenTxs.Add(ptx)
-	pool.all.Store(hash, ptx)
-	pool.addCache(ptx)
-
-	// We've directly injected a replacement transaction, notify subsystems
-	go pool.txFeed.Send(modules.TxPreEvent{Tx: ptx.Tx})
-	return nil
-}
-
-func (pool *TxPool) ProcessTransaction(tx *modules.Transaction) error {
-	// Potentially accept the transaction to the memory pool.
-	err := pool.maybeAcceptTransaction(tx)
-	if err != nil {
-		log.Info("txpool", "accept transaction err:", err)
-		return err
-	}
-	return nil
-}
-
 func IsCoinBase(tx *modules.Transaction) bool {
 	msgs := tx.TxMessages()
 	if len(msgs) != 1 {
@@ -898,51 +779,6 @@ func IsCoinBase(tx *modules.Transaction) bool {
 		return false
 	}
 	return msg.IsCoinbase()
-}
-
-// maybeAcceptTransaction is the internal function which implements the public
-// MaybeAcceptTransaction.  See the comment for MaybeAcceptTransaction for
-// more details.
-//
-// This function MUST be called with the mempool lock held (for writes).
-func (pool *TxPool) maybeAcceptTransaction(tx *modules.Transaction) error {
-	txHash := tx.Hash()
-	// Don't accept the transaction if it already exists in the pool.  This
-	// applies to orphan transactions as well when the reject duplicate
-	// orphans flag is set.  This check is intended to be a quick check to
-	// weed out duplicates.
-	if pool.isTransactionInPool(txHash) {
-		str := fmt.Sprintf("already have transaction %s", txHash.String())
-		log.Debug("txpool", "info", str)
-		return nil
-	}
-
-	err := CheckTransactionSanity(tx)
-	if err != nil {
-		log.Info("Check Transaction Sanity err:", "error", err)
-		return err
-	}
-
-	// A standalone transaction must not be a coinbase transaction.
-	if IsCoinBase(tx) {
-		str := fmt.Sprintf("transaction %s is an individual coinbase",
-			txHash.String())
-		log.Info("txpool check coinbase tx.", "info", str)
-		return nil
-	}
-	pool.mu.Lock()
-	defer pool.mu.Unlock()
-
-	err = pool.checkPoolDoubleSpend(tx)
-	if err != nil {
-		log.Infof("the tx[%s] p2p send is double spend,don't add txpool. ", txHash.String())
-		return err
-	}
-	if _, err := pool.add(tx, !pool.config.NoLocals); err != nil {
-		return err
-	}
-	log.Debug("accepted tx and add pool.", "err", err)
-	return nil
 }
 
 // addTx enqueues a single transaction into the pool if it is valid.
@@ -957,14 +793,6 @@ func (pool *TxPool) addTx(tx *modules.Transaction, local bool) error {
 		pool.promoteExecutables()
 	}
 	return nil
-}
-
-// addTxs attempts to queue a batch of transactions if they are valid.
-func (pool *TxPool) addTxs(txs []*modules.Transaction, local bool) []error {
-	pool.mu.Lock()
-	defer pool.mu.Unlock()
-
-	return pool.addTxsLocked(txs, local)
 }
 
 // addTxsLocked attempts to queue a batch of transactions if they are valid,
@@ -990,15 +818,6 @@ func (pool *TxPool) addTxsLocked(txs []*modules.Transaction, local bool) []error
 		pool.promoteExecutables()
 	}
 	return errs
-}
-
-type TxStatus uint
-
-// GetUnpackedTxsByAddr returns all tx by addr.
-func (pool *TxPool) GetPoolTxsByAddr(addr common.Address) ([]*TxPoolTransaction, error) {
-	pool.mu.RLock()
-	defer pool.mu.RUnlock()
-	return pool.getPoolTxsByAddr(addr, false)
 }
 
 func (pool *TxPool) GetUnpackedTxsByAddr(addr common.Address) ([]*TxPoolTransaction, error) {
@@ -1040,13 +859,20 @@ func (pool *TxPool) GetTx(hash common.Hash) (*TxPoolTransaction, error) {
 		tx := interTx.(*TxPoolTransaction)
 		log.Debug("get tx info by hash in txpool... ", "unit_hash", tx.UnitHash, "p_tx", tx)
 		return tx, nil
-	} else {
-		if otx, exist := pool.orphans.Load(hash); exist {
-			tx := otx.(*TxPoolTransaction)
-			log.Debug("get tx info by hash in orphan txpool... ", "txhash", tx.Tx.Hash(), "info", tx)
-			return tx, nil
-		}
 	}
+	if otx, exist := pool.orphans.Load(hash); exist {
+		tx := otx.(*TxPoolTransaction)
+		log.Debug("get tx info by hash in orphan txpool... ", "txhash", tx.Tx.Hash(), "info", tx)
+		return tx, nil
+	}
+	if tx, ok := pool.userContractRequests[hash]; ok {
+		return tx, nil
+	}
+	if tx, ok := pool.basedOnRequestOrphans[hash]; ok {
+		return tx, nil
+	}
+
+	//4个池都找不到
 	return nil, ErrNotFound
 }
 
@@ -1145,12 +971,8 @@ func (pool *TxPool) removeTx(hash common.Hash) {
 		}
 	}
 }
-func (pool *TxPool) RemoveTxs(hashs []common.Hash) {
-	for _, hash := range hashs {
-		pool.removeTx(hash)
-	}
-}
 
+// 标记该交易及引用的交易为discard。
 func (pool *TxPool) removeTransaction(tx *TxPoolTransaction, removeRedeemers bool) {
 	hash := tx.Tx.Hash()
 	if removeRedeemers {
@@ -1185,102 +1007,6 @@ func (pool *TxPool) removeTransaction(tx *TxPoolTransaction, removeRedeemers boo
 	}
 	tx.Discarded = true
 	pool.all.Store(hash, tx)
-}
-
-func (pool *TxPool) checkPoolDoubleSpend(tx *modules.Transaction) error {
-	for _, msg := range tx.TxMessages() {
-		if msg.App == modules.APP_PAYMENT {
-			inputs, ok := msg.Payload.(*modules.PaymentPayload)
-			if !ok {
-				continue
-			}
-			for _, input := range inputs.Inputs {
-				if input == nil {
-					break
-				}
-				if _, err := pool.OutPointIsSpend(input.PreviousOutPoint); err != nil {
-					return err
-				}
-			}
-		}
-	}
-	return nil
-}
-
-func (pool *TxPool) OutPointIsSpend(outPoint *modules.OutPoint) (bool, error) {
-	if outPoint.TxHash.IsSelfHash() {
-		return false, nil
-	}
-	if tx, ok := pool.outpoints.Load(*outPoint); ok {
-		str := fmt.Sprintf("output %v already spent by "+
-			"transaction %x in the txpool",
-			outPoint, tx.(*TxPoolTransaction).Tx.Hash())
-		return true, errors.New(str)
-	}
-	return false, nil
-}
-
-// CheckSpend checks whether the passed outpoint is already spent by a transaction in the txpool
-func (pool *TxPool) CheckSpend(output modules.OutPoint) *modules.Transaction {
-	tx, has := pool.outpoints.Load(output)
-	if has {
-		return tx.(*TxPoolTransaction).Tx
-	}
-	return nil
-}
-func (pool *TxPool) GetUtxoView(tx *modules.Transaction) (*UtxoViewpoint, error) {
-	neededSet := make(map[modules.OutPoint]struct{})
-
-	for _, msgcopy := range tx.TxMessages() {
-		if msgcopy.App != modules.APP_PAYMENT {
-			continue
-		}
-		msg, ok := msgcopy.Payload.(*modules.PaymentPayload)
-		if !ok || msg.IsCoinbase() {
-			continue
-		}
-		for _, in := range msg.Inputs {
-			neededSet[*in.PreviousOutPoint] = struct{}{}
-		}
-	}
-
-	view := NewUtxoViewpoint()
-	err := view.FetchUtxos(pool, neededSet)
-	return view, err
-}
-
-func (pool *TxPool) FetchInputUtxos(tx *modules.Transaction) (*UtxoViewpoint, error) {
-	utxoView, err := pool.GetUtxoView(tx)
-	if err != nil {
-		return nil, err
-	}
-	// spent input utxo, and add output utxo.
-	for _, utxo := range utxoView.entries {
-		utxo.Spend()
-	}
-	// Attempt to populate any missing inputs from the transaction pool.
-	for i, msgcopy := range tx.TxMessages() {
-		if msgcopy.App == modules.APP_PAYMENT {
-			continue
-		}
-		msg, ok := msgcopy.Payload.(*modules.PaymentPayload)
-		if !ok {
-			continue
-		}
-		for _, txIn := range msg.Inputs {
-			preout := txIn.PreviousOutPoint
-			utxo := utxoView.LookupUtxo(*preout)
-			if utxo != nil && utxo.IsSpent() {
-				continue
-			}
-			// attempt to populate any missing inputs form the tx pool.
-			if pooltx, exist := pool.all.Load(preout.TxHash); exist {
-				this := pooltx.(*TxPoolTransaction)
-				utxoView.AddTxOut(this.Tx, uint32(i), preout.OutIndex)
-			}
-		}
-	}
-	return utxoView, nil
 }
 
 // promoteExecutables moves transactions that have become processable from the
@@ -1359,11 +1085,6 @@ func (pool *TxPool) Stop() {
 		pool.journal.close()
 	}
 	log.Info("Transaction pool stopped")
-}
-
-func (pool *TxPool) SendStoredTxs(hashs []common.Hash) error {
-	pool.RemoveTxs(hashs)
-	return nil
 }
 
 // 打包后的没有被最终确认的交易，废弃处理
@@ -1648,7 +1369,7 @@ func (pool *TxPool) GetSortedTxs() ([]*TxPoolTransaction, error) {
 	}
 	list = make([]*TxPoolTransaction, 0)
 	for _, tx := range sorted {
-		list = append(list, TxtoTxpoolTx(tx))
+		list = append(list, pool.convertBaseTx(tx))
 	}
 
 	log.DebugDynamic(func() string {
@@ -1732,10 +1453,6 @@ func (ol orList) Less(i, j int) bool {
 // starts sending event to the given channel.
 func (pool *TxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subscription {
 	return pool.scope.Track(pool.txFeed.Subscribe(ch))
-}
-
-func (pool *TxPool) GetTxFee(tx *modules.Transaction) (*modules.AmountAsset, error) {
-	return tx.GetTxFee(pool.GetTxOutput)
 }
 
 func (pool *TxPool) limitNumberOrphans() {
@@ -1835,13 +1552,6 @@ func (pool *TxPool) removeOrphan(tx *TxPoolTransaction, reRedeemers bool) {
 	pool.orphans.Delete(hash)
 }
 
-// This function is safe for concurrent access.
-func (pool *TxPool) RemoveOrphan(tx *TxPoolTransaction) {
-	pool.mu.Lock()
-	pool.removeOrphan(tx, false)
-	pool.mu.Unlock()
-}
-
 // isOrphanInPool returns whether or not the passed transaction already exists
 // in the orphan pool.
 //
@@ -1851,12 +1561,6 @@ func (pool *TxPool) isOrphanInPool(hash common.Hash) bool {
 		return true
 	}
 	return false
-}
-
-func (pool *TxPool) IsOrphanInPool(hash common.Hash) bool {
-	// Protect concurrent access.
-	return pool.isOrphanInPool(hash)
-
 }
 
 // validate tx is an orphanTx or not.
