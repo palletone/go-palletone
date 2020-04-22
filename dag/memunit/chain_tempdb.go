@@ -43,17 +43,17 @@ type ChainTempDb struct {
 
 func NewChainTempDb(db ptndb.Database,
 	cache palletcache.ICache, tokenEngine tokenengine.ITokenEngine, saveHeaderOnly bool,
-	builderFunc validator.ValidatorBuilderFunc) (*ChainTempDb, error) {
+	builderFunc validator.ValidatorBuilderFunc, enableGasFee bool) (*ChainTempDb, error) {
 	tempdb, _ := ptndb.NewTempdb(db)
-	trep := comm2.NewUnitRepository4Db(tempdb, tokenEngine)
+	trep := comm2.NewUnitRepository4Db(tempdb, tokenEngine, enableGasFee)
 	tutxoRep := comm2.NewUtxoRepository4Db(tempdb, tokenEngine)
 	tstateRep := comm2.NewStateRepository4Db(tempdb)
 	tpropRep := comm2.NewPropRepository4Db(tempdb)
 	tunitProduceRep := comm2.NewUnitProduceRepository(trep, tpropRep, tstateRep)
-	contractDag := NewContractSupportRepository(tempdb)
-	val := builderFunc(trep, tutxoRep, tstateRep, tpropRep, contractDag, cache, false)
+	contractDag := NewContractSupportRepository(tempdb, enableGasFee)
+	val := builderFunc(trep, tutxoRep, tstateRep, tpropRep, contractDag, cache, false, enableGasFee)
 	if saveHeaderOnly { //轻节点，只有Header数据，无法做高级验证
-		val = builderFunc(trep, nil, nil, nil, nil, cache, true)
+		val = builderFunc(trep, nil, nil, nil, nil, cache, true, enableGasFee)
 	}
 	val.SetContractTxCheckFun(jury.CheckContractTxResult)
 	return &ChainTempDb{

@@ -29,6 +29,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/dag/constants"
@@ -52,7 +53,11 @@ func (validate *Validate) validateTx(rwM rwset.TxManager, tx *modules.Transactio
 	if tx == nil {
 		return TxValidationCode_VALID, nil
 	}
-
+	msgs := tx.TxMessages()
+	if len(msgs) == 0 {
+		return TxValidationCode_INVALID_MSG, nil
+	}
+	//ptn := modules.NewPTNAsset()
 	ptn := dagconfig.DagConfig.GetGasToken()
 	_, chainindex, err := validate.propquery.GetNewestUnit(ptn)
 	if err != nil {
@@ -60,17 +65,18 @@ func (validate *Validate) validateTx(rwM rwset.TxManager, tx *modules.Transactio
 	}
 	unithigh := int64(chainindex.Index)
 	reqId := tx.RequestHash()
-	msgs := tx.TxMessages()
-	if len(msgs) == 0 {
-		return TxValidationCode_INVALID_MSG, nil
-	}
+	reqMsgCount := tx.GetRequestMsgCount()
 	isOrphanTx := false
-	if msgs[0].App != modules.APP_PAYMENT { // 交易费
+	if validate.enableGasFee && msgs[0].App != modules.APP_PAYMENT { // 交易费
 		return TxValidationCode_INVALID_MSG, nil
 	}
-	txFeePass, txFee := validate.validateTxFeeValid(tx)
-	if txFeePass != TxValidationCode_VALID {
-		return txFeePass, nil
+	txFee := []*modules.Addition{}
+	var txFeePass ValidationCode
+	if validate.enableGasFee {
+		txFeePass, txFee = validate.validateTxFeeValid(tx)
+		if txFeePass != TxValidationCode_VALID {
+			return txFeePass, nil
+		}
 	}
 	// validate tx size
 	if tx.Size().Float64() > float64(modules.TX_MAXSIZE) {
@@ -189,12 +195,13 @@ func (validate *Validate) validateTx(rwM rwset.TxManager, tx *modules.Transactio
 			if payload.TplName == "" || payload.Path == "" || payload.Version == "" {
 				return TxValidationCode_INVALID_CONTRACT, txFee
 			}
-			reqAddr, err := validate.dagquery.GetTxRequesterAddress(tx)
-			if err != nil {
+			//reqAddr, err :=  validate.dagquery.GetTxRequesterAddress(tx)
+			reqAddrs, err := tx.GetFromAddrs(validate.utxoquery.GetUtxoEntry, validate.tokenEngine.GetAddressFromScript)
+			if err != nil || len(reqAddrs) == 0 {
 				return TxValidationCode_INVALID_CONTRACT, txFee
 			}
 			if validate.enableDeveloperCheck {
-				if !validate.statequery.IsContractDeveloper(reqAddr) {
+				if !validate.statequery.IsContractDeveloper(reqAddrs[0]) {
 					return TxValidationCode_NOT_TPL_DEVELOPER, txFee
 				}
 			}
@@ -245,9 +252,14 @@ func (validate *Validate) validateTx(rwM rwset.TxManager, tx *modules.Transactio
 				return validateCode, txFee
 			}
 		case modules.APP_SIGNATURE:
-			// 签名验证
 			payload, _ := msg.Payload.(*modules.SignaturePayload)
-			validateCode := validate.validateContractSignature(payload.Signatures[:], tx, isFullTx)
+			var validateCode ValidationCode
+			// 签名验证,被签名的消息是SignaturePayload之前的所有消息
+			if msgIdx < reqMsgCount {
+				validateCode = validate.validateRequesterSignature(payload.Signatures[:], tx, msgIdx)
+			} else {
+				validateCode = validate.validateContractSignature(payload.Signatures[:], tx, msgIdx, isFullTx)
+			}
 			if validateCode != TxValidationCode_VALID {
 				return validateCode, txFee
 			}
@@ -269,6 +281,23 @@ func (validate *Validate) validateTx(rwM rwset.TxManager, tx *modules.Transactio
 	return TxValidationCode_VALID, txFee
 }
 
+//Disable GasFee的情况下，验证发起人的签名是否有效
+func (validate *Validate) validateRequesterSignature(signatures []modules.SignatureSet,
+	tx *modules.Transaction, signPayloadMsgIndex int) ValidationCode {
+	tx4Sign := tx.CopyPartTx(signPayloadMsgIndex - 1)
+	txBytes, _ := rlp.EncodeToBytes(tx4Sign)
+	for _, s := range signatures {
+		pass, err := crypto.MyCryptoLib.Verify(s.PubKey, s.Signature, txBytes)
+		if err != nil {
+			log.Error(err.Error())
+			return TxValidationCode_INVALID_SIGNATURE
+		}
+		if !pass {
+			return TxValidationCode_INVALID_SIGNATURE
+		}
+	}
+	return TxValidationCode_VALID
+}
 func (validate *Validate) validateVoteMediatorTx(payload interface{}) ValidationCode {
 	accountUpdate, ok := payload.(*modules.AccountStateUpdatePayload)
 	if !ok {
@@ -336,7 +365,7 @@ func (validate *Validate) ValidateTxFeeEnough(tx *modules.Transaction, extSize f
 	fees, err := tx.GetTxFee(validate.utxoquery.GetUtxoEntry) //validate.dagquery.GetTxFee(tx)
 	if err != nil {
 		log.Warnf("[%s]validateTxFeeEnough return ORPHAN since GetTxFee err:%s", reqId.ShortStr(), err.Error())
-		return TxValidationCode_ORPHAN
+		return TxValidationCode_INVALID_DOUBLE_SPEND
 	}
 	cp := validate.propquery.GetChainParameters()
 	timeUnitFee := float64(cp.ContractTxTimeoutUnitFee)
@@ -371,18 +400,16 @@ func (validate *Validate) ValidateTxFeeEnough(tx *modules.Transaction, extSize f
 		timeFee = opFee * timeUnitFee * (float64(timeout) + extTime)
 		allFee = sizeFee + timeFee + accountUpdateFee + appDataFee
 	}
+	allFee *= fees.GetFloatdec()
 	val := math.Max(float64(fees.Amount), allFee) == float64(fees.Amount)
+	//val := math.Max(float64(fees.Amount), allFee) == float64(fees.Amount)
+
 	if !val {
 		log.Errorf("[%s]validateTxFeeEnough invalid, fee amount[%f]-fees[%f] (%f + %f + %f + %f), "+
 			"txSize[%f], timeout[%d], extSize[%f], extTime[%f]",
 			reqId.ShortStr(), float64(fees.Amount), allFee, sizeFee, timeFee, accountUpdateFee, appDataFee,
 			txSize, timeout, extSize, extTime)
 	}
-
-	log.Debugf("[%s]validateTxFeeEnough is %v, fee amount[%f]-fees[%f](%f + %f + %f + %f), "+
-		"txSize[%f], timeout[%d], extSize[%f], extTime[%f]",
-		reqId.ShortStr(), val, float64(fees.Amount), allFee, sizeFee, timeFee, accountUpdateFee, appDataFee,
-		txSize, timeout, extSize, extTime)
 	if val {
 		return TxValidationCode_VALID
 	} else {

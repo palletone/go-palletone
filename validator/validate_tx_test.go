@@ -29,10 +29,12 @@ import (
 	"time"
 
 	"github.com/coocood/freecache"
+	"github.com/golang/mock/gomock"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/errors"
+	"github.com/palletone/go-palletone/dag/mock"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/palletcache"
 	"github.com/palletone/go-palletone/tokenengine"
@@ -41,27 +43,28 @@ import (
 
 var privKeyBytes, _ = hex.DecodeString("2BE3B4B671FF5B8009E6876CCCC8808676C1C279EE824D0AB530294838DC1644")
 
-type mockiDagQuery struct{}
-
-func (id *mockiDagQuery) GetTransactionOnly(hash common.Hash) (*modules.Transaction, error) {
-	return nil, nil
-}
-func (id *mockiDagQuery) IsTransactionExist(hash common.Hash) (bool, error) {
-	return true, nil
-}
-func (id *mockiDagQuery) GetHeaderByHash(common.Hash) (*modules.Header, error) {
-	return nil, nil
-}
-func (id *mockiDagQuery) GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error) {
-	return &modules.AmountAsset{Amount: 15000, Asset: modules.NewPTNAsset()}, nil
-}
-func (id *mockiDagQuery) CheckReadSetValid(contractId []byte, readSet []modules.ContractReadSet) bool {
-	return true
-}
-
-func (id *mockiDagQuery) GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error) {
-	return common.Address{}, nil
-}
+//
+//type mockiDagQuery struct{}
+//
+//func (id *mockiDagQuery) GetTransactionOnly(hash common.Hash) (*modules.Transaction, error) {
+//	return nil, nil
+//}
+//func (id *mockiDagQuery) IsTransactionExist(hash common.Hash) (bool, error) {
+//	return true, nil
+//}
+//func (id *mockiDagQuery) GetHeaderByHash(common.Hash) (*modules.Header, error) {
+//	return nil, nil
+//}
+//func (id *mockiDagQuery) GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error) {
+//	return &modules.AmountAsset{Amount: 15000, Asset: modules.NewPTNAsset()}, nil
+//}
+//func (id *mockiDagQuery) CheckReadSetValid(contractId []byte, readSet []modules.ContractReadSet) bool {
+//	return true
+//}
+//
+//func (id *mockiDagQuery) GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error) {
+//	return common.Address{}, nil
+//}
 
 type mockiPropQuery struct{}
 
@@ -96,11 +99,14 @@ func newCache() palletcache.ICache {
 	return freecache.NewCache(100 * 1024)
 }
 func TestValidate_ValidateTx_EmptyTx_NoPayment(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mdag := mock.NewMockIDag(mockCtrl)
 	tx := &modules.Transaction{} //Empty Tx
-	stateQ := &mockStatedbQuery{}
-	dagq := &mockiDagQuery{}
+	//stateQ := &mockStatedbQuery{}
+	//dagq := &mockiDagQuery{}
 	propQ := &mockiPropQuery{}
-	validat := NewValidate(dagq, nil, stateQ, propQ, nil, newCache(), false)
+	validat := NewValidate(mdag, nil, mdag, propQ, nil, newCache(), false, true)
 	_, _, err := validat.ValidateTx(tx, true)
 	assert.NotNil(t, err)
 	t.Log(err)
@@ -227,6 +233,10 @@ func TestGetRequestTx(t *testing.T) {
 	}
 }
 func TestValidateDoubleSpendOn1Tx(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mdag := mock.NewMockIDag(mockCtrl)
+	mdag.EXPECT().GetBlacklistAddress().Return([]common.Address{}, nil, nil).AnyTimes()
 	outPoint := modules.NewOutPoint(hash1, 0, 1)
 	pay1 := newTestPayment(outPoint, 1)
 	m1 := modules.NewMessage(modules.APP_PAYMENT, pay1)
@@ -234,10 +244,10 @@ func TestValidateDoubleSpendOn1Tx(t *testing.T) {
 
 	signTx(tx, outPoint)
 	utxoq := &testutxoQuery{}
-	stateQ := &mockStatedbQuery{}
-	dagq := &mockiDagQuery{}
+	//stateQ := &mockStatedbQuery{}
+	//dagq := &mockiDagQuery{}
 	propQ := &mockiPropQuery{}
-	validate := NewValidate(dagq, utxoq, stateQ, propQ, nil, newCache(), false)
+	validate := NewValidate(mdag, utxoq, mdag, propQ, nil, newCache(), false, true)
 	_, _, err := validate.ValidateTx(tx, true)
 	assert.Nil(t, err)
 	pay2 := newTestPayment(outPoint, 2)
@@ -251,6 +261,10 @@ func TestValidateDoubleSpendOn1Tx(t *testing.T) {
 
 //构造一个上千Input的交易，验证时间要多久？
 func TestValidateLargeInputPayment(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mdag := mock.NewMockIDag(mockCtrl)
+	mdag.EXPECT().GetBlacklistAddress().Return([]common.Address{}, nil, nil).AnyTimes()
 	N := 1000
 	pay := &modules.PaymentPayload{Inputs: []*modules.Input{}, Outputs: []*modules.Output{}}
 	lockScripts := map[modules.OutPoint][]byte{}
@@ -280,10 +294,10 @@ func TestValidateLargeInputPayment(t *testing.T) {
 	}
 
 	utxoq := &testutxoQuery{}
-	stateQ := &mockStatedbQuery{}
-	dagq := &mockiDagQuery{}
+	//stateQ := &mockStatedbQuery{}
+	//dagq := &mockiDagQuery{}
 	propQ := &mockiPropQuery{}
-	validate := NewValidate(dagq, utxoq, stateQ, propQ, nil, newCache(), false)
+	validate := NewValidate(mdag, utxoq, mdag, propQ, nil, newCache(), false, true)
 	_, _, err := validate.ValidateTx(tx, true)
 
 	t1 := time.Now()

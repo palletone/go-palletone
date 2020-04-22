@@ -49,13 +49,13 @@ type CCPackage interface {
 	InitFromBuffer(buf []byte) (*ChaincodeData, error)
 
 	// InitFromFS gets the chaincode from the filesystem (includes the raw bytes too)
-	InitFromFS(ccname string, ccversion string) ([]byte, *pb.ChaincodeDeploymentSpec, error)
+	InitFromFS(ccname string, ccversion string) ([]byte, *pb.PtnChaincodeDeploymentSpec, error)
 
 	// PutChaincodeToFS writes the chaincode to the filesystem
 	PutChaincodeToFS() error
 
 	// GetDepSpec gets the ChaincodeDeploymentSpec from the package
-	GetDepSpec() *pb.ChaincodeDeploymentSpec
+	GetDepSpec() *pb.PtnChaincodeDeploymentSpec
 
 	// GetDepSpecBytes gets the serialized ChaincodeDeploymentSpec from the package
 	GetDepSpecBytes() []byte
@@ -151,7 +151,7 @@ func (*CCInfoFSImpl) GetChaincode(ccname string, ccversion string) (CCPackage, e
 
 // PutChaincodeIntoFS is a wrapper for putting raw ChaincodeDeploymentSpec
 //using CDSPackage. This is only used in UTs
-//func (*CCInfoFSImpl) PutChaincode(depSpec *pb.ChaincodeDeploymentSpec) (CCPackage, error) {
+//func (*CCInfoFSImpl) PutChaincode(depSpec *pb.PtnChaincodeDeploymentSpec) (CCPackage, error) {
 //	buf, err := proto.Marshal(depSpec)
 //	if err != nil {
 //		return nil, err
@@ -206,7 +206,7 @@ func GetChaincodeFromFS(ccname string, ccversion string) (CCPackage, error) {
 // PutChaincodeIntoFS puts chaincode information in the file system (and
 // also in the cache to prime it) if the cache is enabled, or directly
 // from the file system otherwise
-//func PutChaincodeIntoFS(depSpec *pb.ChaincodeDeploymentSpec) error {
+//func PutChaincodeIntoFS(depSpec *pb.PtnChaincodeDeploymentSpec) error {
 //	_, err := ccInfoFSProvider.PutChaincode(depSpec)
 //	return err
 //}
@@ -277,14 +277,14 @@ func GetCCPackage(buf []byte) (CCPackage, error) {
 // value is the ChaincodeDeploymentSpec struct for that chaincodes that have
 // been installed (but not necessarily instantiated) on the peer by searching
 // the chaincode install path
-func GetInstalledChaincodes() (*pb.ChaincodeQueryResponse, error) {
+func GetInstalledChaincodes() (*pb.PtnChaincodeQueryResponse, error) {
 	files, err := ioutil.ReadDir(chaincodeInstallPath)
 	if err != nil {
 		return nil, err
 	}
 
 	// array to store info for all chaincode entries from LSCC
-	var ccInfoArray []*pb.ChaincodeInfo
+	var ccInfoArray []*pb.PtnChaincodeInfo
 
 	for _, file := range files {
 		// split at first period as chaincode versions can contain periods while
@@ -318,7 +318,7 @@ func GetInstalledChaincodes() (*pb.ChaincodeQueryResponse, error) {
 			// since this is just an installed chaincode these should be blank
 			input, escc, vscc := "", "", ""
 
-			ccInfo := &pb.ChaincodeInfo{Name: name, Version: version, Path: path, Input: input, Escc: escc, Vscc: vscc, Id: ccpack.GetId()}
+			ccInfo := &pb.PtnChaincodeInfo{Name: name, Version: version, Path: path, Input: input, Escc: escc, Vscc: vscc, Id: ccpack.GetId()}
 
 			// add this specific chaincode's metadata to the array of all chaincodes
 			ccInfoArray = append(ccInfoArray, ccInfo)
@@ -326,7 +326,7 @@ func GetInstalledChaincodes() (*pb.ChaincodeQueryResponse, error) {
 	}
 	// add array with info about all instantiated chaincodes to the query
 	// response proto
-	cqr := &pb.ChaincodeQueryResponse{Chaincodes: ccInfoArray}
+	cqr := &pb.PtnChaincodeQueryResponse{Chaincodes: ccInfoArray}
 
 	return cqr, nil
 }
@@ -353,12 +353,12 @@ type CCContext struct {
 	//SignedProposal for this invoke (if any)
 	//this is kept here for access control and in case we need to pass something
 	//from this to the chaincode
-	SignedProposal *pb.SignedProposal
+	SignedProposal *pb.PtnSignedProposal
 
 	//Proposal for this invoke (if any)
 	//this is kept here just in case we need to pass something
 	//from this to the chaincode
-	Proposal *pb.Proposal
+	Proposal *pb.PtnProposal
 
 	//this is not set but computed (note that this is not exported. use GetCanonicalName)
 	canonicalName string
@@ -368,7 +368,7 @@ type CCContext struct {
 }
 
 //NewCCContext just construct a new struct with whatever args
-func NewCCContext(contractid []byte, cid, name, version, txid string, syscc bool, signedProp *pb.SignedProposal, prop *pb.Proposal) *CCContext {
+func NewCCContext(contractid []byte, cid, name, version, txid string, syscc bool, signedProp *pb.PtnSignedProposal, prop *pb.PtnProposal) *CCContext {
 	//version CANNOT be empty. The chaincode namespace has to use version and chain name.
 	//All system chaincodes share the same version given by utils.GetSysCCVersion. Note
 	//that neither Chain Name or Version are stored in a chaincodes state on the ledger
@@ -486,17 +486,17 @@ type ChaincodeProvider interface {
 	//GetContext(ledger ledger.PeerLedger, txid string) (context.Context, ledger.TxSimulator, error)
 	GetContext() (context.Context, error)
 	// GetCCContext returns an opaque chaincode context
-	GetCCContext(contractid []byte, cid, name, version, txid string, syscc bool, signedProp *pb.SignedProposal, prop *pb.Proposal) interface{}
+	GetCCContext(contractid []byte, cid, name, version, txid string, syscc bool, signedProp *pb.PtnSignedProposal, prop *pb.PtnProposal) interface{}
 	// ExecuteChaincode executes the chaincode given context and args
-	ExecuteChaincode(ctxt context.Context, cccid interface{}, args [][]byte, timeout time.Duration) (*pb.Response, *pb.ChaincodeEvent, error)
+	ExecuteChaincode(ctxt context.Context, cccid interface{}, args [][]byte, timeout time.Duration) (*pb.PtnResponse, *pb.PtnChaincodeEvent, error)
 	// Execute executes the chaincode given context and spec (invocation or deploy)
-	Execute(ctxt context.Context, cccid interface{}, spec interface{}, timeout time.Duration) (*pb.Response, *pb.ChaincodeEvent, error)
+	Execute(ctxt context.Context, cccid interface{}, spec interface{}, timeout time.Duration) (*pb.PtnResponse, *pb.PtnChaincodeEvent, error)
 	// ExecuteWithErrorFilter executes the chaincode given context and spec and returns payload
-	ExecuteWithErrorFilter(ctxt context.Context, cccid interface{}, spec interface{}, timeout time.Duration) ([]byte, *pb.ChaincodeEvent, error)
+	ExecuteWithErrorFilter(ctxt context.Context, cccid interface{}, spec interface{}, timeout time.Duration) ([]byte, *pb.PtnChaincodeEvent, error)
 	// Stop stops the chaincode given context and deployment spec
-	Stop(ctxt context.Context, cccid interface{}, spec *pb.ChaincodeDeploymentSpec, dontRmCon bool) error
+	Stop(ctxt context.Context, cccid interface{}, spec *pb.PtnChaincodeDeploymentSpec, dontRmCon bool) error
 
-	Destroy(ctxt context.Context, cccid interface{}, spec *pb.ChaincodeDeploymentSpec) error
+	Destroy(ctxt context.Context, cccid interface{}, spec *pb.PtnChaincodeDeploymentSpec) error
 }
 
 var ccFactory ChaincodeProviderFactory

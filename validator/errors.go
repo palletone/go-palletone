@@ -48,7 +48,7 @@ const (
 	TxValidationCode_BAD_CHANNEL_HEADER           ValidationCode = 20
 	TxValidationCode_BAD_RESPONSE_PAYLOAD         ValidationCode = 21
 	TxValidationCode_BAD_RWSET                    ValidationCode = 22
-	TxValidationCode_ILLEGAL_WRITESET             ValidationCode = 23
+	TxValidationCode_INVALID_SIGNATURE            ValidationCode = 23
 	TxValidationCode_INVALID_CONTRACT_SIGN        ValidationCode = 24
 	TxValidationCode_INVALID_MSG                  ValidationCode = 25
 	TxValidationCode_INVALID_PAYMMENTLOAD         ValidationCode = 26
@@ -106,7 +106,7 @@ var validationCode_name = map[byte]string{
 	20:  "BAD_CHANNEL_HEADER",
 	21:  "BAD_RESPONSE_PAYLOAD",
 	22:  "BAD_RWSET",
-	23:  "ILLEGAL_WRITESET",
+	23:  "INVALID_SIGNATURE",
 	24:  "INVALID_CONTRACT_SIGN",
 	25:  "INVALID_MSG",
 	26:  "INVALID_PAYMMENTLOAD",

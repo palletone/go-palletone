@@ -1,7 +1,6 @@
 package ptnapi
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -69,7 +68,13 @@ func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFe
 	if err != nil {
 		return nil, nil, err
 	}
-	if !gasFee.IsPositive() {
+	deci := tokenAsset.GetDecimal()
+	dnumber_slice := strings.Split(fmt.Sprintf("%v", amount), ".")
+	if len(dnumber_slice) > 1 && len(dnumber_slice[1]) > int(deci) {
+		return nil, nil, fmt.Errorf("Asset Deimal is error")
+	}
+
+	if !gasFee.IsPositive() && b.EnableGasFee() {
 		return nil, nil, fmt.Errorf("fee is ZERO ")
 	}
 	//
@@ -91,7 +96,7 @@ func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFe
 	if tokenId == gasToken {
 		ptnAmount = gasAsset.Uint64Amount(amount)
 	}
-
+	tx := modules.NewTransaction([]*modules.Message{})
 	//构造转移PTN的Message0
 	//var dbUtxos map[modules.OutPoint]*modules.Utxo
 	//var reqTxMapping map[common.Hash]common.Hash
@@ -123,18 +128,22 @@ func buildRawTransferTx(b Backend, tokenId, fromStr, toStr string, amount, gasFe
 	//	return "txpool unpacked tx:" + txHashs
 	//})
 	//utxosPTN, err := SelectUtxoFromDagAndPool(dbUtxos, reqTxMapping, poolTxs, from, gasToken)
-	utxosPTN, err := b.GetPoolAddrUtxos(fromAddr, gasAsset.ToAsset())
-	if err != nil {
-		return nil, nil, fmt.Errorf("SelectUtxoFromDagAndPool utxo err:%s", err.Error())
-	}
-	feeAmount := gasAsset.Uint64Amount(gasFee)
-	pay1, usedUtxo1, err := createPayment(fromAddr, toAddr, ptnAmount, feeAmount, utxosPTN)
-	if err != nil {
-		return nil, nil, err
-	}
-	tx := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_PAYMENT, pay1)})
-	if tokenId == gasToken {
-		return tx, usedUtxo1, nil
+	usedUtxo1 := []*modules.UtxoWithOutPoint{}
+	if b.EnableGasFee() {
+		utxosPTN, err := b.GetPoolAddrUtxos(fromAddr, gasAsset.ToAsset())
+		if err != nil {
+			return nil, nil, fmt.Errorf("SelectUtxoFromDagAndPool utxo err:%s", err.Error())
+		}
+		feeAmount := gasAsset.Uint64Amount(gasFee)
+		var pay1 *modules.PaymentPayload
+		pay1, usedUtxo1, err = createPayment(fromAddr, toAddr, ptnAmount, feeAmount, utxosPTN)
+		if err != nil {
+			return nil, nil, err
+		}
+		tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay1))
+		if tokenId == gasToken {
+			return tx, usedUtxo1, nil
+		}
 	}
 	log.Debugf("gas token[%s], transfer token[%s], start build payment1", gasToken, tokenId)
 	//构造转移Token的Message1
@@ -191,8 +200,128 @@ func createPayment(fromAddr, toAddr common.Address, amountToken uint64, feePTN u
 	return payPTN, usedUtxo, nil
 }
 
+func buildRawTransferTx2(b Backend, tokenId, fromStr string, toAddrStr map[string]decimal.Decimal, gasFee decimal.Decimal, password string) (
+	*modules.Transaction, []*modules.UtxoWithOutPoint, error) {
+	//参数检查
+	tokenAsset, err := modules.StringToAsset(tokenId)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if !gasFee.IsPositive() && b.EnableGasFee() {
+		return nil, nil, fmt.Errorf("fee is ZERO ")
+	}
+	//
+	fromAddr, err := parseAddressStr(fromStr, b.GetKeyStore(), password)
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, nil, err
+	}
+	gasToken := dagconfig.DagConfig.GasToken
+	gasAsset := dagconfig.DagConfig.GetGasToken()
+	ptnAmount := uint64(0)
+	toAddrAmt := make(map[common.Address]uint64)
+	for toStr, toAmt := range toAddrStr {
+		toAddr, err := parseAddressStr(toStr, b.GetKeyStore(), password)
+		if err != nil {
+			return nil, nil, err
+		}
+		amt := gasAsset.Uint64Amount(toAmt)
+		toAddrAmt[toAddr] = amt
+		if tokenId == gasToken {
+			ptnAmount += amt
+		}
+	}
+	tx := modules.NewTransaction([]*modules.Message{})
+
+	usedUtxo1 := []*modules.UtxoWithOutPoint{}
+	if b.EnableGasFee() {
+		utxosPTN, err := b.GetPoolAddrUtxos(fromAddr, gasAsset.ToAsset())
+		if err != nil {
+			return nil, nil, fmt.Errorf("SelectUtxoFromDagAndPool utxo err:%s", err.Error())
+		}
+		feeAmount := gasAsset.Uint64Amount(gasFee)
+		var pay1 *modules.PaymentPayload
+		if ptnAmount == 0 {
+			pay1, usedUtxo1, err = createPayment(fromAddr, fromAddr, ptnAmount, feeAmount, utxosPTN)
+		} else {
+			pay1, usedUtxo1, err = createPayment2(fromAddr, toAddrAmt, feeAmount, utxosPTN)
+		}
+		if err != nil {
+			return nil, nil, err
+		}
+		tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay1))
+		if tokenId == gasToken {
+			return tx, usedUtxo1, nil
+		}
+	}
+	log.Debugf("gas token[%s], transfer token[%s], start build payment1", gasToken, tokenId)
+	//构造转移Token的Message1 m'k
+	//utxosToken, err := SelectUtxoFromDagAndPool(dbUtxos, reqTxMapping, poolTxs, from, tokenId)
+	utxosToken, err := b.GetPoolAddrUtxos(fromAddr, tokenAsset)
+	if err != nil {
+		return nil, nil, fmt.Errorf("SelectUtxoFromDagAndPool token utxo err:%s", err.Error())
+	}
+	pay2, usedUtxo2, err := createPayment2(fromAddr, toAddrAmt, 0, utxosToken)
+	if err != nil {
+		return nil, nil, err
+	}
+	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, pay2))
+	usedUtxo1 = append(usedUtxo1, usedUtxo2...)
+
+	return tx, usedUtxo1, nil
+}
+
+func createPayment2(fromAddr common.Address, toAddr map[common.Address]uint64, feePTN uint64,
+	utxosPTN map[modules.OutPoint]*modules.Utxo) (*modules.PaymentPayload, []*modules.UtxoWithOutPoint, error) {
+
+	if len(utxosPTN) == 0 {
+		log.Errorf("No PTN Utxo or No Token Utxo for %s", fromAddr.String())
+		return nil, nil, fmt.Errorf("No Utxo found for %s", fromAddr.String())
+	}
+
+	//PTN
+	utxoPTNView, asset := convertUtxoMap2Utxos(utxosPTN)
+	amountToken := uint64(0)
+	for _, amt := range toAddr {
+		amountToken += amt
+	}
+	utxosPTNTaken, change, err := core.Select_utxo_Greedy(utxoPTNView, amountToken+feePTN)
+	if err != nil {
+		return nil, nil, fmt.Errorf("createPayment Select_utxo_Greedy utxo err:%s", err.Error())
+	}
+	usedUtxo := []*modules.UtxoWithOutPoint{}
+	//ptn payment
+	payPTN := &modules.PaymentPayload{}
+	//ptn inputs
+	for _, u := range utxosPTNTaken {
+		utxo := u.(*modules.UtxoWithOutPoint)
+		usedUtxo = append(usedUtxo, utxo)
+		prevOut := &utxo.OutPoint // modules.NewOutPoint(txHash, utxo.MessageIndex, utxo.OutIndex)
+		txInput := modules.NewTxIn(prevOut, []byte{})
+		payPTN.AddTxIn(txInput)
+	}
+
+	//ptn outputs
+	if amountToken > 0 {
+		for addr, amt := range toAddr {
+			payPTN.AddTxOut(modules.NewTxOut(amt, tokenengine.Instance.GenerateLockScript(addr), asset))
+		}
+	}
+	if change > 0 {
+		payPTN.AddTxOut(modules.NewTxOut(change, tokenengine.Instance.GenerateLockScript(fromAddr), asset))
+	}
+	return payPTN, usedUtxo, nil
+}
 func signRawTransaction(b Backend, rawTx *modules.Transaction, fromStr, password string, timeout *Int, hashType uint32,
 	usedUtxo []*modules.UtxoWithOutPoint) error {
+	if !b.EnableGasFee() {
+		//no gas fee, enable nonce
+		if rawTx.Nonce() == 0 {
+			rawTx.SetNonce(uint64(time.Now().UnixNano()))
+		}
+		rawTx.SetVersion(1)
+	}
 	ks := b.GetKeyStore()
 	//lockscript
 	getPubKeyFn := func(addr common.Address) ([]byte, error) {
@@ -228,7 +357,7 @@ func signRawTransaction(b Backend, rawTx *modules.Transaction, fromStr, password
 }
 
 // submitTransaction is a helper function that submits tx to txPool and logs a message.
-func submitTransaction(ctx context.Context, b Backend, tx *modules.Transaction) (common.Hash, error) {
+func submitTransaction(b Backend, tx *modules.Transaction) (common.Hash, error) {
 	if tx.IsOnlyContractRequest() && tx.GetContractTxType() != modules.APP_CONTRACT_INVOKE_REQUEST {
 		log.Debugf("[%s]submitTransaction, not invoke Tx", tx.RequestHash().String()[:8])
 		reqId, err := b.SendContractInvokeReqTx(tx)
@@ -236,7 +365,7 @@ func submitTransaction(ctx context.Context, b Backend, tx *modules.Transaction) 
 	}
 	log.Debugf("[%s]submitTransaction, is invoke Tx", tx.RequestHash().String()[:8])
 	//普通交易和系统合约交易，走交易池
-	if err := b.SendTx(ctx, tx); err != nil {
+	if err := b.SendTx(tx); err != nil {
 		return common.Hash{}, err
 	}
 	return tx.Hash(), nil
@@ -277,4 +406,30 @@ func (d *Int) UnmarshalJSON(iBytes []byte) error {
 	}
 	d.i = input
 	return nil
+}
+func signRawNoGasTx(b Backend, tx *modules.Transaction, addr common.Address, pwd string) (*modules.Transaction, error) {
+	//no gas fee, enable nonce
+	if tx.Nonce() == 0 {
+		tx.SetNonce(uint64(time.Now().UnixNano()))
+	}
+	tx.SetVersion(1)
+	keystore := b.GetKeyStore()
+	if !keystore.IsUnlock(addr) {
+		keystore.Unlock(accounts.Account{Address: addr}, pwd)
+	}
+	sign, err := keystore.SigData(tx, addr)
+	if err != nil {
+		return nil, err
+	}
+	pubKey, err := keystore.GetPublicKey(addr)
+	if err != nil {
+		return nil, err
+	}
+	ss := modules.SignatureSet{
+		PubKey:    pubKey,
+		Signature: sign,
+	}
+	signature := &modules.SignaturePayload{Signatures: []modules.SignatureSet{ss}}
+	tx.AddMessage(modules.NewMessage(modules.APP_SIGNATURE, signature))
+	return tx, nil
 }

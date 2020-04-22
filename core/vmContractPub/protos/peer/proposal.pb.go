@@ -44,7 +44,7 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 //    that it is allowed to transact with us (with respect to some ACLs);
 // 3. Verification that the signature on proposalBytes is valid;
 // 4. Detect replay attacks;
-type SignedProposal struct {
+type PtnSignedProposal struct {
 	// The bytes of Proposal
 	ProposalBytes []byte `protobuf:"bytes,1,opt,name=proposal_bytes,json=proposalBytes,proto3" json:"proposal_bytes,omitempty"`
 	// Signaure over proposalBytes; this signature is to be verified against
@@ -56,39 +56,39 @@ type SignedProposal struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *SignedProposal) Reset()         { *m = SignedProposal{} }
-func (m *SignedProposal) String() string { return proto.CompactTextString(m) }
-func (*SignedProposal) ProtoMessage()    {}
-func (*SignedProposal) Descriptor() ([]byte, []int) {
+func (m *PtnSignedProposal) Reset()         { *m = PtnSignedProposal{} }
+func (m *PtnSignedProposal) String() string { return proto.CompactTextString(m) }
+func (*PtnSignedProposal) ProtoMessage()    {}
+func (*PtnSignedProposal) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c3ac5ce23bf32d05, []int{0}
 }
 
-func (m *SignedProposal) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_SignedProposal.Unmarshal(m, b)
+func (m *PtnSignedProposal) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_PtnSignedProposal.Unmarshal(m, b)
 }
-func (m *SignedProposal) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_SignedProposal.Marshal(b, m, deterministic)
+func (m *PtnSignedProposal) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_PtnSignedProposal.Marshal(b, m, deterministic)
 }
-func (m *SignedProposal) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SignedProposal.Merge(m, src)
+func (m *PtnSignedProposal) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PtnSignedProposal.Merge(m, src)
 }
-func (m *SignedProposal) XXX_Size() int {
-	return xxx_messageInfo_SignedProposal.Size(m)
+func (m *PtnSignedProposal) XXX_Size() int {
+	return xxx_messageInfo_PtnSignedProposal.Size(m)
 }
-func (m *SignedProposal) XXX_DiscardUnknown() {
-	xxx_messageInfo_SignedProposal.DiscardUnknown(m)
+func (m *PtnSignedProposal) XXX_DiscardUnknown() {
+	xxx_messageInfo_PtnSignedProposal.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_SignedProposal proto.InternalMessageInfo
+var xxx_messageInfo_PtnSignedProposal proto.InternalMessageInfo
 
-func (m *SignedProposal) GetProposalBytes() []byte {
+func (m *PtnSignedProposal) GetProposalBytes() []byte {
 	if m != nil {
 		return m.ProposalBytes
 	}
 	return nil
 }
 
-func (m *SignedProposal) GetSignature() []byte {
+func (m *PtnSignedProposal) GetSignature() []byte {
 	if m != nil {
 		return m.Signature
 	}
@@ -114,7 +114,7 @@ func (m *SignedProposal) GetSignature() []byte {
 // 3. The extension is a ChaincodeAction that might be used to ask the
 //    endorsers to endorse a specific ChaincodeAction, thus emulating the
 //    submitting peer model.
-type Proposal struct {
+type PtnProposal struct {
 	// The header of the proposal. It is the bytes of the Header
 	Header []byte `protobuf:"bytes,1,opt,name=header,proto3" json:"header,omitempty"`
 	// The payload of the proposal as defined by the type in the proposal
@@ -129,46 +129,46 @@ type Proposal struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Proposal) Reset()         { *m = Proposal{} }
-func (m *Proposal) String() string { return proto.CompactTextString(m) }
-func (*Proposal) ProtoMessage()    {}
-func (*Proposal) Descriptor() ([]byte, []int) {
+func (m *PtnProposal) Reset()         { *m = PtnProposal{} }
+func (m *PtnProposal) String() string { return proto.CompactTextString(m) }
+func (*PtnProposal) ProtoMessage()    {}
+func (*PtnProposal) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c3ac5ce23bf32d05, []int{1}
 }
 
-func (m *Proposal) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Proposal.Unmarshal(m, b)
+func (m *PtnProposal) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_PtnProposal.Unmarshal(m, b)
 }
-func (m *Proposal) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Proposal.Marshal(b, m, deterministic)
+func (m *PtnProposal) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_PtnProposal.Marshal(b, m, deterministic)
 }
-func (m *Proposal) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Proposal.Merge(m, src)
+func (m *PtnProposal) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PtnProposal.Merge(m, src)
 }
-func (m *Proposal) XXX_Size() int {
-	return xxx_messageInfo_Proposal.Size(m)
+func (m *PtnProposal) XXX_Size() int {
+	return xxx_messageInfo_PtnProposal.Size(m)
 }
-func (m *Proposal) XXX_DiscardUnknown() {
-	xxx_messageInfo_Proposal.DiscardUnknown(m)
+func (m *PtnProposal) XXX_DiscardUnknown() {
+	xxx_messageInfo_PtnProposal.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Proposal proto.InternalMessageInfo
+var xxx_messageInfo_PtnProposal proto.InternalMessageInfo
 
-func (m *Proposal) GetHeader() []byte {
+func (m *PtnProposal) GetHeader() []byte {
 	if m != nil {
 		return m.Header
 	}
 	return nil
 }
 
-func (m *Proposal) GetPayload() []byte {
+func (m *PtnProposal) GetPayload() []byte {
 	if m != nil {
 		return m.Payload
 	}
 	return nil
 }
 
-func (m *Proposal) GetExtension() []byte {
+func (m *PtnProposal) GetExtension() []byte {
 	if m != nil {
 		return m.Extension
 	}
@@ -178,7 +178,7 @@ func (m *Proposal) GetExtension() []byte {
 // ChaincodeHeaderExtension is the Header's extentions message to be used when
 // the Header's type is CHAINCODE.  This extensions is used to specify which
 // chaincode to invoke and what should appear on the ledger.
-type ChaincodeHeaderExtension struct {
+type PtnChaincodeHeaderExtension struct {
 	// The PayloadVisibility field controls to what extent the Proposal's payload
 	// (recall that for the type CHAINCODE, it is ChaincodeProposalPayload
 	// message) field will be visible in the final transaction and in the ledger.
@@ -192,45 +192,45 @@ type ChaincodeHeaderExtension struct {
 	// this field impacts the content of ProposalResponsePayload.proposalHash.
 	PayloadVisibility []byte `protobuf:"bytes,1,opt,name=payload_visibility,json=payloadVisibility,proto3" json:"payload_visibility,omitempty"`
 	// The ID of the chaincode to target.
-	ChaincodeId          *ChaincodeID `protobuf:"bytes,2,opt,name=chaincode_id,json=chaincodeId,proto3" json:"chaincode_id,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
-	XXX_unrecognized     []byte       `json:"-"`
-	XXX_sizecache        int32        `json:"-"`
+	ChaincodeId          *PtnChaincodeID `protobuf:"bytes,2,opt,name=chaincode_id,json=chaincodeId,proto3" json:"chaincode_id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
 }
 
-func (m *ChaincodeHeaderExtension) Reset()         { *m = ChaincodeHeaderExtension{} }
-func (m *ChaincodeHeaderExtension) String() string { return proto.CompactTextString(m) }
-func (*ChaincodeHeaderExtension) ProtoMessage()    {}
-func (*ChaincodeHeaderExtension) Descriptor() ([]byte, []int) {
+func (m *PtnChaincodeHeaderExtension) Reset()         { *m = PtnChaincodeHeaderExtension{} }
+func (m *PtnChaincodeHeaderExtension) String() string { return proto.CompactTextString(m) }
+func (*PtnChaincodeHeaderExtension) ProtoMessage()    {}
+func (*PtnChaincodeHeaderExtension) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c3ac5ce23bf32d05, []int{2}
 }
 
-func (m *ChaincodeHeaderExtension) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_ChaincodeHeaderExtension.Unmarshal(m, b)
+func (m *PtnChaincodeHeaderExtension) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_PtnChaincodeHeaderExtension.Unmarshal(m, b)
 }
-func (m *ChaincodeHeaderExtension) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_ChaincodeHeaderExtension.Marshal(b, m, deterministic)
+func (m *PtnChaincodeHeaderExtension) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_PtnChaincodeHeaderExtension.Marshal(b, m, deterministic)
 }
-func (m *ChaincodeHeaderExtension) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ChaincodeHeaderExtension.Merge(m, src)
+func (m *PtnChaincodeHeaderExtension) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PtnChaincodeHeaderExtension.Merge(m, src)
 }
-func (m *ChaincodeHeaderExtension) XXX_Size() int {
-	return xxx_messageInfo_ChaincodeHeaderExtension.Size(m)
+func (m *PtnChaincodeHeaderExtension) XXX_Size() int {
+	return xxx_messageInfo_PtnChaincodeHeaderExtension.Size(m)
 }
-func (m *ChaincodeHeaderExtension) XXX_DiscardUnknown() {
-	xxx_messageInfo_ChaincodeHeaderExtension.DiscardUnknown(m)
+func (m *PtnChaincodeHeaderExtension) XXX_DiscardUnknown() {
+	xxx_messageInfo_PtnChaincodeHeaderExtension.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ChaincodeHeaderExtension proto.InternalMessageInfo
+var xxx_messageInfo_PtnChaincodeHeaderExtension proto.InternalMessageInfo
 
-func (m *ChaincodeHeaderExtension) GetPayloadVisibility() []byte {
+func (m *PtnChaincodeHeaderExtension) GetPayloadVisibility() []byte {
 	if m != nil {
 		return m.PayloadVisibility
 	}
 	return nil
 }
 
-func (m *ChaincodeHeaderExtension) GetChaincodeId() *ChaincodeID {
+func (m *PtnChaincodeHeaderExtension) GetChaincodeId() *PtnChaincodeID {
 	if m != nil {
 		return m.ChaincodeId
 	}
@@ -240,7 +240,7 @@ func (m *ChaincodeHeaderExtension) GetChaincodeId() *ChaincodeID {
 // ChaincodeProposalPayload is the Proposal's payload message to be used when
 // the Header's type is CHAINCODE.  It contains the arguments for this
 // invocation.
-type ChaincodeProposalPayload struct {
+type PtnChaincodeProposalPayload struct {
 	// Input contains the arguments for this invocation. If this invocation
 	// deploys a new chaincode, ESCC/VSCC are part of this field.
 	// This is usually a marshaled ChaincodeInvocationSpec
@@ -255,39 +255,39 @@ type ChaincodeProposalPayload struct {
 	XXX_sizecache        int32             `json:"-"`
 }
 
-func (m *ChaincodeProposalPayload) Reset()         { *m = ChaincodeProposalPayload{} }
-func (m *ChaincodeProposalPayload) String() string { return proto.CompactTextString(m) }
-func (*ChaincodeProposalPayload) ProtoMessage()    {}
-func (*ChaincodeProposalPayload) Descriptor() ([]byte, []int) {
+func (m *PtnChaincodeProposalPayload) Reset()         { *m = PtnChaincodeProposalPayload{} }
+func (m *PtnChaincodeProposalPayload) String() string { return proto.CompactTextString(m) }
+func (*PtnChaincodeProposalPayload) ProtoMessage()    {}
+func (*PtnChaincodeProposalPayload) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c3ac5ce23bf32d05, []int{3}
 }
 
-func (m *ChaincodeProposalPayload) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_ChaincodeProposalPayload.Unmarshal(m, b)
+func (m *PtnChaincodeProposalPayload) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_PtnChaincodeProposalPayload.Unmarshal(m, b)
 }
-func (m *ChaincodeProposalPayload) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_ChaincodeProposalPayload.Marshal(b, m, deterministic)
+func (m *PtnChaincodeProposalPayload) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_PtnChaincodeProposalPayload.Marshal(b, m, deterministic)
 }
-func (m *ChaincodeProposalPayload) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ChaincodeProposalPayload.Merge(m, src)
+func (m *PtnChaincodeProposalPayload) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PtnChaincodeProposalPayload.Merge(m, src)
 }
-func (m *ChaincodeProposalPayload) XXX_Size() int {
-	return xxx_messageInfo_ChaincodeProposalPayload.Size(m)
+func (m *PtnChaincodeProposalPayload) XXX_Size() int {
+	return xxx_messageInfo_PtnChaincodeProposalPayload.Size(m)
 }
-func (m *ChaincodeProposalPayload) XXX_DiscardUnknown() {
-	xxx_messageInfo_ChaincodeProposalPayload.DiscardUnknown(m)
+func (m *PtnChaincodeProposalPayload) XXX_DiscardUnknown() {
+	xxx_messageInfo_PtnChaincodeProposalPayload.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ChaincodeProposalPayload proto.InternalMessageInfo
+var xxx_messageInfo_PtnChaincodeProposalPayload proto.InternalMessageInfo
 
-func (m *ChaincodeProposalPayload) GetInput() []byte {
+func (m *PtnChaincodeProposalPayload) GetInput() []byte {
 	if m != nil {
 		return m.Input
 	}
 	return nil
 }
 
-func (m *ChaincodeProposalPayload) GetTransientMap() map[string][]byte {
+func (m *PtnChaincodeProposalPayload) GetTransientMap() map[string][]byte {
 	if m != nil {
 		return m.TransientMap
 	}
@@ -296,7 +296,7 @@ func (m *ChaincodeProposalPayload) GetTransientMap() map[string][]byte {
 
 // ChaincodeAction contains the actions the events generated by the execution
 // of the chaincode.
-type ChaincodeAction struct {
+type PtnChaincodeAction struct {
 	// This field contains the read set and the write set produced by the
 	// chaincode executing this invocation.
 	Results []byte `protobuf:"bytes,1,opt,name=results,proto3" json:"results,omitempty"`
@@ -304,65 +304,65 @@ type ChaincodeAction struct {
 	// invocation.
 	Events []byte `protobuf:"bytes,2,opt,name=events,proto3" json:"events,omitempty"`
 	// This field contains the result of executing this invocation.
-	Response *Response `protobuf:"bytes,3,opt,name=response,proto3" json:"response,omitempty"`
+	Response *PtnResponse `protobuf:"bytes,3,opt,name=response,proto3" json:"response,omitempty"`
 	// This field contains the ChaincodeID of executing this invocation. Endorser
 	// will set it with the ChaincodeID called by endorser while simulating proposal.
 	// Committer will validate the version matching with latest chaincode version.
 	// Adding ChaincodeID to keep version opens up the possibility of multiple
 	// ChaincodeAction per transaction.
-	ChaincodeId          *ChaincodeID `protobuf:"bytes,4,opt,name=chaincode_id,json=chaincodeId,proto3" json:"chaincode_id,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
-	XXX_unrecognized     []byte       `json:"-"`
-	XXX_sizecache        int32        `json:"-"`
+	ChaincodeId          *PtnChaincodeID `protobuf:"bytes,4,opt,name=chaincode_id,json=chaincodeId,proto3" json:"chaincode_id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
 }
 
-func (m *ChaincodeAction) Reset()         { *m = ChaincodeAction{} }
-func (m *ChaincodeAction) String() string { return proto.CompactTextString(m) }
-func (*ChaincodeAction) ProtoMessage()    {}
-func (*ChaincodeAction) Descriptor() ([]byte, []int) {
+func (m *PtnChaincodeAction) Reset()         { *m = PtnChaincodeAction{} }
+func (m *PtnChaincodeAction) String() string { return proto.CompactTextString(m) }
+func (*PtnChaincodeAction) ProtoMessage()    {}
+func (*PtnChaincodeAction) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c3ac5ce23bf32d05, []int{4}
 }
 
-func (m *ChaincodeAction) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_ChaincodeAction.Unmarshal(m, b)
+func (m *PtnChaincodeAction) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_PtnChaincodeAction.Unmarshal(m, b)
 }
-func (m *ChaincodeAction) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_ChaincodeAction.Marshal(b, m, deterministic)
+func (m *PtnChaincodeAction) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_PtnChaincodeAction.Marshal(b, m, deterministic)
 }
-func (m *ChaincodeAction) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ChaincodeAction.Merge(m, src)
+func (m *PtnChaincodeAction) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PtnChaincodeAction.Merge(m, src)
 }
-func (m *ChaincodeAction) XXX_Size() int {
-	return xxx_messageInfo_ChaincodeAction.Size(m)
+func (m *PtnChaincodeAction) XXX_Size() int {
+	return xxx_messageInfo_PtnChaincodeAction.Size(m)
 }
-func (m *ChaincodeAction) XXX_DiscardUnknown() {
-	xxx_messageInfo_ChaincodeAction.DiscardUnknown(m)
+func (m *PtnChaincodeAction) XXX_DiscardUnknown() {
+	xxx_messageInfo_PtnChaincodeAction.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ChaincodeAction proto.InternalMessageInfo
+var xxx_messageInfo_PtnChaincodeAction proto.InternalMessageInfo
 
-func (m *ChaincodeAction) GetResults() []byte {
+func (m *PtnChaincodeAction) GetResults() []byte {
 	if m != nil {
 		return m.Results
 	}
 	return nil
 }
 
-func (m *ChaincodeAction) GetEvents() []byte {
+func (m *PtnChaincodeAction) GetEvents() []byte {
 	if m != nil {
 		return m.Events
 	}
 	return nil
 }
 
-func (m *ChaincodeAction) GetResponse() *Response {
+func (m *PtnChaincodeAction) GetResponse() *PtnResponse {
 	if m != nil {
 		return m.Response
 	}
 	return nil
 }
 
-func (m *ChaincodeAction) GetChaincodeId() *ChaincodeID {
+func (m *PtnChaincodeAction) GetChaincodeId() *PtnChaincodeID {
 	if m != nil {
 		return m.ChaincodeId
 	}
@@ -370,45 +370,46 @@ func (m *ChaincodeAction) GetChaincodeId() *ChaincodeID {
 }
 
 func init() {
-	proto.RegisterType((*SignedProposal)(nil), "protos.SignedProposal")
-	proto.RegisterType((*Proposal)(nil), "protos.Proposal")
-	proto.RegisterType((*ChaincodeHeaderExtension)(nil), "protos.ChaincodeHeaderExtension")
-	proto.RegisterType((*ChaincodeProposalPayload)(nil), "protos.ChaincodeProposalPayload")
-	proto.RegisterMapType((map[string][]byte)(nil), "protos.ChaincodeProposalPayload.TransientMapEntry")
-	proto.RegisterType((*ChaincodeAction)(nil), "protos.ChaincodeAction")
+	proto.RegisterType((*PtnSignedProposal)(nil), "protos.PtnSignedProposal")
+	proto.RegisterType((*PtnProposal)(nil), "protos.PtnProposal")
+	proto.RegisterType((*PtnChaincodeHeaderExtension)(nil), "protos.PtnChaincodeHeaderExtension")
+	proto.RegisterType((*PtnChaincodeProposalPayload)(nil), "protos.PtnChaincodeProposalPayload")
+	proto.RegisterMapType((map[string][]byte)(nil), "protos.PtnChaincodeProposalPayload.TransientMapEntry")
+	proto.RegisterType((*PtnChaincodeAction)(nil), "protos.PtnChaincodeAction")
 }
 
 func init() { proto.RegisterFile("proposal.proto", fileDescriptor_c3ac5ce23bf32d05) }
 
 var fileDescriptor_c3ac5ce23bf32d05 = []byte{
-	// 458 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x53, 0x4d, 0x8b, 0xd4, 0x40,
-	0x10, 0x25, 0x33, 0xba, 0x1f, 0x95, 0x71, 0x3f, 0x5a, 0x91, 0x30, 0x78, 0x58, 0x02, 0xc2, 0x1e,
-	0xdc, 0x09, 0x8c, 0x20, 0xe2, 0x45, 0x9d, 0x75, 0xc1, 0x3d, 0x08, 0x43, 0xd4, 0x45, 0xf6, 0x32,
-	0x76, 0x92, 0x22, 0xd3, 0x6c, 0xb6, 0xbb, 0xe9, 0xee, 0x0c, 0xce, 0xd1, 0x9f, 0xe3, 0x4f, 0xf1,
-	0x5f, 0x49, 0xa6, 0x3f, 0xb2, 0x3a, 0x17, 0x61, 0x4f, 0xc9, 0xab, 0x7e, 0xf5, 0xaa, 0xea, 0x55,
-	0x37, 0x1c, 0x48, 0x25, 0xa4, 0xd0, 0xb4, 0x99, 0x48, 0x25, 0x8c, 0x20, 0x3b, 0x9b, 0x8f, 0x1e,
-	0xcf, 0x6b, 0x66, 0x96, 0x6d, 0x31, 0x29, 0xc5, 0x6d, 0x26, 0x69, 0xd3, 0xa0, 0x11, 0x1c, 0xb3,
-	0x5a, 0x9c, 0xf5, 0xa0, 0x14, 0x0a, 0xb3, 0xd5, 0xed, 0xb9, 0xe0, 0x46, 0xd1, 0xd2, 0xcc, 0xdb,
-	0x22, 0xb3, 0xc9, 0x99, 0x44, 0x54, 0x59, 0xb9, 0xa4, 0x8c, 0x97, 0xa2, 0x42, 0xab, 0x3c, 0xfe,
-	0x76, 0x6f, 0x45, 0xdf, 0xea, 0x42, 0xa1, 0x96, 0x82, 0x6b, 0xa7, 0x9c, 0x7e, 0x85, 0x83, 0xcf,
-	0xac, 0xe6, 0x58, 0xcd, 0x1d, 0x81, 0x3c, 0xef, 0xe7, 0x5a, 0x14, 0x6b, 0x83, 0x3a, 0x89, 0x4e,
-	0xa2, 0xd3, 0x51, 0xfe, 0xc8, 0x47, 0x67, 0x5d, 0x90, 0x3c, 0x83, 0x7d, 0xcd, 0x6a, 0x4e, 0x4d,
-	0xab, 0x30, 0x19, 0x6c, 0x18, 0x7d, 0x20, 0xbd, 0x86, 0xbd, 0x20, 0xf8, 0x14, 0x76, 0x96, 0x48,
-	0x2b, 0x54, 0x4e, 0xc8, 0x21, 0x92, 0xc0, 0xae, 0xa4, 0xeb, 0x46, 0xd0, 0xca, 0xe5, 0x7b, 0xd8,
-	0x69, 0xe3, 0x0f, 0x83, 0x5c, 0x33, 0xc1, 0x93, 0xa1, 0xd5, 0x0e, 0x81, 0xf4, 0x67, 0x04, 0xc9,
-	0xb9, 0x37, 0xe8, 0xe3, 0x46, 0xeb, 0xc2, 0x1f, 0x92, 0x33, 0x20, 0x4e, 0x65, 0xb1, 0x62, 0x9a,
-	0x15, 0xac, 0x61, 0x66, 0xed, 0x0a, 0x1f, 0xbb, 0x93, 0xab, 0x70, 0x40, 0x5e, 0xc1, 0x28, 0x78,
-	0xbd, 0x60, 0xb6, 0x91, 0x78, 0xfa, 0xd8, 0x9a, 0xa3, 0x27, 0xa1, 0xcc, 0xe5, 0x87, 0x3c, 0x0e,
-	0xc4, 0xcb, 0x2a, 0xfd, 0x7d, 0xb7, 0x07, 0x3f, 0xe9, 0xdc, 0xb5, 0xff, 0x04, 0x1e, 0x32, 0x2e,
-	0x5b, 0xe3, 0xca, 0x5a, 0x40, 0xae, 0x60, 0xf4, 0x45, 0x51, 0xae, 0x19, 0x72, 0xf3, 0x89, 0xca,
-	0x64, 0x70, 0x32, 0x3c, 0x8d, 0xa7, 0xd3, 0xad, 0x52, 0xff, 0xa8, 0x4d, 0xee, 0x26, 0x5d, 0x70,
-	0xa3, 0xd6, 0xf9, 0x5f, 0x3a, 0xe3, 0xb7, 0x70, 0xbc, 0x45, 0x21, 0x47, 0x30, 0xbc, 0x41, 0x3b,
-	0xf7, 0x7e, 0xde, 0xfd, 0x76, 0x4d, 0xad, 0x68, 0xd3, 0xfa, 0x5d, 0x59, 0xf0, 0x66, 0xf0, 0x3a,
-	0x4a, 0x7f, 0x45, 0x70, 0x18, 0xaa, 0xbf, 0x2f, 0x4d, 0x67, 0x63, 0x02, 0xbb, 0x0a, 0x75, 0xdb,
-	0x18, 0xbf, 0x7d, 0x0f, 0xbb, 0x6d, 0xe2, 0x0a, 0xb9, 0xd1, 0x4e, 0xc8, 0x21, 0xf2, 0x02, 0xf6,
-	0xfc, 0xd5, 0xda, 0xac, 0x2c, 0x9e, 0x1e, 0xf9, 0xd1, 0x72, 0x17, 0xcf, 0x03, 0x63, 0xcb, 0xf7,
-	0x07, 0xff, 0xe7, 0xfb, 0xec, 0x3b, 0xc4, 0x8e, 0xd2, 0xdd, 0xea, 0xd9, 0x61, 0x6f, 0x56, 0x79,
-	0x43, 0x6b, 0xbc, 0x7e, 0x77, 0xdf, 0x87, 0x52, 0xd8, 0x47, 0xfc, 0xf2, 0x4f, 0x00, 0x00, 0x00,
-	0xff, 0xff, 0xaa, 0x69, 0xa9, 0x55, 0xdd, 0x03, 0x00, 0x00,
+	// 466 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x93, 0xdd, 0x6a, 0xd4, 0x40,
+	0x14, 0xc7, 0xc9, 0xae, 0xb6, 0x76, 0xb2, 0x7e, 0xec, 0x28, 0x25, 0xac, 0x5e, 0x94, 0x80, 0xd0,
+	0x9b, 0x6e, 0x60, 0x45, 0x50, 0x6f, 0xd4, 0xad, 0x05, 0x7b, 0x21, 0x84, 0x28, 0x52, 0x05, 0x59,
+	0x27, 0xc9, 0x21, 0x3b, 0x34, 0x9d, 0x19, 0x66, 0x4e, 0x16, 0xf7, 0x09, 0x7c, 0x1f, 0x5f, 0xc4,
+	0x57, 0x92, 0xec, 0xcc, 0x64, 0x63, 0xeb, 0x85, 0xb0, 0x57, 0xc9, 0xff, 0x9c, 0x33, 0xbf, 0xf3,
+	0x35, 0x43, 0xee, 0x29, 0x2d, 0x95, 0x34, 0xac, 0x9e, 0x2a, 0x2d, 0x51, 0xd2, 0xbd, 0xcd, 0xc7,
+	0x4c, 0xd2, 0x8a, 0xe3, 0xb2, 0xc9, 0xa7, 0x85, 0xbc, 0x4a, 0x14, 0xab, 0x6b, 0x40, 0x29, 0x20,
+	0xa9, 0xe4, 0xc9, 0x56, 0x14, 0x52, 0x43, 0xb2, 0xba, 0x3a, 0x95, 0x02, 0x35, 0x2b, 0x30, 0x6d,
+	0xf2, 0xc4, 0x1e, 0x4e, 0x14, 0x80, 0x4e, 0x8a, 0x25, 0xe3, 0xa2, 0x90, 0x25, 0x58, 0xf2, 0xe4,
+	0x62, 0x67, 0xa2, 0x2f, 0x75, 0xa1, 0xc1, 0x28, 0x29, 0x8c, 0x23, 0xc7, 0x17, 0x64, 0x9c, 0xa2,
+	0xf8, 0xc8, 0x2b, 0x01, 0x65, 0xea, 0x62, 0xe8, 0xd3, 0x6d, 0x6b, 0x8b, 0x7c, 0x8d, 0x60, 0xa2,
+	0xe0, 0x28, 0x38, 0x1e, 0x65, 0x77, 0xbd, 0x75, 0xde, 0x1a, 0xe9, 0x13, 0x72, 0x60, 0x78, 0x25,
+	0x18, 0x36, 0x1a, 0xa2, 0xc1, 0x26, 0x62, 0x6b, 0x88, 0xbf, 0x91, 0x30, 0x45, 0xd1, 0x31, 0x0f,
+	0xc9, 0xde, 0x12, 0x58, 0x09, 0xda, 0xb1, 0x9c, 0xa2, 0x11, 0xd9, 0x57, 0x6c, 0x5d, 0x4b, 0x56,
+	0x3a, 0x84, 0x97, 0x2d, 0x1e, 0x7e, 0x20, 0x08, 0xc3, 0xa5, 0x88, 0x86, 0x16, 0xdf, 0x19, 0xe2,
+	0x9f, 0x01, 0x79, 0x9c, 0xa2, 0x38, 0xf5, 0x93, 0x7a, 0xbf, 0xc1, 0x9d, 0x79, 0x3f, 0x3d, 0x21,
+	0xd4, 0x81, 0x16, 0x2b, 0x6e, 0x78, 0xce, 0x6b, 0x8e, 0x6b, 0x97, 0x7b, 0xec, 0x3c, 0x9f, 0x3b,
+	0x07, 0x7d, 0x49, 0x46, 0xdd, 0xd0, 0x17, 0xdc, 0xd6, 0x12, 0xce, 0x0e, 0xed, 0x94, 0xcc, 0xb4,
+	0x9f, 0xe9, 0xfc, 0x5d, 0x16, 0x76, 0xb1, 0xe7, 0x65, 0xfc, 0xfb, 0x5a, 0x25, 0xbe, 0xe5, 0xd4,
+	0xf5, 0xf1, 0x88, 0xdc, 0xe6, 0x42, 0x35, 0xe8, 0x92, 0x5b, 0x41, 0xbf, 0x90, 0xd1, 0x27, 0xcd,
+	0x84, 0xe1, 0x20, 0xf0, 0x03, 0x53, 0xd1, 0xe0, 0x68, 0x78, 0x1c, 0xce, 0x9e, 0xff, 0x2b, 0xe1,
+	0x35, 0xe0, 0xb4, 0x7f, 0xee, 0x4c, 0xa0, 0x5e, 0x67, 0x7f, 0xa1, 0x26, 0xaf, 0xc9, 0xf8, 0x46,
+	0x08, 0x7d, 0x40, 0x86, 0x97, 0x60, 0x07, 0x70, 0x90, 0xb5, 0xbf, 0x6d, 0x5d, 0x2b, 0x56, 0x37,
+	0x7e, 0x75, 0x56, 0xbc, 0x1a, 0xbc, 0x08, 0xe2, 0x5f, 0x01, 0xa1, 0xfd, 0x02, 0xde, 0x16, 0xd8,
+	0x8e, 0x34, 0x22, 0xfb, 0x1a, 0x4c, 0x53, 0xa3, 0xbf, 0x0f, 0x5e, 0xb6, 0xcb, 0x85, 0x15, 0x08,
+	0x34, 0x8e, 0xe5, 0x14, 0x4d, 0xc8, 0x1d, 0x7f, 0xdf, 0x36, 0x1b, 0x0c, 0x67, 0x0f, 0x7b, 0x0d,
+	0x66, 0xce, 0x95, 0x75, 0x41, 0x37, 0xd6, 0x70, 0xeb, 0xbf, 0xd7, 0x30, 0xff, 0x4e, 0x42, 0x17,
+	0xd5, 0x5e, 0xf8, 0xf9, 0xfd, 0xed, 0xd4, 0x8a, 0x4b, 0x56, 0xc1, 0xd7, 0x37, 0xbb, 0xbe, 0xa1,
+	0xdc, 0xbe, 0xef, 0x67, 0x7f, 0x02, 0x00, 0x00, 0xff, 0xff, 0x43, 0xcd, 0x75, 0x08, 0xf8, 0x03,
+	0x00, 0x00,
 }

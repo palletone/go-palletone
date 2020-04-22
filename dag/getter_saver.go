@@ -143,6 +143,11 @@ func (dag *Dag) HeadUnitNum() uint64 {
 	return idx.Index
 }
 
+func (dag *Dag) StableUnitNum() uint64 {
+	gasToken := dagconfig.DagConfig.GetGasToken()
+	return dag.GetIrreversibleUnitNum(gasToken)
+}
+
 func (dag *Dag) LastMaintenanceTime() int64 {
 	return int64(dag.GetDynGlobalProp().LastMaintenanceTime)
 }

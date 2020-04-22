@@ -68,10 +68,10 @@ type Dag struct {
 	stableUnitProduceRep dagcommon.IUnitProduceRepository
 	localRep             dagcommon.ILocalRepository
 	ChainHeadFeed        *event.Feed
-
-	Mutex           sync.RWMutex
-	Memdag          memunit.IMemDag                     // memory unit
-	PartitionMemDag map[modules.AssetId]memunit.IMemDag //其他分区的MemDag
+	enableGasFee         bool
+	Mutex                sync.RWMutex
+	Memdag               memunit.IMemDag                     // memory unit
+	PartitionMemDag      map[modules.AssetId]memunit.IMemDag //其他分区的MemDag
 
 	//applyLock sync.Mutex
 
@@ -567,7 +567,7 @@ func (d *Dag) RefreshPartitionMemDag() {
 		if !ok {
 			d.initDataForMainChainHeader(mainChain)
 			log.Debugf("Init main chain mem dag for:%s", mainChain.GasToken.String())
-			pmemdag := memunit.NewMemDag(mainChain.GasToken, threshold, true, db, unitRep,
+			pmemdag := memunit.NewMemDag(mainChain.GasToken, threshold, true, d.enableGasFee, db, unitRep,
 				propRep, d.stableStateRep, cache(), d.tokenEngine, validator.NewValidate)
 			//pmemdag.SetUnstableRepositories(d.unstableUnitRep, d.unstableUtxoRep, d.unstableStateRep,
 			// d.unstablePropRep, d.unstableUnitProduceRep)
@@ -593,7 +593,7 @@ func (d *Dag) RefreshPartitionMemDag() {
 			threshold := int(partition.StableThreshold)
 			d.initDataForPartition(partition)
 			log.Debugf("Init partition mem dag for:%s", ptoken.String())
-			pmemdag := memunit.NewMemDag(ptoken, threshold, true, db, unitRep, propRep,
+			pmemdag := memunit.NewMemDag(ptoken, threshold, true, d.enableGasFee, db, unitRep, propRep,
 				d.stableStateRep, cache(), d.tokenEngine, validator.NewValidate)
 			//pmemdag.SetUnstableRepositories(d.unstableUnitRep, d.unstableUtxoRep, d.unstableStateRep,
 			// d.unstablePropRep, d.unstableUnitProduceRep)
@@ -611,7 +611,7 @@ func (d *Dag) RefreshPartitionMemDag() {
 		if !ok {
 			d.initDataForPartition(partition)
 			log.Debugf("Init partition mem dag for:%s", ptoken.String())
-			pmemdag := memunit.NewMemDag(ptoken, threshold, true, db, unitRep, propRep,
+			pmemdag := memunit.NewMemDag(ptoken, threshold, true, d.enableGasFee, db, unitRep, propRep,
 				d.stableStateRep, cache(), d.tokenEngine, validator.NewValidate)
 			//pmemdag.SetUnstableRepositories(d.unstableUnitRep, d.unstableUtxoRep, d.unstableStateRep,
 			// d.unstablePropRep, d.unstableUnitProduceRep)
@@ -653,7 +653,7 @@ func (d *Dag) initDataForMainChainHeader(mainChain *modules.MainChain) {
 
 // newDag, with db , light to build a new dag
 // firstly to check db migration, is updated ptn database.
-func NewDag(db ptndb.Database, localdb ptndb.Database, cache palletcache.ICache, light bool) (*Dag, error) {
+func NewDag(db ptndb.Database, localdb ptndb.Database, cache palletcache.ICache, light, enableGasFee bool) (*Dag, error) {
 	tokenEngine := tokenengine.Instance //TODO Devin tokenENgine from parmeter
 	dagDb := storage.NewDagDb(db)
 	txutxoDb := storage.NewUtxoDb(db, tokenEngine, false)
@@ -668,13 +668,13 @@ func NewDag(db ptndb.Database, localdb ptndb.Database, cache palletcache.ICache,
 	}
 	localRep := dagcommon.NewLocalRepository(localDb)
 	utxoRep := dagcommon.NewUtxoRepository(txutxoDb, requtxoDb, idxDb, stateDb, propDb, tokenEngine)
-	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, txutxoDb, requtxoDb, stateDb, propDb, tokenEngine)
+	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, txutxoDb, requtxoDb, stateDb, propDb, tokenEngine, enableGasFee)
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb, dagDb)
 	stableUnitProduceRep := dagcommon.NewUnitProduceRepository(unitRep, propRep, stateRep)
 	gasToken := dagconfig.DagConfig.GetGasToken()
 	threshold, _ := propRep.GetChainThreshold()
-	unstableChain := memunit.NewMemDag(gasToken, threshold, light, db,
+	unstableChain := memunit.NewMemDag(gasToken, threshold, light, enableGasFee, db,
 		unitRep, propRep, stateRep, cache, tokenEngine, validator.NewValidate)
 	tunitRep, tutxoRep, tstateRep, tpropRep, tUnitProduceRep := unstableChain.GetUnstableRepositories()
 
@@ -696,6 +696,7 @@ func NewDag(db ptndb.Database, localdb ptndb.Database, cache palletcache.ICache,
 		Memdag:                 unstableChain,
 		localRep:               localRep,
 		PartitionMemDag:        make(map[modules.AssetId]memunit.IMemDag),
+		enableGasFee:           enableGasFee,
 	}
 	dag.stableUnitRep.SubscribeSysContractStateChangeEvent(dag.AfterSysContractStateChangeEvent)
 	dag.stableUnitProduceRep.SubscribeChainMaintenanceEvent(dag.AfterChainMaintenanceEvent)
@@ -799,7 +800,7 @@ func NewDagSimple(db ptndb.Database) (*Dag, error) {
 	propDb := storage.NewPropertyDb(db)
 
 	utxoRep := dagcommon.NewUtxoRepository(txutxoDb, requtxoDb, idxDb, stateDb, propDb, tokenEngine)
-	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, txutxoDb, requtxoDb, stateDb, propDb, tokenEngine)
+	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, txutxoDb, requtxoDb, stateDb, propDb, tokenEngine, true)
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb, dagDb)
 
@@ -819,6 +820,7 @@ func NewDagSimple(db ptndb.Database) (*Dag, error) {
 		unstableStateRep:     stateRep,
 		unstableUtxoRep:      utxoRep,
 		PartitionMemDag:      make(map[modules.AssetId]memunit.IMemDag),
+		enableGasFee:         true,
 	}
 	return dag, nil
 }
@@ -836,11 +838,11 @@ func NewDagForTest(db ptndb.Database) (*Dag, error) {
 	propRep := dagcommon.NewPropRepository(propDb)
 	stateRep := dagcommon.NewStateRepository(stateDb, dagDb)
 	utxoRep := dagcommon.NewUtxoRepository(txutxoDb, requtxoDb, idxDb, stateDb, propDb, tokenEngine)
-	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, txutxoDb, requtxoDb, stateDb, propDb, tokenEngine)
+	unitRep := dagcommon.NewUnitRepository(dagDb, idxDb, txutxoDb, requtxoDb, stateDb, propDb, tokenEngine, true)
 	statleUnitProduceRep := dagcommon.NewUnitProduceRepository(unitRep, propRep, stateRep)
 
 	threshold, _ := propRep.GetChainThreshold()
-	unstableChain := memunit.NewMemDag(modules.PTNCOIN, threshold, false, db, unitRep,
+	unstableChain := memunit.NewMemDag(modules.PTNCOIN, threshold, false, true, db, unitRep,
 		propRep, stateRep, cache(), tokenEngine, validator.NewValidate)
 	tunitRep, tutxoRep, tstateRep, tpropRep, tUnitProduceRep := unstableChain.GetUnstableRepositories()
 
@@ -860,6 +862,7 @@ func NewDagForTest(db ptndb.Database) (*Dag, error) {
 		unstablePropRep:        tpropRep,
 		unstableUnitProduceRep: tUnitProduceRep,
 		PartitionMemDag:        make(map[modules.AssetId]memunit.IMemDag),
+		enableGasFee:           true,
 	}
 	return dag, nil
 }
@@ -952,6 +955,10 @@ func (d *Dag) GetTxOutput(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 //	}
 //	return view
 //}
+// return the transaction's fee ,
+func (d *Dag) GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error) {
+	return d.unstableUtxoRep.ComputeTxFee(pay)
+}
 
 // return the true or false , is utxo is spent.
 func (d *Dag) IsUtxoSpent(outpoint *modules.OutPoint) (bool, error) {
@@ -1235,9 +1242,6 @@ func (d *Dag) SetUnitGroupSign(unitHash common.Hash, groupSign []byte) error {
 	// 群签之后， 更新memdag，将该unit和它的父单元们稳定存储。
 	d.Memdag.SetUnitGroupSign(unitHash, groupSign)
 
-	//TODO albert 待合并
-	// 状态更新
-	//go d.updateGlobalPropDependGroupSign(unitHash)
 	return nil
 }
 
@@ -1380,9 +1384,9 @@ func (bc *Dag) GetMainChain() (*modules.MainChain, error) {
 }
 
 // return requester's address from the transaction
-func (d *Dag) GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error) {
-	return d.unstableUnitRep.GetTxRequesterAddress(tx)
-}
+//func (d *Dag) GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error) {
+//	return d.unstableUnitRep.GetTxRequesterAddress(tx)
+//}
 
 // refresh all address transaction's index
 func (d *Dag) RefreshAddrTxIndex() error {

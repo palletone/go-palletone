@@ -34,15 +34,15 @@ func (e SendPanicFailure) Error() string {
 
 // PeerChaincodeStream interface for stream between Peer and chaincode instance.
 type inProcStream struct {
-	recv <-chan *pb.ChaincodeMessage
-	send chan<- *pb.ChaincodeMessage
+	recv <-chan *pb.PtnChaincodeMessage
+	send chan<- *pb.PtnChaincodeMessage
 }
 
-func newInProcStream(recv <-chan *pb.ChaincodeMessage, send chan<- *pb.ChaincodeMessage) *inProcStream {
+func newInProcStream(recv <-chan *pb.PtnChaincodeMessage, send chan<- *pb.PtnChaincodeMessage) *inProcStream {
 	return &inProcStream{recv, send}
 }
 
-func (s *inProcStream) Send(msg *pb.ChaincodeMessage) (err error) {
+func (s *inProcStream) Send(msg *pb.PtnChaincodeMessage) (err error) {
 	//send may happen on a closed channel when the system is
 	//shutting down. Just catch the exception and return error
 	defer func() {
@@ -55,7 +55,7 @@ func (s *inProcStream) Send(msg *pb.ChaincodeMessage) (err error) {
 	return
 }
 
-func (s *inProcStream) Recv() (*pb.ChaincodeMessage, error) {
+func (s *inProcStream) Recv() (*pb.PtnChaincodeMessage, error) {
 	msg := <-s.recv
 	return msg, nil
 }

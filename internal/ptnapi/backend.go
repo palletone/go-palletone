@@ -65,8 +65,8 @@ type Backend interface {
 	//SubscribeChainSideEvent(ch chan<- coredata.ChainSideEvent) event.Subscription
 	GetUnstableUnits() []*ptnjson.UnitSummaryJson
 	// TxPool API
-	SendTx(ctx context.Context, tx *modules.Transaction) error
-	SendTxs(ctx context.Context, signedTxs []*modules.Transaction) []error
+	SendTx(tx *modules.Transaction) error
+	SendTxs(signedTxs []*modules.Transaction) []error
 	GetPoolTransactions() (modules.Transactions, error)
 	GetPoolTransaction(txHash common.Hash) *modules.Transaction
 	GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, error)
@@ -75,6 +75,7 @@ type Backend interface {
 	GetPoolAddrUtxos(addr common.Address, token *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	//GetPoolNonce(ctx context.Context, addr common.Address) (uint64, error)
 	Status() (int, int, int)
+	TxPoolClear()
 	TxPoolContent() (map[common.Hash]*txspool.TxPoolTransaction, map[common.Hash]*txspool.TxPoolTransaction)
 	Queued() ([]*txspool.TxPoolTransaction, error)
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
@@ -205,6 +206,7 @@ type Backend interface {
 	SyncUTXOByAddr(addr string) string
 	StartCorsSync() (string, error)
 
+	EnableGasFee() bool
 	GetContractsWithJuryAddr(addr common.Hash) []*modules.Contract
 }
 

@@ -29,7 +29,7 @@ import "github.com/palletone/go-palletone/core/vmContractPub/protos/peer/proposa
 import "google/protobuf/timestamp.proto";
 
 
-message ChaincodeMessage {
+message PtnChaincodeMessage {
 
     enum Type {
         UNDEFINED = 0;
@@ -40,17 +40,17 @@ message ChaincodeMessage {
         TRANSACTION = 5;
         COMPLETED = 6;
         ERROR = 7;
-        GET_STATE = 8;
-        PUT_STATE = 9;
-        DEL_STATE = 10;
+        PTN_GET_STATE = 8;
+        PTN_PUT_STATE = 9;
+        PTN_DEL_STATE = 10;
         INVOKE_CHAINCODE = 11;
         RESPONSE = 13;
         GET_STATE_BY_PREFIX=14;
-//        GET_QUERY_RESULT = 15;
-//        QUERY_STATE_NEXT = 16;
-//        QUERY_STATE_CLOSE = 17;
+//        PTN_GET_QUERY_RESULT = 15;
+//        PTN_QUERY_STATE_NEXT = 16;
+//        PTN_QUERY_STATE_CLOSE = 17;
         KEEPALIVE = 18;
-//        GET_HISTORY_FOR_KEY = 19;
+//        PTN_GET_HISTORY_FOR_KEY = 19;
         GET_SYSTEM_CONFIG_REQUEST = 23;
         GET_CONTRACT_ALL_STATE = 24;
         GET_TOKEN_BALANCE=25;
@@ -71,12 +71,12 @@ message ChaincodeMessage {
     bytes payload = 3;
     string txid = 4;
 
-    SignedProposal proposal = 5;
+    PtnSignedProposal proposal = 5;
 
     //event emitted by chaincode. Used only with Init or Invoke.
     // This event is then stored (currently)
     //with Block.NonHashData.TransactionResult
-    ChaincodeEvent chaincode_event = 6;
+    PtnChaincodeEvent chaincode_event = 6;
 
     //channel id
     string channel_id = 7;
@@ -87,125 +87,125 @@ message ChaincodeMessage {
 // TODO: We need to finalize the design on chaincode container
 // compatibility upon upgrade, see FAB-5777.
 
-message GetState {
+message PtnGetState {
     string key = 1;
     string collection = 2;
     bytes contractId=3;
 }
-message GetStateByPrefix {
+message PtnGetStateByPrefix {
     string prefix = 1;
     bytes contractId=2;
 }
-message GetTimestamp {
+message PtnGetTimestamp {
     uint32 rangeNumber = 1;
     string collection = 2;
 }
-message PutState {
+message PtnPutState {
     string key = 1;
     bytes value = 2;
     string collection = 3;
     bytes contractId=4;
 }
 
-message DelState {
+message PtnDelState {
     string key = 1;
     string collection = 2;
     bytes contractId=3;
 }
 
-message GetStateByRange {
+message PtnGetStateByRange {
     string startKey = 1;
     string endKey = 2;
     string collection = 3;
 }
 
-message GetQueryResult {
+message PtnGetQueryResult {
     string query = 1;
     string collection = 2;
 }
 
-message GetHistoryForKey {
+message PtnGetHistoryForKey {
     string key = 1;
 }
 
-message QueryStateNext {
+message PtnQueryStateNext {
     string id = 1;
 }
 
-message QueryStateClose {
+message PtnQueryStateClose {
     string id = 1;
 }
 
-message QueryResultBytes {
+message PtnQueryResultBytes {
     bytes resultBytes = 1;
 }
 
-message QueryResponse {
-    repeated QueryResultBytes results = 1;
+message PtnQueryResponse {
+    repeated PtnQueryResultBytes results = 1;
     bool has_more = 2;
     string id = 3;
 }
 
-message OutChainCall {
+message PtnOutChainCall {
     string OutChainName = 1;
     string method = 2;
     bytes params = 3;
     string collection = 4;
 }
 
-message GetCertState {
+message PtnGetCertState {
     string key = 1;
     string collection = 2;
 }
 
-message SendJury {
+message PtnSendJury {
     uint32 msgType =1;
     bytes consultContent = 2;
     bytes myAnswer = 3;
     string collection = 4;
 }
-message RecvJury {
+message PtnRecvJury {
     uint32 msgType =1;
     bytes consultContent = 2;
     uint32 timeout =3;
     string collection = 4;
 }
 
-message GetTokenBalance {
+message PtnGetTokenBalance {
     string address = 1;
     string asset = 2;
 }
 
-message GetStableTransaction {
+message PtnGetStableTransaction {
     string txHash = 1;
 }
 
-message GetStableUnit {
+message PtnGetStableUnit {
     string unitHash = 1;
     uint64 unitNumber = 2;
 }
 
-message PayOutToken {
+message PtnPayOutToken {
     bytes asset = 1;
     uint64 amount = 2;
     uint32 locktime =3;
     string address = 4;
 }
-message DefineToken{
+message PtnDefineToken{
     int32 tokenType=1 ;
     bytes define=2;
     string creator = 3;
 }
-message SupplyToken{
+message PtnSupplyToken{
     bytes assetId=1;
     bytes uniqueId=2;
     uint64 amount=3;
     string creator = 4;
 }
-message KeyForSystemConfig{
+message PtnKeyForSystemConfig{
     string key = 1;
 }
-message GetStateByPrefixKv {
+message PtnGetStateByPrefixKv {
     string key = 1;
     bytes resultBytes = 2;
 }
@@ -214,7 +214,7 @@ message GetStateByPrefixKv {
 // provides the context necessary for the server to respond appropriately.
 service ChaincodeSupport {
 
-    rpc Register(stream ChaincodeMessage) returns (stream ChaincodeMessage) {}
+    rpc Register(stream PtnChaincodeMessage) returns (stream PtnChaincodeMessage) {}
 
 
 }

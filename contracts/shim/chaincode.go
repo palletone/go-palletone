@@ -70,11 +70,11 @@ type ChaincodeStub struct {
 	ContractId     []byte
 	TxID           string
 	ChannelId      string
-	chaincodeEvent *pb.ChaincodeEvent
+	chaincodeEvent *pb.PtnChaincodeEvent
 	args           [][]byte
 	handler        *Handler
-	signedProposal *pb.SignedProposal
-	//proposal       *pb.Proposal
+	signedProposal *pb.PtnSignedProposal
+	//proposal       *pb.PtnProposal
 
 	// Additional fields extracted from the signedProposal
 	//creator   []byte
@@ -215,8 +215,8 @@ func Start(cc Chaincode) error {
 
 // StartInProc is an entry point for system chaincodes bootstrap. It is not an
 // API for chaincodes.
-func StartInProc(env []string, args []string, cc Chaincode, recv <-chan *pb.ChaincodeMessage,
-	send chan<- *pb.ChaincodeMessage) error {
+func StartInProc(env []string, args []string, cc Chaincode, recv <-chan *pb.PtnChaincodeMessage,
+	send chan<- *pb.PtnChaincodeMessage) error {
 	log.Debugf("in proc %v", args)
 	var chaincodename string
 	for _, v := range env {
@@ -268,14 +268,14 @@ func chatWithPeer(chaincodename string, stream PeerChaincodeStream, cc Chaincode
 	handler := newChaincodeHandler(stream, cc)
 	defer stream.CloseSend()
 	// Send the ChaincodeID during register.
-	chaincodeID := &pb.ChaincodeID{Name: chaincodename}
+	chaincodeID := &pb.PtnChaincodeID{Name: chaincodename}
 	payload, err := proto.Marshal(chaincodeID)
 	if err != nil {
 		return errors.Wrap(err, "error marshaling chaincodeID during chaincode registration")
 	}
 	// Register on the stream
-	log.Debugf("Registering.. sending %s", pb.ChaincodeMessage_REGISTER)
-	err = handler.serialSend(&pb.ChaincodeMessage{Type: pb.ChaincodeMessage_REGISTER, Payload: payload})
+	log.Debugf("Registering.. sending %s", pb.PtnChaincodeMessage_REGISTER)
+	err = handler.serialSend(&pb.PtnChaincodeMessage{Type: pb.PtnChaincodeMessage_REGISTER, Payload: payload})
 	if err != nil {
 		return errors.WithMessage(err, "error sending chaincode REGISTER")
 	}
@@ -283,9 +283,9 @@ func chatWithPeer(chaincodename string, stream PeerChaincodeStream, cc Chaincode
 	errc := make(chan error)
 	go func() {
 		defer close(waitc)
-		msgAvail := make(chan *pb.ChaincodeMessage)
+		msgAvail := make(chan *pb.PtnChaincodeMessage)
 		var nsInfo *nextStateInfo
-		var in *pb.ChaincodeMessage
+		var in *pb.PtnChaincodeMessage
 		recv := true
 		for {
 			in = nil
@@ -294,7 +294,7 @@ func chatWithPeer(chaincodename string, stream PeerChaincodeStream, cc Chaincode
 			if recv {
 				recv = false
 				go func() {
-					var in2 *pb.ChaincodeMessage
+					var in2 *pb.PtnChaincodeMessage
 					in2, err = stream.Recv()
 					msgAvail <- in2
 				}()
@@ -338,7 +338,7 @@ func chatWithPeer(chaincodename string, stream PeerChaincodeStream, cc Chaincode
 				return
 			}
 			//keepalive messages are PONGs to the PINGs
-			if in.Type == pb.ChaincodeMessage_KEEPALIVE {
+			if in.Type == pb.PtnChaincodeMessage_KEEPALIVE {
 				log.Debug("Sending KEEPALIVE response")
 				//ignore any errors, maybe next KEEPALIVE will work
 				handler.serialSendAsync(in, nil)
@@ -355,7 +355,7 @@ func chatWithPeer(chaincodename string, stream PeerChaincodeStream, cc Chaincode
 // -- init stub ---
 // ChaincodeInvocation functionality
 func (stub *ChaincodeStub) init(handler *Handler, contractid []byte, channelId string, txid string,
-	input *pb.ChaincodeInput, signedProposal *pb.SignedProposal) error {
+	input *pb.PtnChaincodeInput, signedProposal *pb.PtnSignedProposal) error {
 	stub.TxID = txid
 	stub.ChannelId = channelId
 	stub.args = input.Args
@@ -583,7 +583,7 @@ func (stub *ChaincodeStub) SetEvent(name string, payload []byte) error {
 	if name == "" {
 		return errors.New("event name can not be nil string")
 	}
-	stub.chaincodeEvent = &pb.ChaincodeEvent{EventName: name, Payload: payload}
+	stub.chaincodeEvent = &pb.PtnChaincodeEvent{EventName: name, Payload: payload}
 	return nil
 }
 
@@ -1100,6 +1100,6 @@ func (c *ChaincodeLogger) Criticalf(format string, args ...interface{}) {
 //}
 
 // GetSignedProposal documentation can be found in interfaces.go
-//func (stub *ChaincodeStub) GetSignedProposal() (*pb.SignedProposal, error) {
+//func (stub *ChaincodeStub) GetSignedProposal() (*pb.PtnSignedProposal, error) {
 // return stub.signedProposal, nil
 //}

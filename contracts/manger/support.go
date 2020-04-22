@@ -60,17 +60,17 @@ func (s *SupportImpl) IsSysCC(name string) bool {
 }
 
 //Execute - execute proposal, return original response of chaincode
-func (s *SupportImpl) Execute(contractid []byte, ctxt context.Context, cid, name, version, txid string, syscc bool, signedProp *pb.SignedProposal, prop *pb.Proposal, spec interface{}, timeout time.Duration) (*pb.Response, *pb.ChaincodeEvent, error) {
+func (s *SupportImpl) Execute(contractid []byte, ctxt context.Context, cid, name, version, txid string, syscc bool, signedProp *pb.PtnSignedProposal, prop *pb.PtnProposal, spec interface{}, timeout time.Duration) (*pb.PtnResponse, *pb.PtnChaincodeEvent, error) {
 	log.Debugf("execute enter")
 	cccid := ccprovider.NewCCContext(contractid, cid, name, version, txid, syscc, signedProp, prop)
 
 	switch spec.(type) {
-	case *pb.ChaincodeDeploymentSpec:
+	case *pb.PtnChaincodeDeploymentSpec:
 		log.Debugf("deploy")
 		return chaincode.Execute(ctxt, cccid, spec, timeout)
-	case *pb.ChaincodeInvocationSpec:
+	case *pb.PtnChaincodeInvocationSpec:
 		log.Debugf("invoke")
-		cis := spec.(*pb.ChaincodeInvocationSpec)
+		cis := spec.(*pb.PtnChaincodeInvocationSpec)
 
 		//log.Infof("cis:%v", cis)
 		//decorate the chaincode input
@@ -93,7 +93,7 @@ func shorttxid(txid string) string {
 	return txid[0:8]
 }
 
-func GetBytesChaincodeEvent(event *pb.ChaincodeEvent) ([]byte, error) {
+func GetBytesChaincodeEvent(event *pb.PtnChaincodeEvent) ([]byte, error) {
 	eventBytes, err := proto.Marshal(event)
 	return eventBytes, err
 }

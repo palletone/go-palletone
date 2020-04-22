@@ -123,7 +123,7 @@ func (dag *Dag) getBePackedTxs(txp txspool.ITxPool, cp *jury.Processor,
 
 // GenerateUnit, generate unit
 func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKey []byte, ks *keystore.KeyStore,
-	txp txspool.ITxPool, cp *jury.Processor) (*modules.Unit, error) {
+	txp txspool.ITxPool, cp *jury.Processor, allowedNoTxs bool) (*modules.Unit, error) {
 	t0 := time.Now()
 	defer func(start time.Time) {
 		log.Debugf("GenerateUnit cost time: %v", time.Since(start))
@@ -150,6 +150,11 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 		errStr := fmt.Sprintf("No unit need to be packaged for now.")
 		log.Debug(errStr)
 		return nil, fmt.Errorf(errStr)
+	}
+
+	// 特殊返回条件，不是错误
+	if !allowedNoTxs && unsign_unit.Txs.Len() == 0 {
+		return unsign_unit, nil
 	}
 
 	sign_unit, err := dagcommon.GetUnitWithSig(unsign_unit, ks, producer)
@@ -214,7 +219,7 @@ func (d *Dag) createUnit(mAddr common.Address, txs []*modules.Transaction,
 
 	//return d.unstableUnitRep.CreateUnit(med.GetRewardAdd(), txpool, rep, state.GetJurorReward)
 	return d.unstableUnitRep.CreateUnit(med.GetRewardAdd(), txs, when,
-		d.unstablePropRep, d.unstableStateRep.GetJurorReward)
+		d.unstablePropRep, d.unstableStateRep.GetJurorReward, d.enableGasFee)
 }
 
 func (d *Dag) GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error) {

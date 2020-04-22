@@ -46,7 +46,6 @@ type IUnitProduceRepository interface {
 	SubscribeChainMaintenanceEvent(ob AfterChainMaintenanceEventFunc)
 	SubscribeActiveMediatorsUpdatedEvent(ch chan<- modules.ActiveMediatorsUpdatedEvent) event.Subscription
 	RefreshSysParameters()
-	//HeadUnitTime() int64
 }
 
 type UnitProduceRepository struct {
@@ -75,7 +74,7 @@ func NewUnitProduceRepository(unitRep IUnitRepository, propRep IPropRepository,
 }
 
 func NewUnitProduceRepository4Db(db ptndb.Database,
-	tokenEngine tokenengine.ITokenEngine) *UnitProduceRepository {
+	tokenEngine tokenengine.ITokenEngine, enableGasFee bool) *UnitProduceRepository {
 	dagDb := storage.NewDagDb(db)
 	txutxoDb := storage.NewUtxoDb(db, tokenEngine, false)
 	requtxoDb := storage.NewUtxoDb(db, tokenEngine, true)
@@ -83,7 +82,7 @@ func NewUnitProduceRepository4Db(db ptndb.Database,
 	idxDb := storage.NewIndexDb(db)
 	propDb := storage.NewPropertyDb(db)
 
-	unitRep := NewUnitRepository(dagDb, idxDb, txutxoDb, requtxoDb, stateDb, propDb, tokenEngine)
+	unitRep := NewUnitRepository(dagDb, idxDb, txutxoDb, requtxoDb, stateDb, propDb, tokenEngine, enableGasFee)
 	propRep := NewPropRepository(propDb)
 	stateRep := NewStateRepository(stateDb, dagDb)
 
@@ -563,9 +562,7 @@ func (dag *UnitProduceRepository) updateActiveMediators() bool {
 	}
 	dag.propRep.StoreGlobalProp(gp)
 
-	// todo albert 待使用
-	//return isActiveMediatorsChanged(gp)
-	return true
+	return isActiveMediatorsChanged(gp)
 }
 
 func (d *UnitProduceRepository) getDesiredActiveMediatorCount() int {
@@ -651,27 +648,21 @@ func (dag *UnitProduceRepository) updateMaintenanceFlag(newMaintenanceFlag bool)
 	dag.propRep.StoreDynGlobalProp(dgp)
 }
 
-//func (dag *UnitProduceRepository) HeadUnitTime() int64 {
-//	gasToken := dagconfig.DagConfig.GetGasToken()
-//	t, _ := dag.propRep.GetNewestUnitTimestamp(gasToken)
-//	return t
-//}
-
 // 判断新一届mediator和上一届mediator是否有变化
-//func isActiveMediatorsChanged(gp *modules.GlobalProperty) bool {
-//	precedingMediators := gp.PrecedingMediators
-//	activeMediators := gp.ActiveMediators
-//
-//	// 首先考虑活跃mediator个数是否改变
-//	if len(precedingMediators) != len(activeMediators) {
-//		return true
-//	}
-//
-//	for am := range activeMediators {
-//		if !precedingMediators[am] {
-//			return true
-//		}
-//	}
-//
-//	return false
-//}
+func isActiveMediatorsChanged(gp *modules.GlobalProperty) bool {
+	precedingMediators := gp.PrecedingMediators
+	activeMediators := gp.ActiveMediators
+
+	// 首先考虑活跃mediator个数是否改变
+	if len(precedingMediators) != len(activeMediators) {
+		return true
+	}
+
+	for am := range activeMediators {
+		if !precedingMediators[am] {
+			return true
+		}
+	}
+
+	return false
+}

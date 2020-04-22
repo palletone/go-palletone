@@ -94,12 +94,12 @@ func Deploy(rwM rwset.TxManager, idag dboperation.IContractDag, chainID string, 
 	defer log.Info("Deploy exit", "chainID", chainID, "templateId", templateId, "txId", txId)
 	var mksupt manger.Support = &manger.SupportImpl{}
 	setTimeOut := time.Duration(30) * time.Second
-	spec := &pb.ChaincodeSpec{
-		Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value["GOLANG"]),
-		Input: &pb.ChaincodeInput{
+	spec := &pb.PtnChaincodeSpec{
+		Type: pb.PtnChaincodeSpec_Type(pb.PtnChaincodeSpec_Type_value["GOLANG"]),
+		Input: &pb.PtnChaincodeInput{
 			Args: args,
 		},
-		ChaincodeId: &pb.ChaincodeID{},
+		ChaincodeId: &pb.PtnChaincodeID{},
 	}
 	templateCC := &ucc.UserChaincode{}
 	var err error
@@ -139,7 +139,7 @@ func Deploy(rwM rwset.TxManager, idag dboperation.IContractDag, chainID string, 
 		//InitArgs:   args,
 		Enabled: true,
 	}
-	chaincodeID := &pb.ChaincodeID{
+	chaincodeID := &pb.PtnChaincodeID{
 		Name:    usrcc.Name,
 		Path:    usrcc.Path,
 		Version: usrcc.Version,
@@ -198,12 +198,12 @@ func Invoke(rwM rwset.TxManager, idag dboperation.IContractDag, chainID string, 
 	}
 	startTm := time.Now()
 	es := manger.NewEndorserServer(mksupt)
-	spec := &pb.ChaincodeSpec{
-		ChaincodeId: &pb.ChaincodeID{Name: cc.Name},
-		Type:        pb.ChaincodeSpec_GOLANG,
-		Input:       &pb.ChaincodeInput{Args: args},
+	spec := &pb.PtnChaincodeSpec{
+		ChaincodeId: &pb.PtnChaincodeID{Name: cc.Name},
+		Type:        pb.PtnChaincodeSpec_GOLANG,
+		Input:       &pb.PtnChaincodeInput{Args: args},
 	}
-	cid := &pb.ChaincodeID{
+	cid := &pb.PtnChaincodeID{
 		Path:    cc.Path, //no use
 		Name:    cc.Name,
 		Version: cc.Version,

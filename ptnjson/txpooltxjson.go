@@ -1,8 +1,9 @@
 package ptnjson
 
 import (
-	"github.com/palletone/go-palletone/txspool"
 	"time"
+
+	"github.com/palletone/go-palletone/txspool"
 
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -10,6 +11,8 @@ import (
 
 type TxPoolTxJson struct {
 	TxHash     string       `json:"tx_hash"`
+	Version    uint32       `json:"version"`
+	Nonce      uint64       `json:"nonce"`
 	UnitHash   string       `json:"unit_hash"`
 	UnitIndex  uint64       `json:"unit_index"`
 	Timestamp  uint64       `json:"timestamp"`
@@ -97,6 +100,8 @@ func ConvertTxPoolTx2Json(tx *txspool.TxPoolTransaction, hash common.Hash) *TxPo
 	payJson := ConvertPayment2Json(pay)
 	return &TxPoolTxJson{
 		TxHash:     tx.Tx.Hash().String(),
+		Version:    tx.Tx.Version(),
+		Nonce:      tx.Tx.Nonce(),
 		UnitHash:   hex_hash,
 		Payment:    payJson,
 		TxMessages: ConvertMegs2Json(msgs),

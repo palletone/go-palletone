@@ -21,6 +21,7 @@
 package dag
 
 import (
+	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"math/big"
 	"time"
 
@@ -68,7 +69,7 @@ type IDag interface {
 	GetStableUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error)
 	IsTransactionExist(hash common.Hash) (bool, error)
 	GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, error)
-	GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
+	//GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
 	GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error)
 	// InsertHeaderDag inserts a batch of headers into the local chain.
 	InsertHeaderDag([]*modules.Header) (int, error)
@@ -162,6 +163,7 @@ type IDag interface {
 	HeadUnitNum() uint64
 	HeadUnitHash() common.Hash
 	GetIrreversibleUnitNum(id modules.AssetId) uint64
+	StableUnitNum() uint64
 	StableHeadUnitProperty(asset modules.AssetId) (*modules.UnitProperty, error)
 	UnstableHeadUnitProperty(asset modules.AssetId) (*modules.UnitProperty, error)
 
@@ -170,7 +172,7 @@ type IDag interface {
 
 	RefreshAddrTxIndex() error
 
-	GenVoteMediatorTx(voter common.Address, mediators map[string]bool) (*modules.Transaction, uint64, error)
+	GenVoteMediatorTx(voter common.Address, mediators map[string]bool,enableGasFee bool,ks *keystore.KeyStore) (*modules.Transaction, uint64, error)
 	GetDynGlobalProp() *modules.DynamicGlobalProperty
 	GetGlobalProp() *modules.GlobalProperty
 	GetMediatorSchl() *modules.MediatorSchedule
@@ -207,7 +209,7 @@ type IDag interface {
 	IsContractDeveloper(addr common.Address) bool
 	//GetActiveJuries() []common.Address
 	CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
-		msg *modules.Message) (*modules.Transaction, uint64, error)
+		msg *modules.Message, enableGasFee bool) (*modules.Transaction, uint64, error)
 	CreateTokenTransaction(from, to common.Address, token *modules.Asset, daoAmountToken, daoFee uint64,
 		msg *modules.Message) (*modules.Transaction, uint64, error)
 	ChainThreshold() int

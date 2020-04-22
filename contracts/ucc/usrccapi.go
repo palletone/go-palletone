@@ -30,19 +30,19 @@ type UserChaincode struct {
 	Enabled bool //Enabled a convenient switch to enable/disable chaincode
 }
 
-//func buildUserCC(context context.Context, spec *pb.ChaincodeSpec) (*pb.ChaincodeDeploymentSpec, error) {
+//func buildUserCC(context context.Context, spec *pb.PtnChaincodeSpec) (*pb.PtnChaincodeDeploymentSpec, error) {
 //	var codePackageBytes []byte
-//	chaincodeDeploymentSpec := &pb.ChaincodeDeploymentSpec{ExecEnv: pb.ChaincodeDeploymentSpec_DOCKER, ChaincodeSpec: spec, CodePackage: codePackageBytes}
+//	chaincodeDeploymentSpec := &pb.PtnChaincodeDeploymentSpec{ExecEnv: pb.PtnChaincodeDeploymentSpec_DOCKER, ChaincodeSpec: spec, CodePackage: codePackageBytes}
 //	return chaincodeDeploymentSpec, nil
 //}
 
-func getDeploymentSpec(spec *pb.ChaincodeSpec) (*pb.ChaincodeDeploymentSpec, error) {
+func getDeploymentSpec(spec *pb.PtnChaincodeSpec) (*pb.PtnChaincodeDeploymentSpec, error) {
 	log.Debugf("getting deployment spec for chaincode spec: %v\n", spec)
 	codePackageBytes, err := platforms.GetDeploymentPayload(spec)
 	if err != nil {
 		return nil, err
 	}
-	cdDeploymentSpec := &pb.ChaincodeDeploymentSpec{ChaincodeSpec: spec, CodePackage: codePackageBytes}
+	cdDeploymentSpec := &pb.PtnChaincodeDeploymentSpec{ChaincodeSpec: spec, CodePackage: codePackageBytes}
 	return cdDeploymentSpec, nil
 }
 
@@ -54,10 +54,10 @@ func getDeploymentSpec(spec *pb.ChaincodeSpec) (*pb.ChaincodeDeploymentSpec, err
 //	return nil
 //}
 
-func DeployUserCC(contractId []byte, chaincodeData []byte, spec *pb.ChaincodeSpec, chainID string, txid string, txsim rwset.TxSimulator, timeout time.Duration) error {
+func DeployUserCC(contractId []byte, chaincodeData []byte, spec *pb.PtnChaincodeSpec, chainID string, txid string, txsim rwset.TxSimulator, timeout time.Duration) error {
 	//return mockerDeployUserCC()
 
-	cdDeploymentSpec := &pb.ChaincodeDeploymentSpec{}
+	cdDeploymentSpec := &pb.PtnChaincodeDeploymentSpec{}
 	var err error
 	if cfg.DebugTest {
 		cdDeploymentSpec, err = getDeploymentSpec(spec)
@@ -86,15 +86,15 @@ func DeployUserCC(contractId []byte, chaincodeData []byte, spec *pb.ChaincodeSpe
 
 func StopUserCC(contractid []byte, chainID string, usrcc *UserChaincode, txid string, deleteImage bool, dontRmCon bool) error {
 	ccprov := ccprovider.GetChaincodeProvider()
-	chaincodeID := &pb.ChaincodeID{Path: usrcc.Path, Name: usrcc.Name, Version: usrcc.Version}
-	spec := &pb.ChaincodeSpec{
-		Type:        pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value[usrcc.Language]),
+	chaincodeID := &pb.PtnChaincodeID{Path: usrcc.Path, Name: usrcc.Name, Version: usrcc.Version}
+	spec := &pb.PtnChaincodeSpec{
+		Type:        pb.PtnChaincodeSpec_Type(pb.PtnChaincodeSpec_Type_value[usrcc.Language]),
 		ChaincodeId: chaincodeID,
-		//Input: &pb.ChaincodeInput{
+		//Input: &pb.PtnChaincodeInput{
 		//	Args: usrcc.InitArgs,
 		//},
 	}
-	chaincodeDeploymentSpec := &pb.ChaincodeDeploymentSpec{
+	chaincodeDeploymentSpec := &pb.PtnChaincodeDeploymentSpec{
 		ChaincodeSpec: spec,
 		CodePackage:   nil,
 	}
@@ -111,8 +111,8 @@ func StopUserCC(contractid []byte, chainID string, usrcc *UserChaincode, txid st
 }
 
 func GetUserCCPayload(usrcc *UserChaincode) (payload []byte, err error) {
-	chaincodeID := &pb.ChaincodeID{Path: usrcc.Path, Name: usrcc.Name, Version: usrcc.Version}
-	spec := &pb.ChaincodeSpec{Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value[usrcc.Language]), ChaincodeId: chaincodeID}
+	chaincodeID := &pb.PtnChaincodeID{Path: usrcc.Path, Name: usrcc.Name, Version: usrcc.Version}
+	spec := &pb.PtnChaincodeSpec{Type: pb.PtnChaincodeSpec_Type(pb.PtnChaincodeSpec_Type_value[usrcc.Language]), ChaincodeId: chaincodeID}
 	chaincodeData, err := platforms.GetChainCodePayload(spec)
 	if err != nil {
 		log.Error("getChainCodePayload err:", "error", err)

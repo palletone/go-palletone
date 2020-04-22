@@ -287,6 +287,8 @@ type txpoolTransactionTemp struct {
 	Msgs    []messageTemp
 	CertId  []byte
 	Illegal bool
+	Version uint32
+	Nonce   uint64
 
 	From             []modules.OutPoint
 	CreationDate     time.Time `json:"creation_date"`
@@ -327,6 +329,8 @@ func (pooltx *TxPoolTransaction) EncodeRLP(w io.Writer) error {
 	}
 	temp.CertId = common.CopyBytes(pooltx.Tx.CertId())
 	temp.Illegal = pooltx.Tx.Illegal()
+	temp.Version = pooltx.Tx.Version()
+	temp.Nonce = pooltx.Tx.Nonce()
 	for _, from := range pooltx.From {
 		temp.From = append(temp.From, *from)
 	}
@@ -477,6 +481,8 @@ func (pooltx *TxPoolTransaction) DecodeRLP(s *rlp.Stream) error {
 
 	pooltx.Tx = modules.NewTransaction(msgs)
 	pooltx.Tx.SetIllegal(temp.Illegal)
+	pooltx.Tx.SetVersion(temp.Version)
+	pooltx.Tx.SetNonce(temp.Nonce)
 	pooltx.Tx.SetCertId(common.CopyBytes(temp.CertId))
 	pooltx.From = make([]*modules.OutPoint, 0)
 	for _, from := range temp.From {

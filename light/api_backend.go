@@ -58,6 +58,11 @@ func (b *LesApiBackend) Lock() {
 func (b *LesApiBackend) Unlock() {
 	b.mutex.Unlock()
 }
+
+func (b *LesApiBackend) EnableGasFee() bool {
+	return b.ptn.config.EnableGasFee
+}
+
 func (b *LesApiBackend) SignAndSendRequest(addr common.Address, tx *modules.Transaction) error {
 	return nil
 }
@@ -118,10 +123,10 @@ func (b *LesApiBackend) GetChainParameters() *core.ChainParameters {
 	return nil
 }
 
-func (b *LesApiBackend) SendTx(ctx context.Context, tx *modules.Transaction) error {
+func (b *LesApiBackend) SendTx(tx *modules.Transaction) error {
 	return b.ptn.txPool.AddLocal(tx)
 }
-func (b *LesApiBackend) SendTxs(ctx context.Context, signedTxs []*modules.Transaction) []error {
+func (b *LesApiBackend) SendTxs(signedTxs []*modules.Transaction) []error {
 	errs := []error{}
 	for _, tx := range signedTxs {
 		err := b.ptn.txPool.AddLocal(tx)
@@ -160,6 +165,9 @@ func (b *LesApiBackend) TxPoolContent() (map[common.Hash]*txspool.TxPoolTransact
 	map[common.Hash]*txspool.TxPoolTransaction) {
 	return nil, nil
 	//return b.ptn.txPool.Content()
+}
+func (b *LesApiBackend) TxPoolClear() {
+	b.ptn.TxPool().Clear()
 }
 func (b *LesApiBackend) Queued() ([]*txspool.TxPoolTransaction, error) {
 	return nil, nil

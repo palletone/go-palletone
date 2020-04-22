@@ -133,6 +133,14 @@ func (s *PrivateAccountAPI) NewAccount(password string) (string, error) {
 	return "ERROR", err
 }
 
+func (s *PrivateAccountAPI) NewOutAccount(password string) (string, error) {
+	acc, err := fetchKeystore(s.am).NewAccountOutchain(password)
+	if err == nil {
+		return acc.Address.String(), nil
+	}
+	return "ERROR", err
+}
+
 type NewHdAccountResult struct {
 	Address  common.Address
 	Mnemonic string

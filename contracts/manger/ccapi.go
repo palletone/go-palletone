@@ -162,12 +162,12 @@ func Deploy(rwM rwset.TxManager, idag dboperation.IContractDag, chainID string, 
 	usrccName := depId.String()
 
 	//  TODO 可以开启单机多容器,防止容器名冲突
-	spec := &pb.ChaincodeSpec{
-		Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value[templateCC.Language]),
-		Input: &pb.ChaincodeInput{
+	spec := &pb.PtnChaincodeSpec{
+		Type: pb.PtnChaincodeSpec_Type(pb.PtnChaincodeSpec_Type_value[templateCC.Language]),
+		Input: &pb.PtnChaincodeInput{
 			Args: args,
 		},
-		ChaincodeId: &pb.ChaincodeID{
+		ChaincodeId: &pb.PtnChaincodeID{
 			Name:    usrccName,
 			Path:    templateCC.Path,
 			Version: templateCC.Version + ":" + contractcfg.GetConfig().ContractAddress,
@@ -237,12 +237,12 @@ func Invoke(rwM rwset.TxManager, idag dboperation.IContractDag, chainID string, 
 	}
 	startTm := time.Now()
 	es := NewEndorserServer(mksupt)
-	spec := &pb.ChaincodeSpec{
-		ChaincodeId: &pb.ChaincodeID{Name: contractName, Version: contractVersion},
-		//Type:        pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value[cc.Language]),
-		Input: &pb.ChaincodeInput{Args: args},
+	spec := &pb.PtnChaincodeSpec{
+		ChaincodeId: &pb.PtnChaincodeID{Name: contractName, Version: contractVersion},
+		//Type:        pb.PtnChaincodeSpec_Type(pb.PtnChaincodeSpec_Type_value[cc.Language]),
+		Input: &pb.PtnChaincodeInput{Args: args},
 	}
-	cid := &pb.ChaincodeID{
+	cid := &pb.PtnChaincodeID{
 		//Path:    cc.Path,
 		Name:    contractName,
 		Version: contractVersion,
@@ -336,12 +336,12 @@ func RestartContainer(idag dboperation.IContractDag, chainID string, addr common
 		log.Debugf("get contract template with id = %s, error: %s", contract.TemplateId, err.Error())
 		return nil, err
 	}
-	spec := &pb.ChaincodeSpec{
-		Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value[temptpl.Language]),
-		Input: &pb.ChaincodeInput{
+	spec := &pb.PtnChaincodeSpec{
+		Type: pb.PtnChaincodeSpec_Type(pb.PtnChaincodeSpec_Type_value[temptpl.Language]),
+		Input: &pb.PtnChaincodeInput{
 			Args: [][]byte{},
 		},
-		ChaincodeId: &pb.ChaincodeID{
+		ChaincodeId: &pb.PtnChaincodeID{
 			Name:    contract.Name,
 			Path:    temptpl.Path,
 			Version: contract.Version + ":" + contractcfg.GetConfig().ContractAddress,
@@ -431,12 +431,12 @@ func removeConWhenOverDisk(containerName string, dag dboperation.IContractDag) (
 //		InitArgs: args,
 //		Enabled:  true,
 //	}
-//	spec := &pb.ChaincodeSpec{
-//		Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value["GOLANG"]),
-//		Input: &pb.ChaincodeInput{
+//	spec := &pb.PtnChaincodeSpec{
+//		Type: pb.PtnChaincodeSpec_Type(pb.PtnChaincodeSpec_Type_value["GOLANG"]),
+//		Input: &pb.PtnChaincodeInput{
 //			Args: args,
 //		},
-//		ChaincodeId: &pb.ChaincodeID{
+//		ChaincodeId: &pb.PtnChaincodeID{
 //			Name:    ccName,
 //			Path:    ccPath,
 //			Version: ccVersion,

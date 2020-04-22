@@ -146,13 +146,15 @@ func (p *Processor) ContractDeployReq(from, to common.Address, daoAmount, daoFee
 			return common.Hash{}, common.Address{}, errors.New("ContractDeployReq request param len overflow")
 		}
 	}
-	if daoFee == 0 { //dynamic calculation fee
-		fee, _, _, err := p.ContractDeployReqFee(from, to, daoAmount, daoFee, templateId, args, extData, timeout)
-		if err != nil {
-			return common.Hash{}, common.Address{}, fmt.Errorf("ContractDeployReq, ContractDeployReqFee err:%s", err.Error())
+	if p.ptn.EnableGasFee() {
+		if daoFee == 0 { //dynamic calculation fee
+			fee, _, _, err := p.ContractDeployReqFee(from, to, daoAmount, daoFee, templateId, args, extData, timeout)
+			if err != nil {
+				return common.Hash{}, common.Address{}, fmt.Errorf("ContractDeployReq, ContractDeployReqFee err:%s", err.Error())
+			}
+			daoFee = uint64(fee) + 1
+			log.Debug("ContractDeployReq", "dynamic calculation fee:", daoFee)
 		}
-		daoFee = uint64(fee) + 1
-		log.Debug("ContractDeployReq", "dynamic calculation fee:", daoFee)
 	}
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_DEPLOY_REQUEST,
@@ -281,13 +283,15 @@ func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee u
 	if err != nil {
 		return common.Hash{}, errors.New("ContractStopReq, GetRandomNonce error")
 	}
-	if daoFee == 0 { //dynamic calculation fee
-		fee, _, _, err := p.ContractStopReqFee(from, to, daoAmount, daoFee, contractId, deleteImage)
-		if err != nil {
-			return common.Hash{}, fmt.Errorf("ContractStopReq, ContractStopReqFee err:%s", err.Error())
+	if p.ptn.EnableGasFee() {
+		if daoFee == 0 { //dynamic calculation fee
+			fee, _, _, err := p.ContractStopReqFee(from, to, daoAmount, daoFee, contractId, deleteImage)
+			if err != nil {
+				return common.Hash{}, fmt.Errorf("ContractStopReq, ContractStopReqFee err:%s", err.Error())
+			}
+			daoFee = uint64(fee) + 1
+			log.Debug("ContractStopReq", "dynamic calculation fee:", daoFee)
 		}
-		daoFee = uint64(fee) + 1
-		log.Debug("ContractStopReq", "dynamic calculation fee:", daoFee)
 	}
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_STOP_REQUEST,
@@ -365,12 +369,12 @@ func (p *Processor) ContractQuery(id []byte, args [][]byte, timeout time.Duratio
 				return nil, err
 			}
 			cv := ct.Version + ":" + contractcfg.GetConfig().ContractAddress
-			spec := &pb.ChaincodeSpec{
-				Type: pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value["GOLANG"]),
-				Input: &pb.ChaincodeInput{
+			spec := &pb.PtnChaincodeSpec{
+				Type: pb.PtnChaincodeSpec_Type(pb.PtnChaincodeSpec_Type_value["GOLANG"]),
+				Input: &pb.PtnChaincodeInput{
 					Args: [][]byte{},
 				},
-				ChaincodeId: &pb.ChaincodeID{
+				ChaincodeId: &pb.PtnChaincodeID{
 					Name:    addr.String(),
 					Path:    ct.Path,
 					Version: cv,

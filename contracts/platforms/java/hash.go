@@ -42,7 +42,7 @@ import (
 //by the user is equivalent to the path. This method will treat the name
 //as codebytes and compute the hash from it. ie, user cannot run the chaincode
 //with the same (name, input, args)
-func collectChaincodeFiles(spec *pb.ChaincodeSpec, tw *tar.Writer) (string, error) {
+func collectChaincodeFiles(spec *pb.PtnChaincodeSpec, tw *tar.Writer) (string, error) {
 	if spec == nil {
 		return "", errors.New("Cannot collect chaincode files from nil spec")
 	}

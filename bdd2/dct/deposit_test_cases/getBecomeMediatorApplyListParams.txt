@@ -1,0 +1,12 @@
+*** Settings ***
+Library           RequestsLibrary
+
+*** Variables ***
+
+*** Keywords ***
+getBecomeMediatorApplyList
+    ${one}    Create List    GetBecomeMediatorApplyList
+    ${two}    Create List    ${one}
+    ${result}    创建公用的POST请求    ${depositContractQuery}    GetBecomeMediatorApplyList    ${two}
+    ${addressMap}    To Json    ${result}
+    [Return]    ${addressMap}

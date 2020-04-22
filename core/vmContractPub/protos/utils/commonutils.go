@@ -40,8 +40,8 @@ func Marshal(pb proto.Message) ([]byte, error) {
 }
 
 // UnmarshalChannelHeader returns a ChannelHeader from bytes
-func UnmarshalChannelHeader(bytes []byte) (*cb.ChannelHeader, error) {
-	chdr := &cb.ChannelHeader{}
+func UnmarshalChannelHeader(bytes []byte) (*cb.PtnChannelHeader, error) {
+	chdr := &cb.PtnChannelHeader{}
 	err := proto.Unmarshal(bytes, chdr)
 	if err != nil {
 		return nil, fmt.Errorf("UnmarshalChannelHeader failed, err %s", err)

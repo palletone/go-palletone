@@ -1,0 +1,43 @@
+---
+name: basic-network
+version: 1.0.0
+client:
+    organization: Org1
+    logging:
+        level: info
+    connection:
+        timeout:
+            peer:
+                endorser: '300'
+            orderer: '300'
+channels:
+    mychannel:
+        orderers:
+        - orderer.example.com
+        peers:
+            peer0.org1.example.com: {}
+organizations:
+    Org1:
+        mspid: Org1MSP
+        #zxl add
+        cryptoPath:  crypto-config/peerOrganizations/org1.example.com/users/{username}@org1.example.com/msp
+        peers:
+        - peer0.org1.example.com
+        certificateAuthorities:
+        - ca.example.com
+orderers:
+    orderer.example.com:
+        url: grpc://123.126.106.89:7050
+peers:
+    peer0.org1.example.com:
+        url: grpc://123.126.106.89:7051
+certificateAuthorities:
+    ca.example.com:
+        url: http://123.126.106.89:7054
+        caName: ca.example.com
+        registrar:
+            enrollId: admin
+            enrollSecret: adminpw
+        tlsCACerts:
+            # Comma-Separated list of paths
+            path: crypto-config/peerOrganizations/org1.example.com/tlsca/tlsca.org1.example.com-cert.pem

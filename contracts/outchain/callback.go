@@ -13,6 +13,7 @@ import (
 	"github.com/palletone/adaptor"
 	"github.com/palletone/btc-adaptor"
 	"github.com/palletone/eth-adaptor"
+	"github.com/palletone/fabric-adaptor"
 )
 
 var (
@@ -27,6 +28,7 @@ func setAllChain() {
 	allChain["btc"] = GetBTCAdaptor()
 	allChain["eth"] = GetETHAdaptor()
 	allChain["erc20"] = GetERC20Adaptor()
+	allChain["fabric"] = GetFabricAdaptor()
 }
 
 type Callback func() adaptor.ICryptoCurrency
@@ -56,8 +58,19 @@ func GetERC20Adaptor() adaptor.ICryptoCurrency {
 	ethAdaptor.TxQueryUrl = cfg.Ada.Eth.TxQueryUrl
 	return &ethAdaptor
 }
+func GetFabricAdaptor() adaptor.ICryptoCurrency {
+	var fabAdaptor fabricadaptor.AdaptorFabric
+	fabAdaptor.ConfigFile = cfg.Ada.Fab.ConfigFile
+	fabAdaptor.UserName = cfg.Ada.Fab.UserName
+	fabAdaptor.ChannelID = cfg.Ada.Fab.ChannelID
+	fabAdaptor.OrgAdmin = cfg.Ada.Fab.OrgAdmin
+	fabAdaptor.OrgName = cfg.Ada.Fab.OrgName
+	fabAdaptor.OrgID = cfg.Ada.Fab.OrgID
+	fabAdaptor.EnvGoPath = cfg.Ada.Fab.EnvGoPath
+	return &fabAdaptor
+}
 
-func ProcessOutChainCall(chaincodeID string, outChainCall *pb.OutChainCall) (result string, err error) {
+func ProcessOutChainCall(chaincodeID string, outChainCall *pb.PtnOutChainCall) (result string, err error) {
 	log.Infof("Get Request method : %s %s", outChainCall.Method, cfg.Ada.Eth.Rawurl)
 
 	defer func() {
@@ -100,7 +113,11 @@ func SignTransaction(chaincodeID string, chainName string, params []byte) (strin
 	//
 	priKey, err := GetJuryKeyInfo(chaincodeID, chainName, params, adaptorObj)
 	if err != nil {
-		return "", err
+		if "fabric" == chainName {
+			priKey = []byte{}
+		} else {
+			return "", err
+		}
 	}
 	//
 	var input adaptor.SignTransactionInput
@@ -136,7 +153,11 @@ func SignMessage(chaincodeID string, chainName string, params []byte) (string, e
 	//
 	priKey, err := GetJuryKeyInfo(chaincodeID, chainName, params, adaptorObj)
 	if err != nil {
-		return "", err
+		if "fabric" == chainName {
+			priKey = []byte{}
+		} else {
+			return "", err
+		}
 	}
 	//fmt.Printf("prikey : %x\n", priKey)
 	//

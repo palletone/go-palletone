@@ -42,6 +42,7 @@ var (
 		ConsecutiveProductionFlag,
 		RequiredParticipationFlag,
 		NoGroupSignFlag,
+		IdledProducingFlag,
 		MediatorsFlag,
 	}
 
@@ -72,6 +73,10 @@ var (
 			"{\\\"Address\\\":\\\"P1xx\\\",\\\"Password\\\":\\\"xxx\\\",\\\"InitPrivKey\\\":\\\"xxx\\\"," +
 			"\\\"InitPubKey\\\":\\\"xxx\\\"}",
 	}
+	IdledProducingFlag = cli.BoolFlag{
+		Name:  "idledProducing",
+		Usage: "Enable producing unit, even if we have no pending transactions.",
+	}
 )
 
 // config data for mediator plugin
@@ -94,6 +99,9 @@ type Config struct {
 
 	// 标记本节点是否开启群签名的功能
 	EnableGroupSigning bool
+
+	// 标记本节点是否生产无交易的区块
+	EnableIdledProduction bool
 }
 
 func DefaultMediatorConf() *MediatorConf {
@@ -112,6 +120,7 @@ var DefaultConfig = Config{
 	EnableConsecutiveProduction: false,
 	RequiredParticipation:       DefaultRequiredParticipation,
 	EnableGroupSigning:          true,
+	EnableIdledProduction:       true,
 	Mediators: []*MediatorConf{
 		DefaultMediatorConf(),
 	},
@@ -142,6 +151,10 @@ func SetMediatorConfig(ctx *cli.Context, cfg *Config) {
 
 	if ctx.GlobalIsSet(NoGroupSignFlag.Name) {
 		cfg.EnableGroupSigning = false
+	}
+
+	if ctx.GlobalIsSet(IdledProducingFlag.Name) {
+		cfg.EnableIdledProduction = true
 	}
 
 	if ctx.GlobalIsSet(MediatorsFlag.Name) {

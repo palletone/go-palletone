@@ -11,6 +11,7 @@ import (
 	discover "github.com/palletone/go-palletone/common/p2p/discover"
 	ptndb "github.com/palletone/go-palletone/common/ptndb"
 	core "github.com/palletone/go-palletone/core"
+	keystore "github.com/palletone/go-palletone/core/accounts/keystore"
 	dboperation "github.com/palletone/go-palletone/dag/dboperation"
 	modules "github.com/palletone/go-palletone/dag/modules"
 	big "math/big"
@@ -474,21 +475,6 @@ func (m *MockIDag) GetTxSearchEntry(hash common.Hash) (*modules.TxLookupEntry, e
 func (mr *MockIDagMockRecorder) GetTxSearchEntry(hash interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxSearchEntry", reflect.TypeOf((*MockIDag)(nil).GetTxSearchEntry), hash)
-}
-
-// GetTxRequesterAddress mocks base method
-func (m *MockIDag) GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTxRequesterAddress", tx)
-	ret0, _ := ret[0].(common.Address)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetTxRequesterAddress indicates an expected call of GetTxRequesterAddress
-func (mr *MockIDagMockRecorder) GetTxRequesterAddress(tx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxRequesterAddress", reflect.TypeOf((*MockIDag)(nil).GetTxRequesterAddress), tx)
 }
 
 // GetNewestUnit mocks base method
@@ -1487,6 +1473,20 @@ func (mr *MockIDagMockRecorder) GetIrreversibleUnitNum(id interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIrreversibleUnitNum", reflect.TypeOf((*MockIDag)(nil).GetIrreversibleUnitNum), id)
 }
 
+// StableUnitNum mocks base method
+func (m *MockIDag) StableUnitNum() uint64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StableUnitNum")
+	ret0, _ := ret[0].(uint64)
+	return ret0
+}
+
+// StableUnitNum indicates an expected call of StableUnitNum
+func (mr *MockIDagMockRecorder) StableUnitNum() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StableUnitNum", reflect.TypeOf((*MockIDag)(nil).StableUnitNum))
+}
+
 // StableHeadUnitProperty mocks base method
 func (m *MockIDag) StableHeadUnitProperty(asset modules.AssetId) (*modules.UnitProperty, error) {
 	m.ctrl.T.Helper()
@@ -1562,9 +1562,9 @@ func (mr *MockIDagMockRecorder) RefreshAddrTxIndex() *gomock.Call {
 }
 
 // GenVoteMediatorTx mocks base method
-func (m *MockIDag) GenVoteMediatorTx(voter common.Address, mediators map[string]bool) (*modules.Transaction, uint64, error) {
+func (m *MockIDag) GenVoteMediatorTx(voter common.Address, mediators map[string]bool, enableGasFee bool, ks *keystore.KeyStore) (*modules.Transaction, uint64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GenVoteMediatorTx", voter, mediators)
+	ret := m.ctrl.Call(m, "GenVoteMediatorTx", voter, mediators, enableGasFee, ks)
 	ret0, _ := ret[0].(*modules.Transaction)
 	ret1, _ := ret[1].(uint64)
 	ret2, _ := ret[2].(error)
@@ -1572,9 +1572,9 @@ func (m *MockIDag) GenVoteMediatorTx(voter common.Address, mediators map[string]
 }
 
 // GenVoteMediatorTx indicates an expected call of GenVoteMediatorTx
-func (mr *MockIDagMockRecorder) GenVoteMediatorTx(voter, mediators interface{}) *gomock.Call {
+func (mr *MockIDagMockRecorder) GenVoteMediatorTx(voter, mediators, enableGasFee, ks interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenVoteMediatorTx", reflect.TypeOf((*MockIDag)(nil).GenVoteMediatorTx), voter, mediators)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenVoteMediatorTx", reflect.TypeOf((*MockIDag)(nil).GenVoteMediatorTx), voter, mediators, enableGasFee, ks)
 }
 
 // GetDynGlobalProp mocks base method
@@ -1991,9 +1991,9 @@ func (mr *MockIDagMockRecorder) IsContractDeveloper(addr interface{}) *gomock.Ca
 }
 
 // CreateGenericTransaction mocks base method
-func (m *MockIDag) CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int, msg *modules.Message) (*modules.Transaction, uint64, error) {
+func (m *MockIDag) CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int, msg *modules.Message, enableGasFee bool) (*modules.Transaction, uint64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateGenericTransaction", from, to, daoAmount, daoFee, certID, msg)
+	ret := m.ctrl.Call(m, "CreateGenericTransaction", from, to, daoAmount, daoFee, certID, msg, enableGasFee)
 	ret0, _ := ret[0].(*modules.Transaction)
 	ret1, _ := ret[1].(uint64)
 	ret2, _ := ret[2].(error)
@@ -2001,9 +2001,9 @@ func (m *MockIDag) CreateGenericTransaction(from, to common.Address, daoAmount, 
 }
 
 // CreateGenericTransaction indicates an expected call of CreateGenericTransaction
-func (mr *MockIDagMockRecorder) CreateGenericTransaction(from, to, daoAmount, daoFee, certID, msg interface{}) *gomock.Call {
+func (mr *MockIDagMockRecorder) CreateGenericTransaction(from, to, daoAmount, daoFee, certID, msg, enableGasFee interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateGenericTransaction", reflect.TypeOf((*MockIDag)(nil).CreateGenericTransaction), from, to, daoAmount, daoFee, certID, msg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateGenericTransaction", reflect.TypeOf((*MockIDag)(nil).CreateGenericTransaction), from, to, daoAmount, daoFee, certID, msg, enableGasFee)
 }
 
 // CreateTokenTransaction mocks base method

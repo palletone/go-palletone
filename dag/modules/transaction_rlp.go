@@ -20,100 +20,86 @@
 package modules
 
 import (
-	"fmt"
+	"io"
+
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
-	"io"
 )
-
-type transactionTemp struct {
-	TxMessages []messageTemp
-	CertId     []byte // should be big.Int byte
-	Illegal    bool   // not hash, 1:no valid, 0:ok
-}
-type messageTemp struct {
-	App  MessageType
-	Data []byte
-}
 
 func (tx *Transaction) DecodeRLP(s *rlp.Stream) error {
 	raw, err := s.Raw()
 	if err != nil {
 		return err
 	}
-	txTemp := &transactionTemp{}
+	txTemp := &transactionTempV1{}
 	err = rlp.DecodeBytes(raw, txTemp)
 	if err != nil {
-		return err
+		txTempV0 := &transactionTempV0{}
+		err = rlp.DecodeBytes(raw, txTempV0)
+		if err != nil {
+			return err
+		}
+		return tempV02Tx(txTempV0, tx)
 	}
-	return temp2Tx(txTemp, tx)
+	return tempV12Tx(txTemp, tx)
 }
 func (tx *Transaction) EncodeRLP(w io.Writer) error {
-	temp, err := tx2Temp(tx)
+	if tx.Version() == 0 {
+		return encodeRlpTxV0(tx, w)
+	}
+	temp, err := tx2TempV1(tx)
 	if err != nil {
 		return err
 	}
 	return rlp.Encode(w, temp)
 }
-func tx2Temp(tx *Transaction) (*transactionTemp, error) {
-	temp := transactionTemp{}
-	temp.Illegal = tx.Illegal()
-	temp.CertId = tx.CertId()
-
-	for _, m := range tx.Messages() {
-		m1 := messageTemp{
-			App: m.App,
-		}
-		d, err := rlp.EncodeToBytes(m.Payload)
-		if err != nil {
-			return nil, err
-		}
-		m1.Data = d
-
-		temp.TxMessages = append(temp.TxMessages, m1)
-
+func encodeRlpTxV0(tx *Transaction, w io.Writer) error {
+	tempV0, err := tx2TempV0(tx)
+	if err != nil {
+		return err
 	}
-	return &temp, nil
+	return rlp.Encode(w, tempV0)
 }
-func temp2Tx(temp *transactionTemp, tx *Transaction) error {
-	d := transaction_sdw{}
-	for _, m := range temp.TxMessages {
+
+func convertTxMessages(msgs []messageTemp) ([]*Message, error) {
+	result := []*Message{}
+	for _, m := range msgs {
 		m1 := new(Message)
 		m1.App = m.App
 		if m.App == APP_PAYMENT {
 			pay := new(PaymentPayload)
 			err := rlp.DecodeBytes(m.Data, pay)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			m1.Payload = pay
 		} else if m.App == APP_DATA {
 			var text DataPayload
 			err := rlp.DecodeBytes(m.Data, &text)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			m1.Payload = &text
 		} else if m.App == APP_CONTRACT_TPL_REQUEST {
 			var payload ContractInstallRequestPayload
 			err := rlp.DecodeBytes(m.Data, &payload)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			m1.Payload = &payload
 		} else if m.App == APP_CONTRACT_TPL {
 			var payload ContractTplPayload
 			err := rlp.DecodeBytes(m.Data, &payload)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			m1.Payload = &payload
 		} else if m.App == APP_CONTRACT_DEPLOY_REQUEST {
 			var payload ContractDeployRequestPayload
 			err := rlp.DecodeBytes(m.Data, &payload)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			m1.Payload = &payload
 		} else if m.App == APP_CONTRACT_DEPLOY {
@@ -126,7 +112,7 @@ func temp2Tx(temp *transactionTemp, tx *Transaction) error {
 				temp := &ContractDeployPayloadV1{}
 				err = rlp.DecodeBytes(m.Data, temp)
 				if err != nil {
-					return err
+					return nil, err
 				}
 
 				payload.TemplateId = temp.TemplateId
@@ -143,28 +129,28 @@ func temp2Tx(temp *transactionTemp, tx *Transaction) error {
 			var payload ContractInvokeRequestPayload
 			err := rlp.DecodeBytes(m.Data, &payload)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			m1.Payload = &payload
 		} else if m.App == APP_CONTRACT_INVOKE {
 			var payload ContractInvokePayload
 			err := rlp.DecodeBytes(m.Data, &payload)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			m1.Payload = &payload
 		} else if m.App == APP_CONTRACT_STOP_REQUEST {
 			var payload ContractStopRequestPayload
 			err := rlp.DecodeBytes(m.Data, &payload)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			m1.Payload = &payload
 		} else if m.App == APP_CONTRACT_STOP {
 			var payload ContractStopPayload
 			err := rlp.DecodeBytes(m.Data, &payload)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			m1.Payload = &payload
 			//} else if m.App == APP_CONFIG {
@@ -175,28 +161,23 @@ func temp2Tx(temp *transactionTemp, tx *Transaction) error {
 			var sigPayload SignaturePayload
 			err := rlp.DecodeBytes(m.Data, &sigPayload)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			m1.Payload = &sigPayload
 		} else if m.App == APP_ACCOUNT_UPDATE {
 			var accountUpdateOp AccountStateUpdatePayload
 			err := rlp.DecodeBytes(m.Data, &accountUpdateOp)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			m1.Payload = &accountUpdateOp
 		} else {
-			fmt.Println("Unknown message app type:", m.App)
+			log.Warn("Unknown message app type:", m.App)
 		}
-		d.TxMessages = append(d.TxMessages, m1)
+		result = append(result, m1)
 
 	}
-	d.Illegal = temp.Illegal
-	d.CertId = temp.CertId
-	// init tx
-	tx.txdata = d
-	return nil
-
+	return result, nil
 }
 
 //RLP编码有Bug，在struct引用了空指针后，Decode会报错。所以将Input扁平化

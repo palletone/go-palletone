@@ -32,6 +32,8 @@ import (
 type TxSummaryJson struct {
 	TxHash      string       `json:"tx_hash"`
 	RequestHash string       `json:"request_hash"`
+	Version     uint32       `json:"version"`
+	Nonce       uint64       `json:"nonce"`
 	TxSize      float64      `json:"tx_size"`
 	Payment     *PaymentJson `json:"payment"`
 	TxMessages  string       `json:"tx_messages"`
@@ -53,6 +55,8 @@ func ConvertTxWithUnitInfo2SummaryJson(tx *modules.TransactionWithUnitInfo,
 	return &TxSummaryJson{
 		TxHash:      tx.Hash().String(),
 		RequestHash: tx.RequestHash().String(),
+		Version:     tx.Version(),
+		Nonce:       tx.Nonce(),
 		UnitHash:    tx.UnitHash.String(),
 		UnitHeight:  tx.UnitIndex,
 		Timestamp:   time.Unix(int64(tx.Timestamp), 0),
@@ -74,6 +78,8 @@ func ConvertTx2SummaryJson(tx *modules.Transaction,
 	return &TxSummaryJson{
 		TxHash:      tx.Hash().String(),
 		RequestHash: tx.RequestHash().String(),
+		Version:     tx.Version(),
+		Nonce:       tx.Nonce(),
 		UnitHash:    unitHash.String(),
 		UnitHeight:  unitHeigth,
 		Timestamp:   time.Unix(unitTimestamp, 0),

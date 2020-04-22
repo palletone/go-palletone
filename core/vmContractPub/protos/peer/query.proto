@@ -28,13 +28,13 @@ package protos;
 // to a query in lscc.go, such as GetChaincodes (returns all chaincodes
 // instantiated on a channel), and GetInstalledChaincodes (returns all chaincodes
 // installed on a peer)
-message ChaincodeQueryResponse {
-  repeated ChaincodeInfo chaincodes = 1;
+message PtnChaincodeQueryResponse {
+  repeated PtnChaincodeInfo chaincodes = 1;
 }
 
 // ChaincodeInfo contains general information about an installed/instantiated
 // chaincode
-message ChaincodeInfo {
+message PtnChaincodeInfo {
   string name = 1;
   string version = 2;
   // the path as specified by the install/instantiate transaction
@@ -59,11 +59,11 @@ message ChaincodeInfo {
 // ChannelQueryResponse returns information about each channel that pertains
 // to a query in lscc.go, such as GetChannels (returns all channels for a
 // given peer)
-message ChannelQueryResponse {
-  repeated ChannelInfo channels = 1;
+message PtnChannelQueryResponse {
+  repeated PtnChannelInfo channels = 1;
 }
 
 // ChannelInfo contains general information about channels
-message ChannelInfo {
+message PtnChannelInfo {
   string channel_id = 1;
 }

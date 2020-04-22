@@ -68,6 +68,11 @@ func (b *PtnApiBackend) Lock() {
 func (b *PtnApiBackend) Unlock() {
 	b.mutex.Unlock()
 }
+
+func (b *PtnApiBackend) EnableGasFee() bool {
+	return b.ptn.config.EnableGasFee
+}
+
 func (b *PtnApiBackend) Dag() dag.IDag {
 	return b.ptn.dag
 }
@@ -131,11 +136,11 @@ func (b *PtnApiBackend) SendConsensus(ctx context.Context) error {
 	return nil
 }
 
-func (b *PtnApiBackend) SendTx(ctx context.Context, tx *modules.Transaction) error {
+func (b *PtnApiBackend) SendTx(tx *modules.Transaction) error {
 	return b.ptn.contractPorcessor.AddLocalTx(tx)
 }
 
-func (b *PtnApiBackend) SendTxs(ctx context.Context, signedTxs []*modules.Transaction) []error {
+func (b *PtnApiBackend) SendTxs(signedTxs []*modules.Transaction) []error {
 	result := []error{}
 	for _, tx := range signedTxs {
 		err := b.ptn.txPool.AddLocal(tx)
@@ -203,7 +208,9 @@ func (b *PtnApiBackend) GetChainParameters() *core.ChainParameters {
 func (b *PtnApiBackend) Status() (int, int, int) {
 	return b.ptn.txPool.Status()
 }
-
+func (b *PtnApiBackend) TxPoolClear() {
+	b.ptn.TxPool().Clear()
+}
 func (b *PtnApiBackend) TxPoolContent() (map[common.Hash]*txspool.TxPoolTransaction,
 	map[common.Hash]*txspool.TxPoolTransaction) {
 	return b.ptn.TxPool().Content()
