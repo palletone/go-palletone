@@ -66,6 +66,9 @@ func mockdag2(t *testing.T, mockCtrl *gomock.Controller, hash common.Hash) tp1.I
 		}
 		return nil, tp2.ErrNotFound
 	}).AnyTimes()
+	mdag.EXPECT().IsTransactionExist(gomock.Any()).DoAndReturn(func(hash common.Hash) (bool, error) {
+		return false, nil
+	}).AnyTimes()
 	return mdag
 }
 
@@ -133,6 +136,9 @@ func BenchmarkTxPool2_AddLocal(b *testing.B) {
 		}
 		return nil, tp2.ErrNotFound
 	}).AnyTimes()
+	mdag.EXPECT().IsTransactionExist(gomock.Any()).DoAndReturn(func(hash common.Hash) (bool, error) {
+		return false, nil
+	}).AnyTimes()
 	pool := mockTxPool2(mdag)
 
 	txA := mockPaymentTx(Hash("Dag"), 0, 0)
@@ -161,6 +167,9 @@ func TestTxpoolByRealData(t *testing.T) {
 			return &modules.Utxo{Amount: 123}, nil
 		}
 		return nil, tp2.ErrNotFound
+	}).AnyTimes()
+	mdag.EXPECT().IsTransactionExist(gomock.Any()).DoAndReturn(func(hash common.Hash) (bool, error) {
+		return false, nil
 	}).AnyTimes()
 	pool := mockTxPool2(mdag)
 
@@ -193,6 +202,9 @@ func TestTxPool_AddSysContractTx(t *testing.T) {
 			}
 			return nil, tp2.ErrNotFound
 		}).AnyTimes()
+	mdag.EXPECT().IsTransactionExist(gomock.Any()).DoAndReturn(func(hash common.Hash) (bool, error) {
+		return false, nil
+	}).AnyTimes()
 	pool := mockTxPool2(mdag)
 
 	req := mockContractInvokeRequest(Hash("dag"), 0, 0, syscontract.TestContractAddress.Bytes())
@@ -221,6 +233,9 @@ func TestTxPool_AddUserContractTx(t *testing.T) {
 			}
 			return nil, tp2.ErrNotFound
 		}).AnyTimes()
+	mdag.EXPECT().IsTransactionExist(gomock.Any()).DoAndReturn(func(hash common.Hash) (bool, error) {
+		return false, nil
+	}).AnyTimes()
 	pool := mockTxPool2(mdag)
 
 	req := mockContractInvokeRequest(Hash("dag"), 0, 0, []byte("user contract"))
@@ -253,6 +268,9 @@ func TestAddContractInstallTx(t *testing.T) {
 		func(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 			return &modules.Utxo{Amount: 123}, nil
 		}).AnyTimes()
+	mdag.EXPECT().IsTransactionExist(gomock.Any()).DoAndReturn(func(hash common.Hash) (bool, error) {
+		return false, nil
+	}).AnyTimes()
 	pool := mockTxPool2(mdag)
 	err := pool.AddLocal(installTx)
 	t.Log(err)
@@ -272,6 +290,9 @@ func TestTxPool_GetUnpackedTxsByAddr(t *testing.T) {
 			}
 			return nil, tp2.ErrNotFound
 		}).AnyTimes()
+	mdag.EXPECT().IsTransactionExist(gomock.Any()).DoAndReturn(func(hash common.Hash) (bool, error) {
+		return false, nil
+	}).AnyTimes()
 	pool := mockTxPool2(mdag)
 	pay1 := mockPaymentTx(Hash("dag"), 0, 0)
 	pool.AddLocal(pay1)
@@ -307,6 +328,9 @@ func TestTxPool_SubscribeTxPreEvent(t *testing.T) {
 			return &modules.Utxo{Amount: 123}, nil
 		}
 		return nil, tp2.ErrNotFound
+	}).AnyTimes()
+	mdag.EXPECT().IsTransactionExist(gomock.Any()).DoAndReturn(func(hash common.Hash) (bool, error) {
+		return false, nil
 	}).AnyTimes()
 	pool := mockTxPool2(mdag)
 	txpoolAddTxCh := make(chan modules.TxPreEvent, 50)
@@ -368,6 +392,9 @@ func TestTxPool_AddUserContractAndTransferTx(t *testing.T) {
 			}
 			return nil, tp2.ErrNotFound
 		}).AnyTimes()
+	mdag.EXPECT().IsTransactionExist(gomock.Any()).DoAndReturn(func(hash common.Hash) (bool, error) {
+		return false, nil
+	}).AnyTimes()
 	pool := mockTxPool2(mdag)
 
 	reqA := mockContractInvokeRequest(Hash("dag"), 0, 0, []byte("user contract"))
@@ -420,6 +447,8 @@ func testGetSortTxs(t *testing.T, txs []*modules.Transaction, p1 *tp1.TxPool, p2
 			result1 := printTxPoolSortTxs(p1)
 			t.Log("p1 Add Tx A,C", result1)
 			assert.Equal(t, txs[0].Hash().String()+`;`, result1)
+			p1.DeleteTxByHash(txs[0].Hash())
+			p1.AddLocal(txs[0])
 			result2 := printTxPoolSortTxs(p2)
 			t.Log("p2 Add Tx A,C", result2)
 			assert.Equal(t, txs[0].Hash().String()+`;`, result2)
@@ -429,6 +458,6 @@ func testGetSortTxs(t *testing.T, txs []*modules.Transaction, p1 *tp1.TxPool, p2
 	t.Log("p1 Add Tx A,C,B", result1)
 	result2 := printTxPoolSortTxs(p2)
 	t.Log("p2 Add Tx A,C,B", result2)
-	assert.Equal(t, txs[0].Hash().String()+`;`+txs[2].Hash().String()+`;`+txs[1].Hash().String()+`;`, result2)
+	assert.Equal(t, txs[0].Hash().String()+`;`+txs[2].Hash().String()+`;`+txs[1].Hash().String()+`;`, result1)
 	assert.Equal(t, result2, result1)
 }
