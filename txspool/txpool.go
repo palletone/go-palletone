@@ -1700,6 +1700,7 @@ func (pool *TxPool) GetAddrUtxos(addr common.Address, token *modules.Asset) (
 	}
 	for spend := range poolSpend {
 		delete(poolUtxo, spend)
+		//删除引用request 的utxo
 		if txHash, ok := poolReqTxMapping[spend.TxHash]; ok {
 			spend2 := modules.OutPoint{
 				TxHash:       txHash,
@@ -1707,6 +1708,14 @@ func (pool *TxPool) GetAddrUtxos(addr common.Address, token *modules.Asset) (
 				OutIndex:     spend.OutIndex,
 			}
 			delete(poolUtxo, spend2)
+		}
+	}
+	//删除poolutxo里已重复引用的request utxo。
+	for outpoint := range poolUtxo {
+		if txHash, ok := poolReqTxMapping[outpoint.TxHash]; ok {
+			if txHash != outpoint.TxHash {
+				delete(poolUtxo, outpoint)
+			}
 		}
 	}
 	return poolUtxo, nil
