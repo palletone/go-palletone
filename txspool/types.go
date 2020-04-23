@@ -505,6 +505,7 @@ func (pooltx *TxPoolTransaction) DecodeRLP(s *rlp.Stream) error {
 	pooltx.Extra = common.CopyBytes(temp.Extra)
 	pooltx.Tag = temp.Tag
 	pooltx.Expiration = temp.Expiration
+	pooltx.DependOnTxs = make(map[common.Hash]bool)
 
 	for _, tx := range temp.DependOnTxsTrue {
 		pooltx.DependOnTxs[tx] = true
