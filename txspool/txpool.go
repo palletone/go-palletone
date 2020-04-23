@@ -699,13 +699,14 @@ func (pool *TxPool) add(tx *modules.Transaction, local bool) (bool, error) {
 			}
 			pool.all.Store(hash, ptx)
 			txValidPrometheus.Add(1)
+
+			err = pool.checkBasedOnReqOrphanTxToNormal(hash, reqHash)
+			if err != nil {
+				return true, err
+			}
 			// We've directly injected a replacement transaction, notify subsystems
 			pool.txFeed.Send(modules.TxPreEvent{Tx: tx, IsOrphan: false})
 		}
-	}
-	err = pool.checkBasedOnReqOrphanTxToNormal(hash, reqHash)
-	if err != nil {
-		return true, err
 	}
 
 	// 更新一次孤儿交易池数据。
@@ -1680,13 +1681,17 @@ func (pool *TxPool) checkBasedOnReqOrphanTxToNormal(ori_hash, ori_reqhash common
 }
 
 func (pool *TxPool) reflashOrphanTxs(tx *modules.Transaction, orphans map[common.Hash]*TxPoolTransaction, local bool) {
+	tx_hash := tx.Hash()
+	req_hash := tx.RequestHash()
 	for hash, otx := range orphans {
 		isOrphan := false
 		for _, op := range otx.Tx.GetSpendOutpoints() {
 			if _, err := pool.unit.GetUtxoEntry(op); err != nil {
 				if _, err := pool.GetUtxoEntry(op); err != nil {
-					isOrphan = true
-					break
+					if op.TxHash != tx_hash && op.TxHash != req_hash {
+						isOrphan = true
+						break
+					}
 				}
 			}
 		}
@@ -1697,12 +1702,12 @@ func (pool *TxPool) reflashOrphanTxs(tx *modules.Transaction, orphans map[common
 				pool.orphans.Store(hash, otx)
 			}
 		}
-		//该交易不再是孤儿交易，使之变为有效交易。
-		log.Infof("reflash orphan tx[%s] goto packaged.", hash.String())
-		pool.priority_sorted.Put(otx)
-		pool.orphans.Delete(hash)
-		pool.all.Store(hash, otx)
-		pool.addCache(otx)
+		////该交易不再是孤儿交易，使之变为有效交易。
+		//log.Infof("reflash orphan tx[%s] goto packaged.", hash.String())
+		//pool.priority_sorted.Put(otx)
+		//pool.orphans.Delete(hash)
+		//pool.all.Store(hash, otx)
+		//pool.addCache(otx)
 	}
 }
 func (pool *TxPool) GetAddrUtxos(addr common.Address, token *modules.Asset) (
