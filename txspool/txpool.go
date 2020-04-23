@@ -149,7 +149,7 @@ type TxPool struct {
 	nextExpireScan time.Time
 	cache          palletcache.ICache
 	tokenEngine    tokenengine.ITokenEngine
-	enableGasFee   bool
+	//enableGasFee   bool
 }
 
 // NewTxPool creates a new transaction pool to gather, sort and filter inbound
@@ -446,15 +446,6 @@ func (pool *TxPool) validateTx(tx *modules.Transaction, local bool) ([]*modules.
 	validator.ValidationCode, error) {
 
 	return pool.txValidator.ValidateTx(tx, !tx.IsOnlyContractRequest())
-}
-func (pool *TxPool) getTxFeeAllocate(tx *modules.Transaction) ([]*modules.Addition, error) {
-	feeAllocate, err := tx.GetTxFeeAllocate(pool.GetUtxoEntry,
-		pool.tokenEngine.GetScriptSigners, common.Address{}, pool.unit.GetJurorReward)
-	if err != nil {
-		log.Warnf("[%s]validateTxFeeValid, compute tx[%s] fee error:%s", tx.RequestHash().String(), tx.Hash().String(), err.Error())
-		return nil, err
-	}
-	return feeAllocate, nil
 }
 
 // This function MUST be called with the txpool lock held (for reads).
@@ -803,31 +794,6 @@ func (pool *TxPool) addTx(tx *modules.Transaction, local bool) error {
 		pool.promoteExecutables()
 	}
 	return nil
-}
-
-// addTxsLocked attempts to queue a batch of transactions if they are valid,
-// whilst assuming the transaction pool lock is already held.
-func (pool *TxPool) addTxsLocked(txs []*modules.Transaction, local bool) []error {
-	// Add the batch of transaction, tracking the accepted ones
-	errs := make([]error, 0)
-	var replace bool
-	var err error
-	tt := time.Now()
-	for i, tx := range txs {
-		if replace, err = pool.add(tx, local); err != nil {
-			errs = append(errs, err)
-			break
-		}
-		if (i+1)%1000 == 0 {
-			log.Infof("add txs locked: %d, spent time: %s", (i+1)/1000, time.Since(tt))
-			tt = time.Now()
-		}
-	}
-
-	if !replace {
-		pool.promoteExecutables()
-	}
-	return errs
 }
 
 func (pool *TxPool) GetUnpackedTxsByAddr(addr common.Address) ([]*TxPoolTransaction, error) {
@@ -1575,12 +1541,9 @@ func (pool *TxPool) isOrphanInPool(hash common.Hash) bool {
 
 // validate tx is an orphanTx or not.
 func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
-	// 交易的校验，inputs校验 ,先验证该交易的所有输入utxo是否有效。
-	if len(tx.Messages()) <= 0 {
-		return false, errors.New("this tx's message is null.")
-	}
-	ptn_asset, _ := modules.StringToAsset("PTN")
-	_, chainindex, err := pool.unit.GetNewestUnit(ptn_asset.AssetId)
+	gasToken := dagconfig.DagConfig.GetGasToken()
+
+	_, chainindex, err := pool.unit.GetNewestUnit(gasToken)
 	if err != nil {
 		return false, errors.New("can not get GetNewestUnit.")
 	}
@@ -1613,23 +1576,13 @@ func (pool *TxPool) ValidateOrphanTx(tx *modules.Transaction) (bool, error) {
 			isOrphan = true
 			break
 		}
+
 		for _, in := range payment.Inputs {
-			_, err1 := pool.GetUtxoEntry(in.PreviousOutPoint)
-			if err1 != nil {
-				_, has := pool.outputs.Load(*in.PreviousOutPoint)
-				if !has {
-					err = err1
-					isOrphan = true
-					break
-				}
-				for _, in := range payment.Inputs {
-					if _, err := pool.unit.GetUtxoEntry(in.PreviousOutPoint); err != nil {
-						_, err = pool.GetUtxoEntry(in.PreviousOutPoint)
-						if err != nil {
-							log.Debugf("get utxo failed,%s", in.PreviousOutPoint.String())
-							return true, err
-						}
-					}
+			if _, err := pool.unit.GetUtxoEntry(in.PreviousOutPoint); err != nil {
+				_, err = pool.GetUtxoEntry(in.PreviousOutPoint)
+				if err != nil {
+					log.Debugf("get utxo failed,%s", in.PreviousOutPoint.String())
+					return true, err
 				}
 			}
 		}
