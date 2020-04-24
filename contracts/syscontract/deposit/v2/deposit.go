@@ -497,6 +497,16 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			return shim.Error("arg needs one param")
 		}
 		return d.DeteleKey(stub, args[0])
+	case "AddMember":
+		if len(args) != 1 {
+			return shim.Error("args need two param")
+		}
+		return d.AddMember(stub,args[0])
+	case "RemoveMember":
+		if len(args) != 1 {
+			return shim.Error("args need two param")
+		}
+		return d.RemoveMember(stub,args[0])
 	}
 	return shim.Error("please enter validate function name")
 }
@@ -997,6 +1007,22 @@ func (d DepositChaincode) DeteleKey(stub shim.ChaincodeStubInterface, key string
 	}
 	log.Infof("delete key = %s, value = %s", key, string(b))
 	err = stub.DelState(key)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	return shim.Success(nil)
+}
+
+func (d DepositChaincode) AddMember(stub shim.ChaincodeStubInterface,addr string) pb.Response {
+	err := AddMember(stub,addr)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	return shim.Success(nil)
+}
+
+func (d DepositChaincode) RemoveMember(stub shim.ChaincodeStubInterface,addr string) pb.Response {
+	err := RemoveMember(stub,addr)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
