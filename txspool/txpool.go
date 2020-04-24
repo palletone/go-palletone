@@ -1387,8 +1387,10 @@ func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs map[common.Has
 						}
 					}
 				}
-
 			}
+		}
+		if queue_tx == nil {
+			continue
 		}
 		if queue_tx != nil || queue_tx.Pending {
 			continue
