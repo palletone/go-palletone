@@ -147,7 +147,7 @@ func (p *peer) SendHeaders(headers []*modules.Header) error {
 }
 
 func (p *peer) RequestCurrentHeader(number modules.ChainIndex) error {
-	return p2p.Send(p.rw, GetCurrentHeaderMsg, number)
+	return p2p.Send(p.rw, GetCurrentHeaderMsg, &number)
 }
 
 func (p *peer) SendCurrentHeader(headers []*modules.Header) error {
