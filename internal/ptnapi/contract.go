@@ -30,6 +30,9 @@ import (
 	"github.com/palletone/go-palletone/common/crypto"
 )
 
+const GOLANG = "golang"
+const GO = "go"
+
 type buildContractContext struct {
 	msgType  modules.MessageType
 	tokenId  string
@@ -62,8 +65,8 @@ func (s *PrivateContractAPI) buildContractReqTx(ctx *buildContractContext, msgRe
 		if err != nil {
 			return nil, err
 		}
-
 		tx.AddMessage(msgReq)
+
 		//sign
 		err = signRawTransaction(s.b, tx, ctx.fromAddr.String(), ctx.password, &ctx.exeTimeout, 1, usedUtxo)
 		if err != nil {
@@ -72,52 +75,35 @@ func (s *PrivateContractAPI) buildContractReqTx(ctx *buildContractContext, msgRe
 	} else {
 		log.Infof("buildContractReqTx, disabled gas fee, to address[%s],amount[%s] and fee[%s] will ignore.", ctx.toAddr.String(), ctx.amount.String(), ctx.gasFee.String())
 		tx, err = s.buildContractReqTxWithoutGasFee(s.b, ctx.fromAddr, ctx.password, msgReq)
-		//tx, err = s.buildCcinvokeTxWithoutGasFee(s.b, ctx.fromAddr, contractAddr, ctx.args, ctx.password, ctx.exeTimeout.Uint32())
 		if err != nil {
 			return nil, err
 		}
 	}
-
 	return tx, err
 }
 
-//创建没有Payment的ccinvoketx
-//func (s *PrivateContractAPI) buildCcinvokeTxWithoutGasFee(b Backend, from,
-//contractAddr common.Address, args [][]byte, pwd string, exeTimeout uint32) (*modules.Transaction, error) {
-//	msgReq := &modules.Message{
-//		App: modules.APP_CONTRACT_INVOKE_REQUEST,
-//		Payload: &modules.ContractInvokeRequestPayload{
-//			ContractId: contractAddr.Bytes(),
-//			Args:       args,
-//			Timeout:    exeTimeout,
-//		},
-//	}
-//	tx := modules.NewTransaction([]*modules.Message{msgReq})
-//
-//	return signRawNoGasTx(b, tx, from, pwd)
-//}
-
-//创建没有Payment的合约氢气交易
+//创建没有Payment的合约请求交易
 func (s *PrivateContractAPI) buildContractReqTxWithoutGasFee(b Backend, from common.Address,
 	pwd string, msgReq *modules.Message) (*modules.Transaction, error) {
 	tx := modules.NewTransaction([]*modules.Message{msgReq})
 	return signRawNoGasTx(b, tx, from, pwd)
 }
 
-func (s *PrivateContractAPI) contractFeeCheck(enableGasFee bool, ctx *buildContractContext, reqMsg *modules.Message) ( decimal.Decimal,  error) {
+func (s *PrivateContractAPI) contractFeeCheck(enableGasFee bool, ctx *buildContractContext, reqMsg *modules.Message) (decimal.Decimal, error) {
 	if ctx == nil {
 		return decimal.NewFromFloat(0), fmt.Errorf("contractFeeCheck param ctx is nil")
 	}
 	var err error
-	daoFee := ctx.gasFee
+	fee := ctx.gasFee
 	if enableGasFee {
-		if ctx.gasFee.IsZero() {//todo  ctx.gasFee < s.b.Dag().GetChainParameters().TransferPtnBaseFee
+		baseFee := decimal.NewFromFloat(float64(s.b.Dag().GetChainParameters().TransferPtnBaseFee))
+		if ctx.gasFee.Cmp(baseFee) < 0 { //ctx.gasFee < s.b.Dag().GetChainParameters().TransferPtnBaseFee
 			var needFee float64
 			switch ctx.msgType {
 			case modules.APP_CONTRACT_TPL_REQUEST:
 				payload := reqMsg.Payload.(*modules.ContractInstallRequestPayload)
 				needFee, _, _, err = s.b.ContractInstallReqTxFee(ctx.fromAddr, ctx.toAddr, ptnjson.Ptn2Dao(ctx.amount), ptnjson.Ptn2Dao(ctx.gasFee),
-					payload.TplName, payload.Path, payload.Version,payload.TplDescription, payload.Abi, payload.Language, nil)
+					payload.TplName, payload.Path, payload.Version, payload.TplDescription, payload.Abi, payload.Language, nil)
 			case modules.APP_CONTRACT_DEPLOY_REQUEST:
 				payload := reqMsg.Payload.(*modules.ContractDeployRequestPayload)
 				needFee, _, _, err = s.b.ContractDeployReqTxFee(ctx.fromAddr, ctx.toAddr,
@@ -132,12 +118,12 @@ func (s *PrivateContractAPI) contractFeeCheck(enableGasFee bool, ctx *buildContr
 					common.NewAddress(payload.ContractId, common.ContractHash), false)
 			}
 			if err != nil {
-				return daoFee, fmt.Errorf("Ccdeploytx, ContractDeployReqFee err:%s", err.Error())
+				return fee, fmt.Errorf("Ccdeploytx, ContractDeployReqFee err:%s", err.Error())
 			}
 
-			daoFee = decimal.NewFromFloat(needFee + 1)
-			log.Debug("Ccdeploytx", "dynamic calculation fee:", daoFee.String())
+			fee = decimal.NewFromFloat(needFee + 1)
+			log.Debug("Ccdeploytx", "dynamic calculation fee:", fee.String())
 		}
 	}
-	return daoFee, nil
+	return fee, nil
 }

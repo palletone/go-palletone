@@ -170,51 +170,6 @@ func (s *PrivateContractAPI) Ccstop(contractAddr string) error {
 	return err
 }
 
-const GOLANG = "golang"
-const GO = "go"
-
-//contract tx
-func (s *PrivateContractAPI) CcinstalltxOld(from, to string, amount, fee decimal.Decimal,
-	tplName, path, version, ccdescription, ccabi, cclanguage string, addr []string) (*ContractInstallRsp, error) {
-	fromAddr, _ := common.StringToAddress(from)
-	toAddr, _ := common.StringToAddress(to)
-	daoAmount := ptnjson.Ptn2Dao(amount)
-	daoFee := ptnjson.Ptn2Dao(fee)
-
-	log.Info("Ccinstalltx info:")
-	log.Infof("   fromAddr[%s], toAddr[%s]", fromAddr.String(), toAddr.String())
-	log.Infof("   daoAmount[%d], daoFee[%d]", daoAmount, daoFee)
-	log.Infof("   tplName[%s], path[%s],version[%s]", tplName, path, version)
-	log.Infof("   description[%s], abi[%s],language[%s]", ccdescription, ccabi, cclanguage)
-	log.Infof("   addrs len[%d]", len(addr))
-	if strings.ToLower(cclanguage) == GO {
-		cclanguage = GOLANG
-	}
-	language := strings.ToUpper(cclanguage)
-	if _, ok := peer.PtnChaincodeSpec_Type_value[language]; !ok {
-		return nil, errors.New(cclanguage + " language is not supported")
-	}
-
-	addrs := make([]common.Address, 0)
-	for i, s := range addr {
-		a, _ := common.StringToAddress(s)
-		addrs = append(addrs, a)
-		log.Infof("    index[%d],addr[%s]", i, s)
-	}
-	reqId, tplId, err := s.b.ContractInstallReqTx(fromAddr, toAddr, daoAmount, daoFee, tplName, path, version,
-		ccdescription, ccabi, language, addrs)
-	sReqId := hex.EncodeToString(reqId[:])
-	sTplId := hex.EncodeToString(tplId)
-	log.Info("Ccinstalltx:", "reqId", sReqId, "tplId", sTplId)
-
-	rsp := &ContractInstallRsp{
-		ReqId: sReqId,
-		TplId: sTplId,
-	}
-
-	return rsp, err
-}
-
 //将Install包装成对系统合约的ccinvoke
 func (s *PrivateContractAPI) Ccinstalltx(from, to string, amount, fee decimal.Decimal,
 	tplName, path, version, ccdescription, ccabi, cclanguage string, addrs []string, password *string, timeout *Int) (*ContractInstallRsp, error) {
