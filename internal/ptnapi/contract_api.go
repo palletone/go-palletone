@@ -203,7 +203,7 @@ func (s *PrivateContractAPI) Ccinstalltx(from, to string, amount, fee decimal.De
 	//参数检查
 	if fromAddr == (common.Address{}) || toAddr == (common.Address{}) || tplName == "" || path == "" || version == "" {
 		log.Error("Ccinstalltx, param is error")
-		return  nil, errors.New("Ccinstalltx, request param is error")
+		return nil, errors.New("Ccinstalltx, request param is error")
 	}
 	if len(tplName) > jury.MaxLengthTplName || len(path) > jury.MaxLengthTplPath || len(version) > jury.MaxLengthTplVersion ||
 		len(ccdescription) > jury.MaxLengthDescription || len(ccabi) > jury.MaxLengthAbi || len(language) > jury.MaxLengthLanguage ||
@@ -384,6 +384,7 @@ func (s *PrivateContractAPI) CcinvokeToken(from, to, token string, amountToken, 
 		tokenId:    dagconfig.DagConfig.GasToken,
 		fromAddr:   fromAddr,
 		toAddr:     toAddr,
+		ccAddr:     contractAddr,
 		amount:     amountToken,
 		gasFee:     fee,
 		args:       args,
@@ -407,8 +408,6 @@ func (s *PrivateContractAPI) CcinvokeToken(from, to, token string, amountToken, 
 	ctx.gasFee = daoFee
 
 	//3.构建请求交易
-	//如没有GasFee，而且to address不是合约地址，则不构建Payment，直接InvokeRequest+Signature
-	//if s.b.EnableGasFee() || toAddr == contractAddr || fromAddr != toAddr {
 	tx, err := s.buildContractReqTx(ctx, msgReq)
 	if err != nil {
 		log.Errorf("Ccdeploytx, buildContractReqTx err:%s", err.Error())

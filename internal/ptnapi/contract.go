@@ -39,6 +39,7 @@ type buildContractContext struct {
 	password string
 	fromAddr common.Address
 	toAddr   common.Address
+	ccAddr   common.Address
 	amount   decimal.Decimal
 	gasFee   decimal.Decimal
 	args     [][]byte
@@ -58,7 +59,9 @@ func getTemplateId(ccName, ccPath, ccVersion string) []byte {
 func (s *PrivateContractAPI) buildContractReqTx(ctx *buildContractContext, msgReq *modules.Message) (*modules.Transaction, error) {
 	var tx *modules.Transaction
 	var err error
-	if s.b.EnableGasFee() {
+
+	//如没有GasFee，而且to address不是合约地址，则不构建Payment，直接InvokeRequest+Signature
+	if s.b.EnableGasFee() || ctx.toAddr == ctx.ccAddr || ctx.fromAddr != ctx.toAddr {
 		var usedUtxo []*modules.UtxoWithOutPoint
 		//build raw tx
 		tx, usedUtxo, err = buildRawTransferTx(s.b, ctx.tokenId, ctx.fromAddr.String(), ctx.toAddr.String(), ctx.amount, ctx.gasFee, ctx.password)
