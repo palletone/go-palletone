@@ -422,11 +422,11 @@ func (s *PrivateContractAPI) CcinvokeToken(from, to, token string, amountToken, 
 	}
 
 	log.Infof("   reqId[%s]", hex.EncodeToString(reqId[:]))
-	rsp1 := &ContractInvokeRsp{
+	rsp := &ContractInvokeRsp{
 		ReqId:      hex.EncodeToString(reqId[:]),
 		ContractId: contractAddress,
 	}
-	return rsp1, err
+	return rsp, err
 }
 
 func (s *PrivateContractAPI) Ccstoptx(from, to string, amount, fee decimal.Decimal, contractId string) (*ContractStopRsp, error) {
