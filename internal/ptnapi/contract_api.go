@@ -217,7 +217,7 @@ func (s *PrivateContractAPI) CcinstalltxOld(from, to string, amount, fee decimal
 
 //将Install包装成对系统合约的ccinvoke
 func (s *PrivateContractAPI) Ccinstalltx(from, to string, amount, fee decimal.Decimal,
-	tplName, path, version, ccdescription, ccabi, cclanguage string, addr []string, password *string, timeout *Int) (*ContractInstallRsp, error) {
+	tplName, path, version, ccdescription, ccabi, cclanguage string, addrs []string, password *string, timeout *Int) (*ContractInstallRsp, error) {
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
 	daoAmount := ptnjson.Ptn2Dao(amount)
@@ -228,7 +228,7 @@ func (s *PrivateContractAPI) Ccinstalltx(from, to string, amount, fee decimal.De
 	log.Infof("   daoAmount[%d], daoFee[%d]", daoAmount, daoFee)
 	log.Infof("   tplName[%s], path[%s],version[%s]", tplName, path, version)
 	log.Infof("   description[%s], abi[%s],language[%s]", ccdescription, ccabi, cclanguage)
-	log.Infof("   addrs len[%d]", len(addr))
+	log.Infof("   addrs len[%d]", len(addrs))
 	if strings.ToLower(cclanguage) == GO {
 		cclanguage = GOLANG
 	}
@@ -237,14 +237,26 @@ func (s *PrivateContractAPI) Ccinstalltx(from, to string, amount, fee decimal.De
 		return nil, errors.New(cclanguage + " language is not supported")
 	}
 
-	//addrs := make([]common.Address, 0)
-	for i, s := range addr {
+	for i, s := range addrs {
 		_, err := common.StringToAddress(s)
 		if err != nil {
 			return nil, err
 		}
 		//addrs = append(addrs, a)
 		log.Infof("    index[%d],addr[%s]", i, s)
+	}
+	//参数检查
+	if fromAddr == (common.Address{}) || toAddr == (common.Address{}) || tplName == "" || path == "" || version == "" {
+		log.Error("Ccinstalltx, param is error")
+		return  nil, errors.New("Ccinstalltx, request param is error")
+	}
+	if len(tplName) > jury.MaxLengthTplName || len(path) > jury.MaxLengthTplPath || len(version) > jury.MaxLengthTplVersion ||
+		len(ccdescription) > jury.MaxLengthDescription || len(ccabi) > jury.MaxLengthAbi || len(language) > jury.MaxLengthLanguage ||
+		len(addrs) > jury.MaxNumberTplEleAddrHash {
+		log.Error("Ccinstalltx", "request param len overflow，len(tplName)",
+			len(tplName), "len(path)", len(path), "len(version)", len(version), "len(description)", len(ccdescription),
+			"len(abi)", len(ccabi), "len(language)", len(language), "len(addrs)", len(addrs))
+		return nil, errors.New("Ccinstalltx, request param len overflow")
 	}
 
 	usrcc := &ucc.UserChaincode{
@@ -260,7 +272,7 @@ func (s *PrivateContractAPI) Ccinstalltx(from, to string, amount, fee decimal.De
 		log.Error("Ccinstalltx, getUserCCPayload err:", "error", err)
 		return nil, err
 	}
-	juryAddr, _ := json.Marshal(addr)
+	juryAddr, _ := json.Marshal(addrs)
 	contractAddr := syscontract.InstallContractAddress.String()
 	result, err := s.Ccinvoketx(from, to, amount, fee, contractAddr, []string{
 		"installByteCode",
@@ -304,8 +316,8 @@ func (s *PrivateContractAPI) Ccdeploytx(from, to string, amount, fee decimal.Dec
 		args[i] = []byte(arg)
 		fmt.Printf("index[%d], value[%s]\n", i, arg)
 	}
-	//fullArgs := [][]byte{defaultMsg0}
-	//fullArgs = append(fullArgs, args...)
+	s.b.Lock()
+	defer s.b.Unlock()
 
 	//1.参数检查
 	if fromAddr == (common.Address{}) || toAddr == (common.Address{}) || templateId == nil {
@@ -355,7 +367,7 @@ func (s *PrivateContractAPI) Ccdeploytx(from, to string, amount, fee decimal.Dec
 	tx, err := s.buildContractReqTx(ctx, msgReq)
 
 	//4.只广播交易事件
-	reqId:= tx.RequestHash()
+	reqId := tx.RequestHash()
 	go s.b.ContractEventBroadcast(jury.ContractEvent{Ele: nil, CType: jury.CONTRACT_EVENT_ELE, Tx: tx}, true)
 
 	//5.执行结果返回
@@ -376,7 +388,6 @@ func (s *PrivateContractAPI) Ccinvoketx(from, to string, amount, fee decimal.Dec
 
 func (s *PrivateContractAPI) CcinvokeToken(from, to, token string, amountToken, fee decimal.Decimal,
 	contractAddress string, param []string, pwd *string, timeout *Int) (*ContractInvokeRsp, error) {
-
 	password := ""
 	if pwd != nil {
 		password = *pwd
@@ -395,52 +406,61 @@ func (s *PrivateContractAPI) CcinvokeToken(from, to, token string, amountToken, 
 		args[i] = []byte(arg)
 		log.Infof("      index[%d], value[%s]\n", i, arg)
 	}
-	exeTimeout := timeout.Uint32()
-	//1.参数检查
 
 	s.b.Lock()
 	defer s.b.Unlock()
-	var tx *modules.Transaction
-	var err error
-	//如没有GasFee，而且to address不是合约地址，则不构建Payment，直接InvokeRequest+Signature
-	if s.b.EnableGasFee() || toAddr == contractAddr || fromAddr != toAddr {
-		var usedUtxo []*modules.UtxoWithOutPoint
-		tx, usedUtxo, err = buildRawTransferTx(s.b, token, from, to, amountToken, fee, password)
-		if err != nil {
-			return nil, err
-		}
-
-		msgReq := &modules.Message{
-			App: modules.APP_CONTRACT_INVOKE_REQUEST,
-			Payload: &modules.ContractInvokeRequestPayload{
-				ContractId: contractAddr.Bytes(),
-				Args:       args,
-				Timeout:    exeTimeout,
-			},
-		}
-		tx.AddMessage(msgReq)
-		//3. sign
-		err = signRawTransaction(s.b, tx, from, password, timeout, 1, usedUtxo)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		log.Infof("Disabled gas fee, to address[%s],amount[%s] and fee[%s] will ignore.", to, amountToken.String(), fee.String())
-		msgReq := &modules.Message{
-			App: modules.APP_CONTRACT_INVOKE_REQUEST,
-			Payload: &modules.ContractInvokeRequestPayload{
-				ContractId: contractAddr.Bytes(),
-				Args:       args,
-				Timeout:    exeTimeout,
-			},
-		}
-		tx, err = s.buildContractReqTxWithoutGasFee(s.b, fromAddr, password, msgReq)
-		//tx, err = s.buildCcinvokeTxWithoutGasFee(s.b, fromAddr, contractAddr, args, password, exeTimeout)
-		if err != nil {
-			return nil, err
+	//1.参数检查
+	if fromAddr == (common.Address{}) || toAddr == (common.Address{}) || contractAddr == (common.Address{}) || args == nil {
+		log.Error("Ccinvoketx, param is error")
+		return nil, errors.New("Ccinvoketx request param is error")
+	}
+	if len(args) > jury.MaxNumberArgs {
+		log.Error("Ccinvoketx", "len(args)", len(args))
+		return nil, errors.New("Ccinvoketx request param len overflow")
+	}
+	for _, arg := range args {
+		if len(arg) > jury.MaxLengthArgs {
+			log.Error("Ccinvoketx", "request param len overflow,len(arg)", len(arg))
+			return nil, errors.New("Ccinvoketx request param args len overflow")
 		}
 	}
-	//4. send
+	//2.费用检查
+	ctx := &buildContractContext{
+		tokenId:    dagconfig.DagConfig.GasToken,
+		fromAddr:   fromAddr,
+		toAddr:     toAddr,
+		amount:     amountToken,
+		gasFee:     fee,
+		args:       args,
+		password:   password,
+		exeTimeout: *timeout,
+	}
+	msgReq := &modules.Message{
+		App: modules.APP_CONTRACT_INVOKE_REQUEST,
+		Payload: &modules.ContractInvokeRequestPayload{
+			ContractId: contractAddr.Bytes(),
+			Args:       args,
+			Timeout:    timeout.Uint32(),
+		},
+	}
+
+	daoFee, err := s.contractFeeCheck(s.b.EnableGasFee(), ctx, msgReq)
+	if err != nil {
+		log.Errorf("Ccdeploytx, contractFeeCheck err:%s", err.Error())
+		return nil, err
+	}
+	ctx.gasFee = daoFee
+
+	//3.构建请求交易
+	//如没有GasFee，而且to address不是合约地址，则不构建Payment，直接InvokeRequest+Signature
+	//if s.b.EnableGasFee() || toAddr == contractAddr || fromAddr != toAddr {
+	tx, err := s.buildContractReqTx(ctx, msgReq)
+	if err != nil {
+		log.Errorf("Ccdeploytx, buildContractReqTx err:%s", err.Error())
+		return nil, err
+	}
+
+	//4. 广播交易
 	reqId, err := submitTransaction(s.b, tx)
 	if err != nil {
 		log.Errorf("CcinvokeToken, submitTransaction err:%s", err.Error())
@@ -486,7 +506,7 @@ func (s *PrivateContractAPI) Ccstoptx(from, to string, amount, fee decimal.Decim
 		exeTimeout: Int{0},
 	}
 	randNum, err := crypto.GetRandomNonce()
-	if err != nil{
+	if err != nil {
 		log.Errorf("Ccstoptx, GetRandomNonce err:%s", err.Error())
 		return nil, err
 	}
