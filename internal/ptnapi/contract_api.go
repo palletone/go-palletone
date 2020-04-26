@@ -304,8 +304,8 @@ func (s *PrivateContractAPI) Ccdeploytx(from, to string, amount, fee decimal.Dec
 		args[i] = []byte(arg)
 		fmt.Printf("index[%d], value[%s]\n", i, arg)
 	}
-	fullArgs := [][]byte{defaultMsg0}
-	fullArgs = append(fullArgs, args...)
+	//fullArgs := [][]byte{defaultMsg0}
+	//fullArgs = append(fullArgs, args...)
 
 	//1.参数检查
 	if fromAddr == (common.Address{}) || toAddr == (common.Address{}) || templateId == nil {
@@ -474,8 +474,8 @@ func (s *PrivateContractAPI) Ccstoptx(from, to string, amount, fee decimal.Decim
 		return nil, errors.New("Ccstoptx request param is error")
 	}
 	//2.费用检查
-	daoFee := fee
-	var err error
+	//daoFee := fee
+	//var err error
 	ctx := &buildContractContext{
 		tokenId:    dagconfig.DagConfig.GasToken,
 		password:   "",
@@ -486,6 +486,10 @@ func (s *PrivateContractAPI) Ccstoptx(from, to string, amount, fee decimal.Decim
 		exeTimeout: Int{0},
 	}
 	randNum, err := crypto.GetRandomNonce()
+	if err != nil{
+		log.Errorf("Ccstoptx, GetRandomNonce err:%s", err.Error())
+		return nil, err
+	}
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_STOP_REQUEST,
 		Payload: &modules.ContractStopRequestPayload{
@@ -494,7 +498,7 @@ func (s *PrivateContractAPI) Ccstoptx(from, to string, amount, fee decimal.Decim
 			DeleteImage: false,
 		},
 	}
-	daoFee, err = s.contractFeeCheck(s.b.EnableGasFee(), ctx, msgReq)
+	daoFee, err := s.contractFeeCheck(s.b.EnableGasFee(), ctx, msgReq)
 	if err != nil {
 		log.Errorf("Ccstoptx, contractFeeCheck err:%s", err.Error())
 		return nil, err
