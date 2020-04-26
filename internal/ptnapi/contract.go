@@ -71,20 +71,20 @@ func (s *PrivateContractAPI) buildContractReqTx(ctx *buildContractContext, msgRe
 }
 
 //创建没有Payment的ccinvoketx
-func (s *PrivateContractAPI) buildCcinvokeTxWithoutGasFee(b Backend, from,
-contractAddr common.Address, args [][]byte, pwd string, exeTimeout uint32) (*modules.Transaction, error) {
-	msgReq := &modules.Message{
-		App: modules.APP_CONTRACT_INVOKE_REQUEST,
-		Payload: &modules.ContractInvokeRequestPayload{
-			ContractId: contractAddr.Bytes(),
-			Args:       args,
-			Timeout:    exeTimeout,
-		},
-	}
-	tx := modules.NewTransaction([]*modules.Message{msgReq})
-
-	return signRawNoGasTx(b, tx, from, pwd)
-}
+//func (s *PrivateContractAPI) buildCcinvokeTxWithoutGasFee(b Backend, from,
+//contractAddr common.Address, args [][]byte, pwd string, exeTimeout uint32) (*modules.Transaction, error) {
+//	msgReq := &modules.Message{
+//		App: modules.APP_CONTRACT_INVOKE_REQUEST,
+//		Payload: &modules.ContractInvokeRequestPayload{
+//			ContractId: contractAddr.Bytes(),
+//			Args:       args,
+//			Timeout:    exeTimeout,
+//		},
+//	}
+//	tx := modules.NewTransaction([]*modules.Message{msgReq})
+//
+//	return signRawNoGasTx(b, tx, from, pwd)
+//}
 
 //创建没有Payment的合约氢气交易
 func (s *PrivateContractAPI) buildContractReqTxWithoutGasFee(b Backend, from common.Address,
