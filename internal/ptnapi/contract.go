@@ -44,7 +44,7 @@ type buildContractContext struct {
 	gasFee   decimal.Decimal
 	args     [][]byte
 
-	exeTimeout Int
+	exeTimeout *Int
 }
 
 func getTemplateId(ccName, ccPath, ccVersion string) []byte {
@@ -71,7 +71,7 @@ func (s *PrivateContractAPI) buildContractReqTx(ctx *buildContractContext, msgRe
 		tx.AddMessage(msgReq)
 
 		//sign
-		err = signRawTransaction(s.b, tx, ctx.fromAddr.String(), ctx.password, &ctx.exeTimeout, 1, usedUtxo)
+		err = signRawTransaction(s.b, tx, ctx.fromAddr.String(), ctx.password, ctx.exeTimeout, 1, usedUtxo)
 		if err != nil {
 			return nil, err
 		}

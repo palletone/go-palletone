@@ -299,7 +299,7 @@ func (s *PrivateContractAPI) Ccdeploytx(from, to string, amount, fee decimal.Dec
 		gasFee:     fee,
 		args:       args,
 		password:   "",
-		exeTimeout: Int{0},
+		exeTimeout: &Int{0},
 	}
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_DEPLOY_REQUEST,
@@ -389,7 +389,7 @@ func (s *PrivateContractAPI) CcinvokeToken(from, to, token string, amountToken, 
 		gasFee:     fee,
 		args:       args,
 		password:   password,
-		exeTimeout: *timeout,
+		exeTimeout: timeout,
 	}
 	msgReq := &modules.Message{
 		App: modules.APP_CONTRACT_INVOKE_REQUEST,
@@ -457,7 +457,7 @@ func (s *PrivateContractAPI) Ccstoptx(from, to string, amount, fee decimal.Decim
 		toAddr:     toAddr,
 		amount:     amount,
 		gasFee:     fee,
-		exeTimeout: Int{0},
+		exeTimeout: &Int{0},
 	}
 	randNum, err := crypto.GetRandomNonce()
 	if err != nil {
