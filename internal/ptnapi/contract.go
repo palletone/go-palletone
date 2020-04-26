@@ -98,7 +98,7 @@ func (s *PrivateContractAPI) contractFeeCheck(enableGasFee bool, ctx *buildContr
 	}
 	var err error
 	fee := ctx.gasFee
-	if enableGasFee {
+	if enableGasFee || ctx.toAddr == ctx.ccAddr || ctx.fromAddr != ctx.toAddr{
 		baseFee := decimal.NewFromFloat(float64(s.b.Dag().GetChainParameters().TransferPtnBaseFee))
 		if ctx.gasFee.Cmp(baseFee) < 0 { //ctx.gasFee < s.b.Dag().GetChainParameters().TransferPtnBaseFee
 			var needFee float64
@@ -124,7 +124,7 @@ func (s *PrivateContractAPI) contractFeeCheck(enableGasFee bool, ctx *buildContr
 				return fee, fmt.Errorf("Ccdeploytx, ContractDeployReqFee err:%s", err.Error())
 			}
 
-			fee = decimal.NewFromFloat(needFee + 1)
+			fee = decimal.NewFromFloat(needFee)
 			log.Debug("Ccdeploytx", "dynamic calculation fee:", fee.String())
 		}
 	}
