@@ -25,18 +25,18 @@ import (
 )
 
 const (
-	MaxLengthTplName        = 64         //合约模板名字长度
-	MaxLengthTplPath        = 512        //合约模板文件路径长度
-	MaxLengthTplVersion     = 12         //合约模板版本号长度
-	MaxNumberTplEleAddrHash = 5          //合约模板指定节点地址hash数量
-	MaxLengthTplId          = 128        //合约模板Id长度
-	MaxNumberArgs           = 32         //合约请求参数数量
-	MaxLengthArgs           = 1024       //合约请求输入参数长度
-	MaxLengthExtData        = 16         //合约请求扩展数据长度
-	MaxLengthAbi            = 1024 * 500 //合约Abi数据长度
-	MaxLengthLanguage       = 32         //合约模板语言类型长度
-	MaxLengthDescription    = 1024       //合约描述数据长度
-	MaxNumberMergeUtxos     = 500        //合约合并utxo限制数量
+	MaxLengthTplName        = 64              //合约模板名字长度
+	MaxLengthTplPath        = 512             //合约模板文件路径长度
+	MaxLengthTplVersion     = 12              //合约模板版本号长度
+	MaxNumberTplEleAddrHash = 5               //合约模板指定节点地址hash数量
+	MaxLengthTplId          = 128             //合约模板Id长度
+	MaxNumberArgs           = 32              //合约请求参数数量
+	MaxLengthArgs           = 1024 * 1024 * 5 //合约请求输入参数长度(合约模板大小限制)
+	MaxLengthExtData        = 16              //合约请求扩展数据长度
+	MaxLengthAbi            = 1024 * 500      //合约Abi数据长度
+	MaxLengthLanguage       = 32              //合约模板语言类型长度
+	MaxLengthDescription    = 1024            //合约描述数据长度
+	MaxNumberMergeUtxos     = 500             //合约合并utxo限制数量
 )
 
 var (
