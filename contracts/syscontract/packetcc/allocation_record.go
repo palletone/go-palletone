@@ -42,6 +42,7 @@ type PacketAllocationRecord struct {
 	Timestamp   uint64         //领取的时间戳，主要用于排序
 }
 
+// 保存领取记录
 func savePacketAllocationRecord(stub shim.ChaincodeStubInterface, record *PacketAllocationRecord) error {
 	key := PacketAllocationRecordPrefix + hex.EncodeToString(record.PubKey) + "-" + record.Message
 	value, err := rlp.EncodeToBytes(record)
@@ -51,20 +52,7 @@ func savePacketAllocationRecord(stub shim.ChaincodeStubInterface, record *Packet
 	return stub.PutState(key, value)
 }
 
-//func getPacketAllocationRecord(stub shim.ChaincodeStubInterface, pubKey []byte, message string) (
-//	*PacketAllocationRecord, error) {
-//	key := PacketAllocationRecordPrefix + hex.EncodeToString(pubKey) + "-" + message
-//	value, err := stub.GetState(key)
-//	if err != nil {
-//		return nil, err
-//	}
-//	p := PacketAllocationRecord{}
-//	err = rlp.DecodeBytes(value, &p)
-//	if err != nil {
-//		return nil, err
-//	}
-//	return &p, nil
-//}
+// 获取红包的所有领取记录
 func getPacketAllocationHistory(stub shim.ChaincodeStubInterface, pubKey []byte) (
 	[]*PacketAllocationRecord, error) {
 	key := PacketAllocationRecordPrefix + hex.EncodeToString(pubKey) + "-"
@@ -84,6 +72,22 @@ func getPacketAllocationHistory(stub shim.ChaincodeStubInterface, pubKey []byte)
 
 	return result, nil
 }
+
+//func getPacketAllocationRecord(stub shim.ChaincodeStubInterface, pubKey []byte, message string) (
+//	*PacketAllocationRecord, error) {
+//	key := PacketAllocationRecordPrefix + hex.EncodeToString(pubKey) + "-" + message
+//	value, err := stub.GetState(key)
+//	if err != nil {
+//		return nil, err
+//	}
+//	p := PacketAllocationRecord{}
+//	err = rlp.DecodeBytes(value, &p)
+//	if err != nil {
+//		return nil, err
+//	}
+//	return &p, nil
+//}
+
 
 type PacketAllocationRecordJson struct {
 	PubKey      string          //红包公钥
@@ -107,11 +111,3 @@ func convertAllocationRecord2Json(record *PacketAllocationRecord) *PacketAllocat
 	}
 }
 
-func isPulledPacket(stub shim.ChaincodeStubInterface, pubKey []byte, message string) bool {
-	key := PacketAllocationRecordPrefix + hex.EncodeToString(pubKey) + "-" + message
-	byte, _ := stub.GetState(key)
-	if byte == nil {
-		return false
-	}
-	return true
-}

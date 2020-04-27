@@ -47,9 +47,31 @@ type Packet struct {
 	Constant        bool           //是否固定数额
 }
 
+type PacketJson struct {
+	PubKey          string          //红包对应的公钥，也是红包的唯一标识
+	Creator         common.Address  //红包发放人员地址
+	Token           string          //红包中的TokenID
+	TotalAmount     decimal.Decimal //红包总金额
+	PacketCount     uint32          //红包数，为0表示可以无限领取
+	MinPacketAmount decimal.Decimal //单个红包最小额
+	MaxPacketAmount decimal.Decimal //单个红包最大额,最大额最小额相同，则说明不是随机红包
+	ExpiredTime     string          //红包过期时间，0表示永不过期
+	Remark          string          //红包的备注
+	IsConstant      string          //是否固定数额
+	BalanceAmount   decimal.Decimal //红包剩余额度
+	BalanceCount    uint32          //红包剩余次数
+}
+
+//红包余额
+type PacketBalance struct {
+	Amount uint64
+	Count  uint32
+}
+
 func (p *Packet) IsFixAmount() bool {
 	return p.MinPacketAmount == p.MaxPacketAmount && p.MaxPacketAmount > 0
 }
+
 func (p *Packet) GetPullAmount(seed int64, amount uint64, count uint32) uint64 {
 	if p.IsFixAmount() {
 		return p.MaxPacketAmount
@@ -63,6 +85,8 @@ func (p *Packet) GetPullAmount(seed int64, amount uint64, count uint32) uint64 {
 	expect := amount / uint64(count)
 	return NormalRandom(seed, expect, p.MinPacketAmount, p.MaxPacketAmount)
 }
+
+// 随机返回数额
 func NormalRandom(seed int64, expect uint64, min, max uint64) uint64 {
 	if expect < min {
 		return min
@@ -93,6 +117,7 @@ func NormalRandom(seed int64, expect uint64, min, max uint64) uint64 {
 	return expect
 }
 
+// 保存红包
 func savePacket(stub shim.ChaincodeStubInterface, p *Packet) error {
 	key := PacketPrefix + hex.EncodeToString(p.PubKey)
 	value, err := rlp.EncodeToBytes(p)
@@ -101,6 +126,8 @@ func savePacket(stub shim.ChaincodeStubInterface, p *Packet) error {
 	}
 	return stub.PutState(key, value)
 }
+
+// 获取红包
 func getPacket(stub shim.ChaincodeStubInterface, pubKey []byte) (*Packet, error) {
 	key := PacketPrefix + hex.EncodeToString(pubKey)
 	value, err := stub.GetState(key)
@@ -115,6 +142,7 @@ func getPacket(stub shim.ChaincodeStubInterface, pubKey []byte) (*Packet, error)
 	return &p, nil
 }
 
+// 获取所有红包
 func getPackets(stub shim.ChaincodeStubInterface) ([]*Packet,error) {
 	value, err := stub.GetStateByPrefix(PacketPrefix)
 	if err != nil {
@@ -132,12 +160,7 @@ func getPackets(stub shim.ChaincodeStubInterface) ([]*Packet,error) {
 	return ps,nil
 }
 
-//红包余额
-type PacketBalance struct {
-	Amount uint64
-	Count  uint32
-}
-
+// 保存红包余额和个数
 func savePacketBalance(stub shim.ChaincodeStubInterface, pubKey []byte, balanceAmt uint64, balanceCount uint32) error {
 	key := PacketBalancePrefix + hex.EncodeToString(pubKey)
 	value, err := rlp.EncodeToBytes(PacketBalance{Amount: balanceAmt, Count: balanceCount})
@@ -146,6 +169,8 @@ func savePacketBalance(stub shim.ChaincodeStubInterface, pubKey []byte, balanceA
 	}
 	return stub.PutState(key, value)
 }
+
+// 获取红包余额和个数
 func getPacketBalance(stub shim.ChaincodeStubInterface, pubKey []byte) (uint64, uint32, error) {
 	key := PacketBalancePrefix + hex.EncodeToString(pubKey)
 	value, err := stub.GetState(key)
@@ -158,21 +183,6 @@ func getPacketBalance(stub shim.ChaincodeStubInterface, pubKey []byte) (uint64, 
 		return 0, 0, err
 	}
 	return b.Amount, b.Count, nil
-}
-
-type PacketJson struct {
-	PubKey          string          //红包对应的公钥，也是红包的唯一标识
-	Creator         common.Address  //红包发放人员地址
-	Token           string          //红包中的TokenID
-	TotalAmount     decimal.Decimal //红包总金额
-	PacketCount     uint32          //红包数，为0表示可以无限领取
-	MinPacketAmount decimal.Decimal //单个红包最小额
-	MaxPacketAmount decimal.Decimal //单个红包最大额,最大额最小额相同，则说明不是随机红包
-	ExpiredTime     string          //红包过期时间，0表示永不过期
-	Remark          string          //红包的备注
-	IsConstant      string          //是否固定数额
-	BalanceAmount   decimal.Decimal //红包剩余额度
-	BalanceCount    uint32          //红包剩余次数
 }
 
 func convertPacket2Json(packet *Packet, balanceAmount uint64, balanceCount uint32) *PacketJson {
@@ -195,3 +205,34 @@ func convertPacket2Json(packet *Packet, balanceAmount uint64, balanceCount uint3
 
 	return js
 }
+
+//  判断是否基金会发起的
+func isFoundationInvoke(stub shim.ChaincodeStubInterface) bool {
+	//  判断是否基金会发起的
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		return false
+	}
+	//  获取
+	gp, err := stub.GetSystemConfig()
+	if err != nil {
+		return false
+	}
+	foundationAddress := gp.ChainParameters.FoundationAddress
+	// 判断当前请求的是否为基金会
+	if invokeAddr.String() != foundationAddress {
+		return false
+	}
+	return true
+}
+
+// 是否红包已被领了
+func isPulledPacket(stub shim.ChaincodeStubInterface, pubKey []byte, message string) bool {
+	key := PacketAllocationRecordPrefix + hex.EncodeToString(pubKey) + "-" + message
+	byte, _ := stub.GetState(key)
+	if byte == nil {
+		return false
+	}
+	return true
+}
+

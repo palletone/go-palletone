@@ -190,6 +190,7 @@ func (p *PacketMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Error(jsonResp)
 	}
 }
+
 func (p *PacketMgr) CreatePacket(stub shim.ChaincodeStubInterface, pubKey []byte, count uint32,
 	minAmount, maxAmount decimal.Decimal, expiredTime *time.Time, remark string, isConstant bool) error {
 	creator, _ := stub.GetInvokeAddress()
@@ -201,6 +202,7 @@ func (p *PacketMgr) CreatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 		return errors.New("Please pay one kind of token to this contract.")
 	}
 	tokenToPacket := tokenToPackets[0]
+	// 获取当前 pubKey 对应的红包
 	pk, _ := getPacket(stub, pubKey)
 	if pk != nil {
 		return errors.New("PubKey already exist")
@@ -221,10 +223,12 @@ func (p *PacketMgr) CreatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 	} else {
 		packet.ExpiredTime = uint64(expiredTime.Unix())
 	}
+	// 保存红包
 	err = savePacket(stub, packet)
 	if err != nil {
 		return err
 	}
+	// 保存红包的余额及个数
 	err = savePacketBalance(stub, pubKey, packet.Amount, packet.Count)
 	if err != nil {
 		return err
@@ -236,6 +240,7 @@ func (p *PacketMgr) CreatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 func (p *PacketMgr) UpdatePacket(stub shim.ChaincodeStubInterface, pubKey []byte, count uint32,
 	minAmount, maxAmount decimal.Decimal, expiredTime *time.Time, remark string, isConstant bool) error {
 	creator, _ := stub.GetInvokeAddress()
+	// 获取当前 pubKey 对应的红包
 	packet, err := getPacket(stub, pubKey)
 	if err != nil {
 		return err
@@ -244,6 +249,7 @@ func (p *PacketMgr) UpdatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 		return errors.New("Only creator or admin can update")
 	}
 	//adjustCount := int32(count) - int32(packet.Count)
+	// 更新全部
 	packet.Count = count
 	packet.MinPacketAmount = packet.Token.Uint64Amount(minAmount)
 	packet.MaxPacketAmount = packet.Token.Uint64Amount(maxAmount)
@@ -266,6 +272,7 @@ func (p *PacketMgr) UpdatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 	//
 	//	return nil
 	//}
+	// 获取红包当前的余额和个数
 	bAmount, _, err := getPacketBalance(stub, pubKey)
 	if err != nil {
 		return err
@@ -281,7 +288,7 @@ func (p *PacketMgr) UpdatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 		packet.Amount += tokenToPacket.Amount
 		bAmount += tokenToPacket.Amount
 	}
-
+	// 保存红包
 	err = savePacket(stub, packet)
 	if err != nil {
 		return err
@@ -291,19 +298,22 @@ func (p *PacketMgr) UpdatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 	//if newCount < 0 {
 	//	return errors.New(fmt.Sprintf("Count must >=%d", bCount))
 	//}
+	// 保存余额和个数
 	err = savePacketBalance(stub, pubKey, bAmount, count)
 	if err != nil {
 		return err
 	}
 	return nil
 }
+
 func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 	pubKey []byte, msg string, signature []byte,
 	pullAddr common.Address, amount string) error {
-	//是否已经存在了
+	//是否已经被领取了
 	if isPulledPacket(stub, pubKey, msg) {
 		return errors.New("Packet had been pulled")
 	}
+	// 获取红包
 	packet, err := getPacket(stub, pubKey)
 	if err != nil {
 		return errors.New("Packet not found")
@@ -319,6 +329,7 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 	hash := common.HexToHash(stub.GetTxID())
 	seed := util.BytesToUInt64(hash[0:8])
 	var payAmt uint64
+	// 获取红包余额和个数
 	balanceAmount, balanceCount, err := getPacketBalance(stub, packet.PubKey)
 	if err != nil {
 		return err
@@ -326,6 +337,7 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 	if balanceAmount == 0 {
 		return errors.New("Packet balance is zero")
 	}
+	// 是否固定数额红包
 	if packet.Constant {
 		temp, _ := decimal.NewFromString(amount)
 		payAmt = packet.Token.Uint64Amount(temp)
@@ -350,7 +362,7 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 	if err != nil || !pass {
 		return errors.New("validate signature failed")
 	}
-
+	// 从红包转 token
 	err = stub.PayOutToken(pullAddr.String(), &modules.AmountAsset{
 		Amount: payAmt,
 		Asset:  packet.Token,
@@ -358,7 +370,7 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 	if err != nil {
 		return err
 	}
-	//调整红包余额
+	// 调整红包余额
 	err = savePacketBalance(stub, packet.PubKey, balanceAmount-payAmt, balanceCount)
 	if err != nil {
 		return err
@@ -382,25 +394,37 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 	return nil
 }
 
-//  判断是否基金会发起的
-func isFoundationInvoke(stub shim.ChaincodeStubInterface) bool {
-	//  判断是否基金会发起的
+func (p *PacketMgr) RecyclePacket(stub shim.ChaincodeStubInterface, pubKey []byte) error {
+	packet, err := getPacket(stub, pubKey)
+	if err != nil {
+		return err
+	}
 	invokeAddr, err := stub.GetInvokeAddress()
 	if err != nil {
-		return false
+		return err
 	}
-	//  获取
-	gp, err := stub.GetSystemConfig()
+	if !invokeAddr.Equal(packet.Creator) {
+		return errors.New("should be the creator of the packet")
+	}
+	now, _ := stub.GetTxTimestamp(10)
+	if packet.ExpiredTime > uint64(now.Seconds) { //红包未过期
+		return errors.New("packet not expired")
+	}
+	balanceAmount, _, err := getPacketBalance(stub, pubKey)
 	if err != nil {
-		return false
+		return err
 	}
-	foundationAddress := gp.ChainParameters.FoundationAddress
-	// 判断当前请求的是否为基金会
-	if invokeAddr.String() != foundationAddress {
-		return false
+	if balanceAmount == 0 {
+		return errors.New("no balance to recycle")
 	}
-	return true
+	err = stub.PayOutToken(packet.Creator.String(), &modules.AmountAsset{Amount: balanceAmount, Asset: packet.Token}, 0)
+	if err != nil {
+		return err
+	}
+	//更新余额
+	return savePacketBalance(stub, pubKey, 0, 0)
 }
+
 func (p *PacketMgr) GetPacketInfo(stub shim.ChaincodeStubInterface, pubKey []byte) (*PacketJson, error) {
 	packet, err := getPacket(stub, pubKey)
 	if err != nil {
@@ -444,36 +468,6 @@ func (p *PacketMgr) GetPacketAllocationHistory(stub shim.ChaincodeStubInterface,
 		return result[i].Timestamp > result[j].Timestamp
 	})
 	return result, nil
-}
-func (p *PacketMgr) RecyclePacket(stub shim.ChaincodeStubInterface, pubKey []byte) error {
-	packet, err := getPacket(stub, pubKey)
-	if err != nil {
-		return err
-	}
-	invokeAddr, err := stub.GetInvokeAddress()
-	if err != nil {
-		return err
-	}
-	if !invokeAddr.Equal(packet.Creator) {
-		return errors.New("should be the creator of the packet")
-	}
-	now, _ := stub.GetTxTimestamp(10)
-	if packet.ExpiredTime > uint64(now.Seconds) { //红包未过期
-		return errors.New("packet not expired")
-	}
-	balanceAmount, _, err := getPacketBalance(stub, pubKey)
-	if err != nil {
-		return err
-	}
-	if balanceAmount == 0 {
-		return errors.New("no balance to recycle")
-	}
-	err = stub.PayOutToken(packet.Creator.String(), &modules.AmountAsset{Amount: balanceAmount, Asset: packet.Token}, 0)
-	if err != nil {
-		return err
-	}
-	//更新余额
-	return savePacketBalance(stub, pubKey, 0, 0)
 }
 
 func (p *PacketMgr) IsPulledPacket(stub shim.ChaincodeStubInterface, pubKey []byte, msg string) bool {
