@@ -381,7 +381,7 @@ func (s *PrivateContractAPI) CcinvokeToken(from, to, token string, amountToken, 
 	}
 	//2.费用检查
 	ctx := &buildContractContext{
-		tokenId:    dagconfig.DagConfig.GasToken,
+		tokenId:    token,
 		fromAddr:   fromAddr,
 		toAddr:     toAddr,
 		ccAddr:     contractAddr,
