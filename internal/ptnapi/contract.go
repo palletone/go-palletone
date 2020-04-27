@@ -34,7 +34,7 @@ const GOLANG = "golang"
 const GO = "go"
 
 type buildContractContext struct {
-	msgType  modules.MessageType
+	//msgType  modules.MessageType
 	tokenId  string
 	password string
 	fromAddr common.Address
