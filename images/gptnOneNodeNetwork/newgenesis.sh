@@ -1,6 +1,6 @@
 #!/usr/bin/expect
 
-spawn gptn newgenesis
+spawn ./gptn newgenesis
 
 expect "Do you want to create a new account as the holder of the token? \[y/N\]"
 

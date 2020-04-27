@@ -2,7 +2,7 @@
 
 set timeout 30
 
-spawn gptn init
+spawn ./gptn init
 
 expect "Passphrase:"
 

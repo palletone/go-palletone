@@ -21,19 +21,16 @@ MAINTAINER palletone "contract@pallet.one"
 
 RUN mkdir /go-palletone
 
-# Copy gptn from stock Go builder container
-#COPY --from=builder /go/go-palletone/build/bin/gptn /usr/local/bin/
-COPY --from=builder /go/src/github.com/palletone/go-palletone/cmd/gptn/gptn /usr/local/bin/
-
 # Working in the go-palletone directory
 WORKDIR /go-palletone
 
+COPY --from=builder /go/src/github.com/palletone/go-palletone/cmd/gptn/gptn .
 COPY init.sh .
 COPY newgenesis.sh .
 COPY gptn-entrypoint.sh .
 
 # Exposing 8545 8546 30303 30303/udp ports
-EXPOSE 8545 8546 30303 30303/udp
+EXPOSE 8545
 
 # Default start command
 ENTRYPOINT ["./gptn-entrypoint.sh"]
