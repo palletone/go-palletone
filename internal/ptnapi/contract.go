@@ -24,10 +24,10 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common"
-	"github.com/palletone/go-palletone/ptnjson"
 	"fmt"
 	"bytes"
 	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/dag/errors"
 )
 
 const GOLANG = "golang"
@@ -59,12 +59,21 @@ func getTemplateId(ccName, ccPath, ccVersion string) []byte {
 func (s *PrivateContractAPI) buildContractReqTx(ctx *buildContractContext, msgReq *modules.Message) (*modules.Transaction, error) {
 	var tx *modules.Transaction
 	var err error
+	if ctx == nil || msgReq == nil {
+		return nil, errors.New("buildContractReqTx, param is nil")
+	}
 
 	//如没有GasFee，而且to address不是合约地址，则不构建Payment，直接InvokeRequest+Signature
 	if s.b.EnableGasFee() || ctx.toAddr == ctx.ccAddr || ctx.fromAddr != ctx.toAddr {
 		var usedUtxo []*modules.UtxoWithOutPoint
+		//费用检查
+		fee, err := s.contractFeeCheck(s.b.EnableGasFee(), ctx, msgReq)
+		if err != nil {
+			log.Errorf("buildContractReqTx, contractFeeCheck err:%s", err.Error())
+			return nil, err
+		}
 		//build raw tx
-		tx, usedUtxo, err = buildRawTransferTx(s.b, ctx.tokenId, ctx.fromAddr.String(), ctx.toAddr.String(), ctx.amount, ctx.gasFee, ctx.password)
+		tx, usedUtxo, err = buildRawTransferTx(s.b, ctx.tokenId, ctx.fromAddr.String(), ctx.toAddr.String(), ctx.amount, fee, ctx.password)
 		if err != nil {
 			return nil, err
 		}
@@ -96,38 +105,42 @@ func (s *PrivateContractAPI) contractFeeCheck(enableGasFee bool, ctx *buildContr
 	if ctx == nil {
 		return decimal.NewFromFloat(0), fmt.Errorf("contractFeeCheck param ctx is nil")
 	}
+
+	return ctx.gasFee, nil
+/*
 	var err error
 	fee := ctx.gasFee
-	if enableGasFee || ctx.toAddr == ctx.ccAddr || ctx.fromAddr != ctx.toAddr {
-		baseFee := decimal.NewFromFloat(float64(s.b.Dag().GetChainParameters().TransferPtnBaseFee))
-		if ctx.gasFee.Cmp(baseFee) < 0 { //ctx.gasFee < s.b.Dag().GetChainParameters().TransferPtnBaseFee
-			var needFee float64
-			switch ctx.msgType {
-			case modules.APP_CONTRACT_TPL_REQUEST:
-				payload := reqMsg.Payload.(*modules.ContractInstallRequestPayload)
-				needFee, _, _, err = s.b.ContractInstallReqTxFee(ctx.fromAddr, ctx.toAddr, ptnjson.Ptn2Dao(ctx.amount), ptnjson.Ptn2Dao(ctx.gasFee),
-					payload.TplName, payload.Path, payload.Version, payload.TplDescription, payload.Abi, payload.Language, nil)
-			case modules.APP_CONTRACT_DEPLOY_REQUEST:
-				payload := reqMsg.Payload.(*modules.ContractDeployRequestPayload)
-				needFee, _, _, err = s.b.ContractDeployReqTxFee(ctx.fromAddr, ctx.toAddr,
-					ptnjson.Ptn2Dao(ctx.amount), 0, payload.TemplateId, ctx.args, payload.ExtData, 0)
-			case modules.APP_CONTRACT_INVOKE_REQUEST:
-				payload := reqMsg.Payload.(*modules.ContractInvokeRequestPayload)
-				needFee, _, _, err = s.b.ContractInvokeReqTxFee(ctx.fromAddr, ctx.toAddr, ptnjson.Ptn2Dao(ctx.amount), ptnjson.Ptn2Dao(ctx.gasFee),
-					nil, common.NewAddress(payload.ContractId, common.ContractHash), ctx.args, 0)
-			case modules.APP_CONTRACT_STOP_REQUEST:
-				payload := reqMsg.Payload.(*modules.ContractStopRequestPayload)
-				needFee, _, _, err = s.b.ContractStopReqTxFee(ctx.fromAddr, ctx.toAddr, ptnjson.Ptn2Dao(ctx.amount), ptnjson.Ptn2Dao(ctx.gasFee),
-					common.NewAddress(payload.ContractId, common.ContractHash), false)
-			}
-			if err != nil {
-				return fee, fmt.Errorf("Ccdeploytx, ContractDeployReqFee err:%s", err.Error())
-			}
 
-			fee = decimal.NewFromFloat(needFee)
-			log.Debug("Ccdeploytx", "dynamic calculation fee:", fee.String())
+	baseFee := decimal.NewFromFloat(float64(s.b.Dag().GetChainParameters().TransferPtnBaseFee))
+	if ctx.gasFee.Cmp(baseFee) < 0 { //ctx.gasFee < s.b.Dag().GetChainParameters().TransferPtnBaseFee
+		var needFee float64
+		switch ctx.msgType {
+		case modules.APP_CONTRACT_TPL_REQUEST:
+			payload := reqMsg.Payload.(*modules.ContractInstallRequestPayload)
+			needFee, _, _, err = s.b.ContractInstallReqTxFee(ctx.fromAddr, ctx.toAddr, ptnjson.Ptn2Dao(ctx.amount), ptnjson.Ptn2Dao(ctx.gasFee),
+				payload.TplName, payload.Path, payload.Version, payload.TplDescription, payload.Abi, payload.Language, nil)
+		case modules.APP_CONTRACT_DEPLOY_REQUEST:
+			payload := reqMsg.Payload.(*modules.ContractDeployRequestPayload)
+			needFee, _, _, err = s.b.ContractDeployReqTxFee(ctx.fromAddr, ctx.toAddr,
+				ptnjson.Ptn2Dao(ctx.amount), 0, payload.TemplateId, ctx.args, payload.ExtData, 0)
+		case modules.APP_CONTRACT_INVOKE_REQUEST:
+			payload := reqMsg.Payload.(*modules.ContractInvokeRequestPayload)
+			needFee, _, _, err = s.b.ContractInvokeReqTxFee(ctx.fromAddr, ctx.toAddr, ptnjson.Ptn2Dao(ctx.amount), ptnjson.Ptn2Dao(ctx.gasFee),
+				nil, common.NewAddress(payload.ContractId, common.ContractHash), ctx.args, 0)
+		case modules.APP_CONTRACT_STOP_REQUEST:
+			payload := reqMsg.Payload.(*modules.ContractStopRequestPayload)
+			needFee, _, _, err = s.b.ContractStopReqTxFee(ctx.fromAddr, ctx.toAddr, ptnjson.Ptn2Dao(ctx.amount), ptnjson.Ptn2Dao(ctx.gasFee),
+				common.NewAddress(payload.ContractId, common.ContractHash), false)
 		}
+		if err != nil {
+			return fee, fmt.Errorf("Ccdeploytx, ContractDeployReqFee err:%s", err.Error())
+		}
+
+		fee = decimal.NewFromFloat(needFee)
+		log.Debug("Ccdeploytx", "dynamic calculation fee:", fee.String())
 	}
-	return ctx.gasFee, nil
-	//return fee, nil
+
+	//return ctx.gasFee, nil
+	return fee, nil
+*/
 }

@@ -31,7 +31,7 @@ const (
 	MaxNumberTplEleAddrHash = 5               //合约模板指定节点地址hash数量
 	MaxLengthTplId          = 128             //合约模板Id长度
 	MaxNumberArgs           = 32              //合约请求参数数量
-	MaxLengthArgs           = 1024 * 1024 * 5 //合约请求输入参数长度(合约模板大小限制)
+	MaxLengthArgs           = 1024 * 1024 * 4 //合约请求输入参数长度(合约模板大小限制)
 	MaxLengthExtData        = 16              //合约请求扩展数据长度
 	MaxLengthAbi            = 1024 * 500      //合约Abi数据长度
 	MaxLengthLanguage       = 32              //合约模板语言类型长度

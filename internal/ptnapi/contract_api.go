@@ -245,7 +245,7 @@ func (s *PrivateContractAPI) Ccinstalltx(from, to string, amount, fee decimal.De
 	}
 	tplId := getTemplateId(tplName, path, version)
 	sTplId := hex.EncodeToString(tplId)
-
+	log.Debug("-----Ccinstalltx:", "reqId", result.ReqId, "tplId", sTplId)
 	rsp := &ContractInstallRsp{
 		ReqId: result.ReqId,
 		TplId: sTplId,
@@ -290,7 +290,7 @@ func (s *PrivateContractAPI) Ccdeploytx(from, to string, amount, fee decimal.Dec
 			return nil, errors.New("Ccdeploytx request param len overflow")
 		}
 	}
-	//2.费用检查
+	//2.构建交易
 	ctx := &buildContractContext{
 		tokenId:    dagconfig.DagConfig.GasToken,
 		fromAddr:   fromAddr,
@@ -310,22 +310,16 @@ func (s *PrivateContractAPI) Ccdeploytx(from, to string, amount, fee decimal.Dec
 			Timeout:    0,
 		},
 	}
-
-	daoFee, err := s.contractFeeCheck(s.b.EnableGasFee(), ctx, msgReq)
+	tx, err := s.buildContractReqTx(ctx, msgReq)
 	if err != nil {
-		log.Errorf("Ccdeploytx, contractFeeCheck err:%s", err.Error())
+		log.Errorf("Ccdeploytx, buildContractReqTx err:%s", err.Error())
 		return nil, err
 	}
-	ctx.gasFee = daoFee
-
-	//3.构建合约请求交易
-	tx, err := s.buildContractReqTx(ctx, msgReq)
-
-	//4.只广播交易事件
+	//3.只广播交易事件
 	reqId := tx.RequestHash()
 	go s.b.ContractEventBroadcast(jury.ContractEvent{Ele: nil, CType: jury.CONTRACT_EVENT_ELE, Tx: tx}, true)
 
-	//5.执行结果返回
+	//4.执行结果返回
 	contractAddr := crypto.RequestIdToContractAddress(reqId)
 	sReqId := hex.EncodeToString(reqId[:])
 	log.Debug("-----Ccdeploytx:", "reqId", sReqId, "depId", contractAddr.String())
@@ -379,7 +373,7 @@ func (s *PrivateContractAPI) CcinvokeToken(from, to, token string, amountToken, 
 			return nil, errors.New("Ccinvoketx request param args len overflow")
 		}
 	}
-	//2.费用检查
+	//2.构建请求交易
 	ctx := &buildContractContext{
 		tokenId:    token,
 		fromAddr:   fromAddr,
@@ -399,25 +393,16 @@ func (s *PrivateContractAPI) CcinvokeToken(from, to, token string, amountToken, 
 			Timeout:    timeout.Uint32(),
 		},
 	}
-
-	daoFee, err := s.contractFeeCheck(s.b.EnableGasFee(), ctx, msgReq)
-	if err != nil {
-		log.Errorf("Ccdeploytx, contractFeeCheck err:%s", err.Error())
-		return nil, err
-	}
-	ctx.gasFee = daoFee
-
-	//3.构建请求交易
 	tx, err := s.buildContractReqTx(ctx, msgReq)
 	if err != nil {
-		log.Errorf("Ccdeploytx, buildContractReqTx err:%s", err.Error())
+		log.Errorf("Ccinvoketx, buildContractReqTx err:%s", err.Error())
 		return nil, err
 	}
 
-	//4. 广播交易
+	//3. 广播交易
 	reqId, err := submitTransaction(s.b, tx)
 	if err != nil {
-		log.Errorf("CcinvokeToken, submitTransaction err:%s", err.Error())
+		log.Errorf("Ccinvoketx, submitTransaction err:%s", err.Error())
 		return nil, err
 	}
 
@@ -447,9 +432,7 @@ func (s *PrivateContractAPI) Ccstoptx(from, to string, amount, fee decimal.Decim
 		log.Error("Ccstoptx, param is error")
 		return nil, errors.New("Ccstoptx request param is error")
 	}
-	//2.费用检查
-	//daoFee := fee
-	//var err error
+	//2.构建请求交易
 	ctx := &buildContractContext{
 		tokenId:    dagconfig.DagConfig.GasToken,
 		password:   "",
@@ -472,24 +455,13 @@ func (s *PrivateContractAPI) Ccstoptx(from, to string, amount, fee decimal.Decim
 			DeleteImage: false,
 		},
 	}
-	daoFee, err := s.contractFeeCheck(s.b.EnableGasFee(), ctx, msgReq)
-	if err != nil {
-		log.Errorf("Ccstoptx, contractFeeCheck err:%s", err.Error())
-		return nil, err
-	}
-
-	//3.构建请求交易
-	ctx.gasFee = daoFee
-	if err != nil {
-		return nil, errors.New("Ccstoptx, GetRandomNonce error")
-	}
 	tx, err := s.buildContractReqTx(ctx, msgReq)
 	if err != nil {
 		log.Errorf("Ccstoptx, buildContractReqTx err:%s", err.Error())
 		return nil, err
 	}
 
-	//4.广播
+	//3.广播
 	reqId, err := submitTransaction(s.b, tx)
 	if err != nil {
 		log.Errorf("Ccstoptx, submitTransaction err:%s", err.Error())
