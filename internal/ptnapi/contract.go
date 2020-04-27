@@ -128,6 +128,6 @@ func (s *PrivateContractAPI) contractFeeCheck(enableGasFee bool, ctx *buildContr
 			log.Debug("Ccdeploytx", "dynamic calculation fee:", fee.String())
 		}
 	}
-	//return ctx.gasFee, nil
-	return fee, nil
+	return ctx.gasFee, nil
+	//return fee, nil
 }
