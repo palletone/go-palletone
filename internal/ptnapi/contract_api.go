@@ -365,7 +365,7 @@ func (s *PrivateContractAPI) CcinvokeToken(from, to, token string, amountToken, 
 	s.b.Lock()
 	defer s.b.Unlock()
 	//1.参数检查
-	if fromAddr == (common.Address{}) || toAddr == (common.Address{}) || contractAddr == (common.Address{}) || args == nil {
+	if fromAddr == (common.Address{}) || contractAddr == (common.Address{}) || args == nil {
 		log.Error("Ccinvoketx, param is error")
 		return nil, errors.New("Ccinvoketx request param is error")
 	}
