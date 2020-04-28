@@ -193,15 +193,15 @@ func (p *PacketMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 
 func (p *PacketMgr) CreatePacket(stub shim.ChaincodeStubInterface, pubKey []byte, count uint32,
 	minAmount, maxAmount decimal.Decimal, expiredTime *time.Time, remark string, isConstant bool) error {
+	// 支持多 token
 	creator, _ := stub.GetInvokeAddress()
 	tokenToPackets, err := stub.GetInvokeTokens()
 	if err != nil {
 		return err
 	}
-	if len(tokenToPackets) != 1 {
-		return errors.New("Please pay one kind of token to this contract.")
+	if len(tokenToPackets) < 1 {
+		return errors.New("Please pay more than one kind of token to this contract.")
 	}
-	tokenToPacket := tokenToPackets[0]
 	// 获取当前 pubKey 对应的红包
 	pk, _ := getPacket(stub, pubKey)
 	if pk != nil {
@@ -210,11 +210,9 @@ func (p *PacketMgr) CreatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 	packet := &Packet{
 		PubKey:          pubKey,
 		Creator:         creator,
-		Token:           tokenToPacket.Asset,
-		Amount:          tokenToPacket.Amount,
 		Count:           count,
-		MinPacketAmount: tokenToPacket.Asset.Uint64Amount(minAmount),
-		MaxPacketAmount: tokenToPacket.Asset.Uint64Amount(maxAmount),
+		MinPacketAmount: tokenToPackets[0].Asset.Uint64Amount(minAmount),
+		MaxPacketAmount: tokenToPackets[0].Asset.Uint64Amount(maxAmount),
 		Remark:          remark,
 		Constant:        isConstant,
 	}
@@ -223,6 +221,12 @@ func (p *PacketMgr) CreatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 	} else {
 		packet.ExpiredTime = uint64(expiredTime.Unix())
 	}
+	a := uint64(0)
+	packet.Tokens = tokenToPackets
+	for _,t := range tokenToPackets {
+		a += t.Amount
+	}
+	packet.Amount = a
 	// 保存红包
 	err = savePacket(stub, packet)
 	if err != nil {
@@ -251,8 +255,7 @@ func (p *PacketMgr) UpdatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 	//adjustCount := int32(count) - int32(packet.Count)
 	// 更新全部
 	packet.Count = count
-	packet.MinPacketAmount = packet.Token.Uint64Amount(minAmount)
-	packet.MaxPacketAmount = packet.Token.Uint64Amount(maxAmount)
+
 	packet.Remark = remark
 	packet.Constant = isConstant
 	if expiredTime == nil {
@@ -281,13 +284,24 @@ func (p *PacketMgr) UpdatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 		if len(tokenToPackets) != 1 {
 			return errors.New("Please pay one kind of token to this contract.")
 		}
+		// 只能一次调整一个红包的一个 token
 		tokenToPacket := tokenToPackets[0]
-		if !tokenToPacket.Asset.Equal(packet.Token) {
-			return errors.New("Please pay " + packet.Token.String() + " to this contract.")
+		b := false
+		for _,t := range packet.Tokens {
+			if tokenToPacket.Asset.Equal(t.Asset) {
+				b=true
+				t.Amount += tokenToPacket.Amount
+				packet.Amount += tokenToPacket.Amount
+				bAmount += tokenToPacket.Amount
+				break
+			}
 		}
-		packet.Amount += tokenToPacket.Amount
-		bAmount += tokenToPacket.Amount
+		if !b {
+			return errors.New("note: Please pay correct token to this packet")
+		}
 	}
+	packet.MinPacketAmount = packet.Tokens[0].Asset.Uint64Amount(minAmount)
+	packet.MaxPacketAmount = packet.Tokens[0].Asset.Uint64Amount(maxAmount)
 	// 保存红包
 	err = savePacket(stub, packet)
 	if err != nil {
@@ -340,7 +354,7 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 	// 是否固定数额红包
 	if packet.Constant {
 		temp, _ := decimal.NewFromString(amount)
-		payAmt = packet.Token.Uint64Amount(temp)
+		payAmt = packet.Tokens[0].Asset.Uint64Amount(temp)
 	} else {
 		//
 		if packet.Count != 0 {
@@ -362,14 +376,21 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 	if err != nil || !pass {
 		return errors.New("validate signature failed")
 	}
+	recordToken := make([]modules.InvokeTokens, len(packet.Tokens))
 	// 从红包转 token
-	err = stub.PayOutToken(pullAddr.String(), &modules.AmountAsset{
-		Amount: payAmt,
-		Asset:  packet.Token,
-	}, 0)
-	if err != nil {
-		return err
+	for i,t := range packet.Tokens {
+		err = stub.PayOutToken(pullAddr.String(), &modules.AmountAsset{
+			Amount: payAmt,
+			Asset:  t.Asset,
+		}, 0)
+		if err != nil {
+			return err
+		}
+		recordToken[i].Amount = payAmt
+		recordToken[i].Asset = t.Asset
+		t.Amount -= payAmt
 	}
+	payAmt *=  uint64(len(packet.Tokens))
 	// 调整红包余额
 	err = savePacketBalance(stub, packet.PubKey, balanceAmount-payAmt, balanceCount)
 	if err != nil {
@@ -381,12 +402,12 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 	record := &PacketAllocationRecord{
 		PubKey:      pubKey,
 		Message:     msg,
-		Amount:      payAmt,
-		Token:       packet.Token,
+		Tokens:recordToken,
 		ToAddress:   pullAddr,
 		RequestHash: reqId,
 		Timestamp:   uint64(timestamp.Seconds),
 	}
+
 	err = savePacketAllocationRecord(stub, record)
 	if err != nil {
 		return err
@@ -417,9 +438,11 @@ func (p *PacketMgr) RecyclePacket(stub shim.ChaincodeStubInterface, pubKey []byt
 	if balanceAmount == 0 {
 		return errors.New("no balance to recycle")
 	}
-	err = stub.PayOutToken(packet.Creator.String(), &modules.AmountAsset{Amount: balanceAmount, Asset: packet.Token}, 0)
-	if err != nil {
-		return err
+	for _,t := range packet.Tokens {
+		err = stub.PayOutToken(packet.Creator.String(), &modules.AmountAsset{Amount: t.Amount, Asset: t.Asset}, 0)
+		if err != nil {
+			return err
+		}
 	}
 	//更新余额
 	return savePacketBalance(stub, pubKey, 0, 0)

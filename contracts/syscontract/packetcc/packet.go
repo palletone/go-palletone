@@ -34,7 +34,7 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-type Packet struct {
+type OldPacket struct {
 	PubKey          []byte         //红包对应的公钥，也是红包的唯一标识
 	Creator         common.Address //红包发放人员地址
 	Token           *modules.Asset //红包中的TokenID
@@ -47,10 +47,34 @@ type Packet struct {
 	Constant        bool           //是否固定数额
 }
 
+//type Tokens struct {
+//	Amount  uint64 `json:"amount"`  //数量
+//	Asset   *modules.Asset `json:"asset"`   //资产
+//}
+
+// new Packet
+type Packet struct {
+	PubKey          []byte         //红包对应的公钥，也是红包的唯一标识
+	Creator         common.Address //红包发放人员地址
+	Tokens           []*modules.InvokeTokens //红包中的TokenID
+	Amount          uint64         //红包总金额
+	Count           uint32         //红包数，为0表示可以无限领取
+	MinPacketAmount uint64         //单个红包最小额
+	MaxPacketAmount uint64         //单个红包最大额,最大额最小额相同，则说明不是随机红包,0则表示完全随机
+	ExpiredTime     uint64         //红包过期时间，0表示永不过期
+	Remark          string         //红包的备注
+	Constant        bool           //是否固定数额
+}
+
+type TokensJson struct {
+	Amount  decimal.Decimal `json:"amount"`  //数量
+	Asset   string `json:"asset"`   //资产
+}
+
 type PacketJson struct {
 	PubKey          string          //红包对应的公钥，也是红包的唯一标识
 	Creator         common.Address  //红包发放人员地址
-	Token           string          //红包中的TokenID
+	Token           []TokensJson          //红包中的TokenID
 	TotalAmount     decimal.Decimal //红包总金额
 	PacketCount     uint32          //红包数，为0表示可以无限领取
 	MinPacketAmount decimal.Decimal //单个红包最小额
@@ -189,20 +213,23 @@ func convertPacket2Json(packet *Packet, balanceAmount uint64, balanceCount uint3
 	js := &PacketJson{
 		PubKey:          hex.EncodeToString(packet.PubKey),
 		Creator:         packet.Creator,
-		Token:           packet.Token.String(),
-		TotalAmount:     packet.Token.DisplayAmount(packet.Amount),
-		MinPacketAmount: packet.Token.DisplayAmount(packet.MinPacketAmount),
-		MaxPacketAmount: packet.Token.DisplayAmount(packet.MaxPacketAmount),
+		TotalAmount:     packet.Tokens[0].Asset.DisplayAmount(packet.Amount),
+		MinPacketAmount: packet.Tokens[0].Asset.DisplayAmount(packet.MinPacketAmount),
+		MaxPacketAmount: packet.Tokens[0].Asset.DisplayAmount(packet.MaxPacketAmount),
 		PacketCount:     packet.Count,
 		Remark:          packet.Remark,
 		IsConstant:      strconv.FormatBool(packet.Constant),
-		BalanceAmount:   packet.Token.DisplayAmount(balanceAmount),
+		BalanceAmount:   packet.Tokens[0].Asset.DisplayAmount(balanceAmount),
 		BalanceCount:    balanceCount,
 	}
 	if packet.ExpiredTime != 0 {
 		js.ExpiredTime = time.Unix(int64(packet.ExpiredTime), 0).String()
 	}
-
+	js.Token = make([]TokensJson, len(packet.Tokens))
+	for i,t := range packet.Tokens {
+		js.Token[i].Amount = t.Asset.DisplayAmount(t.Amount)
+		js.Token[i].Asset = t.Asset.String()
+	}
 	return js
 }
 
