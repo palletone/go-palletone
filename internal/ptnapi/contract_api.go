@@ -172,11 +172,15 @@ func (s *PrivateContractAPI) Ccstop(contractAddr string) error {
 
 //将Install包装成对系统合约的ccinvoke
 func (s *PrivateContractAPI) Ccinstalltx(from, to string, amount, fee decimal.Decimal,
-	tplName, path, version, ccdescription, ccabi, cclanguage string, addrs []string, password *string, timeout *Int) (*ContractInstallRsp, error) {
+	tplName, path, version, ccdescription, ccabi, cclanguage string, addrs []string, pwd *string, timeout *Int) (*ContractInstallRsp, error) {
 	fromAddr, _ := common.StringToAddress(from)
 	toAddr, _ := common.StringToAddress(to)
 	daoAmount := ptnjson.Ptn2Dao(amount)
 	daoFee := ptnjson.Ptn2Dao(fee)
+	password := ""
+	if pwd != nil {
+		password = *pwd
+	}
 
 	log.Info("Ccinstalltx info:")
 	log.Infof("   fromAddr[%s], toAddr[%s]", fromAddr.String(), toAddr.String())
@@ -227,9 +231,39 @@ func (s *PrivateContractAPI) Ccinstalltx(from, to string, amount, fee decimal.De
 		log.Error("Ccinstalltx, getUserCCPayload err:", "error", err)
 		return nil, err
 	}
+	//获取费用
+	needFee := fee
+	if s.b.EnableGasFee() {
+		ctx := &buildContractContext{
+			tokenId:    dagconfig.DagConfig.GasToken,
+			fromAddr:   fromAddr,
+			toAddr:     toAddr,
+			amount:     amount,
+			gasFee:     fee,
+			password:   password,
+			exeTimeout: &Int{0},
+		}
+		msgReq := &modules.Message{
+			App: modules.APP_CONTRACT_TPL_REQUEST,
+			Payload: &modules.ContractInstallRequestPayload{
+				TplName:        tplName,
+				TplDescription: ccdescription,
+				Path:           path,
+				Version:        version,
+				Abi:            ccabi,
+				Language:       language,
+			},
+		}
+		needFee, err = s.contractFeeCheck(ctx, msgReq)
+		if err != nil {
+			log.Errorf("Ccinstalltx, contractFeeCheck err:%s", err.Error())
+			return nil, err
+		}
+	}
+
 	juryAddr, _ := json.Marshal(addrs)
 	contractAddr := syscontract.InstallContractAddress.String()
-	result, err := s.Ccinvoketx(from, to, amount, fee, contractAddr, []string{
+	result, err := s.Ccinvoketx(from, to, amount, needFee, contractAddr, []string{
 		"installByteCode",
 		tplName,
 		ccdescription,
@@ -239,7 +273,7 @@ func (s *PrivateContractAPI) Ccinstalltx(from, to string, amount, fee decimal.De
 		ccabi,
 		language,
 		string(juryAddr),
-	}, password, timeout)
+	}, &password, timeout)
 	if err != nil {
 		return nil, err
 	}
