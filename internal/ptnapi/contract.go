@@ -28,7 +28,6 @@ import (
 	"bytes"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/dag/errors"
-	"github.com/palletone/go-palletone/ptnjson"
 )
 
 const GOLANG = "golang"
@@ -169,50 +168,51 @@ func (s *PrivateContractAPI) contractFeeCheck(ctx *buildContractContext, reqMsg 
 	if ctx == nil || reqMsg == nil {
 		return decimal.NewFromFloat(0), fmt.Errorf("contractFeeCheck param ctx is nil")
 	}
-	//return ctx.gasFee, nil
+	return ctx.gasFee, nil
+	/*
+		var err error
+		fee := ctx.gasFee
 
-	var err error
-	fee := ctx.gasFee
-
-	//baseFee := decimal.NewFromFloat(float64(s.b.Dag().GetChainParameters().TransferPtnBaseFee))
-	//if ctx.gasFee.Cmp(baseFee) < 0 { //ctx.gasFee < s.b.Dag().GetChainParameters().TransferPtnBaseFee
-	var needFee float64
-	switch reqMsg.App {
-	case modules.APP_CONTRACT_TPL_REQUEST:
-		payload := reqMsg.Payload.(*modules.ContractInstallRequestPayload)
-		needFee, _, _, err = s.b.ContractInstallReqTxFee(ctx.fromAddr, ctx.toAddr, ptnjson.Ptn2Dao(ctx.amount), ptnjson.Ptn2Dao(ctx.gasFee),
-			payload.TplName, payload.Path, payload.Version, payload.TplDescription, payload.Abi, payload.Language, nil)
-	case modules.APP_CONTRACT_DEPLOY_REQUEST:
-		payload := reqMsg.Payload.(*modules.ContractDeployRequestPayload)
-		needFee, _, _, err = s.b.ContractDeployReqTxFee(ctx.fromAddr, ctx.toAddr,
-			ptnjson.Ptn2Dao(ctx.amount), 0, payload.TemplateId, ctx.args, payload.ExtData, 0)
-	case modules.APP_CONTRACT_INVOKE_REQUEST:
-		payload := reqMsg.Payload.(*modules.ContractInvokeRequestPayload)
-		needFee, _, _, err = s.b.ContractInvokeReqTxFee(ctx.fromAddr, ctx.toAddr, ptnjson.Ptn2Dao(ctx.amount), ptnjson.Ptn2Dao(ctx.gasFee),
-			nil, common.NewAddress(payload.ContractId, common.ContractHash), ctx.args, 0)
-	case modules.APP_CONTRACT_STOP_REQUEST:
-		payload := reqMsg.Payload.(*modules.ContractStopRequestPayload)
-		needFee, _, _, err = s.b.ContractStopReqTxFee(ctx.fromAddr, ctx.toAddr, ptnjson.Ptn2Dao(ctx.amount), ptnjson.Ptn2Dao(ctx.gasFee),
-			common.NewAddress(payload.ContractId, common.ContractHash), false)
-	}
-	if err != nil {
-		return fee, fmt.Errorf("contractFeeCheck, contract fee get err:%s", err.Error())
-	}
-
-	//dNeedFee := decimal.NewFromFloat(needFee)
-	dNeedFee := ptnjson.Dao2Ptn(uint64(needFee))
-	//如果设定费用<=0，则由程序计算费用。如果设定>0，则进行费用比较，不足则直接返回错误，费用够则使用用户设置费用
-	if ctx.gasFee.GreaterThan(decimal.Zero) { // gasFee> 0
-		if ctx.gasFee.LessThan(dNeedFee) {
-			log.Errorf("contractFeeCheck, fee not enough, fee[%s], need fee[%s]",
-				ctx.gasFee.String(), dNeedFee.String())
-			return fee, fmt.Errorf("contractFeeCheck, fee not enough, fee[%s], need fee[%s]",
-				ctx.gasFee.String(), dNeedFee.String())
+		//baseFee := decimal.NewFromFloat(float64(s.b.Dag().GetChainParameters().TransferPtnBaseFee))
+		//if ctx.gasFee.Cmp(baseFee) < 0 { //ctx.gasFee < s.b.Dag().GetChainParameters().TransferPtnBaseFee
+		var needFee float64
+		switch reqMsg.App {
+		case modules.APP_CONTRACT_TPL_REQUEST:
+			payload := reqMsg.Payload.(*modules.ContractInstallRequestPayload)
+			needFee, _, _, err = s.b.ContractInstallReqTxFee(ctx.fromAddr, ctx.toAddr, ptnjson.Ptn2Dao(ctx.amount), ptnjson.Ptn2Dao(ctx.gasFee),
+				payload.TplName, payload.Path, payload.Version, payload.TplDescription, payload.Abi, payload.Language, nil)
+		case modules.APP_CONTRACT_DEPLOY_REQUEST:
+			payload := reqMsg.Payload.(*modules.ContractDeployRequestPayload)
+			needFee, _, _, err = s.b.ContractDeployReqTxFee(ctx.fromAddr, ctx.toAddr,
+				ptnjson.Ptn2Dao(ctx.amount), 0, payload.TemplateId, ctx.args, payload.ExtData, 0)
+		case modules.APP_CONTRACT_INVOKE_REQUEST:
+			payload := reqMsg.Payload.(*modules.ContractInvokeRequestPayload)
+			needFee, _, _, err = s.b.ContractInvokeReqTxFee(ctx.fromAddr, ctx.toAddr, ptnjson.Ptn2Dao(ctx.amount), ptnjson.Ptn2Dao(ctx.gasFee),
+				nil, common.NewAddress(payload.ContractId, common.ContractHash), ctx.args, 0)
+		case modules.APP_CONTRACT_STOP_REQUEST:
+			payload := reqMsg.Payload.(*modules.ContractStopRequestPayload)
+			needFee, _, _, err = s.b.ContractStopReqTxFee(ctx.fromAddr, ctx.toAddr, ptnjson.Ptn2Dao(ctx.amount), ptnjson.Ptn2Dao(ctx.gasFee),
+				common.NewAddress(payload.ContractId, common.ContractHash), false)
 		}
-	} else { // gasFee<=0
-		fee = dNeedFee
-	}
+		if err != nil {
+			return fee, fmt.Errorf("contractFeeCheck, contract fee get err:%s", err.Error())
+		}
 
-	log.Debug("contractFeeCheck", "dynamic calculation fee:", fee.String())
-	return fee, nil
+		//dNeedFee := decimal.NewFromFloat(needFee)
+		dNeedFee := ptnjson.Dao2Ptn(uint64(needFee))
+		//如果设定费用<=0，则由程序计算费用。如果设定>0，则进行费用比较，不足则直接返回错误，费用够则使用用户设置费用
+		if ctx.gasFee.GreaterThan(decimal.Zero) { // gasFee> 0
+			if ctx.gasFee.LessThan(dNeedFee) {
+				log.Errorf("contractFeeCheck, fee not enough, fee[%s], need fee[%s]",
+					ctx.gasFee.String(), dNeedFee.String())
+				return fee, fmt.Errorf("contractFeeCheck, fee not enough, fee[%s], need fee[%s]",
+					ctx.gasFee.String(), dNeedFee.String())
+			}
+		} else { // gasFee<=0
+			fee = dNeedFee
+		}
+
+		log.Debug("contractFeeCheck", "dynamic calculation fee:", fee.String())
+		return fee, nil
+	*/
 }
