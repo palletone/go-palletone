@@ -68,7 +68,7 @@ multiToken
     Should Be Equal As Numbers    ${t}    1000
     ${res}    addBlacklist    ${two}    lsls
     log    ${res}
-    sleep    6
+    sleep    10
     ${pb}    getBalance    PCGTta3M4t3yXu8uRgkKvaWd2d8DRdWEXJF    PTN
     log    ${pb}
     Should Be Equal As Numbers    ${pb}    19999
@@ -81,13 +81,13 @@ multiToken
     log    ${res}
     ${res}    payout    P1DQA485N7r8sjUB31pKDqE2x7ZEfJxCJ2A    ${pb}    PTN
     log    ${res}
-    sleep    8
+    sleep    6
     ${b}    getBalance    P1DQA485N7r8sjUB31pKDqE2x7ZEfJxCJ2A    PTN
     log    ${b}
     Should Be Equal As Numbers    ${b}    19999
     ${res}    payout    P1DQA485N7r8sjUB31pKDqE2x7ZEfJxCJ2A    ${bb}    ${assetId}
     log    ${res}
-    sleep    8
+    sleep    6
     ${b}    getBalance    P1DQA485N7r8sjUB31pKDqE2x7ZEfJxCJ2A    ${assetId}
     log    ${b}
     Should Be Equal As Numbers    ${b}    1000

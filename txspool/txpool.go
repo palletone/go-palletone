@@ -816,8 +816,8 @@ func (pool *TxPool) getPoolTxsByAddr(addr common.Address, onlyUnpacked bool) ([]
 		poolTxs[hash] = tx
 	}
 	for _, tx := range poolTxs {
-		// 如果已被打包，则忽略
-		if tx.Pending {
+		// 如果已被打包、被标记为discard，则忽略
+		if tx.Pending || tx.Discarded {
 			continue
 		}
 		if tx.IsFrom(addr) || tx.IsTo(addr) {
@@ -1076,6 +1076,7 @@ func (pool *TxPool) DiscardTxs(txs []*modules.Transaction) error {
 					log.Warnf("Req[%s] discard error:%s", requestHash.String(), err.Error())
 				}
 			}
+			pool.orphans.Delete(requestHash)
 			//删除对应的Request,可能有后续Tx在孤儿池，添加回来
 			if _, ok := pool.userContractRequests[requestHash]; ok {
 				log.Debugf("Request[%s] already packed into unit, delete it from request pool", requestHash.String())
@@ -1083,7 +1084,6 @@ func (pool *TxPool) DiscardTxs(txs []*modules.Transaction) error {
 				pool.checkBasedOnReqOrphanTxToNormal(tx.Hash(), requestHash)
 
 			}
-			pool.orphans.Delete(requestHash)
 		}
 		err := pool.discardTx(tx.Hash())
 		if err != nil && err != ErrNotFound {
