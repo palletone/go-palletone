@@ -41,7 +41,8 @@ normalGetBalance
     [Arguments]    ${address}    ${host}=${host}
     ${PTN}    ${RESULT}    Request getBalance    ${address}    ${host}
     #Should Match Regexp    ${RESULT}    result    msg="TotalSupply:does't match"
-    [Return]    ${PTN}    ${RESULT}
+    ${amount}    Set Variable If    ${len}>1     ${result["${assetId}"]}     ${result["PTN"]}
+    [Return]    ${amount}
 
 normalCcqueryById
     [Arguments]    ${contractId}    ${methodType}    ${preTokenId}
