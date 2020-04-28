@@ -149,7 +149,7 @@ type TxPool struct {
 	nextExpireScan time.Time
 	cache          palletcache.ICache
 	tokenEngine    tokenengine.ITokenEngine
-	//enableGasFee   bool
+	enableGasFee   bool
 }
 
 // NewTxPool creates a new transaction pool to gather, sort and filter inbound
@@ -183,6 +183,7 @@ func NewTxPool4DI(config TxPoolConfig, cachedb palletcache.ICache, unit IDag,
 		userContractRequests:  make(map[common.Hash]*TxPoolTransaction),
 		cache:                 cachedb,
 		tokenEngine:           tokenEngine,
+		enableGasFee:          enableGasFee,
 	}
 	pool.mu = sync.RWMutex{}
 	pool.priority_sorted = newTxPrioritiedList(&pool.all)
@@ -511,25 +512,6 @@ func (pool *TxPool) add_journalTx(ptx *TxPoolTransaction) error {
 		}
 	}
 
-	// If the transaction pool is full, discard underpriced transactions
-	length := pool.AllLength()
-	if uint64(length) >= pool.config.GlobalSlots+pool.config.GlobalQueue {
-		// If the new transaction is underpriced, don't accept it
-		if pool.priority_sorted.Underpriced(ptx) {
-			log.Trace("Discarding underpriced transaction", "hash", hash, "price", ptx.GetTxFee().Int64())
-			return ErrUnderpriced
-		}
-		// New transaction is better than our worse ones, make room for it
-		count := length - int(pool.config.GlobalSlots+pool.config.GlobalQueue-1)
-		if count > 0 {
-			drop := pool.priority_sorted.Discard(count)
-			for _, tx := range drop {
-				log.Trace("Discarding freshly underpriced transaction", "hash", hash, "price", tx.GetTxFee().Int64())
-				pool.removeTransaction(tx, true)
-				pool.removeTx(tx.Tx.Hash())
-			}
-		}
-	}
 	if ptx.Tx.IsUserContract() && ptx.Tx.IsOnlyContractRequest() {
 		//user contract request
 		log.Debugf("[%s]add tx[%s] to user contract request pool", reqHash.ShortStr(), hash.String())
@@ -575,9 +557,11 @@ func (pool *TxPool) add(tx *modules.Transaction, local bool) (bool, error) {
 	hash := tx.Hash()
 	reqHash := tx.RequestHash()
 	msgs := tx.Messages()
-	if msgs[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
-		txCoinbasePrometheus.Add(1)
-		return true, nil
+	if msgs[0].App == modules.APP_PAYMENT {
+		if msgs[0].Payload.(*modules.PaymentPayload).IsCoinbase() {
+			txCoinbasePrometheus.Add(1)
+			return true, nil
+		}
 	}
 	exitsInDb, _ := pool.unit.IsTransactionExist(hash)
 	if exitsInDb {

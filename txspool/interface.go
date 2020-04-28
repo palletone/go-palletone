@@ -29,16 +29,7 @@ type ITxPool interface {
 	Stop()
 	Clear()
 	AddLocal(tx *modules.Transaction) error
-	//AddLocals(txs []*modules.Transaction) []error
-	//AddSequenTx(tx *modules.Transaction) error
-	//AddSequenTxs(txs []*modules.Transaction) error
-	//AllHashs() []*common.Hash
-	//AllTxpoolTxs() map[common.Hash]*TxPoolTransaction
-
-	// AddRemotes should add the given transactions to the pool.
 	AddRemote(tx *modules.Transaction) error
-	//AddRemotes([]*modules.Transaction) []error
-	//ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag Tag) ([]*TxDesc, error)
 	//查询已打包的交易，以UnitHash为Key
 	Pending() (map[common.Hash][]*TxPoolTransaction, error)
 	//查询孤儿交易
@@ -47,23 +38,16 @@ type ITxPool interface {
 	SetPendingTxs(unit_hash common.Hash, num uint64, txs []*modules.Transaction) error
 	//将一堆交易设置为未打包
 	ResetPendingTxs(txs []*modules.Transaction) error
-	//SendStoredTxs(hashs []common.Hash) error
 	//将一堆交易标记为删除
 	DiscardTxs(txs []*modules.Transaction) error
 	//查询交易池所有的UTXO，比如有A，B，C连续交易，那么ABC的UTXO都会被查询
 	GetUtxoFromAll(outpoint *modules.OutPoint) (*modules.Utxo, error)
-	//查询交易池中未被使用的UTXO，比如有ABC连续交易，那么只有C的UTXO会被查询，而AB的已经被使用了
-	//GetUtxoFromFree(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	//订阅事件
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
-	//GetSortedTxs(hash common.Hash, index uint64) ([]*TxPoolTransaction, common.StorageSize)
 	//迭代获取未打包的排序好的Tx，迭代执行函数时，如果返回true就继续迭代，如果false停止迭代
-	//GetSortedTxs(processor func(tx *TxPoolTransaction) (getNext bool, err error)) error
 	GetSortedTxs() ([]*TxPoolTransaction, error)
 	//从交易池获取某个交易
 	GetTx(hash common.Hash) (*TxPoolTransaction, error)
-	//获取交易池中某个地址的所有交易
-	//GetPoolTxsByAddr(addr string) ([]*TxPoolTransaction, error)
 	//获得一个地址的未打包的交易
 	GetUnpackedTxsByAddr(addr common.Address) ([]*TxPoolTransaction, error)
 	//返回交易池中几种状态的交易数量
