@@ -413,6 +413,87 @@ func (s *PrivateContractAPI) CcinvokeToken(from, to, token string, amountToken, 
 	}
 	return rsp, err
 }
+func (s *PrivateContractAPI) CcinvokeMutiToken(from, to, token1,token2 string, amountToken1, amountToken2,fee decimal.Decimal,
+	contractAddress string, param []string, pwd *string, timeout *Int) (*ContractInvokeRsp, error) {
+	password := ""
+	if pwd != nil {
+		password = *pwd
+	}
+	fromAddr, _ := common.StringToAddress(from)
+	toAddr, _ := common.StringToAddress(to)
+	contractAddr, _ := common.StringToAddress(contractAddress)
+
+	log.Info("Ccinvoketx info:")
+	log.Infof("   fromAddr[%s], toAddr[%s]", fromAddr.String(), toAddr.String())
+	log.Infof("   token[%s], amountToken[%d], fee[%d]", token1, amountToken1, fee)
+	log.Infof("   token[%s], amountToken[%d], fee[%d]", token2, amountToken2, fee)
+	log.Infof("   contractAddr[%s], is systemContract[%v]", contractAddr.String(), contractAddr.IsSystemContractAddress())
+	log.Infof("   param len[%d]", len(param))
+	args := make([][]byte, len(param))
+	for i, arg := range param {
+		args[i] = []byte(arg)
+		log.Infof("      index[%d], value[%s]\n", i, arg)
+	}
+
+	s.b.Lock()
+	defer s.b.Unlock()
+	//1.参数检查
+	if fromAddr == (common.Address{}) || contractAddr == (common.Address{}) || args == nil {
+		log.Error("Ccinvoketx, param is error")
+		return nil, errors.New("Ccinvoketx request param is error")
+	}
+	if len(args) > jury.MaxNumberArgs {
+		log.Error("Ccinvoketx", "len(args)", len(args))
+		return nil, errors.New("Ccinvoketx request param len overflow")
+	}
+	for _, arg := range args {
+		if len(arg) > jury.MaxLengthArgs {
+			log.Error("Ccinvoketx", "request param len overflow,len(arg)", len(arg))
+			return nil, errors.New("Ccinvoketx request param args len overflow")
+		}
+	}
+	//2.构建请求交易
+	ctx := &buildMutiContractContext{
+		tokenId1:    token1,
+		tokenId2:    token2,
+		fromAddr:   fromAddr,
+		toAddr:     toAddr,
+		ccAddr:     contractAddr,
+		amount1:     amountToken1,
+		amount2:     amountToken2,
+		gasFee:     fee,
+		args:       args,
+		password:   password,
+		exeTimeout: timeout,
+	}
+	msgReq := &modules.Message{
+		App: modules.APP_CONTRACT_INVOKE_REQUEST,
+		Payload: &modules.ContractInvokeRequestPayload{
+			ContractId: contractAddr.Bytes(),
+			Args:       args,
+			Timeout:    timeout.Uint32(),
+		},
+	}
+	tx, err := s.buildMutiContractReqTx(ctx, msgReq)
+	if err != nil {
+		log.Errorf("Ccinvoketx, buildContractReqTx err:%s", err.Error())
+		return nil, err
+	}
+
+	//3. 广播交易
+	reqId, err := submitTransaction(s.b, tx)
+	if err != nil {
+		log.Errorf("Ccinvoketx, submitTransaction err:%s", err.Error())
+		return nil, err
+	}
+
+	log.Infof("   reqId[%s]", hex.EncodeToString(reqId[:]))
+	rsp := &ContractInvokeRsp{
+		ReqId:      hex.EncodeToString(reqId[:]),
+		ContractId: contractAddress,
+	}
+	return rsp, err
+}
 
 func (s *PrivateContractAPI) Ccstoptx(from, to string, amount, fee decimal.Decimal, contractId string) (*ContractStopRsp, error) {
 	fromAddr, _ := common.StringToAddress(from)

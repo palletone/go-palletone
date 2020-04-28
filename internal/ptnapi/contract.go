@@ -43,10 +43,21 @@ type buildContractContext struct {
 	amount   decimal.Decimal
 	gasFee   decimal.Decimal
 	args     [][]byte
-
 	exeTimeout *Int
 }
-
+type buildMutiContractContext struct {
+	tokenId1  string
+	tokenId2  string
+	password string
+	fromAddr common.Address
+	toAddr   common.Address
+	ccAddr   common.Address
+	amount1   decimal.Decimal
+	amount2   decimal.Decimal
+	gasFee   decimal.Decimal
+	args     [][]byte
+	exeTimeout *Int
+}
 func getTemplateId(ccName, ccPath, ccVersion string) []byte {
 	var buffer bytes.Buffer
 	buffer.Write([]byte(ccName))
@@ -93,7 +104,60 @@ func (s *PrivateContractAPI) buildContractReqTx(ctx *buildContractContext, msgRe
 	}
 	return tx, err
 }
+func (s *PrivateContractAPI) buildMutiContractReqTx(ctx *buildMutiContractContext, msgReq *modules.Message) (*modules.Transaction, error) {
+	var tx *modules.Transaction
+	var tx2 *modules.Transaction
+	var err error
+	if ctx == nil || msgReq == nil {
+		return nil, errors.New("buildContractReqTx, param is nil")
+	}
+    totalamount := ctx.amount1.Add(ctx.amount2)
+	//如没有GasFee，而且to address不是合约地址，则不构建Payment，直接InvokeRequest+Signature
+	if s.b.EnableGasFee() || ctx.toAddr == ctx.ccAddr || ctx.fromAddr != ctx.toAddr {
+		var usedUtxo []*modules.UtxoWithOutPoint
+		//费用检查
+		ctx4check := &buildContractContext{
+		   tokenId:    ctx.tokenId1,
+		   fromAddr:   ctx.fromAddr,
+		   toAddr:     ctx.toAddr,
+		   ccAddr:     ctx.ccAddr,
+		   amount:     totalamount,
+		   gasFee:     ctx.gasFee,
+		   args:       ctx.args,
+		   password:   ctx.password,
+		   exeTimeout: ctx.exeTimeout,
+	    }
+		fee, err := s.contractFeeCheck(ctx4check, msgReq)
+		if err != nil {
+			log.Errorf("buildContractReqTx, contractFeeCheck err:%s", err.Error())
+			return nil, err
+		}
+		//build raw tx
+		tx, usedUtxo, err = buildRawTransferTx(s.b, ctx.tokenId1, ctx.fromAddr.String(), ctx.toAddr.String(), ctx.amount1, fee, ctx.password)
+		if err != nil {
+			return nil, err
+		}
+		tx2, usedUtxo, err = buildRawTransferTx(s.b, ctx.tokenId2, ctx.fromAddr.String(), ctx.toAddr.String(), ctx.amount2, fee, ctx.password)
+		if err != nil {
+			return nil, err
+		}
+		tx.AddMessage(tx2.TxMessages()[1])
 
+		tx.AddMessage(msgReq)
+		//sign
+		err = signRawTransaction(s.b, tx, ctx.fromAddr.String(), ctx.password, ctx.exeTimeout, 1, usedUtxo)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		log.Infof("buildContractReqTx, disabled gas fee, to address[%s],amount[%s] and fee[%s] will ignore.", ctx.toAddr.String(), totalamount.String(), ctx.gasFee.String())
+		tx, err = s.buildContractReqTxWithoutGasFee(s.b, ctx.fromAddr, ctx.password, msgReq)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return tx, err
+}
 //创建没有Payment的合约请求交易
 func (s *PrivateContractAPI) buildContractReqTxWithoutGasFee(b Backend, from common.Address,
 	pwd string, msgReq *modules.Message) (*modules.Transaction, error) {
