@@ -193,36 +193,40 @@ func (p *PacketMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 
 func (p *PacketMgr) CreatePacket(stub shim.ChaincodeStubInterface, pubKey []byte, count uint32,
 	minAmount, maxAmount decimal.Decimal, expiredTime *time.Time, remark string, isConstant bool) error {
-	creator, _ := stub.GetInvokeAddress()
-	tokenToPackets, err := stub.GetInvokeTokens()
-	if err != nil {
-		return err
-	}
-	if len(tokenToPackets) != 1 {
-		return errors.New("Please pay one kind of token to this contract.")
-	}
-	tokenToPacket := tokenToPackets[0]
 	// 获取当前 pubKey 对应的红包
 	pk, _ := getPacket(stub, pubKey)
 	if pk != nil {
 		return errors.New("PubKey already exist")
 	}
+	creator, _ := stub.GetInvokeAddress()
+	tokenToPackets, err := stub.GetInvokeTokens()
+	if err != nil {
+		return err
+	}
+	if len(tokenToPackets) < 1 {
+		return errors.New("Please pay more than one token to this contract.")
+	}
+	et := uint64(0)
+	if expiredTime != nil {
+		et = uint64(expiredTime.Unix())
+	}
+	if len(tokenToPackets) > 1 {
+		// 走多 token
+		return p.SupportMultiToken(stub,creator,tokenToPackets,pubKey, count, minAmount, maxAmount, et, remark, isConstant)
+	}
 	packet := &Packet{
 		PubKey:          pubKey,
 		Creator:         creator,
-		Token:           tokenToPacket.Asset,
-		Amount:          tokenToPacket.Amount,
+		Token:           tokenToPackets[0].Asset,
+		Amount:          tokenToPackets[0].Amount,
 		Count:           count,
-		MinPacketAmount: tokenToPacket.Asset.Uint64Amount(minAmount),
-		MaxPacketAmount: tokenToPacket.Asset.Uint64Amount(maxAmount),
+		MinPacketAmount: tokenToPackets[0].Asset.Uint64Amount(minAmount),
+		MaxPacketAmount: tokenToPackets[0].Asset.Uint64Amount(maxAmount),
 		Remark:          remark,
 		Constant:        isConstant,
+		ExpiredTime:et,
 	}
-	if expiredTime == nil {
-		packet.ExpiredTime = 0
-	} else {
-		packet.ExpiredTime = uint64(expiredTime.Unix())
-	}
+
 	// 保存红包
 	err = savePacket(stub, packet)
 	if err != nil {
@@ -425,19 +429,37 @@ func (p *PacketMgr) RecyclePacket(stub shim.ChaincodeStubInterface, pubKey []byt
 	return savePacketBalance(stub, pubKey, 0, 0)
 }
 
-func (p *PacketMgr) GetPacketInfo(stub shim.ChaincodeStubInterface, pubKey []byte) (*PacketJson, error) {
+func (p *PacketMgr) GetPacketInfo(stub shim.ChaincodeStubInterface, pubKey []byte) (*AllJson, error) {
 	packet, err := getPacket(stub, pubKey)
 	if err != nil {
 		return nil, err
+	}
+	var pm *PacketMultiToken
+	if packet == nil {
+		pm,err = getPacketMultiToken(stub, pubKey)
+		if err != nil {
+			return nil, err
+		}
+		if pm == nil {
+			return nil,errors.New("pubKey is nil")
+		}
 	}
 	balanceAmount, balanceCount, err := getPacketBalance(stub, pubKey)
 	if err != nil {
 		return nil, err
 	}
-	return convertPacket2Json(packet, balanceAmount, balanceCount), nil
+	var pj *PacketJson
+	if packet != nil {
+		pj = convertPacket2Json(packet, balanceAmount, balanceCount)
+	}
+	var pjm *PacketMultiTokenJson
+	if pm != nil {
+		pjm = convertPacketMultiToken2Json(pm,balanceAmount,balanceCount)
+	}
+	return &AllJson{PacketJson:pj,PacketMultiTokenJson:pjm},nil
 }
 
-func (p *PacketMgr) GetAllPacketInfo(stub shim.ChaincodeStubInterface) ([]*PacketJson,error) {
+func (p *PacketMgr) GetAllPacketInfo(stub shim.ChaincodeStubInterface) (*AllJsonAll,error) {
 	ps,err := getPackets(stub)
 	if err != nil {
 		return nil, err
@@ -451,7 +473,28 @@ func (p *PacketMgr) GetAllPacketInfo(stub shim.ChaincodeStubInterface) ([]*Packe
 		pjs = append(pjs,convertPacket2Json(ppp, balanceAmount, balanceCount))
 	}
 
-	return pjs, nil
+	//return pjs, nil
+
+	//
+	aja := &AllJsonAll{}
+	allpacket,err := getAllPackets(stub)
+	for _,o := range allpacket.One {
+		balanceAmount, balanceCount, err := getPacketBalance(stub, o.PubKey)
+		if err != nil {
+			return nil, err
+		}
+		aja.One = append(aja.One,convertPacket2Json(o, balanceAmount, balanceCount))
+	}
+	for _,m := range allpacket.Multi {
+		balanceAmount, balanceCount, err := getPacketBalance(stub, m.PubKey)
+		if err != nil {
+			return nil, err
+		}
+		aja.Multi = append(aja.Multi,convertPacketMultiToken2Json(m, balanceAmount, balanceCount))
+	}
+
+	return aja, nil
+
 }
 
 func (p *PacketMgr) GetPacketAllocationHistory(stub shim.ChaincodeStubInterface,

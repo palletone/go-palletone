@@ -47,6 +47,7 @@ type Packet struct {
 	Constant        bool           //是否固定数额
 }
 
+
 type PacketJson struct {
 	PubKey          string          //红包对应的公钥，也是红包的唯一标识
 	Creator         common.Address  //红包发放人员地址
@@ -133,6 +134,9 @@ func getPacket(stub shim.ChaincodeStubInterface, pubKey []byte) (*Packet, error)
 	value, err := stub.GetState(key)
 	if err != nil {
 		return nil, err
+	}
+	if value == nil {
+		return nil,nil
 	}
 	p := Packet{}
 	err = rlp.DecodeBytes(value, &p)
