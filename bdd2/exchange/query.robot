@@ -58,7 +58,7 @@ getBalance
     log    ${result}
     ${len}    Get Length    ${result}
     log    ${len}
-    ${amount}    Set Variable    ${result["${assetId}"]}
+    ${amount}    Set Variable If    ${len}>1     ${result["${assetId}"]}     ${result["PTN"]}
     log    ${amount}
     [Return]    ${amount}
 

@@ -186,7 +186,7 @@ getBalance
     ${result}    post    wallet_getBalance    wallet_getBalance    ${two}
     log    ${result}
     ${len}    Get Length    ${result}
-    ${amount}    Set Variable    ${result["${assetId}"]}
+    ${amount}    Set Variable If    ${len}>1     ${result["${assetId}"]}     ${result["PTN"]}
     [Return]    ${amount}
 post
     [Arguments]    ${method}    ${alias}    ${params}
