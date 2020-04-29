@@ -295,6 +295,8 @@ func (p *PacketMgr) UpdatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 			if tokenToPacket.Asset.Equal(t.Asset) {
 				b = true
 				t.Amount += tokenToPacket.Amount
+				t.BalanceAmount += tokenToPacket.Amount
+				t.BalanceCount = count
 				packet.Amount += tokenToPacket.Amount
 				bAmount += tokenToPacket.Amount
 				break
@@ -390,7 +392,7 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 		if err != nil {
 			return err
 		}
-		packet.Tokens[i].BalanceCount =balanceCount
+		packet.Tokens[i].BalanceCount = balanceCount
 		packet.Tokens[i].BalanceAmount -= payAmt
 		recordToken[i] = &RecordTokens{
 			Amount: payAmt,
@@ -398,7 +400,7 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 		}
 	}
 	if len(packet.Tokens) > 1 {
-		err = savePacket(stub,packet)
+		err = savePacket(stub, packet)
 		if err != nil {
 			return err
 		}
@@ -451,10 +453,16 @@ func (p *PacketMgr) RecyclePacket(stub shim.ChaincodeStubInterface, pubKey []byt
 		return errors.New("no balance to recycle")
 	}
 	for _, t := range packet.Tokens {
-		err = stub.PayOutToken(packet.Creator.String(), &modules.AmountAsset{Amount: t.Amount, Asset: t.Asset}, 0)
+		err = stub.PayOutToken(packet.Creator.String(), &modules.AmountAsset{Amount: t.BalanceAmount, Asset: t.Asset}, 0)
 		if err != nil {
 			return err
 		}
+		t.BalanceCount = 0
+		t.BalanceAmount = 0
+	}
+	err = savePacket(stub, packet)
+	if err != nil {
+		return err
 	}
 	//更新余额
 	return savePacketBalance(stub, pubKey, 0, 0)

@@ -345,15 +345,15 @@ packet5
     listAccounts    #    主要获取 tokenHolder
     unlockAccount    ${tokenHolder}    1    #    解锁 tokenHolder
     ${twoAddr}    newAccount
-    sleep    3
+    sleep    10
     transferPtn    ${tokenHolder}    ${twoAddr}    10000    1    1
-    sleep    5
+    sleep    10
     unlockAccount    ${twoAddr}    1
-    sleep    3
+    sleep    10
     getPublicKey    ${twoAddr}
     createPacket    ${twoAddr}    900    ${tokenHolderPubKey}    10    1    10
     ...    ${time}    false
-    sleep    3
+    sleep    10
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     getBalance    ${twoAddr}    PTN

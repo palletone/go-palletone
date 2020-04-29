@@ -51,30 +51,30 @@ type OldPacket struct {
 
 // new Packet
 type Packet struct {
-	PubKey          []byte                  //红包对应的公钥，也是红包的唯一标识
-	Creator         common.Address          //红包发放人员地址
-	Tokens          []*Tokens //红包中的TokenID
-	Amount          uint64                  //红包总金额
-	Count           uint32                  //红包数，为0表示可以无限领取
-	MinPacketAmount uint64                  //单个红包最小额
-	MaxPacketAmount uint64                  //单个红包最大额,最大额最小额相同，则说明不是随机红包,0则表示完全随机
-	ExpiredTime     uint64                  //红包过期时间，0表示永不过期
-	Remark          string                  //红包的备注
-	Constant        bool                    //是否固定数额
+	PubKey          []byte         //红包对应的公钥，也是红包的唯一标识
+	Creator         common.Address //红包发放人员地址
+	Tokens          []*Tokens      //红包中的TokenID
+	Amount          uint64         //红包总金额
+	Count           uint32         //红包数，为0表示可以无限领取
+	MinPacketAmount uint64         //单个红包最小额
+	MaxPacketAmount uint64         //单个红包最大额,最大额最小额相同，则说明不是随机红包,0则表示完全随机
+	ExpiredTime     uint64         //红包过期时间，0表示永不过期
+	Remark          string         //红包的备注
+	Constant        bool           //是否固定数额
 }
 
 type Tokens struct {
-	Amount  uint64 `json:"amount"`  //数量
-	Asset   *modules.Asset `json:"asset"`   //资产
-	BalanceAmount   uint64 //红包剩余额度
-	BalanceCount    uint32          //红包剩余次数
+	Amount        uint64         `json:"amount"` //数量
+	Asset         *modules.Asset `json:"asset"`  //资产
+	BalanceAmount uint64         //红包剩余额度
+	BalanceCount  uint32         //红包剩余次数
 }
 
 type TokensJson struct {
-	Amount decimal.Decimal `json:"amount"` //数量
-	Asset  string          `json:"asset"`  //资产
-	BalanceAmount   decimal.Decimal //红包剩余额度
-	BalanceCount    uint32          //红包剩余次数
+	Amount        decimal.Decimal `json:"amount"` //数量
+	Asset         string          `json:"asset"`  //资产
+	BalanceAmount decimal.Decimal //红包剩余额度
+	BalanceCount  uint32          //红包剩余次数
 }
 
 type RecordTokensJson struct {
@@ -83,14 +83,14 @@ type RecordTokensJson struct {
 }
 
 type RecordTokens struct {
-	Amount  uint64 `json:"amount"`  //数量
-	Asset   *modules.Asset `json:"asset"`   //资产
+	Amount uint64         `json:"amount"` //数量
+	Asset  *modules.Asset `json:"asset"`  //资产
 }
 
 type PacketJson struct {
 	PubKey          string          //红包对应的公钥，也是红包的唯一标识
 	Creator         common.Address  //红包发放人员地址
-	Token           []*TokensJson    //红包中的TokenID
+	Token           []*TokensJson   //红包中的TokenID
 	TotalAmount     decimal.Decimal //红包总金额
 	PacketCount     uint32          //红包数，为0表示可以无限领取
 	MinPacketAmount decimal.Decimal //单个红包最小额
@@ -185,7 +185,7 @@ func getPacket(stub shim.ChaincodeStubInterface, pubKey []byte) (*Packet, error)
 		}
 		// 转换
 		balanceAmount, balanceCount, _ := getPacketBalance(stub, op.PubKey)
-		np := OldPacket2New(&op,balanceAmount,balanceCount)
+		np := OldPacket2New(&op, balanceAmount, balanceCount)
 		p = *np
 	}
 	sort.Slice(p.Tokens, func(i, j int) bool {
@@ -213,7 +213,7 @@ func getPackets(stub shim.ChaincodeStubInterface) ([]*Packet, error) {
 			}
 			// 转换
 			balanceAmount, balanceCount, _ := getPacketBalance(stub, op.PubKey)
-			np := OldPacket2New(&op,balanceAmount, balanceCount)
+			np := OldPacket2New(&op, balanceAmount, balanceCount)
 			p = *np
 		}
 		sort.Slice(p.Tokens, func(i, j int) bool {
@@ -266,21 +266,12 @@ func convertPacket2Json(packet *Packet, balanceAmount uint64, balanceCount uint3
 		js.ExpiredTime = time.Unix(int64(packet.ExpiredTime), 0).String()
 	}
 	js.Token = make([]*TokensJson, len(packet.Tokens))
-	if len(packet.Tokens) > 1 {
-		for i, t := range packet.Tokens {
-			js.Token[i] = &TokensJson{}
-			js.Token[i].Amount = t.Asset.DisplayAmount(t.Amount)
-			js.Token[i].Asset = t.Asset.String()
-			js.Token[i].BalanceAmount = t.Asset.DisplayAmount(t.BalanceAmount)
-			js.Token[i].BalanceCount = t.BalanceCount
-		}
-	}else {
-		js.Token[0] = &TokensJson{
-			Amount:        packet.Tokens[0].Asset.DisplayAmount(packet.Tokens[0].Amount),
-			Asset:         packet.Tokens[0].Asset.String(),
-			BalanceAmount: packet.Tokens[0].Asset.DisplayAmount(balanceAmount),
-			BalanceCount:  balanceCount,
-		}
+	for i, t := range packet.Tokens {
+		js.Token[i] = &TokensJson{}
+		js.Token[i].Amount = t.Asset.DisplayAmount(t.Amount)
+		js.Token[i].Asset = t.Asset.String()
+		js.Token[i].BalanceAmount = t.Asset.DisplayAmount(t.BalanceAmount)
+		js.Token[i].BalanceCount = t.BalanceCount
 	}
 	return js
 }
@@ -315,16 +306,16 @@ func isPulledPacket(stub shim.ChaincodeStubInterface, pubKey []byte, message str
 	return true
 }
 
-func OldPacket2New(old *OldPacket,BalanceAmount uint64,BalanceCount uint32) *Packet {
+func OldPacket2New(old *OldPacket, BalanceAmount uint64, BalanceCount uint32) *Packet {
 	return &Packet{
 		PubKey:  old.PubKey,
 		Creator: old.Creator,
 		Tokens: []*Tokens{
 			{
-				Amount: old.Amount,
-				Asset:  old.Token,
-				BalanceCount:BalanceCount,
-				BalanceAmount:BalanceAmount,
+				Amount:        old.Amount,
+				Asset:         old.Token,
+				BalanceCount:  BalanceCount,
+				BalanceAmount: BalanceAmount,
 			},
 		},
 		Amount:          old.Amount,
