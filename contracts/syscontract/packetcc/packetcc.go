@@ -26,6 +26,7 @@ import (
 	"errors"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/palletone/go-palletone/common/crypto"
@@ -353,7 +354,7 @@ func (p *PacketMgr) UpdatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 
 func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 	pubKey []byte, msg string, signature []byte,
-	pullAddr common.Address, amount string) error {
+	pullAddr common.Address, amounts string) error {
 	//是否已经被领取了
 	if isPulledPacket(stub, pubKey, msg) {
 		return errors.New("Packet had been pulled")
@@ -374,6 +375,7 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 	hash := common.HexToHash(stub.GetTxID())
 	seed := util.BytesToUInt64(hash[0:8])
 	var payAmt uint64
+	var payAmtList []uint64
 	// 获取红包余额和个数
 	balanceAmount, balanceCount, err := getPacketBalance(stub, packet.PubKey)
 	if err != nil {
@@ -384,8 +386,15 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 	}
 	// 是否固定数额红包
 	if packet.Constant {
-		temp, _ := decimal.NewFromString(amount)
-		payAmt = packet.Tokens[0].Asset.Uint64Amount(temp)
+		amtStr := strings.Split(amounts, ",")
+		if len(amtStr) > len(packet.Tokens) {
+			return errors.New("amount count great than token count")
+		}
+		for i, amount := range amtStr {
+			temp, _ := decimal.NewFromString(amount)
+			payAmti := packet.Tokens[i].Asset.Uint64Amount(temp)
+			payAmtList = append(payAmtList, payAmti)
+		}
 	} else {
 		//
 		if packet.Count != 0 {
@@ -398,10 +407,11 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 		} else { // 无限领取，最大值
 			payAmt = packet.GetPullAmount(int64(seed), balanceAmount, 1)
 		}
+		payAmtList = []uint64{payAmt}
 	}
 	message := msg
-	if amount != "0" {
-		message += amount
+	if amounts != "0" {
+		message += amounts
 	}
 	pass, err := crypto.MyCryptoLib.Verify(pubKey, signature, []byte(message))
 	if err != nil || !pass {
@@ -409,10 +419,10 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 	}
 	recordToken := make([]*RecordTokens, len(packet.Tokens))
 	// 从红包转 token
-	for i, t := range packet.Tokens {
+	for i, payAmti := range payAmtList {
 		err = stub.PayOutToken(pullAddr.String(), &modules.AmountAsset{
-			Amount: payAmt,
-			Asset:  t.Asset,
+			Amount: payAmti,
+			Asset:  packet.Tokens[i].Asset,
 		}, 0)
 		if err != nil {
 			return err
@@ -421,10 +431,10 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 		packet.Tokens[i].BalanceAmount -= payAmt
 		recordToken[i] = &RecordTokens{
 			Amount: payAmt,
-			Asset:  t.Asset,
+			Asset:  packet.Tokens[i].Asset,
 		}
 	}
-	if len(packet.Tokens) > 1 {
+	if packet.IsFixAmount() {
 		err = savePacket(stub, packet)
 		if err != nil {
 			return err
