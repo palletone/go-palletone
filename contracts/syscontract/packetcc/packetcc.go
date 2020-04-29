@@ -41,6 +41,7 @@ import (
 type PacketMgr struct {
 }
 
+const PACKET_ADDRESS = "PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99"
 const PacketPrefix = "P-"
 const PacketBalancePrefix = "B-"
 const PacketAllocationRecordPrefix = "R-"
@@ -190,12 +191,24 @@ func (p *PacketMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Error(jsonResp)
 	}
 }
-
+func getPayToContractTokens(stub shim.ChaincodeStubInterface) ([]*modules.InvokeTokens, error) {
+	tokens, err := stub.GetInvokeTokens()
+	if err != nil {
+		return nil, err
+	}
+	tokenToPackets := []*modules.InvokeTokens{}
+	for _, t := range tokens {
+		if t.Address == PACKET_ADDRESS {
+			tokenToPackets = append(tokenToPackets, t)
+		}
+	}
+	return tokenToPackets, nil
+}
 func (p *PacketMgr) CreatePacket(stub shim.ChaincodeStubInterface, pubKey []byte, count uint32,
 	minAmount, maxAmount decimal.Decimal, expiredTime *time.Time, remark string, isConstant bool) error {
 	// 支持多 token
 	creator, _ := stub.GetInvokeAddress()
-	tokenToPackets, err := stub.GetInvokeTokens()
+	tokenToPackets, err := getPayToContractTokens(stub)
 	if err != nil {
 		return err
 	}
@@ -267,7 +280,7 @@ func (p *PacketMgr) UpdatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 	} else {
 		packet.ExpiredTime = uint64(expiredTime.Unix())
 	}
-	tokenToPackets, err := stub.GetInvokeTokens()
+	tokenToPackets, err := getPayToContractTokens(stub)
 	if err != nil {
 		return err
 	}
@@ -390,7 +403,7 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 		if err != nil {
 			return err
 		}
-		packet.Tokens[i].BalanceCount =balanceCount
+		packet.Tokens[i].BalanceCount = balanceCount
 		packet.Tokens[i].BalanceAmount -= payAmt
 		recordToken[i] = &RecordTokens{
 			Amount: payAmt,
@@ -398,7 +411,7 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 		}
 	}
 	if len(packet.Tokens) > 1 {
-		err = savePacket(stub,packet)
+		err = savePacket(stub, packet)
 		if err != nil {
 			return err
 		}
