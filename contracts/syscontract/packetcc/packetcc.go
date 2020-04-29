@@ -298,27 +298,28 @@ func (p *PacketMgr) UpdatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 		return err
 	}
 	if len(tokenToPackets) > 0 {
-		isNew := true
 		//
 		for _, t := range tokenToPackets {
+			isNew := true
 			for _, pt := range packet.Tokens {
 				if t.Asset.Equal(pt.Asset) {
 					pt.Amount += t.Amount
 					pt.BalanceAmount += t.Amount
 					pt.BalanceCount = count
 					isNew = false
+					break
 				}
 			}
-		}
-		// 追加新 token
-		if isNew {
-			for _, t := range tokenToPackets {
-				packet.Tokens = append(packet.Tokens, &Tokens{
-					Amount:        t.Amount,
-					Asset:         t.Asset,
-					BalanceAmount: t.Amount,
-					BalanceCount:  count,
-				})
+			// 追加新 token
+			if isNew {
+				for _, t := range tokenToPackets {
+					packet.Tokens = append(packet.Tokens, &Tokens{
+						Amount:        t.Amount,
+						Asset:         t.Asset,
+						BalanceAmount: t.Amount,
+						BalanceCount:  count,
+					})
+				}
 			}
 		}
 		//
