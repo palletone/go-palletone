@@ -298,39 +298,32 @@ func (p *PacketMgr) UpdatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 	if err != nil {
 		return err
 	}
-	if len(tokenToPackets) != 0 {
-		if len(tokenToPackets) != 1 {
-			return errors.New("Please pay one kind of token to this contract.")
-		}
-		// 一次调整红包的多个 token
-		for _, tokenToPacket := range tokenToPackets {
-			findToken := false
-			for _, t := range packet.Tokens {
-				if tokenToPacket.Asset.Equal(t.Asset) {
-					t.Amount += tokenToPacket.Amount
-					t.BalanceAmount += tokenToPacket.Amount
-					t.BalanceCount = count
-					packet.Amount += tokenToPacket.Amount
-					bAmount += tokenToPacket.Amount
-					findToken = true
+	if len(tokenToPackets) > 0 {
+		//
+		for _, t := range tokenToPackets {
+			isNew := true
+			for _, pt := range packet.Tokens {
+				if t.Asset.Equal(pt.Asset) {
+					pt.Amount += t.Amount
+					pt.BalanceAmount += t.Amount
+					pt.BalanceCount = count
+					isNew = false
 					break
 				}
 			}
-			if !findToken {
+			// 追加新 token
+			if isNew {
 				packet.Tokens = append(packet.Tokens, &Tokens{
-					Amount:        tokenToPacket.Amount,
-					Asset:         tokenToPacket.Asset,
-					BalanceAmount: tokenToPacket.Amount,
+					Amount:        t.Amount,
+					Asset:         t.Asset,
+					BalanceAmount: t.Amount,
 					BalanceCount:  count,
 				})
-				packet.Amount += tokenToPacket.Amount
-				bAmount += tokenToPacket.Amount
 			}
 		}
-
-		//if !b {
-		//	return errors.New("note: Please pay correct token to this packet")
-		//}
+		//
+		bAmount += tokenToPackets[0].Amount
+		packet.Amount += tokenToPackets[0].Amount
 	}
 	packet.MinPacketAmount = packet.Tokens[0].Asset.Uint64Amount(minAmount)
 	packet.MaxPacketAmount = packet.Tokens[0].Asset.Uint64Amount(maxAmount)
