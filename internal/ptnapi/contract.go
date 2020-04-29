@@ -114,6 +114,7 @@ func (s *PrivateContractAPI) buildMutiContractReqTx(ctx *buildMutiContractContex
 	//如没有GasFee，而且to address不是合约地址，则不构建Payment，直接InvokeRequest+Signature
 	if s.b.EnableGasFee() || ctx.toAddr == ctx.ccAddr || ctx.fromAddr != ctx.toAddr {
 		var usedUtxo []*modules.UtxoWithOutPoint
+		var usedUtxo2 []*modules.UtxoWithOutPoint
 		//费用检查
 		ctx4check := &buildContractContext{
 		   tokenId:    ctx.tokenId1,
@@ -136,10 +137,11 @@ func (s *PrivateContractAPI) buildMutiContractReqTx(ctx *buildMutiContractContex
 		if err != nil {
 			return nil, err
 		}
-		tx2, usedUtxo, err = buildRawTransferTx(s.b, ctx.tokenId2, ctx.fromAddr.String(), ctx.toAddr.String(), ctx.amount2, fee, ctx.password)
+		tx2, usedUtxo2, err = buildRawTransferTx(s.b, ctx.tokenId2, ctx.fromAddr.String(), ctx.toAddr.String(), ctx.amount2, fee, ctx.password)
 		if err != nil {
 			return nil, err
 		}
+		usedUtxo=append(usedUtxo,usedUtxo2...)
 		tx.AddMessage(tx2.TxMessages()[1])
 
 		tx.AddMessage(msgReq)
