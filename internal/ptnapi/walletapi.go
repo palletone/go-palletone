@@ -403,9 +403,11 @@ func (s *PublicWalletAPI) GetBalance(ctx context.Context, addr string) (map[stri
 			result[utxo.Asset] = ptnjson.AssetAmt2JsonAmt(asset, utxo.Amount)
 		}
 	}
-	if _, has := result[dagconfig.DagConfig.GasToken]; !has {
-		gas_asset, _ := modules.StringToAsset(dagconfig.DagConfig.GasToken)
-		result[dagconfig.DagConfig.GasToken] = ptnjson.AssetAmt2JsonAmt(gas_asset, 0)
+	if s.b.EnableGasFee() {
+		if _, has := result[dagconfig.DagConfig.GasToken]; !has {
+			gas_asset, _ := modules.StringToAsset(dagconfig.DagConfig.GasToken)
+			result[dagconfig.DagConfig.GasToken] = ptnjson.AssetAmt2JsonAmt(gas_asset, 0)
+		}
 	}
 	return result, nil
 }
