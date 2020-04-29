@@ -736,8 +736,8 @@ post
     [Arguments]    ${method}    ${alias}    ${params}
     ${header}    Create Dictionary    Content-Type=application/json
     ${data}    Create Dictionary    jsonrpc=2.0    method=${method}    params=${params}    id=1
-    Create Session    ${alias}    http://192.168.44.128:8545    #    http://127.0.0.1:8545    http://192.168.44.128:8545
-    ${resp}    Post Request    ${alias}    http://192.168.44.128:8545    data=${data}    headers=${header}
+    Create Session    ${alias}    http://127.0.0.1:8545    #    http://127.0.0.1:8545    http://192.168.44.128:8545
+    ${resp}    Post Request    ${alias}    http://127.0.0.1:8545    data=${data}    headers=${header}
     ${respJson}    To Json    ${resp.content}
     Dictionary Should Contain Key    ${respJson}    result
     ${res}    Get From Dictionary    ${respJson}    result

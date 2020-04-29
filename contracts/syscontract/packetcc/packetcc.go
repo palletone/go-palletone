@@ -321,10 +321,10 @@ func (p *PacketMgr) UpdatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 				})
 			}
 		}
+		//
+		bAmount += tokenToPackets[0].Amount
+		packet.Amount += tokenToPackets[0].Amount
 	}
-	// 
-	bAmount += tokenToPackets[0].Amount
-	packet.Amount += tokenToPackets[0].Amount
 	packet.MinPacketAmount = packet.Tokens[0].Asset.Uint64Amount(minAmount)
 	packet.MaxPacketAmount = packet.Tokens[0].Asset.Uint64Amount(maxAmount)
 	// 保存红包
