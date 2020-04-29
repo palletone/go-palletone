@@ -22,7 +22,7 @@ packet
     sleep    3
     unlockAccount    ${twoAddr}    1
     sleep    3
-    getBalance    ${twoAddr}
+    getBalance    ${twoAddr}    PTN
     getPublicKey    ${twoAddr}
     createPacket    ${twoAddr}    90    ${tokenHolderPubKey}    10    1    10
     ...    ${EMPTY}    false
@@ -34,77 +34,77 @@ packet
     sleep    3
     pullPacket    ${tokenHolder}    1    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sign    ${twoAddr}    2
     sleep    3
     pullPacket    ${tokenHolder}    2    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sign    ${twoAddr}    3
     sleep    3
     pullPacket    ${tokenHolder}    3    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sign    ${twoAddr}    4
     sleep    3
     pullPacket    ${tokenHolder}    4    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sign    ${twoAddr}    5
     sleep    3
     pullPacket    ${tokenHolder}    5    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sign    ${twoAddr}    6
     sleep    3
     pullPacket    ${tokenHolder}    6    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sign    ${twoAddr}    7
     sleep    3
     pullPacket    ${tokenHolder}    7    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sign    ${twoAddr}    8
     sleep    3
     pullPacket    ${tokenHolder}    8    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sign    ${twoAddr}    9
     sleep    3
     pullPacket    ${tokenHolder}    9    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sign    ${twoAddr}    10
     sleep    3
     pullPacket    ${tokenHolder}    10    ${signature}    ${oneAddr}    0
     sleep    3
-    ${amount}    getBalance    ${oneAddr}
+    ${amount}    getBalance    ${oneAddr}    PTN
     Should Be Equal As Numbers    ${amount}    90
     ${result}    getPacketInfo    ${tokenHolderPubKey}
     Should Be Equal As Strings    ${result["BalanceAmount"]}    0
     getPacketAllocationHistory    ${tokenHolderPubKey}
     pullPacket    ${tokenHolder}    10    ${signature}    ${oneAddr}    0
     sleep    3
-    ${amount}    getBalance    ${oneAddr}
+    ${amount}    getBalance    ${oneAddr}    PTN
     Should Be Equal As Numbers    ${amount}    90
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
@@ -115,7 +115,7 @@ packet
     sleep    3
     pullPacket    ${tokenHolder}    11    ${signature}    ${oneAddr}    0
     sleep    3
-    ${amount}    getBalance    ${oneAddr}
+    ${amount}    getBalance    ${oneAddr}    PTN
     Should Be Equal As Numbers    ${amount}    90
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
@@ -139,7 +139,7 @@ packet1
     transferPtn    ${tokenHolder}    ${twoAddr}    10000    1    1
     sleep    3
     unlockAccount    ${twoAddr}    1
-    getBalance    ${twoAddr}
+    getBalance    ${twoAddr}    PTN
     getPublicKey    ${twoAddr}
     createPacket    ${twoAddr}    90    ${tokenHolderPubKey}    10    1    10
     ...    ${EMPTY}    false
@@ -150,7 +150,7 @@ packet1
     sleep    3
     ${result}    getPacketInfo    ${tokenHolderPubKey}
     Should Be Equal As Strings    ${result["BalanceCount"]}    11
-    getBalance    ${twoAddr}
+    getBalance    ${twoAddr}    PTN
     getAllPacketInfo
 
 packet2
@@ -172,7 +172,7 @@ packet2
     transferPtn    ${tokenHolder}    ${twoAddr}    10000    1    1
     sleep    3
     unlockAccount    ${twoAddr}    1
-    getBalance    ${twoAddr}
+    getBalance    ${twoAddr}    PTN
     getPublicKey    ${twoAddr}
     createPacket    ${twoAddr}    90    ${tokenHolderPubKey}    10    1    10
     ...    ${EMPTY}    false
@@ -196,7 +196,7 @@ packet3
     transferPtn    ${tokenHolder}    ${twoAddr}    10000    1    1
     sleep    3
     unlockAccount    ${twoAddr}    1
-    getBalance    ${twoAddr}
+    getBalance    ${twoAddr}    PTN
     getPublicKey    ${twoAddr}
     createPacket    ${twoAddr}    9    ${tokenHolderPubKey}    10    1    10
     ...    ${EMPTY}    false
@@ -208,70 +208,70 @@ packet3
     sleep    3
     pullPacket    ${tokenHolder}    1    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sign    ${twoAddr}    2
     sleep    3
     pullPacket    ${tokenHolder}    2    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sign    ${twoAddr}    3
     sleep    3
     pullPacket    ${tokenHolder}    3    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sign    ${twoAddr}    4
     sleep    3
     pullPacket    ${tokenHolder}    4    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sign    ${twoAddr}    5
     sleep    3
     pullPacket    ${tokenHolder}    5    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sign    ${twoAddr}    6
     sleep    3
     pullPacket    ${tokenHolder}    6    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sign    ${twoAddr}    7
     sleep    3
     pullPacket    ${tokenHolder}    7    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sign    ${twoAddr}    8
     sleep    3
     pullPacket    ${tokenHolder}    8    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sign    ${twoAddr}    9
     sleep    3
     pullPacket    ${tokenHolder}    9    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     ${result}    getPacketInfo    ${tokenHolderPubKey}
     Should Be Equal As Strings    ${result["BalanceAmount"]}    0
     Should Be Equal As Strings    ${result["BalanceCount"]}    1
     getPacketAllocationHistory    ${tokenHolderPubKey}
     pullPacket    ${tokenHolder}    9    ${signature}    ${oneAddr}    0
     sleep    3
-    ${amount}    getBalance    ${oneAddr}
+    ${amount}    getBalance    ${oneAddr}    PTN
     Should Be Equal As Numbers    ${amount}    9
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
@@ -282,7 +282,7 @@ packet3
     sleep    3
     pullPacket    ${tokenHolder}    10    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
 
@@ -298,7 +298,7 @@ packet4
     transferPtn    ${tokenHolder}    ${twoAddr}    10000    1    1
     sleep    3
     unlockAccount    ${twoAddr}    1
-    getBalance    ${twoAddr}
+    getBalance    ${twoAddr}    PTN
     getPublicKey    ${twoAddr}
     createPacket    ${twoAddr}    900    ${tokenHolderPubKey}    10    1    10
     ...    ${EMPTY}    true
@@ -311,26 +311,26 @@ packet4
     sleep    3
     pullPacket    ${tokenHolder}    1    ${signature}    ${oneAddr}    1
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sign    ${twoAddr}    22
     sleep    3
     pullPacket    ${tokenHolder}    2    ${signature}    ${oneAddr}    2
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sign    ${twoAddr}    33
     sleep    3
     pullPacket    ${tokenHolder}    3    ${signature}    ${oneAddr}    3
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     pullPacket    ${tokenHolder}    3    ${signature}    ${oneAddr}    3
     sleep    3
-    ${amount}    getBalance    ${oneAddr}
+    ${amount}    getBalance    ${oneAddr}    PTN
     Should Be Equal As Numbers    ${amount}    6
     ${result}    getPacketInfo    ${tokenHolderPubKey}
     Should Be Equal As Strings    ${result["BalanceAmount"]}    894
@@ -356,14 +356,14 @@ packet5
     sleep    3
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    getBalance    ${twoAddr}
+    getBalance    ${twoAddr}    PTN
     recyclePacket    ${twoAddr}    ${tokenHolderPubKey}
     sleep    3
     ${result}    getPacketInfo    ${tokenHolderPubKey}
     Should Be Equal As Strings    ${result["BalanceAmount"]}    0
     Should Be Equal As Strings    ${result["BalanceCount"]}    0
     getPacketAllocationHistory    ${tokenHolderPubKey}
-    ${amount}    getBalance    ${twoAddr}
+    ${amount}    getBalance    ${twoAddr}    PTN
     Should Be Equal As Numbers    ${amount}    9998
     sign    ${twoAddr}    1
     sleep    3
@@ -381,7 +381,7 @@ packet6
     transferPtn    ${tokenHolder}    ${twoAddr}    10000    1    1
     sleep    3
     unlockAccount    ${twoAddr}    1
-    getBalance    ${twoAddr}
+    getBalance    ${twoAddr}    PTN
     getPublicKey    ${twoAddr}
     createPacket    ${twoAddr}    900    ${tokenHolderPubKey}    10    1    10
     ...    ${EMPTY}    false
@@ -394,70 +394,70 @@ packet6
     sleep    3
     pullPacket    ${tokenHolder}    1    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sign    ${twoAddr}    2
     sleep    3
     pullPacket    ${tokenHolder}    2    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sign    ${twoAddr}    3
     sleep    3
     pullPacket    ${tokenHolder}    3    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sign    ${twoAddr}    4
     sleep    3
     pullPacket    ${tokenHolder}    4    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sign    ${twoAddr}    5
     sleep    3
     pullPacket    ${tokenHolder}    5    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sign    ${twoAddr}    6
     sleep    3
     pullPacket    ${tokenHolder}    6    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sign    ${twoAddr}    7
     sleep    3
     pullPacket    ${tokenHolder}    7    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sign    ${twoAddr}    8
     sleep    3
     pullPacket    ${tokenHolder}    8    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sign    ${twoAddr}    9
     sleep    3
     pullPacket    ${tokenHolder}    9    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sign    ${twoAddr}    10
     sleep    3
     pullPacket    ${tokenHolder}    10    ${signature}    ${oneAddr}    0
     sleep    3
-    ${amount}    getBalance    ${oneAddr}
+    ${amount}    getBalance    ${oneAddr}    PTN
     Should Be Equal As Numbers    ${amount}    100
     ${result}    getPacketInfo    ${tokenHolderPubKey}
     Should Be Equal As Strings    ${result["BalanceAmount"]}    800
@@ -466,7 +466,7 @@ packet6
     sleep    3
     pullPacket    ${tokenHolder}    10    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     ${pulled}    isPulledPacket    ${tokenHolderPubKey}    10
@@ -476,7 +476,7 @@ packet6
     sleep    3
     pullPacket    ${tokenHolder}    11    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
 
@@ -495,7 +495,7 @@ packet7
     sleep    3
     unlockAccount    ${twoAddr}    1
     sleep    3
-    getBalance    ${twoAddr}
+    getBalance    ${twoAddr}    PTN
     getPublicKey    ${twoAddr}
     createPacket    ${twoAddr}    30    ${tokenHolderPubKey}    0    1    10
     ...    ${EMPTY}    false
@@ -508,21 +508,21 @@ packet7
     sleep    3
     pullPacket    ${tokenHolder}    1    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sign    ${twoAddr}    2
     sleep    3
     pullPacket    ${tokenHolder}    2    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sign    ${twoAddr}    3
     sleep    3
     pullPacket    ${tokenHolder}    3    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     ${result}    getPacketInfo    ${tokenHolderPubKey}
     Should Be Equal As Strings    ${result["BalanceAmount"]}    0
     Should Be Equal As Strings    ${result["BalanceCount"]}    0
@@ -531,13 +531,13 @@ packet7
     sleep    3
     pullPacket    ${tokenHolder}    4    ${signature}    ${oneAddr}    0
     sleep    3
-    ${amount}    getBalance    ${oneAddr}
+    ${amount}    getBalance    ${oneAddr}    PTN
     Should Be Equal As Numbers    ${amount}    30
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     pullPacket    ${tokenHolder}    3    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     ${pulled}    isPulledPacket    ${tokenHolderPubKey}    3
@@ -558,7 +558,7 @@ packet8
     sleep    3
     unlockAccount    ${twoAddr}    1
     sleep    3
-    getBalance    ${twoAddr}
+    getBalance    ${twoAddr}    PTN
     getPublicKey    ${twoAddr}
     createPacket    ${twoAddr}    30    ${tokenHolderPubKey}    3    1    10
     ...    ${EMPTY}    false
@@ -571,21 +571,21 @@ packet8
     sleep    3
     pullPacket    ${tokenHolder}    1    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sign    ${twoAddr}    2
     sleep    3
     pullPacket    ${tokenHolder}    2    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     sign    ${twoAddr}    3
     sleep    3
     pullPacket    ${tokenHolder}    3    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     ${result}    getPacketInfo    ${tokenHolderPubKey}
     Should Be Equal As Strings    ${result["BalanceAmount"]}    0
     Should Be Equal As Strings    ${result["BalanceCount"]}    0
@@ -594,17 +594,75 @@ packet8
     sleep    3
     pullPacket    ${tokenHolder}    4    ${signature}    ${oneAddr}    0
     sleep    3
-    getBalance    ${oneAddr}
+    getBalance    ${oneAddr}    PTN
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     pullPacket    ${tokenHolder}    3    ${signature}    ${oneAddr}    0
     sleep    3
-    ${amount}    getBalance    ${oneAddr}
+    ${amount}    getBalance    ${oneAddr}    PTN
     Should Be Equal As Numbers    ${amount}    30
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     isPulledPacket    ${tokenHolderPubKey}    3
     getAllPacketInfo
+
+multiToken
+    listAccounts    #    主要获取 tokenHolder
+    unlockAccount    ${tokenHolder}    1    #    解锁 tokenHolder
+    ${twoAddr}    newAccount
+    sleep    3
+    transferPtn    ${tokenHolder}    ${twoAddr}    10000    1    1
+    sleep    3
+    unlockAccount    ${twoAddr}    1
+    getBalance    ${twoAddr}    PTN
+    getPublicKey    ${twoAddr}
+    ${result}    createToken    ${twoAddr}    t1
+    log    ${result}
+    sleep    5
+    ${assetId}    ccquery    t1
+    ${t}    getBalance    ${twoAddr}    PTN
+    log    ${t}
+    ${t}    getBalance    ${twoAddr}    ${assetId}
+    log    ${t}
+    Should Be Equal As Numbers    ${t}    10000000000
+    createMultiTokenPacket    ${twoAddr}    90    ${tokenHolderPubKey}    10    1    10
+    ...    ${EMPTY}    true    PTN    ${assetId}
+    sleep    3
+    getPacketInfo    ${tokenHolderPubKey}
+    getPacketAllocationHistory    ${tokenHolderPubKey}
+    ${oneAddr}    newAccount
+    sleep    3
+    sign    ${twoAddr}    11
+    sleep    3
+    pullPacket    ${tokenHolder}    1    ${signature}    ${oneAddr}    1
+    sleep    3
+    getBalance    ${oneAddr}    PTN
+    getPacketInfo    ${tokenHolderPubKey}
+    getPacketAllocationHistory    ${tokenHolderPubKey}
+    sign    ${twoAddr}    22
+    sleep    3
+    pullPacket    ${tokenHolder}    2    ${signature}    ${oneAddr}    2
+    sleep    3
+    getBalance    ${oneAddr}    PTN
+    getPacketInfo    ${tokenHolderPubKey}
+    getPacketAllocationHistory    ${tokenHolderPubKey}
+    sign    ${twoAddr}    33
+    sleep    3
+    pullPacket    ${tokenHolder}    3    ${signature}    ${oneAddr}    3
+    sleep    3
+    getBalance    ${oneAddr}    PTN
+    getPacketInfo    ${tokenHolderPubKey}
+    getPacketAllocationHistory    ${tokenHolderPubKey}
+    pullPacket    ${tokenHolder}    3    ${signature}    ${oneAddr}    3
+    sleep    3
+    ${amount}    getBalance    ${oneAddr}    PTN
+    Should Be Equal As Numbers    ${amount}    6
+    ${result}    getPacketInfo    ${tokenHolderPubKey}
+    #    Should Be Equal As Strings    ${result["BalanceAmount"]}    894
+    log    ${result}
+    getPacketAllocationHistory    ${tokenHolderPubKey}
+    ${pulled}    isPulledPacket    ${tokenHolderPubKey}    3
+    Should Be Equal As Strings    ${pulled}    true
 
 *** Keywords ***
 createPacket
@@ -675,11 +733,12 @@ pullPacket
     log    ${res}
 
 getBalance
-    [Arguments]    ${addr}
-    ${param}    Create List    ${addr}
-    ${result}    post    wallet_getBalance    wallet_getBalance    ${param}
+    [Arguments]    ${address}    ${assetId}
+    ${two}    Create List    ${address}
+    ${result}    post    wallet_getBalance    wallet_getBalance    ${two}
     log    ${result}
-    ${amount}    Set Variable    ${result["PTN"]}
+    ${len}    Get Length    ${result}
+    ${amount}    Set Variable If    ${len} == 0    0    ${result["${assetId}"]}
     [Return]    ${amount}
 
 getPacketAllocationHistory
@@ -745,3 +804,35 @@ getAllPacketInfo
     log    ${res}
     ${addressMap}    To Json    ${res}
     log    ${addressMap}
+
+createToken
+    [Arguments]    ${address}    ${name}
+    ${one}    Create List    createToken    BlackListTest    ${name}    1    10000000000
+    ...    ${address}
+    ${two}    Create List    ${address}    ${address}    0    1    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43
+    ...    ${one}
+    ${result}    post    contract_ccinvoketx    createToken    ${two}
+    [Return]    ${result}
+
+ccquery
+    [Arguments]    ${name}
+    ${one}    Create List    getTokenInfo    ${name}
+    ${two}    Create List    PCGTta3M4t3yXu8uRgkKvaWd2d8DREThG43    ${one}    ${0}
+    ${result}    post    contract_ccquery    getTokenInfo    ${two}
+    ${addressMap}    To Json    ${result}
+    ${assetId}    Get From Dictionary    ${addressMap}    AssetID
+    [Return]    ${assetId}
+
+createMultiTokenPacket
+    [Arguments]    ${addr}    ${amount}    ${pubkey}    ${count}    ${min}    ${max}
+    ...    ${expiredTime}    ${isConstant}    ${token1}    ${token2}
+    ${param}    Create List    createPacket    ${pubkey}    ${count}    ${min}    ${max}
+    ...    ${expiredTime}    remark    ${isConstant}
+    ${two}    Create List    ${addr}    PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99    ${token1}    ${token2}    ${amount}
+    ...    900000000    1    PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99    ${param}
+    ${res}    post    contract_ccinvokeMutiToken    createPacket    ${two}
+    log    ${res}    #    #    Create List    createPacket    ${pubkey}
+    ...    # ${count}    ${min}    ${max}    # ${expiredTime}    remark    #
+    ...    # Create List    ${addr}    PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99    PTN    ${amount}    1
+    ...    # PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99    ${param}
+    [Return]    ${res}

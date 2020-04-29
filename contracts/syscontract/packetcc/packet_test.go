@@ -80,9 +80,9 @@ func TestOle2New(t *testing.T) {
 		Constant:        false,
 	}
 	fmt.Printf("old = %v\n", oP)
-	nP := OldPacket2New(oP)
+	nP := OldPacket2New(oP,uint64(90),uint32(10))
 	fmt.Printf("new = %v\n", nP)
-	fmt.Printf("new = %v\n", nP.Tokens)
+	fmt.Printf("new = %#v\n", nP.Tokens[0])
 
 	toA, _ := common.StringToAddress("P1CLYFd65W1YcHBmEBnUf8ACZsaqqworsMG")
 	oR := &OldPacketAllocationRecord{
@@ -97,5 +97,5 @@ func TestOle2New(t *testing.T) {
 	fmt.Printf("old = %v\n", oR)
 	nR := OldRecord2New(oR)
 	fmt.Printf("new = %v\n", nR)
-	fmt.Printf("new = %v\n", nR.Tokens)
+	fmt.Printf("new = %#v\n", nR.Tokens[0])
 }

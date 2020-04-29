@@ -319,12 +319,12 @@ func TestPacketCompatibility(t *testing.T) {
 		t.Log("进入")
 		// 兼容
 		op := packetcc.OldPacket{}
-		err = rlp.DecodeBytes(value, &op)
+		err = rlp.DecodeBytes(bytes, &op)
 		if err != nil {
 			t.Error(err)
 		}
 		// 转换
-		np := packetcc.OldPacket2New(&op)
+		np := packetcc.OldPacket2New(&op,uint64(90),uint32(10))
 		p = *np
 	}
 	fmt.Printf("new = %v\n",&p)

@@ -24,6 +24,7 @@ package packetcc
 import (
 	"encoding/hex"
 	"github.com/palletone/go-palletone/dag/modules"
+	"sort"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
@@ -45,7 +46,7 @@ type OldPacketAllocationRecord struct {
 type PacketAllocationRecord struct {
 	PubKey      []byte //红包公钥
 	Message     string //领取红包用的消息，防止重复领取
-	Tokens      []modules.InvokeTokens
+	Tokens      []*RecordTokens
 	ToAddress   common.Address //领取人的地址
 	RequestHash common.Hash    //领取请求的Hash
 	Timestamp   uint64         //领取的时间戳，主要用于排序
@@ -56,7 +57,7 @@ func OldRecord2New(old *OldPacketAllocationRecord) *PacketAllocationRecord {
 	return &PacketAllocationRecord{
 		PubKey:  old.PubKey,
 		Message: old.Message,
-		Tokens: []modules.InvokeTokens{
+		Tokens: []*RecordTokens{
 			{
 				Amount: old.Amount,
 				Asset:  old.Token,
@@ -101,6 +102,9 @@ func getPacketAllocationHistory(stub shim.ChaincodeStubInterface, pubKey []byte)
 			nr := OldRecord2New(&or)
 			p = *nr
 		}
+		sort.Slice(p.Tokens, func(i, j int) bool {
+			return p.Tokens[i].Amount > p.Tokens[j].Amount
+		})
 		result[i] = &p
 	}
 
@@ -125,7 +129,7 @@ func getPacketAllocationHistory(stub shim.ChaincodeStubInterface, pubKey []byte)
 type PacketAllocationRecordJson struct {
 	PubKey      string //红包公钥
 	Message     string //领取红包用的消息，防止重复领取
-	Tokens      []TokensJson
+	Tokens      []RecordTokensJson
 	ToAddress   common.Address //领取人的地址
 	RequestHash string         //领取请求的Hash
 	Timestamp   uint64         //领取的时间戳，主要用于排序
@@ -139,7 +143,7 @@ func convertAllocationRecord2Json(record *PacketAllocationRecord) *PacketAllocat
 		RequestHash: record.RequestHash.String(),
 		Timestamp:   record.Timestamp,
 	}
-	p.Tokens = make([]TokensJson, len(record.Tokens))
+	p.Tokens = make([]RecordTokensJson, len(record.Tokens))
 	for i, t := range record.Tokens {
 		p.Tokens[i].Amount = t.Asset.DisplayAmount(t.Amount)
 		p.Tokens[i].Asset = t.Asset.String()

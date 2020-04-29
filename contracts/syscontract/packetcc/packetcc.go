@@ -221,12 +221,16 @@ func (p *PacketMgr) CreatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 	} else {
 		packet.ExpiredTime = uint64(expiredTime.Unix())
 	}
-	a := uint64(0)
-	packet.Tokens = tokenToPackets
-	for _, t := range tokenToPackets {
-		a += t.Amount
+	packet.Tokens = make([]*Tokens, len(tokenToPackets))
+	for i, t := range tokenToPackets {
+		packet.Tokens[i] = &Tokens{}
+		packet.Tokens[i].BalanceAmount = t.Amount
+		packet.Tokens[i].BalanceCount = count
+		packet.Tokens[i].Asset = t.Asset
+		packet.Tokens[i].Amount = t.Amount
+
 	}
-	packet.Amount = a
+	packet.Amount = packet.Tokens[0].Amount
 	// 保存红包
 	err = savePacket(stub, packet)
 	if err != nil {
@@ -376,7 +380,7 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 	if err != nil || !pass {
 		return errors.New("validate signature failed")
 	}
-	recordToken := make([]modules.InvokeTokens, len(packet.Tokens))
+	recordToken := make([]*RecordTokens, len(packet.Tokens))
 	// 从红包转 token
 	for i, t := range packet.Tokens {
 		err = stub.PayOutToken(pullAddr.String(), &modules.AmountAsset{
@@ -386,11 +390,19 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 		if err != nil {
 			return err
 		}
-		recordToken[i].Amount = payAmt
-		recordToken[i].Asset = t.Asset
-		t.Amount -= payAmt
+		packet.Tokens[i].BalanceCount =balanceCount
+		packet.Tokens[i].BalanceAmount -= payAmt
+		recordToken[i] = &RecordTokens{
+			Amount: payAmt,
+			Asset:  t.Asset,
+		}
 	}
-	payAmt *= uint64(len(packet.Tokens))
+	if len(packet.Tokens) > 1 {
+		err = savePacket(stub,packet)
+		if err != nil {
+			return err
+		}
+	}
 	// 调整红包余额
 	err = savePacketBalance(stub, packet.PubKey, balanceAmount-payAmt, balanceCount)
 	if err != nil {
