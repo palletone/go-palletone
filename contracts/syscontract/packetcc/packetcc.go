@@ -345,6 +345,7 @@ func (p *PacketMgr) UpdatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 	return nil
 }
 
+//领取红包，如果该红包有多种Token，那么amounts参数就可以是一个以逗号分割金额的字符串，并根据对应的index领取对应金额的Token
 func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 	pubKey []byte, msg string, signature []byte,
 	pullAddr common.Address, amounts string) error {
@@ -369,15 +370,8 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 	seed := util.BytesToUInt64(hash[0:8])
 	var payAmt uint64
 	var payAmtList []uint64
-	// 获取红包余额和个数
-	balanceAmount, balanceCount, err := getPacketBalance(stub, packet.PubKey)
-	if err != nil {
-		return err
-	}
-	if balanceAmount == 0 {
-		return errors.New("Packet balance is zero")
-	}
-	// 是否固定数额红包
+
+	// 是否固定数额红包，是则可能是多Token类型
 	if packet.Constant {
 		amtStr := strings.Split(amounts, ",")
 		if len(amtStr) > len(packet.Tokens) {
@@ -389,7 +383,14 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 			payAmtList = append(payAmtList, payAmti)
 		}
 	} else {
-		//
+		// 获取红包余额和个数
+		balanceAmount, balanceCount, err := getPacketBalance(stub, packet.PubKey)
+		if err != nil {
+			return err
+		}
+		if balanceAmount == 0 {
+			return errors.New("Packet balance is zero")
+		}
 		if packet.Count != 0 {
 			//
 			if balanceCount == 0 {
@@ -399,6 +400,11 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 			balanceCount -= 1
 		} else { // 无限领取，最大值
 			payAmt = packet.GetPullAmount(int64(seed), balanceAmount, 1)
+		}
+		//更新红包余额
+		err = savePacketBalance(stub, packet.PubKey, balanceAmount-payAmt, balanceCount)
+		if err != nil {
+			return err
 		}
 		payAmtList = []uint64{payAmt}
 	}
@@ -411,7 +417,7 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 		return errors.New("validate signature failed")
 	}
 	recordToken := make([]*RecordTokens, len(packet.Tokens))
-	// 从红包转 token
+	// 从红包转 token到红包接收地址
 	for i, payAmti := range payAmtList {
 		err = stub.PayOutToken(pullAddr.String(), &modules.AmountAsset{
 			Amount: payAmti,
@@ -420,23 +426,18 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 		if err != nil {
 			return err
 		}
-		packet.Tokens[i].BalanceCount = balanceCount
+		packet.Tokens[i].BalanceCount -= 1
 		packet.Tokens[i].BalanceAmount -= payAmt
 		recordToken[i] = &RecordTokens{
 			Amount: payAmt,
 			Asset:  packet.Tokens[i].Asset,
 		}
 	}
-	if packet.IsFixAmount() {
+	if packet.Constant { //更新多Token的红包余额
 		err = savePacket(stub, packet)
 		if err != nil {
 			return err
 		}
-	}
-	// 调整红包余额
-	err = savePacketBalance(stub, packet.PubKey, balanceAmount-payAmt, balanceCount)
-	if err != nil {
-		return err
 	}
 	//保存红包领取记录
 	reqId := common.HexToHash(stub.GetTxID())
