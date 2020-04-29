@@ -138,7 +138,7 @@ func (p *PacketMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		data, _ := json.Marshal(result)
 		return shim.Success(data)
 	case "getAllPacketInfo":
-		result,err := p.GetAllPacketInfo(stub)
+		result, err := p.GetAllPacketInfo(stub)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
@@ -223,7 +223,7 @@ func (p *PacketMgr) CreatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 	}
 	a := uint64(0)
 	packet.Tokens = tokenToPackets
-	for _,t := range tokenToPackets {
+	for _, t := range tokenToPackets {
 		a += t.Amount
 	}
 	packet.Amount = a
@@ -287,9 +287,9 @@ func (p *PacketMgr) UpdatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 		// 只能一次调整一个红包的一个 token
 		tokenToPacket := tokenToPackets[0]
 		b := false
-		for _,t := range packet.Tokens {
+		for _, t := range packet.Tokens {
 			if tokenToPacket.Asset.Equal(t.Asset) {
-				b=true
+				b = true
 				t.Amount += tokenToPacket.Amount
 				packet.Amount += tokenToPacket.Amount
 				bAmount += tokenToPacket.Amount
@@ -378,7 +378,7 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 	}
 	recordToken := make([]modules.InvokeTokens, len(packet.Tokens))
 	// 从红包转 token
-	for i,t := range packet.Tokens {
+	for i, t := range packet.Tokens {
 		err = stub.PayOutToken(pullAddr.String(), &modules.AmountAsset{
 			Amount: payAmt,
 			Asset:  t.Asset,
@@ -390,7 +390,7 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 		recordToken[i].Asset = t.Asset
 		t.Amount -= payAmt
 	}
-	payAmt *=  uint64(len(packet.Tokens))
+	payAmt *= uint64(len(packet.Tokens))
 	// 调整红包余额
 	err = savePacketBalance(stub, packet.PubKey, balanceAmount-payAmt, balanceCount)
 	if err != nil {
@@ -402,7 +402,7 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 	record := &PacketAllocationRecord{
 		PubKey:      pubKey,
 		Message:     msg,
-		Tokens:recordToken,
+		Tokens:      recordToken,
 		ToAddress:   pullAddr,
 		RequestHash: reqId,
 		Timestamp:   uint64(timestamp.Seconds),
@@ -438,7 +438,7 @@ func (p *PacketMgr) RecyclePacket(stub shim.ChaincodeStubInterface, pubKey []byt
 	if balanceAmount == 0 {
 		return errors.New("no balance to recycle")
 	}
-	for _,t := range packet.Tokens {
+	for _, t := range packet.Tokens {
 		err = stub.PayOutToken(packet.Creator.String(), &modules.AmountAsset{Amount: t.Amount, Asset: t.Asset}, 0)
 		if err != nil {
 			return err
@@ -460,18 +460,18 @@ func (p *PacketMgr) GetPacketInfo(stub shim.ChaincodeStubInterface, pubKey []byt
 	return convertPacket2Json(packet, balanceAmount, balanceCount), nil
 }
 
-func (p *PacketMgr) GetAllPacketInfo(stub shim.ChaincodeStubInterface) ([]*PacketJson,error) {
-	ps,err := getPackets(stub)
+func (p *PacketMgr) GetAllPacketInfo(stub shim.ChaincodeStubInterface) ([]*PacketJson, error) {
+	ps, err := getPackets(stub)
 	if err != nil {
 		return nil, err
 	}
 	pjs := []*PacketJson{}
-	for _,ppp := range ps {
+	for _, ppp := range ps {
 		balanceAmount, balanceCount, err := getPacketBalance(stub, ppp.PubKey)
 		if err != nil {
 			return nil, err
 		}
-		pjs = append(pjs,convertPacket2Json(ppp, balanceAmount, balanceCount))
+		pjs = append(pjs, convertPacket2Json(ppp, balanceAmount, balanceCount))
 	}
 
 	return pjs, nil

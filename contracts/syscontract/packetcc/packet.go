@@ -34,6 +34,7 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+// old packet
 type OldPacket struct {
 	PubKey          []byte         //红包对应的公钥，也是红包的唯一标识
 	Creator         common.Address //红包发放人员地址
@@ -47,34 +48,29 @@ type OldPacket struct {
 	Constant        bool           //是否固定数额
 }
 
-//type Tokens struct {
-//	Amount  uint64 `json:"amount"`  //数量
-//	Asset   *modules.Asset `json:"asset"`   //资产
-//}
-
 // new Packet
 type Packet struct {
-	PubKey          []byte         //红包对应的公钥，也是红包的唯一标识
-	Creator         common.Address //红包发放人员地址
-	Tokens           []*modules.InvokeTokens //红包中的TokenID
-	Amount          uint64         //红包总金额
-	Count           uint32         //红包数，为0表示可以无限领取
-	MinPacketAmount uint64         //单个红包最小额
-	MaxPacketAmount uint64         //单个红包最大额,最大额最小额相同，则说明不是随机红包,0则表示完全随机
-	ExpiredTime     uint64         //红包过期时间，0表示永不过期
-	Remark          string         //红包的备注
-	Constant        bool           //是否固定数额
+	PubKey          []byte                  //红包对应的公钥，也是红包的唯一标识
+	Creator         common.Address          //红包发放人员地址
+	Tokens          []*modules.InvokeTokens //红包中的TokenID
+	Amount          uint64                  //红包总金额
+	Count           uint32                  //红包数，为0表示可以无限领取
+	MinPacketAmount uint64                  //单个红包最小额
+	MaxPacketAmount uint64                  //单个红包最大额,最大额最小额相同，则说明不是随机红包,0则表示完全随机
+	ExpiredTime     uint64                  //红包过期时间，0表示永不过期
+	Remark          string                  //红包的备注
+	Constant        bool                    //是否固定数额
 }
 
 type TokensJson struct {
-	Amount  decimal.Decimal `json:"amount"`  //数量
-	Asset   string `json:"asset"`   //资产
+	Amount decimal.Decimal `json:"amount"` //数量
+	Asset  string          `json:"asset"`  //资产
 }
 
 type PacketJson struct {
 	PubKey          string          //红包对应的公钥，也是红包的唯一标识
 	Creator         common.Address  //红包发放人员地址
-	Token           []TokensJson          //红包中的TokenID
+	Token           []TokensJson    //红包中的TokenID
 	TotalAmount     decimal.Decimal //红包总金额
 	PacketCount     uint32          //红包数，为0表示可以无限领取
 	MinPacketAmount decimal.Decimal //单个红包最小额
@@ -161,27 +157,43 @@ func getPacket(stub shim.ChaincodeStubInterface, pubKey []byte) (*Packet, error)
 	p := Packet{}
 	err = rlp.DecodeBytes(value, &p)
 	if err != nil {
-		return nil, err
+		// 兼容
+		op := OldPacket{}
+		err = rlp.DecodeBytes(value, &op)
+		if err != nil {
+			return nil, err
+		}
+		// 转换
+		np := OldPacket2New(&op)
+		p = *np
 	}
 	return &p, nil
 }
 
 // 获取所有红包
-func getPackets(stub shim.ChaincodeStubInterface) ([]*Packet,error) {
+func getPackets(stub shim.ChaincodeStubInterface) ([]*Packet, error) {
 	value, err := stub.GetStateByPrefix(PacketPrefix)
 	if err != nil {
 		return nil, err
 	}
 	ps := []*Packet{}
-	for _,pp := range value {
+	for _, pp := range value {
 		p := Packet{}
 		err = rlp.DecodeBytes(pp.Value, &p)
 		if err != nil {
-			return nil, err
+			// 兼容
+			op := OldPacket{}
+			err = rlp.DecodeBytes(pp.Value, &op)
+			if err != nil {
+				return nil, err
+			}
+			// 转换
+			np := OldPacket2New(&op)
+			p = *np
 		}
-		ps = append(ps,&p)
+		ps = append(ps, &p)
 	}
-	return ps,nil
+	return ps, nil
 }
 
 // 保存红包余额和个数
@@ -226,7 +238,7 @@ func convertPacket2Json(packet *Packet, balanceAmount uint64, balanceCount uint3
 		js.ExpiredTime = time.Unix(int64(packet.ExpiredTime), 0).String()
 	}
 	js.Token = make([]TokensJson, len(packet.Tokens))
-	for i,t := range packet.Tokens {
+	for i, t := range packet.Tokens {
 		js.Token[i].Amount = t.Asset.DisplayAmount(t.Amount)
 		js.Token[i].Asset = t.Asset.String()
 	}
@@ -263,3 +275,22 @@ func isPulledPacket(stub shim.ChaincodeStubInterface, pubKey []byte, message str
 	return true
 }
 
+func OldPacket2New(old *OldPacket) *Packet {
+	return &Packet{
+		PubKey:  old.PubKey,
+		Creator: old.Creator,
+		Tokens: []*modules.InvokeTokens{
+			{
+				Amount: old.Amount,
+				Asset:  old.Token,
+			},
+		},
+		Amount:          old.Amount,
+		Count:           old.Count,
+		MinPacketAmount: old.MinPacketAmount,
+		MaxPacketAmount: old.MaxPacketAmount,
+		ExpiredTime:     old.ExpiredTime,
+		Remark:          old.Remark,
+		Constant:        old.Constant,
+	}
+}
