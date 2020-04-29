@@ -312,14 +312,12 @@ func (p *PacketMgr) UpdatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 			}
 			// 追加新 token
 			if isNew {
-				for _, t := range tokenToPackets {
-					packet.Tokens = append(packet.Tokens, &Tokens{
-						Amount:        t.Amount,
-						Asset:         t.Asset,
-						BalanceAmount: t.Amount,
-						BalanceCount:  count,
-					})
-				}
+				packet.Tokens = append(packet.Tokens, &Tokens{
+					Amount:        t.Amount,
+					Asset:         t.Asset,
+					BalanceAmount: t.Amount,
+					BalanceCount:  count,
+				})
 			}
 		}
 		//
