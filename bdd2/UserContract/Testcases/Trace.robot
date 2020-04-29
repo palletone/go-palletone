@@ -276,5 +276,5 @@ getBalance
     ${param}    Create List    ${addr}
     ${result}    post    wallet_getBalance    wallet_getBalance    ${param}
     log    ${result}
-    ${amount}    Set Variable    ${result["PTN"]}
+    ${amount}    Set Variable If    ${len}>1     ${result["${param}"]}     ${result["PTN"]}
     [Return]    ${amount}
