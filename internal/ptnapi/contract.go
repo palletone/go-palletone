@@ -34,7 +34,6 @@ const GOLANG = "golang"
 const GO = "go"
 
 type buildContractContext struct {
-	//msgType  modules.MessageType
 	tokenId  string
 	password string
 	fromAddr common.Address
@@ -43,10 +42,21 @@ type buildContractContext struct {
 	amount   decimal.Decimal
 	gasFee   decimal.Decimal
 	args     [][]byte
-
 	exeTimeout *Int
 }
-
+type buildMutiContractContext struct {
+	tokenId1  string
+	tokenId2  string
+	password string
+	fromAddr common.Address
+	toAddr   common.Address
+	ccAddr   common.Address
+	amount1   decimal.Decimal
+	amount2   decimal.Decimal
+	gasFee   decimal.Decimal
+	args     [][]byte
+	exeTimeout *Int
+}
 func getTemplateId(ccName, ccPath, ccVersion string) []byte {
 	var buffer bytes.Buffer
 	buffer.Write([]byte(ccName))
@@ -67,7 +77,7 @@ func (s *PrivateContractAPI) buildContractReqTx(ctx *buildContractContext, msgRe
 	if s.b.EnableGasFee() || ctx.toAddr == ctx.ccAddr || ctx.fromAddr != ctx.toAddr {
 		var usedUtxo []*modules.UtxoWithOutPoint
 		//费用检查
-		fee, err := s.contractFeeCheck(s.b.EnableGasFee(), ctx, msgReq)
+		fee, err := s.contractFeeCheck(ctx, msgReq)
 		if err != nil {
 			log.Errorf("buildContractReqTx, contractFeeCheck err:%s", err.Error())
 			return nil, err
@@ -93,7 +103,62 @@ func (s *PrivateContractAPI) buildContractReqTx(ctx *buildContractContext, msgRe
 	}
 	return tx, err
 }
+func (s *PrivateContractAPI) buildMutiContractReqTx(ctx *buildMutiContractContext, msgReq *modules.Message) (*modules.Transaction, error) {
+	var tx *modules.Transaction
+	var tx2 *modules.Transaction
+	var err error
+	if ctx == nil || msgReq == nil {
+		return nil, errors.New("buildContractReqTx, param is nil")
+	}
+    totalamount := ctx.amount1.Add(ctx.amount2)
+	//如没有GasFee，而且to address不是合约地址，则不构建Payment，直接InvokeRequest+Signature
+	if s.b.EnableGasFee() || ctx.toAddr == ctx.ccAddr || ctx.fromAddr != ctx.toAddr {
+		var usedUtxo []*modules.UtxoWithOutPoint
+		var usedUtxo2 []*modules.UtxoWithOutPoint
+		//费用检查
+		ctx4check := &buildContractContext{
+		   tokenId:    ctx.tokenId1,
+		   fromAddr:   ctx.fromAddr,
+		   toAddr:     ctx.toAddr,
+		   ccAddr:     ctx.ccAddr,
+		   amount:     totalamount,
+		   gasFee:     ctx.gasFee,
+		   args:       ctx.args,
+		   password:   ctx.password,
+		   exeTimeout: ctx.exeTimeout,
+	    }
+		fee, err := s.contractFeeCheck(ctx4check, msgReq)
+		if err != nil {
+			log.Errorf("buildContractReqTx, contractFeeCheck err:%s", err.Error())
+			return nil, err
+		}
+		//build raw tx
+		tx, usedUtxo, err = buildRawTransferTx(s.b, ctx.tokenId1, ctx.fromAddr.String(), ctx.toAddr.String(), ctx.amount1, fee, ctx.password)
+		if err != nil {
+			return nil, err
+		}
+		tx2, usedUtxo2, err = buildRawTransferTx(s.b, ctx.tokenId2, ctx.fromAddr.String(), ctx.toAddr.String(), ctx.amount2, fee, ctx.password)
+		if err != nil {
+			return nil, err
+		}
+		usedUtxo=append(usedUtxo,usedUtxo2...)
+		tx.AddMessage(tx2.TxMessages()[1])
 
+		tx.AddMessage(msgReq)
+		//sign
+		err = signRawTransaction(s.b, tx, ctx.fromAddr.String(), ctx.password, ctx.exeTimeout, 1, usedUtxo)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		log.Infof("buildContractReqTx, disabled gas fee, to address[%s],amount[%s] and fee[%s] will ignore.", ctx.toAddr.String(), totalamount.String(), ctx.gasFee.String())
+		tx, err = s.buildContractReqTxWithoutGasFee(s.b, ctx.fromAddr, ctx.password, msgReq)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return tx, err
+}
 //创建没有Payment的合约请求交易
 func (s *PrivateContractAPI) buildContractReqTxWithoutGasFee(b Backend, from common.Address,
 	pwd string, msgReq *modules.Message) (*modules.Transaction, error) {
@@ -101,20 +166,19 @@ func (s *PrivateContractAPI) buildContractReqTxWithoutGasFee(b Backend, from com
 	return signRawNoGasTx(b, tx, from, pwd)
 }
 
-func (s *PrivateContractAPI) contractFeeCheck(enableGasFee bool, ctx *buildContractContext, reqMsg *modules.Message) (decimal.Decimal, error) {
-	if ctx == nil {
+func (s *PrivateContractAPI) contractFeeCheck(ctx *buildContractContext, reqMsg *modules.Message) (decimal.Decimal, error) {
+	if ctx == nil || reqMsg == nil {
 		return decimal.NewFromFloat(0), fmt.Errorf("contractFeeCheck param ctx is nil")
 	}
-
 	return ctx.gasFee, nil
-/*
-	var err error
-	fee := ctx.gasFee
+	/*
+		var err error
+		fee := ctx.gasFee
 
-	baseFee := decimal.NewFromFloat(float64(s.b.Dag().GetChainParameters().TransferPtnBaseFee))
-	if ctx.gasFee.Cmp(baseFee) < 0 { //ctx.gasFee < s.b.Dag().GetChainParameters().TransferPtnBaseFee
+		//baseFee := decimal.NewFromFloat(float64(s.b.Dag().GetChainParameters().TransferPtnBaseFee))
+		//if ctx.gasFee.Cmp(baseFee) < 0 { //ctx.gasFee < s.b.Dag().GetChainParameters().TransferPtnBaseFee
 		var needFee float64
-		switch ctx.msgType {
+		switch reqMsg.App {
 		case modules.APP_CONTRACT_TPL_REQUEST:
 			payload := reqMsg.Payload.(*modules.ContractInstallRequestPayload)
 			needFee, _, _, err = s.b.ContractInstallReqTxFee(ctx.fromAddr, ctx.toAddr, ptnjson.Ptn2Dao(ctx.amount), ptnjson.Ptn2Dao(ctx.gasFee),
@@ -133,14 +197,24 @@ func (s *PrivateContractAPI) contractFeeCheck(enableGasFee bool, ctx *buildContr
 				common.NewAddress(payload.ContractId, common.ContractHash), false)
 		}
 		if err != nil {
-			return fee, fmt.Errorf("Ccdeploytx, ContractDeployReqFee err:%s", err.Error())
+			return fee, fmt.Errorf("contractFeeCheck, contract fee get err:%s", err.Error())
 		}
 
-		fee = decimal.NewFromFloat(needFee)
-		log.Debug("Ccdeploytx", "dynamic calculation fee:", fee.String())
-	}
+		//dNeedFee := decimal.NewFromFloat(needFee)
+		dNeedFee := ptnjson.Dao2Ptn(uint64(needFee))
+		//如果设定费用<=0，则由程序计算费用。如果设定>0，则进行费用比较，不足则直接返回错误，费用够则使用用户设置费用
+		if ctx.gasFee.GreaterThan(decimal.Zero) { // gasFee> 0
+			if ctx.gasFee.LessThan(dNeedFee) {
+				log.Errorf("contractFeeCheck, fee not enough, fee[%s], need fee[%s]",
+					ctx.gasFee.String(), dNeedFee.String())
+				return fee, fmt.Errorf("contractFeeCheck, fee not enough, fee[%s], need fee[%s]",
+					ctx.gasFee.String(), dNeedFee.String())
+			}
+		} else { // gasFee<=0
+			fee = dNeedFee
+		}
 
-	//return ctx.gasFee, nil
-	return fee, nil
-*/
+		log.Debug("contractFeeCheck", "dynamic calculation fee:", fee.String())
+		return fee, nil
+	*/
 }
