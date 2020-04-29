@@ -301,23 +301,35 @@ func (p *PacketMgr) UpdatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 		if len(tokenToPackets) != 1 {
 			return errors.New("Please pay one kind of token to this contract.")
 		}
-		// 只能一次调整一个红包的一个 token
-		tokenToPacket := tokenToPackets[0]
-		b := false
-		for _, t := range packet.Tokens {
-			if tokenToPacket.Asset.Equal(t.Asset) {
-				b = true
-				t.Amount += tokenToPacket.Amount
-				t.BalanceAmount += tokenToPacket.Amount
-				t.BalanceCount = count
+		// 一次调整红包的多个 token
+		for _, tokenToPacket := range tokenToPackets {
+			findToken := false
+			for _, t := range packet.Tokens {
+				if tokenToPacket.Asset.Equal(t.Asset) {
+					t.Amount += tokenToPacket.Amount
+					t.BalanceAmount += tokenToPacket.Amount
+					t.BalanceCount = count
+					packet.Amount += tokenToPacket.Amount
+					bAmount += tokenToPacket.Amount
+					findToken = true
+					break
+				}
+			}
+			if !findToken {
+				packet.Tokens = append(packet.Tokens, &Tokens{
+					Amount:        tokenToPacket.Amount,
+					Asset:         tokenToPacket.Asset,
+					BalanceAmount: tokenToPacket.Amount,
+					BalanceCount:  count,
+				})
 				packet.Amount += tokenToPacket.Amount
 				bAmount += tokenToPacket.Amount
-				break
 			}
 		}
-		if !b {
-			return errors.New("note: Please pay correct token to this packet")
-		}
+
+		//if !b {
+		//	return errors.New("note: Please pay correct token to this packet")
+		//}
 	}
 	packet.MinPacketAmount = packet.Tokens[0].Asset.Uint64Amount(minAmount)
 	packet.MaxPacketAmount = packet.Tokens[0].Asset.Uint64Amount(maxAmount)
