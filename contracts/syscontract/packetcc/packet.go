@@ -30,6 +30,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/shopspring/decimal"
@@ -110,6 +111,10 @@ type PacketBalance struct {
 
 func (p *Packet) IsFixAmount() bool {
 	return p.MinPacketAmount == p.MaxPacketAmount && p.MaxPacketAmount > 0
+}
+
+func (p *Packet) PubKeyAddress() common.Address {
+	return crypto.PubkeyBytesToAddress(p.PubKey)
 }
 
 func (p *Packet) GetPullAmount(seed int64, amount uint64, count uint32) uint64 {

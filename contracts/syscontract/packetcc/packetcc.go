@@ -258,14 +258,14 @@ func (p *PacketMgr) CreatePacket(stub shim.ChaincodeStubInterface, pubKey []byte
 //增加额度，调整红包产生等
 func (p *PacketMgr) UpdatePacket(stub shim.ChaincodeStubInterface, pubKey []byte, count uint32,
 	minAmount, maxAmount decimal.Decimal, expiredTime *time.Time, remark string, isConstant bool) error {
-	creator, _ := stub.GetInvokeAddress()
+	invokeAddr, _ := stub.GetInvokeAddress()
 	// 获取当前 pubKey 对应的红包
 	packet, err := getPacket(stub, pubKey)
 	if err != nil {
 		return err
 	}
-	if packet.Creator != creator && !isFoundationInvoke(stub) {
-		return errors.New("Only creator or admin can update")
+	if packet.Creator != invokeAddr && !isFoundationInvoke(stub) && packet.PubKeyAddress() != invokeAddr {
+		return errors.New("Only creator address, pubkey address or admin can update")
 	}
 	//adjustCount := int32(count) - int32(packet.Count)
 	// 更新全部
