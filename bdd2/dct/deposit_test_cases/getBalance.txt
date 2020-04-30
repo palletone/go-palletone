@@ -8,7 +8,7 @@ getBalance
     ${result}    创建公用的POST请求    wallet_getBalance    wallet_getBalance    ${two}
     log    ${result}
     ${len}    Get Length    ${result}
-    ${amount}    Set Variable If    ${len}>1     ${result["${assetId}"]}     ${result["PTN"]}
+    ${amount}    Set Variable If    ${len} ==0    0    ${result["${assetId}"]}
     #    ${result["PTN"]}
     #    Set Variable    ${result["PTN"]}
     [Return]    ${amount}
