@@ -24,6 +24,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"github.com/palletone/go-palletone/common/log"
 	"sort"
 	"strconv"
 	"strings"
@@ -116,10 +117,7 @@ func (p *PacketMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		if err != nil {
 			return shim.Error("Invalid address string:" + args[3])
 		}
-		_, err = decimal.NewFromString(args[4])
-		if err != nil {
-			return shim.Error("Invalid min amount string:" + args[4])
-		}
+
 		err = p.PullPacket(stub, pubKey, message, signature, address, args[4])
 		if err != nil {
 			return shim.Error(err.Error())
@@ -383,6 +381,10 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 			payAmtList = append(payAmtList, payAmti)
 		}
 	} else {
+		_, err = decimal.NewFromString(amounts)
+		if err != nil {
+			return errors.New("Invalid min amount string:" + amounts)
+		}
 		// 获取红包余额和个数
 		balanceAmount, balanceCount, err := getPacketBalance(stub, packet.PubKey)
 		if err != nil {
