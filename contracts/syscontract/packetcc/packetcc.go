@@ -24,7 +24,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"github.com/palletone/go-palletone/common/log"
 	"sort"
 	"strconv"
 	"strings"
