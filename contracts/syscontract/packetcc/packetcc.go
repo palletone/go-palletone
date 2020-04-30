@@ -427,9 +427,9 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 			return err
 		}
 		packet.Tokens[i].BalanceCount -= 1
-		packet.Tokens[i].BalanceAmount -= payAmt
+		packet.Tokens[i].BalanceAmount -= payAmti
 		recordToken[i] = &RecordTokens{
-			Amount: payAmt,
+			Amount: payAmti,
 			Asset:  packet.Tokens[i].Asset,
 		}
 	}
