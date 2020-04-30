@@ -420,6 +420,9 @@ func (p *PacketMgr) PullPacket(stub shim.ChaincodeStubInterface,
 	recordToken := make([]*RecordTokens, len(packet.Tokens))
 	// 从红包转 token到红包接收地址
 	for i, payAmti := range payAmtList {
+		if payAmti == 0 {
+			continue
+		}
 		err = stub.PayOutToken(pullAddr.String(), &modules.AmountAsset{
 			Amount: payAmti,
 			Asset:  packet.Tokens[i].Asset,
