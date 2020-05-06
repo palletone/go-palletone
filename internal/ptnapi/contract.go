@@ -77,11 +77,21 @@ func (s *PrivateContractAPI) buildContractReqTx(ctx *buildContractContext, msgRe
 	if s.b.EnableGasFee() || ctx.toAddr == ctx.ccAddr || ctx.fromAddr != ctx.toAddr {
 		var usedUtxo []*modules.UtxoWithOutPoint
 		//费用检查
-		fee, err := s.contractFeeCheck(ctx, msgReq)
-		if err != nil {
-			log.Errorf("buildContractReqTx, contractFeeCheck err:%s", err.Error())
-			return nil, err
+		var fee decimal.Decimal
+		// 当支付给合约，但是没有交易费
+		if s.b.EnableGasFee() {
+			var err error
+			fee, err = s.contractFeeCheck(ctx, msgReq)
+			if err != nil {
+				log.Errorf("buildContractReqTx, contractFeeCheck err:%s", err.Error())
+				return nil, err
+			}
 		}
+		//fee, err := s.contractFeeCheck(ctx, msgReq)
+		//if err != nil {
+		//	log.Errorf("buildContractReqTx, contractFeeCheck err:%s", err.Error())
+		//	return nil, err
+		//}
 		//build raw tx
 		tx, usedUtxo, err = buildRawTransferTx(s.b, ctx.tokenId, ctx.fromAddr.String(), ctx.toAddr.String(), ctx.amount, fee, ctx.password)
 		if err != nil {
@@ -127,11 +137,21 @@ func (s *PrivateContractAPI) buildMutiContractReqTx(ctx *buildMutiContractContex
 		   password:   ctx.password,
 		   exeTimeout: ctx.exeTimeout,
 	    }
-		fee, err := s.contractFeeCheck(ctx4check, msgReq)
-		if err != nil {
-			log.Errorf("buildContractReqTx, contractFeeCheck err:%s", err.Error())
-			return nil, err
+		var fee decimal.Decimal
+		// 当支付给合约，但是没有交易费
+		if s.b.EnableGasFee() {
+			var err error
+			fee, err = s.contractFeeCheck(ctx4check, msgReq)
+			if err != nil {
+				log.Errorf("buildContractReqTx, contractFeeCheck err:%s", err.Error())
+				return nil, err
+			}
 		}
+		//fee, err := s.contractFeeCheck(ctx4check, msgReq)
+		//if err != nil {
+		//	log.Errorf("buildContractReqTx, contractFeeCheck err:%s", err.Error())
+		//	return nil, err
+		//}
 		//build raw tx
 		tx, usedUtxo, err = buildRawTransferTx(s.b, ctx.tokenId1, ctx.fromAddr.String(), ctx.toAddr.String(), ctx.amount1, fee, ctx.password)
 		if err != nil {
