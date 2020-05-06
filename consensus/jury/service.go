@@ -39,6 +39,7 @@ import (
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/gen"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/dboperation"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -60,9 +61,11 @@ type PalletOne interface {
 	LocalHaveActiveMediator() bool
 	GetLocalActiveMediators() []common.Address
 	SignGenericTransaction(from common.Address, tx *modules.Transaction) (*modules.Transaction, error)
+	EnableGasFee() bool
 }
 
 type iDag interface {
+	GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
 	//CurrentHeader(token modules.AssetId) *modules.Header
 	GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error)
 	GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error)
@@ -89,13 +92,13 @@ type iDag interface {
 	IsActiveMediator(addr common.Address) bool
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
-		msg *modules.Message) (*modules.Transaction, uint64, error)
+		msg *modules.Message, enableGasFee bool) (*modules.Transaction, uint64, error)
 	CreateTokenTransaction(from, to common.Address, token *modules.Asset, daoAmountToken, daoFee uint64,
 		msg *modules.Message) (*modules.Transaction, uint64, error)
 	GetTransaction(hash common.Hash) (*modules.TransactionWithUnitInfo, error)
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
-	GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
+	//GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
 	//GetConfig(name string) ([]byte, *modules.StateVersion, error)
 	IsTransactionExist(hash common.Hash) (bool, error)
 	GetContractJury(contractId []byte) (*modules.ElectionNode, error)
@@ -111,6 +114,9 @@ type iDag interface {
 	GetJurorByAddrHash(addrHash common.Hash) (*modules.JurorDeposit, error)
 	SaveTransaction(tx *modules.Transaction, txIndex int) error
 	//nouse
+	GetPtnBalance(addr common.Address) uint64
+	GetPayload(from, to common.Address, daoAmount, daoFee uint64,
+		utxos map[modules.OutPoint]*modules.Utxo) (*modules.PaymentPayload, error)
 	GetNewestUnitTimestamp(token modules.AssetId) (int64, error)
 	GetScheduledMediator(slotNum uint32) common.Address
 	GetSlotAtTime(when time.Time) uint32
@@ -200,7 +206,7 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 	log.Debug("NewContractProcessor", "contractEleNum", cfgEleNum, "contractSigNum", cfgSigNum)
 
 	cache := freecache.NewCache(20 * 1024 * 1024)
-	val := validator.NewValidate(dag, dag, dag, dag, dag, cache, false)
+	val := validator.NewValidate(dag, dag, dag, dag, dag, cache, false, ptn.EnableGasFee())
 	//val.SetContractTxCheckFun(CheckTxContract)
 	//TODO Devin
 
@@ -436,11 +442,10 @@ func (p *Processor) GenContractSigTransaction(signer common.Address, password st
 	}
 	tx := orgTx
 	needSignMsg := true
-	resultMsg := false
 	isSysContract := false
 	reqId := tx.RequestHash()
 	msgs := tx.TxMessages()
-
+	reqMsgCount := tx.GetRequestMsgCount()
 	pubKey, err := ks.GetPublicKey(signer)
 	if err != nil {
 		return nil, fmt.Errorf("GenContractSigTransaction GetPublicKey fail, address[%s], reqId[%s]",
@@ -448,12 +453,12 @@ func (p *Processor) GenContractSigTransaction(signer common.Address, password st
 	}
 	for msgidx, msg := range msgs {
 		if msg.App == modules.APP_CONTRACT_INVOKE_REQUEST {
-			resultMsg = true
+
 			requestMsg := msg.Payload.(*modules.ContractInvokeRequestPayload)
 			isSysContract = common.IsSystemContractId(requestMsg.ContractId)
 			continue
 		}
-		if resultMsg {
+		if msgidx >= reqMsgCount { //invoke result
 			if msg.App == modules.APP_PAYMENT {
 				//Contract result里面的Payment只有2种，创币或者从合约付出
 				payment := msg.Payload.(*modules.PaymentPayload)
@@ -857,10 +862,45 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 	}
 	return false
 }
+func (p *Processor) CreateTokenTransaction(from, to common.Address, token *modules.Asset, daoAmountToken, daoFee uint64,
+	msg *modules.Message) (*modules.Transaction, uint64, error) {
+	
+	if msg.App == modules.APP_DATA {
+		size := float64(modules.CalcDateSize(msg.Payload))
+		pricePerKByte := p.dag.GetChainParameters().TransferPtnPricePerKByte
+		daoFee += uint64(size * float64(pricePerKByte) / 1024)
+	}
+	tx := &modules.Transaction{}
+	// 1. 获取转出账户所有的PTN utxo
+	assetId := dagconfig.DagConfig.GetGasToken()
+	coreUtxos, err := p.ptn.TxPool().GetAddrUtxos(from, assetId.ToAsset())
+	if err != nil {
+		return nil, 0, err
+	}
+	if len(coreUtxos) == 0 {
+		return nil, 0, err
+	}
+	//if p.ptn.EnableGasFee() {
+	// must pay gasfee
+	if daoFee == 0 {
+		return nil, 0, fmt.Errorf("transaction fee cannot be 0")
+	}
+	daoTotal := daoAmountToken + daoFee
+	if daoTotal > p.dag.GetPtnBalance(from) {
+		return nil, 0, fmt.Errorf("the ptn balance of the account is not enough %v", daoTotal)
+	}
+	//2. 获取 PaymentPayload
+	ploadPTN, err := p.dag.GetPayload(from, to, daoAmountToken, daoFee, coreUtxos)
+	if err != nil {
+		return nil, 0, err
+	}
+	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, ploadPTN))
+	return tx, daoFee, nil
+}
 
 func (p *Processor) createContractTxReqToken(contractId, from, to common.Address, token *modules.Asset,
 	daoAmountToken, daoFee uint64, msg *modules.Message) (common.Hash, *modules.Transaction, error) {
-	tx, _, err := p.dag.CreateTokenTransaction(from, to, token, daoAmountToken, daoFee, msg)
+	tx, _, err := p.CreateTokenTransaction(from, to, token, daoAmountToken, daoFee, msg)
 	if err != nil {
 		return common.Hash{}, nil, err
 	}
@@ -871,9 +911,22 @@ func (p *Processor) createContractTxReqToken(contractId, from, to common.Address
 
 func (p *Processor) createContractTxReq(contractId, from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
 	msg *modules.Message) (common.Hash, *modules.Transaction, error) {
-	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, certID, msg)
+	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, certID, msg, p.ptn.EnableGasFee())
 	if err != nil {
 		return common.Hash{}, nil, err
+	}
+	//  构造 signature
+	if !p.ptn.EnableGasFee() && from.Equal(to) {
+		ks := p.ptn.GetKeyStore()
+		pubKey, err := ks.GetPublicKey(from)
+		if err != nil {
+			return common.Hash{}, nil, err
+		}
+		sign, err := ks.SigData(tx, from)
+		if err != nil {
+			return common.Hash{}, nil, err
+		}
+		tx.AddMessage(modules.NewMessage(modules.APP_SIGNATURE, modules.NewSignaturePayload(pubKey, sign)))
 	}
 	return p.signGenericTx(contractId, from, tx)
 }
@@ -903,9 +956,11 @@ func (p *Processor) signGenericTx(contractId common.Address, from common.Address
 	defer p.locker.Unlock()
 
 	reqId := tx.RequestHash()
-	if p.validator.ValidateTxFeeEnough(tx, ContractDefaultSignatureSize+ContractDefaultRWSize,
-		0) != validator.TxValidationCode_VALID {
-		return common.Hash{}, nil, fmt.Errorf("signGenericTx, tx fee is invalid")
+	if p.ptn.EnableGasFee() {
+		if p.validator.ValidateTxFeeEnough(tx, ContractDefaultSignatureSize+ContractDefaultRWSize,
+			0) != validator.TxValidationCode_VALID {
+			return common.Hash{}, nil, fmt.Errorf("signGenericTx, tx fee is invalid")
+		}
 	}
 	log.Debugf("[%s]signGenericTx, contractId[%s]", reqId.ShortStr(), contractId.String())
 	if p.mtx[reqId] != nil {

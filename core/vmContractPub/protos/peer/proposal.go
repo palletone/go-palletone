@@ -12,13 +12,13 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-func (cpp *ChaincodeProposalPayload) StaticallyOpaqueFields() []string {
+func (cpp *PtnChaincodeProposalPayload) StaticallyOpaqueFields() []string {
 	return []string{"input"}
 }
 
-func (cpp *ChaincodeProposalPayload) StaticallyOpaqueFieldProto(name string) (proto.Message, error) {
+func (cpp *PtnChaincodeProposalPayload) StaticallyOpaqueFieldProto(name string) (proto.Message, error) {
 	if name != cpp.StaticallyOpaqueFields()[0] {
 		return nil, fmt.Errorf("not a marshaled field: %s", name)
 	}
-	return &ChaincodeInvocationSpec{}, nil
+	return &PtnChaincodeInvocationSpec{}, nil
 }

@@ -76,28 +76,28 @@ func (c *ccProviderImpl) GetContext() (context.Context, error) {
 // GetCCContext returns an interface that encapsulates a
 // chaincode context; the interface is required to avoid
 // referencing the chaincode package from the interface definition
-func (c *ccProviderImpl) GetCCContext(contractid []byte, cid, name, version, txid string, syscc bool, signedProp *pb.SignedProposal, prop *pb.Proposal) interface{} {
+func (c *ccProviderImpl) GetCCContext(contractid []byte, cid, name, version, txid string, syscc bool, signedProp *pb.PtnSignedProposal, prop *pb.PtnProposal) interface{} {
 	ctx := ccprovider.NewCCContext(contractid, cid, name, version, txid, syscc, signedProp, prop)
 	return &ccProviderContextImpl{ctx: ctx}
 }
 
 // ExecuteChaincode executes the chaincode specified in the context with the specified arguments
-func (c *ccProviderImpl) ExecuteChaincode(ctxt context.Context, cccid interface{}, args [][]byte, timeout time.Duration) (*pb.Response, *pb.ChaincodeEvent, error) {
+func (c *ccProviderImpl) ExecuteChaincode(ctxt context.Context, cccid interface{}, args [][]byte, timeout time.Duration) (*pb.PtnResponse, *pb.PtnChaincodeEvent, error) {
 	return ExecuteChaincode(ctxt, cccid.(*ccProviderContextImpl).ctx, args, timeout)
 }
 
 // Execute executes the chaincode given context and spec (invocation or deploy)
-func (c *ccProviderImpl) Execute(ctxt context.Context, cccid interface{}, spec interface{}, timeout time.Duration) (*pb.Response, *pb.ChaincodeEvent, error) {
+func (c *ccProviderImpl) Execute(ctxt context.Context, cccid interface{}, spec interface{}, timeout time.Duration) (*pb.PtnResponse, *pb.PtnChaincodeEvent, error) {
 	return Execute(ctxt, cccid.(*ccProviderContextImpl).ctx, spec, timeout)
 }
 
 // ExecuteWithErrorFilter executes the chaincode given context and spec and returns payload
-func (c *ccProviderImpl) ExecuteWithErrorFilter(ctxt context.Context, cccid interface{}, spec interface{}, timeout time.Duration) ([]byte, *pb.ChaincodeEvent, error) {
+func (c *ccProviderImpl) ExecuteWithErrorFilter(ctxt context.Context, cccid interface{}, spec interface{}, timeout time.Duration) ([]byte, *pb.PtnChaincodeEvent, error) {
 	return ExecuteWithErrorFilter(ctxt, cccid.(*ccProviderContextImpl).ctx, spec, timeout)
 }
 
 // Stop stops the chaincode given context and spec
-func (c *ccProviderImpl) Stop(ctxt context.Context, cccid interface{}, spec *pb.ChaincodeDeploymentSpec, dontRmCon bool) error {
+func (c *ccProviderImpl) Stop(ctxt context.Context, cccid interface{}, spec *pb.PtnChaincodeDeploymentSpec, dontRmCon bool) error {
 	if theChaincodeSupport != nil {
 		log.Debugf("theChainode support is not nil.")
 		return theChaincodeSupport.Stop(ctxt, cccid.(*ccProviderContextImpl).ctx, spec, dontRmCon)
@@ -105,7 +105,7 @@ func (c *ccProviderImpl) Stop(ctxt context.Context, cccid interface{}, spec *pb.
 	return errors.New("Stop:ChaincodeSupport not initialized")
 }
 
-func (c *ccProviderImpl) Destroy(ctxt context.Context, cccid interface{}, spec *pb.ChaincodeDeploymentSpec) error {
+func (c *ccProviderImpl) Destroy(ctxt context.Context, cccid interface{}, spec *pb.PtnChaincodeDeploymentSpec) error {
 	if theChaincodeSupport != nil {
 		return theChaincodeSupport.Destroy(ctxt, cccid.(*ccProviderContextImpl).ctx, spec)
 	}

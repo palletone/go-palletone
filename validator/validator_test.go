@@ -25,10 +25,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/mock/gomock"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/dag/errors"
+	"github.com/palletone/go-palletone/dag/mock"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/parameter"
 	"github.com/palletone/go-palletone/dag/rwset"
@@ -37,6 +39,13 @@ import (
 )
 
 func TestValidate_ValidateUnitTxs(t *testing.T) {
+
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mdag := mock.NewMockIDag(mockCtrl)
+	mdag.EXPECT().IsTransactionExist(gomock.Any()).Return(true, nil).AnyTimes()
+	mdag.EXPECT().GetBlacklistAddress().Return([]common.Address{}, nil, nil).AnyTimes()
+
 	parameter.CurrentSysParameters.GenerateUnitReward = 0
 	//构造一个Unit包含3个Txs，
 	//0是Coinbase，收集30000Dao手续费
@@ -47,16 +56,16 @@ func TestValidate_ValidateUnitTxs(t *testing.T) {
 	outPoint := modules.NewOutPoint(tx1.Hash(), 0, 0)
 	tx2 := newTx2(t, outPoint)
 	txs := modules.Transactions{tx0, tx1, tx2}
-	dagq := &mockiDagQuery{}
+	//dagq := &mockiDagQuery{}
 	utxoQuery := &mockUtxoQuery{}
-	mockStatedbQuery := &mockStatedbQuery{}
+	//mockStatedbQuery := &mockStatedbQuery{}
 	prop := &mockiPropQuery{}
 	vcache := NewValidatorCache(newCache())
 	validate := &Validate{
 		cache:                    vcache,
-		dagquery:                 dagq,
+		dagquery:                 mdag,
 		utxoquery:                utxoQuery,
-		statequery:               mockStatedbQuery,
+		statequery:               mdag,
 		propquery:                prop,
 		contractDb:               nil,
 		tokenEngine:              tokenengine.Instance,
@@ -65,56 +74,58 @@ func TestValidate_ValidateUnitTxs(t *testing.T) {
 		enableDeveloperCheck:     true,
 		enableContractRwSetCheck: true,
 		light:                    false,
+		enableGasFee:             true,
 	}
 	addr, _ := common.StringToAddress("P1HXNZReTByQHgWQNGMXotMyTkMG9XeEQfX")
 	code := validate.validateTransactions(rwset.RwM, txs, 1564675200, addr)
-	assert.Equal(t, code, TxValidationCode_VALID)
+	assert.Equal(t, code, TxValidationCode_DUPLICATE_TXID)
 }
 
-type mockStatedbQuery struct {
-}
-
-func (q *mockStatedbQuery) GetContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
-	return nil, nil
-}
-func (q *mockStatedbQuery) GetMediators() map[common.Address]bool {
-	return nil
-}
-
-func (q *mockStatedbQuery) GetMediator(add common.Address) *core.Mediator {
-	return nil
-}
-func (q *mockStatedbQuery) GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error) {
-	return []common.Address{}, nil, nil
-}
-
-func (q *mockStatedbQuery) GetContractJury(contractId []byte) (*modules.ElectionNode, error) {
-	return nil, nil
-}
-
-func (q *mockStatedbQuery) GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error) {
-	return nil, nil, nil
-}
-
-func (q *mockStatedbQuery) GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
-	return map[string]*modules.ContractStateValue{}, nil
-}
-
-func (q *mockStatedbQuery) GetJurorByAddrHash(addrHash common.Hash) (*modules.JurorDeposit, error) {
-	return nil, nil
-}
-
-func (q *mockStatedbQuery) GetJurorReward(jurorAdd common.Address) common.Address {
-	return jurorAdd
-}
-
-func (q *mockStatedbQuery) GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error) {
-	return common.Address{}, nil
-}
-
-func (q *mockStatedbQuery) IsContractDeveloper(addr common.Address) bool {
-	return true
-}
+//
+//type mockStatedbQuery struct {
+//}
+//
+//func (q *mockStatedbQuery) GetContractTpl(tplId []byte) (*modules.ContractTemplate, error) {
+//	return nil, nil
+//}
+//func (q *mockStatedbQuery) GetMediators() map[common.Address]bool {
+//	return nil
+//}
+//
+//func (q *mockStatedbQuery) GetMediator(add common.Address) *core.Mediator {
+//	return nil
+//}
+//func (q *mockStatedbQuery) GetBlacklistAddress() ([]common.Address, *modules.StateVersion, error) {
+//	return []common.Address{}, nil, nil
+//}
+//
+//func (q *mockStatedbQuery) GetContractJury(contractId []byte) (*modules.ElectionNode, error) {
+//	return nil, nil
+//}
+//
+//func (q *mockStatedbQuery) GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error) {
+//	return nil, nil, nil
+//}
+//
+//func (q *mockStatedbQuery) GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
+//	return map[string]*modules.ContractStateValue{}, nil
+//}
+//
+//func (q *mockStatedbQuery) GetJurorByAddrHash(addrHash common.Hash) (*modules.JurorDeposit, error) {
+//	return nil, nil
+//}
+//
+//func (q *mockStatedbQuery) GetJurorReward(jurorAdd common.Address) common.Address {
+//	return jurorAdd
+//}
+//
+//func (q *mockStatedbQuery) GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error) {
+//	return common.Address{}, nil
+//}
+//
+//func (q *mockStatedbQuery) IsContractDeveloper(addr common.Address) bool {
+//	return true
+//}
 
 type mockUtxoQuery struct {
 }
@@ -256,13 +267,17 @@ func newHeader(txs modules.Transactions) *modules.Header {
 	return header
 }
 func TestValidate_ValidateHeader(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mdag := mock.NewMockIDag(mockCtrl)
+
 	tx := newTx1(t)
 	header := newHeader(modules.Transactions{tx})
-	stateQ := &mockStatedbQuery{}
+	//stateQ := &mockStatedbQuery{}
 	vcache := NewValidatorCache(newCache())
 	v := &Validate{
 		cache:                    vcache,
-		statequery:               stateQ,
+		statequery:               mdag,
 		tokenEngine:              tokenengine.Instance,
 		enableTxFeeCheck:         true,
 		enableContractSignCheck:  true,

@@ -494,7 +494,7 @@ func forking(ctx context.Context, b Backend) uint64 {
 //}
 
 func submitTxs(ctx context.Context, b Backend, txs []*modules.Transaction) []error {
-	errs := b.SendTxs(ctx, txs)
+	errs := b.SendTxs(txs)
 	if errs != nil {
 		return errs
 	}

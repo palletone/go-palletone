@@ -42,7 +42,7 @@ type IDag interface {
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
-	// getTxfee
+	//getTxfee
 	//GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
 	GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error)
 	GetTxOutput(outpoint *modules.OutPoint) (*modules.Utxo, error)
@@ -51,7 +51,7 @@ type IDag interface {
 	GetContractJury(contractId []byte) (*modules.ElectionNode, error)
 	GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error)
 	GetContractStatesByPrefix(id []byte, prefix string) (map[string]*modules.ContractStateValue, error)
-	GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
+	//GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
 	IsContractDeveloper(addr common.Address) bool
 
 	GetMediators() map[common.Address]bool

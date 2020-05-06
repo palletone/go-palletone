@@ -53,7 +53,7 @@ package ccprovider
 ////CDSPackage encapsulates ChaincodeDeploymentSpec.
 //type CDSPackage struct {
 //	buf     []byte
-//	depSpec *pb.ChaincodeDeploymentSpec
+//	depSpec *pb.PtnChaincodeDeploymentSpec
 //	data    *CDSData
 //	datab   []byte
 //	id      []byte
@@ -75,7 +75,7 @@ package ccprovider
 //}
 //
 //// GetDepSpec gets the ChaincodeDeploymentSpec from the package
-//func (ccpack *CDSPackage) GetDepSpec() *pb.ChaincodeDeploymentSpec {
+//func (ccpack *CDSPackage) GetDepSpec() *pb.PtnChaincodeDeploymentSpec {
 //	//this has to be after creating a package and initializing it
 //	//If those steps fail, GetDepSpec() should never be called
 //	if ccpack.depSpec == nil {
@@ -109,7 +109,7 @@ package ccprovider
 //	return &ChaincodeData{Name: ccpack.depSpec.ChaincodeSpec.ChaincodeId.Name, Version: ccpack.depSpec.ChaincodeSpec.ChaincodeId.Version, Data: ccpack.datab, Id: ccpack.id}
 //}
 //
-//func (ccpack *CDSPackage) getCDSData(cds *pb.ChaincodeDeploymentSpec) ([]byte, []byte, *CDSData, error) {
+//func (ccpack *CDSPackage) getCDSData(cds *pb.PtnChaincodeDeploymentSpec) ([]byte, []byte, *CDSData, error) {
 //	// check for nil argument. It is an assertion that getCDSData
 //	// is never called on a package that did not go through/succeed
 //	// package initialization.
@@ -201,7 +201,7 @@ package ccprovider
 //	//incase ccpack is reused
 //	ccpack.reset()
 //
-//	depSpec := &pb.ChaincodeDeploymentSpec{}
+//	depSpec := &pb.PtnChaincodeDeploymentSpec{}
 //	err := proto.Unmarshal(buf, depSpec)
 //	if err != nil {
 //		return nil, fmt.Errorf("failed to unmarshal deployment spec from bytes")
@@ -222,7 +222,7 @@ package ccprovider
 //}
 //
 ////InitFromFS returns the chaincode and its package from the file system
-////func (ccpack *CDSPackage) InitFromFS(ccname string, ccversion string) ([]byte, *pb.ChaincodeDeploymentSpec, error) {
+////func (ccpack *CDSPackage) InitFromFS(ccname string, ccversion string) ([]byte, *pb.PtnChaincodeDeploymentSpec, error) {
 ////	//incase ccpack is reused
 ////	ccpack.reset()
 ////

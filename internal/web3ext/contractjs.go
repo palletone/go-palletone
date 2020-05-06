@@ -60,6 +60,12 @@ web3._extend({
 			inputFormatter: [null, null, null,null, null, null,null,null]
 		}),
 		new web3._extend.Method({
+			name: 'ccinvokeMutiToken',
+        	call: 'contract_ccinvokeMutiToken',
+        	params: 10, //from, to, token1,token2, daoAmountToken1,daoAmountToken2, daoFee, contractAddr, args[]string------>["fun", "key", "value"]
+			inputFormatter: [null, null, null, null,null,null, null, null,null,null]
+		}),
+		new web3._extend.Method({
 			name: 'ccstoptx',
         	call: 'contract_ccstoptx',
         	params: 5, //from, to, daoAmount, daoFee, contractId

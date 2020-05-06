@@ -70,13 +70,13 @@ func (vm *VM) ListImages(context context.Context) error {
 }
 
 // BuildChaincodeContainer builds the container for the supplied chaincode specification
-func (vm *VM) BuildChaincodeContainer(spec *pb.ChaincodeSpec) error {
+func (vm *VM) BuildChaincodeContainer(spec *pb.PtnChaincodeSpec) error {
 	codePackage, err := platforms.GetDeploymentPayload(spec)
 	if err != nil {
 		return fmt.Errorf("Error getting chaincode package bytes: %s", err)
 	}
 
-	cds := &pb.ChaincodeDeploymentSpec{ChaincodeSpec: spec, CodePackage: codePackage}
+	cds := &pb.PtnChaincodeDeploymentSpec{ChaincodeSpec: spec, CodePackage: codePackage}
 	dockerSpec, err := platforms.GenerateDockerBuild(cds)
 	if err != nil {
 		return fmt.Errorf("Error getting chaincode docker image: %s", err)

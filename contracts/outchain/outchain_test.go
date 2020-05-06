@@ -24,7 +24,7 @@ func TestGetJuryKeyInfo(t *testing.T) {
 	}
 }
 func TestGetJuryPubkey(t *testing.T) {
-	outChainCall := &pb.OutChainCall{OutChainName: "eth", Method: "GetJuryPubkey", Params: []byte("")}
+	outChainCall := &pb.PtnOutChainCall{OutChainName: "eth", Method: "GetJuryPubkey", Params: []byte("")}
 	result, err := ProcessOutChainCall("PCYL82nJX3rKjxMUTHxWA4wswzWyn1EvpYx", outChainCall)
 	if err != nil {
 		fmt.Println("err: ", err)
@@ -37,7 +37,7 @@ func TestGetJuryPubkey(t *testing.T) {
 	fmt.Printf("%x\n", output.PublicKey)
 }
 func TestGetJuryAddr(t *testing.T) {
-	outChainCall := &pb.OutChainCall{OutChainName: "eth", Method: "GetJuryAddr", Params: []byte("")}
+	outChainCall := &pb.PtnOutChainCall{OutChainName: "eth", Method: "GetJuryAddr", Params: []byte("")}
 	result, err := ProcessOutChainCall("PCYL82nJX3rKjxMUTHxWA4wswzWyn1EvpYx", outChainCall)
 	if err != nil {
 		fmt.Println("err: ", err)
@@ -54,7 +54,7 @@ func TestSignMessage(t *testing.T) {
 		return
 	}
 
-	outChainCall := &pb.OutChainCall{OutChainName: "eth", Method: "SignMessage", Params: reqBytes}
+	outChainCall := &pb.PtnOutChainCall{OutChainName: "eth", Method: "SignMessage", Params: reqBytes}
 	result, err := ProcessOutChainCall("PCYL82nJX3rKjxMUTHxWA4wswzWyn1EvpYx", outChainCall)
 	if err != nil {
 		fmt.Println("err: ", err)
@@ -78,7 +78,7 @@ func TestVerifySignature(t *testing.T) {
 		return
 	}
 
-	outChainCall := &pb.OutChainCall{OutChainName: "eth", Method: "VerifySignature", Params: reqBytes}
+	outChainCall := &pb.PtnOutChainCall{OutChainName: "eth", Method: "VerifySignature", Params: reqBytes}
 	result, err := ProcessOutChainCall("PCYL82nJX3rKjxMUTHxWA4wswzWyn1EvpYx", outChainCall)
 	if err != nil {
 		fmt.Println("err: ", err)
@@ -133,7 +133,7 @@ func TestGetTransferTx(t *testing.T) {
 		fmt.Println(string(inputBytes))
 	}
 
-	outChainCall := &pb.OutChainCall{OutChainName: "btc", Method: "GetTransferTx", Params: inputBytes}
+	outChainCall := &pb.PtnOutChainCall{OutChainName: "btc", Method: "GetTransferTx", Params: inputBytes}
 	result, err := ProcessOutChainCall("sample_syscc", outChainCall)
 	if err != nil {
 		fmt.Println("err: ", err)
@@ -161,7 +161,7 @@ func TestGetPalletOneMappingAddress(t *testing.T) {
 		fmt.Println(string(inputBytes))
 	}
 
-	outChainCall := &pb.OutChainCall{OutChainName: "erc20", Method: "GetPalletOneMappingAddress", Params: inputBytes}
+	outChainCall := &pb.PtnOutChainCall{OutChainName: "erc20", Method: "GetPalletOneMappingAddress", Params: inputBytes}
 	result, err := ProcessOutChainCall("sample_syscc", outChainCall)
 	if err != nil {
 		fmt.Println("err: ", err)
@@ -191,7 +191,7 @@ func TestGetBlockInfo(t *testing.T) {
 		return
 	}
 
-	outChainCall := &pb.OutChainCall{OutChainName: "erc20", Method: "GetBlockInfo", Params: inputBytes}
+	outChainCall := &pb.PtnOutChainCall{OutChainName: "erc20", Method: "GetBlockInfo", Params: inputBytes}
 	result, err := ProcessOutChainCall("sample_syscc", outChainCall)
 	if err != nil {
 		fmt.Println("err: ", err)
@@ -210,7 +210,7 @@ func TestGetAddrTxHistory(t *testing.T) {
 		return
 	}
 
-	outChainCall := &pb.OutChainCall{OutChainName: "erc20", Method: "GetAddrTxHistory", Params: inputBytes}
+	outChainCall := &pb.PtnOutChainCall{OutChainName: "erc20", Method: "GetAddrTxHistory", Params: inputBytes}
 	result, err := ProcessOutChainCall("sample_syscc", outChainCall)
 	if err != nil {
 		fmt.Println("err: ", err)

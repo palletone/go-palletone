@@ -37,10 +37,10 @@ func (m *MockChaincode) EXPECT() *MockChaincodeMockRecorder {
 }
 
 // Init mocks base method
-func (m *MockChaincode) Init(stub ChaincodeStubInterface) peer.Response {
+func (m *MockChaincode) Init(stub ChaincodeStubInterface) peer.PtnResponse {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Init", stub)
-	ret0, _ := ret[0].(peer.Response)
+	ret0, _ := ret[0].(peer.PtnResponse)
 	return ret0
 }
 
@@ -51,10 +51,10 @@ func (mr *MockChaincodeMockRecorder) Init(stub interface{}) *gomock.Call {
 }
 
 // Invoke mocks base method
-func (m *MockChaincode) Invoke(stub ChaincodeStubInterface) peer.Response {
+func (m *MockChaincode) Invoke(stub ChaincodeStubInterface) peer.PtnResponse {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Invoke", stub)
-	ret0, _ := ret[0].(peer.Response)
+	ret0, _ := ret[0].(peer.PtnResponse)
 	return ret0
 }
 

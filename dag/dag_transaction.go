@@ -23,6 +23,7 @@ package dag
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"math/big"
 
 	"github.com/palletone/go-palletone/common"
@@ -48,8 +49,27 @@ func newTxo4Greedy(outPoint modules.OutPoint, amount uint64) *Txo4Greedy {
 	}
 }
 
-func (dag *Dag) createBaseTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int) (*modules.Transaction, error) {
-	daoTotal := daoAmount + daoFee
+func (dag *Dag) createBaseTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
+	enableGasFee bool) (*modules.Transaction, error) {
+	//daoTotal := daoAmount + daoFee
+	daoTotal := daoAmount
+	if from.Equal(to) {
+		if enableGasFee {
+			daoTotal += daoFee
+		} else {
+			tx := &modules.Transaction{}
+			certIDBytes := []byte{}
+			if certID != nil {
+				certIDBytes = certID.Bytes()
+			}
+			tx.SetCertId(certIDBytes)
+			return tx, nil
+		}
+	} else {
+		if enableGasFee {
+			daoTotal += daoFee
+		}
+	}
 	// 1. 获取转出账户所有的PTN utxo
 	//allUtxos, err := dag.GetAddrUtxos(from)
 	coreUtxos, err := dag.getAddrCoreUtxos(from)
@@ -111,55 +131,69 @@ func (dag *Dag) createBaseTransaction(from, to common.Address, daoAmount, daoFee
 	}
 
 	// 5. 构建Transaction
+
 	certIDBytes := []byte{}
 	if certID != nil {
 		certIDBytes = certID.Bytes()
 	}
 	tx := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_PAYMENT, pload)})
 	tx.SetCertId(certIDBytes)
+
 	return tx, nil
 }
 
 func (dag *Dag) createTokenTransaction(from, to common.Address, token *modules.Asset, daoAmountToken, daoFee uint64,
 ) (*modules.Transaction, error) {
 	// 条件判断
-	if daoFee == 0 {
-		return nil, fmt.Errorf("transaction fee cannot be 0")
-	}
-
-	daoTotal := daoFee
-	if daoTotal > dag.GetPtnBalance(from) {
-		return nil, fmt.Errorf("the ptn balance of the account is not enough %v", daoTotal)
-	}
-
+	tx := &modules.Transaction{}
 	// 1. 获取转出账户所有的PTN utxo
 	coreUtxos, tokenUtxos, err := dag.getAddrCoreUtxosToken(from, token)
 	if err != nil {
 		return nil, err
 	}
-
 	if len(coreUtxos) == 0 {
 		return nil, fmt.Errorf("%v 's utxo is empty", from.Str())
 	}
 	if len(tokenUtxos) == 0 {
 		return nil, fmt.Errorf("%v 's  utxo of this Token is empty", from.Str())
 	}
-	//2. 获取 PaymentPayload
-	ploadPTN, err := dag.getPayload(from, from, 0, daoFee, coreUtxos)
-	if err != nil {
-		return nil, err
+	if dag.enableGasFee {
+		if daoFee == 0 {
+			return nil, fmt.Errorf("transaction fee cannot be 0")
+		}
+		daoTotal := daoAmountToken + daoFee
+		if daoTotal > dag.GetPtnBalance(from) {
+			return nil, fmt.Errorf("the ptn balance of the account is not enough %v", daoTotal)
+		}
+		// 1. 获取转出账户所有的PTN utxo
+		//coreUtxos, tokenUtxos, err := dag.getAddrCoreUtxosToken(from, assetToken, txPool)
+		//if err != nil {
+		//	return nil, err
+		//}
+
+		//if len(coreUtxos) == 0 {
+		//	return nil, fmt.Errorf("%v 's utxo is empty", from.Str())
+		//}
+		//if len(tokenUtxos) == 0 {
+		//	return nil, fmt.Errorf("%v 's  utxo of this Token is empty", from.Str())
+		//}
+		//2. 获取 PaymentPayload
+		ploadPTN, err := dag.GetPayload(from, to, daoAmountToken, daoFee, coreUtxos)
+		if err != nil {
+			return nil, err
+		}
+		tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, ploadPTN))
 	}
-	ploadToken, err := dag.getPayload(from, to, daoAmountToken, 0, tokenUtxos)
+	ploadToken, err := dag.GetPayload(from, to, daoAmountToken, 0, tokenUtxos)
 	if err != nil {
 		return nil, err
 	}
 	// 3. 构建Transaction
-	tx := modules.NewTransaction([]*modules.Message{modules.NewMessage(modules.APP_PAYMENT, ploadPTN),
-		modules.NewMessage(modules.APP_PAYMENT, ploadToken)})
+	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, ploadToken))
 	return tx, nil
 }
 
-func (dag *Dag) getPayload(from, to common.Address, daoAmount, daoFee uint64,
+func (dag *Dag) GetPayload(from, to common.Address, daoAmount, daoFee uint64,
 	utxos map[modules.OutPoint]*modules.Utxo) (*modules.PaymentPayload, error) {
 	// 1. 利用贪心算法得到指定额度的utxo集合
 	greedyUtxos := core.Utxos{}
@@ -300,15 +334,16 @@ func (dag *Dag) calculateDataFee(data interface{}) uint64 {
 }
 
 func (dag *Dag) CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
-	msg *modules.Message) (*modules.Transaction, uint64, error) {
+	msg *modules.Message, enableGasFee bool) (*modules.Transaction, uint64, error) {
 	// 如果是 text，则增加费用，以防止用户任意增加文本，导致网络负担加重
 	if msg.App == modules.APP_DATA {
 		daoFee += dag.calculateDataFee(msg.Payload)
 	}
-	tx, err := dag.createBaseTransaction(from, to, daoAmount, daoFee, certID)
+	tx, err := dag.createBaseTransaction(from, to, daoAmount, daoFee, certID, enableGasFee)
 	if err != nil {
 		return nil, 0, err
 	}
+
 	tx.AddMessage(msg)
 
 	return tx, daoFee, nil
@@ -331,7 +366,7 @@ func (dag *Dag) CreateTokenTransaction(from, to common.Address, token *modules.A
 }
 
 // to build a vote mediator transaction
-func (dag *Dag) GenVoteMediatorTx(voter common.Address, mediators map[string]bool) (*modules.Transaction, uint64, error) {
+func (dag *Dag) GenVoteMediatorTx(voter common.Address, mediators map[string]bool, enableGasFee bool, ks *keystore.KeyStore) (*modules.Transaction, uint64, error) {
 	// 1. 组装 message
 	msb, err := json.Marshal(mediators)
 	if err != nil {
@@ -352,27 +387,38 @@ func (dag *Dag) GenVoteMediatorTx(voter common.Address, mediators map[string]boo
 		App:     modules.APP_ACCOUNT_UPDATE,
 		Payload: accountUpdate,
 	}
-
-	// 2. 组装 tx
-	//fee := dag.CurrentFeeSchedule().AccountUpdateFee
-	fee := dag.GetChainParameters().AccountUpdateFee
-	tx, fee, err := dag.CreateGenericTransaction(voter, voter, 0, fee, nil, msg)
+	if enableGasFee {
+		// 2. 组装 tx
+		//fee := dag.CurrentFeeSchedule().AccountUpdateFee
+		fee := dag.GetChainParameters().AccountUpdateFee
+		tx, fee, err := dag.CreateGenericTransaction(voter, voter, 0, fee, nil, msg, enableGasFee)
+		if err != nil {
+			return nil, 0, err
+		}
+		return tx, fee, nil
+	}
+	tx := modules.NewTransaction([]*modules.Message{msg})
+	pubKey, err := ks.GetPublicKey(voter)
 	if err != nil {
 		return nil, 0, err
 	}
-
-	return tx, fee, nil
+	sign, err := ks.SigData(tx, voter)
+	if err != nil {
+		return nil, 0, err
+	}
+	tx.AddMessage(modules.NewMessage(modules.APP_SIGNATURE, modules.NewSignaturePayload(pubKey, sign)))
+	return tx, 0, nil
 }
 
 // 构建一个转ptn的转账交易
-func (dag *Dag) GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string) (*modules.Transaction, uint64, error) {
+func (dag *Dag) GenTransferPtnTx(from, to common.Address, daoAmount uint64, text *string, enableGasFee bool) (*modules.Transaction, uint64, error) {
 	fee := dag.GetChainParameters().TransferPtnBaseFee
 	var tx *modules.Transaction
 	var err error
 
 	// 如果没有文本，或者文本为空
 	if text == nil || *text == "" {
-		tx, err = dag.createBaseTransaction(from, to, daoAmount, fee, nil)
+		tx, err = dag.createBaseTransaction(from, to, daoAmount, fee, nil, enableGasFee)
 	} else {
 		// 1. 组装 message
 		msg := &modules.Message{
@@ -381,7 +427,7 @@ func (dag *Dag) GenTransferPtnTx(from, to common.Address, daoAmount uint64, text
 		}
 
 		// 2. 创建 tx
-		tx, fee, err = dag.CreateGenericTransaction(from, to, daoAmount, fee, nil, msg)
+		tx, fee, err = dag.CreateGenericTransaction(from, to, daoAmount, fee, nil, msg, enableGasFee)
 	}
 
 	if err != nil {

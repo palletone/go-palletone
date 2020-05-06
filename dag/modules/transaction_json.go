@@ -104,8 +104,12 @@ type idxContractStopPayload struct {
 }
 
 type txJsonTemp struct {
+	Version  uint32 `json:"version"`
+	Nonce    uint64
 	MsgCount int
 	CertId   string
+	TxHash   string
+	ReqHash  string
 	Illegal  bool
 	Payment  []*idxPaymentPayload
 	//Config                  []*idxConfigPayload
@@ -128,7 +132,15 @@ type txJsonTemp struct {
 func tx2JsonTemp(tx *Transaction) (*txJsonTemp, error) {
 	intCertID := new(big.Int).SetBytes(tx.CertId())
 	msgs := tx.TxMessages()
-	temp := &txJsonTemp{MsgCount: len(msgs), CertId: intCertID.String(), Illegal: tx.Illegal()}
+	temp := &txJsonTemp{
+		Version:  tx.Version(),
+		Nonce:    tx.Nonce(),
+		MsgCount: len(msgs),
+		CertId:   intCertID.String(),
+		Illegal:  tx.Illegal(),
+		TxHash:   tx.Hash().String(),
+		ReqHash:  tx.RequestHash().String(),
+	}
 	for idx, msg := range msgs {
 		if msg.App == APP_PAYMENT {
 			temp.Payment = append(temp.Payment, &idxPaymentPayload{
@@ -194,7 +206,9 @@ func jsonTemp2tx(tx *Transaction, temp *txJsonTemp) error {
 		}
 		sdw.CertId = intCertID.Bytes()
 	}
+	sdw.Version = temp.Version
 	sdw.Illegal = temp.Illegal
+	sdw.AccountNonce = temp.Nonce
 	sdw.TxMessages = make([]*Message, temp.MsgCount)
 	processed := 0
 	for _, p := range temp.Payment {

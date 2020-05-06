@@ -1,0 +1,19 @@
+*** Settings ***
+Resource          publicParams.txt
+
+*** Variables ***
+
+*** Keywords ***
+获取某个节点的账户
+    [Arguments]    ${nodeAddr}
+    ${one}    Create List    GetMediatorDeposit    ${nodeAddr}
+    ${two}    Create List    ${one}
+    [Return]    ${two}
+
+getMediatorDepositWithAddr
+    [Arguments]    ${nodeAddr}
+    ${11}    获取某个节点的账户    ${nodeAddr}
+    ${result}    创建公用的POST请求    ${depositContractQuery}    GetMediatorDeposit    ${11}
+    ${balance}    To Json    ${result}
+    Dictionary Should Contain Key    ${balance}    balance
+    [Return]    ${balance}

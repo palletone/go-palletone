@@ -1,0 +1,12 @@
+*** Settings ***
+Resource          publicParams.txt
+
+*** Variables ***
+
+*** Keywords ***
+getListForCashbackApplication
+    ${one}    Create List    GetListForCashbackApplication
+    ${two}    Create List    ${one}
+    ${result}    创建公用的POST请求    ${depositContractQuery}    GetListForCashbackApplication    ${two}
+    ${addressMap}    To Json    ${result}
+    [Return]    ${addressMap}

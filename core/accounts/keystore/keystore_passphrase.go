@@ -209,9 +209,16 @@ func DecryptKey(keyjson []byte, auth string) (*Key, error) {
 	}
 	if keyType == KeyType_HD_Seed {
 		_, pubKey, _ = NewAccountKey(keyBytes, 0)
-	}
-	if keyType == KeyType_ECDSA_KEY {
+	} else if keyType == KeyType_ECDSA_KEY || keyType == KeyType_Outchain_KEY {
 		pubKey, _ = crypto.MyCryptoLib.PrivateKeyToPubKey(keyBytes)
+	}
+	if keyType == KeyType_Outchain_KEY {
+		return &Key{
+			Id:         uuid.UUID(keyId),
+			Address:    crypto.PubkeyBytesToAddressOutchain(pubKey),
+			PrivateKey: keyBytes,
+			KeyType:    keyType,
+		}, nil
 	}
 	return &Key{
 		Id:         uuid.UUID(keyId),

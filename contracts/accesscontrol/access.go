@@ -92,17 +92,17 @@ func (ac *authenticator) Generate(ccName string) (*CertAndPrivKeyPair, error) {
 	}, nil
 }
 
-func (ac *authenticator) authenticate(msg *pb.ChaincodeMessage, stream grpc.ServerStream) error {
+func (ac *authenticator) authenticate(msg *pb.PtnChaincodeMessage, stream grpc.ServerStream) error {
 	if ac.bypass {
 		return nil
 	}
 
-	if msg.Type != pb.ChaincodeMessage_REGISTER {
+	if msg.Type != pb.PtnChaincodeMessage_REGISTER {
 		log.Warn("Got message", msg, "but expected a ChaincodeMessage_REGISTER message")
 		return errors.New("First message needs to be a register")
 	}
 
-	chaincodeID := &pb.ChaincodeID{}
+	chaincodeID := &pb.PtnChaincodeID{}
 	err := proto.Unmarshal(msg.Payload, chaincodeID)
 	if err != nil {
 		log.Warn("Failed unmarshaling message:", err)

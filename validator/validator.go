@@ -54,11 +54,12 @@ type Validate struct {
 	light                    bool
 	contractCheckFun         ContractTxCheckFunc //合约检查函数，通过Set方法注入
 	//buildTempDagFunc         BuildTempContractDagFunc //为合约运行构造临时Db的方法，通过Set注入
+	enableGasFee bool //Tx是否必须有手续费的存在
 }
 
 func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery, propquery IPropQuery,
 	contractDag dboperation.IContractDag,
-	cache palletcache.ICache, light bool) Validator {
+	cache palletcache.ICache, light bool, enableGasFee bool) Validator {
 	//cache := freecache.NewCache(20 * 1024 * 1024)
 	vcache := NewValidatorCache(cache)
 	return &Validate{
@@ -75,6 +76,7 @@ func NewValidate(dagdb IDagQuery, utxoRep IUtxoQuery, statedb IStateQuery, propq
 		enableContractRwSetCheck: true,
 		enableTxFullCheck:        true,
 		light:                    light,
+		enableGasFee:             enableGasFee,
 	}
 }
 
@@ -129,9 +131,10 @@ func (validate *Validate) validateTransactions(rwM rwset.TxManager, txs modules.
 		//先检查普通交易并计算手续费，最后检查Coinbase
 		txHash := tx.Hash()
 		if validate.checkTxIsExist(tx) {
+			log.Warnf("Tx[%s] already exist in dag", tx.Hash().String())
 			return TxValidationCode_DUPLICATE_TXID
 		}
-		if txIndex == 0 {
+		if txIndex == 0 && validate.enableGasFee {
 			coinbase = tx
 			continue
 			//每个单元的第一条交易比较特殊，是Coinbase交易，其包含增发和收集的手续费
@@ -174,7 +177,7 @@ func (validate *Validate) validateTransactions(rwM rwset.TxManager, txs modules.
 		//validate.utxoquery = newUtxoQuery
 	}
 	//验证第一条交易
-	if len(txs) > 0 {
+	if validate.enableGasFee && len(txs) > 0 {
 		//附加上出块奖励
 		a := &modules.Addition{
 			Addr:   unitAuthor,
@@ -291,17 +294,16 @@ func (validate *Validate) CheckTxIsExist(tx *modules.Transaction) bool {
 	return validate.checkTxIsExist(tx)
 }
 func (validate *Validate) checkTxIsExist(tx *modules.Transaction) bool {
-	if len(tx.TxMessages()) > 2 {
-		txHash := tx.Hash()
-		if validate.dagquery == nil {
-			log.Warnf("Validate DagQuery doesn't set, cannot check tx[%s] is exist or not", txHash.String())
-			return false
-		}
-		if has, _ := validate.dagquery.IsTransactionExist(txHash); has {
-			log.Debug("checkTxIsExist transactions exist in dag", "txHash", txHash.String())
-			return true
-		}
+	txHash := tx.Hash()
+	if validate.dagquery == nil {
+		log.Warnf("Validate DagQuery doesn't set, cannot check tx[%s] is exist or not", txHash.String())
+		return false
 	}
+	if has, _ := validate.dagquery.IsTransactionExist(txHash); has {
+		log.Debug("checkTxIsExist transactions exist in dag", "txHash", txHash.String())
+		return true
+	}
+
 	return false
 }
 

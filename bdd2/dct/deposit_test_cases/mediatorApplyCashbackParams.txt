@@ -1,0 +1,18 @@
+*** Settings ***
+Resource          publicParams.txt
+
+*** Variables ***
+
+*** Keywords ***
+mediator申请退还保证金所需参数
+    [Arguments]    ${mediatorAddr}    ${cashAmount}
+    ${one}    Create List    MediatorApplyCashback    ${cashAmount}
+    ${two}    Create List    ${mediatorAddr}    ${mediatorAddr}    ${amount}    ${fee}    ${one}
+    [Return]    ${two}
+
+mediatorApplyCashback
+    [Arguments]    ${mediatorAddr}    ${cashAmount}
+    ${mediator申请退还保证金所需参数 }    mediator申请退还保证金所需参数    ${mediatorAddr}    ${cashAmount}
+    ${result}    创建公用的POST请求    ${depositContractInvoke}    MediatorApplyCashback    ${mediator申请退还保证金所需参数}
+    sleep    6
+    [Return]    ${result}

@@ -31,7 +31,7 @@ import (
 
 //tw is expected to have the chaincode in it from GenerateHashcode.
 //This method will just package the dockerfile
-func writeChaincodePackage(spec *pb.ChaincodeSpec, tw *tar.Writer) error {
+func writeChaincodePackage(spec *pb.PtnChaincodeSpec, tw *tar.Writer) error {
 	urlLocation := spec.ChaincodeId.Path
 	if urlLocation == "" {
 		return errors.New("ChaincodeSpec's path/URL cannot be empty")

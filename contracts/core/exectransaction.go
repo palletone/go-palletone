@@ -34,20 +34,20 @@ import (
 )
 
 //Execute - execute proposal, return original response of chaincode
-func Execute(ctxt context.Context, cccid *ccprovider.CCContext, spec interface{}, timeout time.Duration) (*pb.Response, *pb.ChaincodeEvent, error) {
+func Execute(ctxt context.Context, cccid *ccprovider.CCContext, spec interface{}, timeout time.Duration) (*pb.PtnResponse, *pb.PtnChaincodeEvent, error) {
 	log.Debugf("execute enter")
 	var err error
-	var cds *pb.ChaincodeDeploymentSpec
-	var ci *pb.ChaincodeInvocationSpec
+	var cds *pb.PtnChaincodeDeploymentSpec
+	var ci *pb.PtnChaincodeInvocationSpec
 
 	//init will call the Init method of a on a chain
-	cctyp := pb.ChaincodeMessage_INIT
-	if cds, _ = spec.(*pb.ChaincodeDeploymentSpec); cds == nil {
-		if ci, _ = spec.(*pb.ChaincodeInvocationSpec); ci == nil {
+	cctyp := pb.PtnChaincodeMessage_INIT
+	if cds, _ = spec.(*pb.PtnChaincodeDeploymentSpec); cds == nil {
+		if ci, _ = spec.(*pb.PtnChaincodeInvocationSpec); ci == nil {
 			log.Error("Execute, Execute should be called with deployment or invocation spec")
 			return nil, nil, errors.New("Execute should be called with deployment or invocation spec")
 		}
-		cctyp = pb.ChaincodeMessage_TRANSACTION
+		cctyp = pb.PtnChaincodeMessage_TRANSACTION
 	}
 
 	_, cMsg, err := theChaincodeSupport.Launch(ctxt, cccid, spec)
@@ -57,7 +57,7 @@ func Execute(ctxt context.Context, cccid *ccprovider.CCContext, spec interface{}
 	}
 
 	cMsg.Decorations = cccid.ProposalDecorations
-	var ccMsg *pb.ChaincodeMessage
+	var ccMsg *pb.PtnChaincodeMessage
 	ccMsg, err = createCCMessage(cccid.ContractId, cctyp, cccid.ChainID, cccid.TxID, cMsg)
 	if err != nil {
 		return nil, nil, errors.WithMessage(err, "failed to create chaincode message")
@@ -78,8 +78,8 @@ func Execute(ctxt context.Context, cccid *ccprovider.CCContext, spec interface{}
 		resp.ChaincodeEvent.TxId = cccid.TxID
 	}
 
-	if resp.Type == pb.ChaincodeMessage_COMPLETED {
-		res := &pb.Response{}
+	if resp.Type == pb.PtnChaincodeMessage_COMPLETED {
+		res := &pb.PtnResponse{}
 		unmarshalErr := proto.Unmarshal(resp.Payload, res)
 		if unmarshalErr != nil {
 			return nil, nil, errors.Wrap(unmarshalErr, fmt.Sprintf("failed to unmarshal response for txid (%s)", cccid.TxID))
@@ -87,7 +87,7 @@ func Execute(ctxt context.Context, cccid *ccprovider.CCContext, spec interface{}
 
 		// Success
 		return res, resp.ChaincodeEvent, nil
-	} else if resp.Type == pb.ChaincodeMessage_ERROR {
+	} else if resp.Type == pb.PtnChaincodeMessage_ERROR {
 		// Rollback transaction
 		return nil, resp.ChaincodeEvent, errors.Errorf("transaction returned with failure: %s", string(resp.Payload))
 	}
@@ -98,7 +98,7 @@ func Execute(ctxt context.Context, cccid *ccprovider.CCContext, spec interface{}
 
 // ExecuteWithErrorFilter is similar to Execute, but filters error contained in chaincode response and returns Payload of response only.
 // Mostly used by unit-test.
-func ExecuteWithErrorFilter(ctxt context.Context, cccid *ccprovider.CCContext, spec interface{}, timeout time.Duration) ([]byte, *pb.ChaincodeEvent, error) {
+func ExecuteWithErrorFilter(ctxt context.Context, cccid *ccprovider.CCContext, spec interface{}, timeout time.Duration) ([]byte, *pb.PtnChaincodeEvent, error) {
 	res, event, err := Execute(ctxt, cccid, spec, timeout)
 	if err != nil {
 		log.Errorf("ExecuteWithErrorFilter %s error: %+v", cccid.Name, err)

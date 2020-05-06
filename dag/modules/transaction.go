@@ -133,7 +133,10 @@ type TxPackInfo struct {
 // It uniquely identifies the transaction.
 func (tx *Transaction) Hash() common.Hash {
 	if hash := tx.hash.Load(); hash != nil {
-		return hash.(common.Hash)
+		cHash := hash.(common.Hash)
+		if !common.EmptyHash(cHash) {
+			return cHash
+		}
 	}
 	oldFlag := tx.Illegal()
 	if oldFlag {
@@ -149,8 +152,18 @@ func (tx *Transaction) Hash() common.Hash {
 }
 
 func (tx *Transaction) RequestHash() common.Hash {
-	reqtx := tx.GetRequestTx()
-	return reqtx.Hash()
+
+	if hash := tx.reqHash.Load(); hash != nil {
+		cHash := hash.(common.Hash)
+		if !common.EmptyHash(cHash) {
+			return cHash
+		}
+	}
+
+	v := tx.GetRequestTx().Hash()
+	tx.reqHash.Store(v)
+	return v
+
 }
 func (tx *Transaction) ErrorResult() string {
 	for _, msg := range tx.txdata.TxMessages {
@@ -287,14 +300,17 @@ func (txs Transactions) GetTxIds() []common.Hash {
 }
 
 type Transaction struct {
-	txdata transaction_sdw
-	hash   atomic.Value
-	size   atomic.Value
+	txdata  transaction_sdw
+	hash    atomic.Value
+	reqHash atomic.Value
+	size    atomic.Value
 }
 type transaction_sdw struct {
-	TxMessages []*Message `json:"messages"`
-	CertId     []byte     `json:"cert_id"` // should be big.Int byte
-	Illegal    bool       `json:"Illegal"` // not hash, 1:no valid, 0:ok
+	Version      uint32     `json:"version"`
+	AccountNonce uint64     `json:"nonce"`
+	TxMessages   []*Message `json:"messages"`
+	CertId       []byte     `json:"cert_id"` // should be big.Int byte
+	Illegal      bool       `json:"Illegal"` // not hash, 1:no valid, 0:ok
 }
 type QueryUtxoFunc func(outpoint *OutPoint) (*Utxo, error)
 type GetAddressFromScriptFunc func(lockScript []byte) (common.Address, error)
@@ -305,8 +321,9 @@ type GetJurorRewardAddFunc func(jurorAdd common.Address) common.Address
 //计算该交易的手续费，基于UTXO，所以传入查询UTXO的函数指针
 func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, error) {
 	msg0 := tx.txdata.TxMessages[0]
-	if msg0.App != APP_PAYMENT {
-		return nil, errors.New("Tx message 0 must a payment payload")
+	if msg0.App != APP_PAYMENT { //no gas fee
+		//return nil, errors.New("Tx message 0 must a payment payload")
+		return NewAmountAsset(0, nil), nil
 	}
 	payload := msg0.Payload.(*PaymentPayload)
 
@@ -359,6 +376,8 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, erro
 		return nil, fmt.Errorf("Compute fees: tx %s txin amount less than txout amount. amount:%d ,outAmount:%d ",
 			tx.Hash().String(), inAmount, outAmount)
 	}
+	log.Debugf("Compute fees: tx %s txin amount more than txout amount. amount:%d ,outAmount:%d ",
+		tx.Hash().String(), inAmount, outAmount)
 	fees := inAmount - outAmount
 
 	return &AmountAsset{Amount: fees, Asset: feeAsset}, nil
@@ -366,65 +385,39 @@ func (tx *Transaction) GetTxFee(queryUtxoFunc QueryUtxoFunc) (*AmountAsset, erro
 
 func (tx *Transaction) CertId() []byte { return common.CopyBytes(tx.txdata.CertId) }
 func (tx *Transaction) Illegal() bool  { return tx.txdata.Illegal }
+
 func (tx *Transaction) SetMessages(msgs []*Message) {
 	if len(msgs) > 0 {
-		d := transaction_sdw{}
-		d.TxMessages = make([]*Message, len(msgs))
-		copy(d.TxMessages, msgs)
-		d.CertId = tx.CertId()
-		d.Illegal = tx.Illegal()
-		temp := &Transaction{txdata: d}
-		tx.txdata = d
-		tx.hash.Store(temp.Hash())
-		tx.size.Store(temp.Size())
+		txMessages := make([]*Message, len(msgs))
+		copy(txMessages, msgs)
+		tx.txdata.TxMessages = txMessages
 	}
+	tx.resetCache()
 }
 
-func (tx *Transaction) UpdateMessage(index int, msg *Message) {
-	tx.txdata.TxMessages[index] = msg
-	//TODO Devin: 清空缓存？
-	tx.hash.Store(tx.Hash())
-	tx.size.Store(tx.Size())
-
+func (tx *Transaction) resetCache() {
+	hash := common.Hash{}
+	tx.hash.Store(hash)
+	tx.reqHash.Store(hash)
+	size0 := common.StorageSize(0)
+	tx.size.Store(size0)
 }
+
 func (tx *Transaction) SetCertId(certid []byte) {
-	d := transaction_sdw{}
-	d.CertId = common.CopyBytes(certid)
-	d.Illegal = tx.Illegal()
-	d.TxMessages = append(d.TxMessages, tx.txdata.TxMessages...)
-	temp := &Transaction{txdata: d}
-	tx.txdata = d
-	tx.hash.Store(temp.Hash())
-	tx.size.Store(temp.Size())
+	tx.txdata.CertId = certid
+	tx.resetCache()
 }
 func (tx *Transaction) SetIllegal(illegal bool) {
-	d := transaction_sdw{}
-	d.Illegal = illegal
-	d.CertId = common.CopyBytes(tx.CertId())
-	d.TxMessages = append(d.TxMessages, tx.txdata.TxMessages...)
-	temp := &Transaction{txdata: d}
-	tx.txdata = d
-	tx.hash.Store(temp.Hash())
-	tx.size.Store(temp.Size())
+	tx.txdata.Illegal = illegal
+	// tx.resetCache()  //SetIllegal 不会导致TxHash改变
 }
+
 func (tx *Transaction) ModifiedMsg(index int, msg *Message) {
 	if len(tx.Messages()) < index {
 		return
 	}
-	sdw := transaction_sdw{}
-	for i, m := range tx.Messages() {
-		if i == index {
-			sdw.TxMessages = append(sdw.TxMessages, msg)
-		} else {
-			sdw.TxMessages = append(sdw.TxMessages, m)
-		}
-	}
-	sdw.Illegal = tx.Illegal()
-	sdw.CertId = tx.CertId()
-	temp := &Transaction{txdata: sdw}
-	tx.txdata = sdw
-	tx.hash.Store(temp.Hash())
-	tx.size.Store(temp.Size())
+	tx.txdata.TxMessages[index] = msg
+	tx.resetCache()
 }
 
 func (tx *Transaction) GetCoinbaseReward(versionFunc QueryStateByVersionFunc,
@@ -605,50 +598,109 @@ func (tx *Transaction) GetSpendOutpoints() []*OutPoint {
 }
 
 //获得合约交易的签名对应的陪审员地址
-func (tx *Transaction) GetContractTxSignatureAddress() []common.Address {
-	if !tx.IsContractTx() {
-		return nil
-	}
-	addrs := make([]common.Address, 0)
-	for _, msg := range tx.txdata.TxMessages {
-		switch msg.App {
-		case APP_SIGNATURE:
-			payload := msg.Payload.(*SignaturePayload)
-			for _, sig := range payload.Signatures {
-				addrs = append(addrs, crypto.PubkeyBytesToAddress(sig.PubKey))
-			}
-		}
-	}
-	return addrs
-}
+//func (tx *Transaction) GetContractTxSignatureAddress() []common.Address {
+//	if !tx.IsContractTx() {
+//		return nil
+//	}
+//	for _, msg := range tx.txdata.TxMessages {
+//		switch msg.App {
+//		case APP_SIGNATURE:
+//			payload := msg.Payload.(*SignaturePayload)
+//			return payload.SignAddress()
+//		}
+//	}
+//	return []common.Address{}
+//}
+
+//获得合约结果部分的Signature，如果不是合约Tx，则返回第一个Signature
+//func (tx *Transaction) GetResultSignature() (int, *SignaturePayload, error) {
+//	reqSign := tx.NeedRequestSignature()
+//	for msgIdx, msg := range tx.txdata.TxMessages {
+//		if msg.App == APP_SIGNATURE {
+//			if reqSign {
+//				reqSign = false
+//			} else {
+//				return msgIdx, msg.Payload.(*SignaturePayload), nil
+//			}
+//		}
+//	}
+//	return 0, nil, errors.ErrMessageNotFound
+//}
 
 //如果是合约调用交易，Copy其中的Msg0到ContractRequest的部分，如果不是请求，那么返回完整Tx
 func (tx *Transaction) GetRequestTx() *Transaction {
 	msgs := tx.TxMessages()
 	request := transaction_sdw{}
-	for _, msg := range msgs {
-		request.TxMessages = append(request.TxMessages, msg)
-		if msg.App.IsRequest() {
-			break
+	if msgs[0].App != APP_PAYMENT { //no gas fee
+		for _, msg := range msgs {
+			request.TxMessages = append(request.TxMessages, msg)
+			if msg.App == APP_SIGNATURE {
+				break
+			}
+		}
+	} else { //有GasFee
+		for _, msg := range msgs {
+			request.TxMessages = append(request.TxMessages, msg)
+			if msg.App.IsRequest() {
+				break
+			}
 		}
 	}
 	request.CertId = tx.CertId()
+	request.Version = tx.Version()
+	request.AccountNonce = tx.Nonce()
 	return &Transaction{txdata: request}
 
+}
+
+//判断一个交易的请求部分有多少个Message，如果不是一个请求，则返回全部Message数量
+func (tx *Transaction) GetRequestMsgCount() int {
+	if tx.txdata.TxMessages[0].App != APP_PAYMENT { //no gas fee
+		for i, msg := range tx.txdata.TxMessages {
+			if msg.App == APP_SIGNATURE {
+				return i + 1
+			}
+		}
+	}
+	//有GasFee
+	for i, msg := range tx.txdata.TxMessages {
+		if msg.App.IsRequest() {
+			return i + 1
+		}
+	}
+	return len(tx.txdata.TxMessages)
+}
+
+//获得一个交易中执行结果的签名Payload和所在的MessageIndex,如果没有执行结果，则返回nil
+func (tx *Transaction) GetResultSignaturePayload() (*SignaturePayload, int) {
+	signCount := 1
+	if tx.txdata.TxMessages[0].App != APP_PAYMENT { //no gas fee
+		signCount = 2
+	}
+	for i, msg := range tx.txdata.TxMessages {
+		if msg.App == APP_SIGNATURE {
+			signCount--
+			if signCount == 0 {
+				return msg.Payload.(*SignaturePayload), i
+			}
+		}
+	}
+	return nil, -1
 }
 
 //获取一个被Jury执行完成后，但是还没有进行陪审员签名的交易
 func (tx *Transaction) GetResultRawTx() *Transaction {
 	sdw := transaction_sdw{}
-	isResultMsg := false
-	for _, msg := range tx.TxMessages() {
-		if msg.App.IsRequest() {
-			isResultMsg = true
+	reqMsgCount := tx.GetRequestMsgCount()
+	for i, msg := range tx.TxMessages() {
+		if i < reqMsgCount {
+			sdw.TxMessages = append(sdw.TxMessages, msg)
+			continue
 		}
 		if msg.App == APP_SIGNATURE {
 			continue //移除SignaturePayload
 		}
-		if isResultMsg && msg.App == APP_PAYMENT { //移除ContractPayout中的解锁脚本
+		if msg.App == APP_PAYMENT { //移除ContractPayout中的解锁脚本
 			pay := msg.Payload.(*PaymentPayload)
 			for _, in := range pay.Inputs {
 				in.SignatureScript = nil
@@ -657,21 +709,40 @@ func (tx *Transaction) GetResultRawTx() *Transaction {
 		sdw.TxMessages = append(sdw.TxMessages, msg)
 	}
 	sdw.CertId = tx.CertId()
+	sdw.Version = tx.Version()
+	sdw.AccountNonce = tx.Nonce()
 	sdw.Illegal = tx.Illegal()
 	return &Transaction{txdata: sdw}
 }
 
-func (tx *Transaction) GetResultTx() *Transaction {
+//复制一个只包含前面几条Message的Tx，包括msgIdx本身这条
+func (tx *Transaction) CopyPartTx(msgIdx int) *Transaction {
 	sdw := transaction_sdw{}
-	for _, msg := range tx.TxMessages() {
-		if msg.App == APP_SIGNATURE {
-			continue //移除SignaturePayload
+	for i, msg := range tx.TxMessages() {
+		if i > msgIdx {
+			break
 		}
 		sdw.TxMessages = append(sdw.TxMessages, msg)
 	}
 	sdw.CertId = tx.CertId()
+	sdw.Version = tx.Version()
+	sdw.AccountNonce = tx.Nonce()
+	sdw.Illegal = tx.Illegal()
 	return &Transaction{txdata: sdw}
 }
+
+//
+//func (tx *Transaction) GetResultTx() *Transaction {
+//	sdw := transaction_sdw{}
+//	for _, msg := range tx.TxMessages() {
+//		if msg.App == APP_SIGNATURE {
+//			continue //移除SignaturePayload
+//		}
+//		sdw.TxMessages = append(sdw.TxMessages, msg)
+//	}
+//	sdw.CertId = tx.CertId()
+//	return &Transaction{txdata: sdw}
+//}
 
 //Request 这条Message的Index是多少
 func (tx *Transaction) GetRequestMsgIndex() int {
@@ -685,13 +756,12 @@ func (tx *Transaction) GetRequestMsgIndex() int {
 
 //这个交易是否包含了从合约付款出去的结果,有则返回该Payment
 func (tx *Transaction) HasContractPayoutMsg() (bool, int, *Message) {
-	isInvokeResult := false
+	reqMsgCount := tx.GetRequestMsgCount()
 	for i, msg := range tx.txdata.TxMessages {
-		if msg.App.IsRequest() {
-			isInvokeResult = true
+		if i < reqMsgCount {
 			continue
 		}
-		if isInvokeResult && msg.App == APP_PAYMENT {
+		if msg.App == APP_PAYMENT {
 			pay := msg.Payload.(*PaymentPayload)
 			if !pay.IsCoinbase() {
 				return true, i, msg
@@ -703,6 +773,15 @@ func (tx *Transaction) HasContractPayoutMsg() (bool, int, *Message) {
 
 //获取该交易的所有From地址
 func (tx *Transaction) GetFromAddrs(queryUtxoFunc QueryUtxoFunc, getAddrFunc GetAddressFromScriptFunc) ([]common.Address, error) {
+	if tx.txdata.TxMessages[0].App != APP_PAYMENT { //没有GasFee
+		for _, msg := range tx.txdata.TxMessages {
+			if msg.App == APP_SIGNATURE {
+				sign := msg.Payload.(*SignaturePayload)
+				return sign.SignAddress(), nil
+			}
+		}
+	}
+	//有GasFee
 	resultMap := map[common.Address]int{}
 	msgs := tx.TxMessages()
 	for _, msg := range msgs {
@@ -760,6 +839,25 @@ func (tx *Transaction) GetToAddrs(getAddrFunc GetAddressFromScriptFunc) ([]commo
 		keys = append(keys, k)
 	}
 	return keys, nil
+}
+
+//判断一个Tx是否有请求的SignaturePayload
+func (tx *Transaction) NeedRequestSignature() bool {
+	return tx.txdata.TxMessages[0].App != APP_PAYMENT
+}
+
+//根据Tx中的第一个SignaturePayload，计算签名者地址
+func (tx *Transaction) GetSignatureAddr() (common.Address, error) {
+	for _, msg := range tx.txdata.TxMessages {
+		if msg.App == APP_SIGNATURE {
+			sign := msg.Payload.(*SignaturePayload)
+			if len(sign.Signatures) == 0 {
+				return common.Address{}, errors.New("Invalid SignaturePayload")
+			}
+			return crypto.PubkeyBytesToAddress(sign.Signatures[0].PubKey), nil
+		}
+	}
+	return common.Address{}, errors.New("SignaturePayload not found")
 }
 
 //获取该交易的发起人地址
@@ -953,9 +1051,25 @@ func (tx *Transaction) IsUserContract() bool {
 
 //判断一个交易是否是一个合约请求交易，并且还没有被执行
 func (tx *Transaction) IsOnlyContractRequest() bool {
-	lastMsg := tx.txdata.TxMessages[len(tx.txdata.TxMessages)-1]
-	return lastMsg.App.IsRequest()
-
+	if tx.txdata.TxMessages[0].App == APP_PAYMENT {
+		lastMsg := tx.txdata.TxMessages[len(tx.txdata.TxMessages)-1]
+		return lastMsg.App.IsRequest()
+	}
+	//no gas fee 判断第一个SignaturePayload是不是最后一个Message
+	hasRequestPayload := false
+	for i, msg := range tx.txdata.TxMessages {
+		if msg.App.IsRequest() {
+			hasRequestPayload = true
+		}
+		if msg.App == APP_SIGNATURE && hasRequestPayload {
+			if i == len(tx.txdata.TxMessages)-1 {
+				return true
+			} else { //SignaturePayload下面还有其他Message
+				return false
+			}
+		}
+	}
+	return false
 }
 
 //获得合约请求Msg的Index

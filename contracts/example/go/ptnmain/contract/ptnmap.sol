@@ -160,7 +160,6 @@ contract PTNMap is IERC20 {
         bytes memory bret = bytes(ret);
         uint k = 0;
         bret[k++] = byte('P');
-        bret[k++] = byte('1');
         for (uint8 i = 0; i < _b.length; i++) bret[k++] = _b[i];
         return string(ret);
     }
@@ -202,6 +201,14 @@ contract PTNMap is IERC20 {
                 digitlength++;
                 carry = carry / 58;
             }
+        }
+
+        for (uint8 k = 0; k<source.length; ++k) {
+            if (uint8(source[k]) != 0) {
+              break;
+            }
+            digitlength++;
+            digits[digitlength] = 0;
         }
 
         return toAlphabet(reverse(truncate(digits, digitlength)));

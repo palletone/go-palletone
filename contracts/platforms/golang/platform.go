@@ -61,7 +61,7 @@ func pathExists(path string) (bool, error) {
 	return true, err
 }
 
-func decodeUrl(spec *pb.ChaincodeSpec) (string, error) {
+func decodeUrl(spec *pb.PtnChaincodeSpec) (string, error) {
 	var urlLocation string
 	if strings.HasPrefix(spec.ChaincodeId.Path, "http://") {
 		urlLocation = spec.ChaincodeId.Path[7:]
@@ -116,7 +116,7 @@ func filter(vs []string, f func(string) bool) []string {
 }
 
 // ValidateSpec validates Go chaincodes
-func (goPlatform *Platform) ValidateSpec(spec *pb.ChaincodeSpec) error {
+func (goPlatform *Platform) ValidateSpec(spec *pb.PtnChaincodeSpec) error {
 	path, err := url.Parse(spec.ChaincodeId.Path)
 	if err != nil || path == nil {
 		return fmt.Errorf("invalid path: %s", err)
@@ -142,7 +142,7 @@ func (goPlatform *Platform) ValidateSpec(spec *pb.ChaincodeSpec) error {
 	return nil
 }
 
-func (goPlatform *Platform) ValidateDeploymentSpec(cds *pb.ChaincodeDeploymentSpec) error {
+func (goPlatform *Platform) ValidateDeploymentSpec(cds *pb.PtnChaincodeDeploymentSpec) error {
 
 	if cds.CodePackage == nil || len(cds.CodePackage) == 0 {
 		// Nothing to validate if no CodePackage was included
@@ -266,7 +266,7 @@ func vendorDependencies(pkg string, files Sources) {
 	}
 }
 
-func (goPlatform *Platform) GetChainCodePayload(spec *pb.ChaincodeSpec) ([]byte, error) {
+func (goPlatform *Platform) GetChainCodePayload(spec *pb.PtnChaincodeSpec) ([]byte, error) {
 	log.Info("GetChainCodePayload enter")
 	defer log.Info("GetChainCodePayload exit")
 	//获取codeDescriptor，即构造CodeDescriptor，Gopath为go环境gopath路径，Pkg为代码相对路径
@@ -416,7 +416,7 @@ func getAllFiles(dirPth string) ([]SourceFile, error) {
 }
 
 // Generates a deployment payload for GOLANG as a series of src/$pkg entries in .tar.gz format
-func (goPlatform *Platform) GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte, error) {
+func (goPlatform *Platform) GetDeploymentPayload(spec *pb.PtnChaincodeSpec) ([]byte, error) {
 	var err error
 
 	log.Info("enter")
@@ -648,7 +648,7 @@ func (goPlatform *Platform) GetDeploymentPayload(spec *pb.ChaincodeSpec) ([]byte
 	return payload.Bytes(), nil
 }
 
-func (goPlatform *Platform) GenerateDockerfile(cds *pb.ChaincodeDeploymentSpec) (string, error) {
+func (goPlatform *Platform) GenerateDockerfile(cds *pb.PtnChaincodeDeploymentSpec) (string, error) {
 
 	var buf []string
 	//glh
@@ -672,7 +672,7 @@ func getLDFlagsOpts() string {
 	return staticLDFlagsOpts
 }
 
-func (goPlatform *Platform) GenerateDockerBuild(cds *pb.ChaincodeDeploymentSpec, tw *tar.Writer) error {
+func (goPlatform *Platform) GenerateDockerBuild(cds *pb.PtnChaincodeDeploymentSpec, tw *tar.Writer) error {
 	spec := cds.ChaincodeSpec
 
 	pkgname, err := decodeUrl(spec)
@@ -708,7 +708,7 @@ func (goPlatform *Platform) GenerateDockerBuild(cds *pb.ChaincodeDeploymentSpec,
 	return cutil.WriteBytesToPackage("binpackage.tar", binpackage.Bytes(), tw)
 }
 
-func (goPlatform *Platform) GetPlatformEnvPath(spec *pb.ChaincodeSpec) (string, error) {
+func (goPlatform *Platform) GetPlatformEnvPath(spec *pb.PtnChaincodeSpec) (string, error) {
 	var err error
 
 	//code, err := getCode(spec) //获取代码，即构造CodeDescriptor，Gopath为代码真实路径，Pkg为代码相对路径

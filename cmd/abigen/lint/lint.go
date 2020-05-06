@@ -248,7 +248,7 @@ func (p *pkg) getChainCodeName() string {
 var (
 	typePalletOne = map[string]string{
 		"github.com/palletone/go-palletone/contracts/shim.ChaincodeStubInterface":   "",
-		"github.com/palletone/go-palletone/core/vmContractPub/protos/peer.Response": "",
+		"github.com/palletone/go-palletone/core/vmContractPub/protos/peer.PtnResponse": "",
 		"error": "",
 		"github.com/palletone/go-palletone/common.Address":                                  "Address",
 		"*github.com/palletone/go-palletone/common.Address":                                 "Address",

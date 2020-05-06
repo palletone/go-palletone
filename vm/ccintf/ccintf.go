@@ -33,8 +33,8 @@ import (
 
 //ChaincodeStream interface for stream between Peer and chaincode instance.
 type ChaincodeStream interface {
-	Send(*pb.ChaincodeMessage) error
-	Recv() (*pb.ChaincodeMessage, error)
+	Send(*pb.PtnChaincodeMessage) error
+	Recv() (*pb.PtnChaincodeMessage, error)
 }
 
 //CCSupport must be implemented by the chaincode support side in peer
@@ -50,7 +50,7 @@ func GetCCHandlerKey() string {
 
 //CCID encapsulates chaincode ID
 type CCID struct {
-	ChaincodeSpec *pb.ChaincodeSpec
+	ChaincodeSpec *pb.PtnChaincodeSpec
 	NetworkID     string
 	PeerID        string
 	ChainID       string

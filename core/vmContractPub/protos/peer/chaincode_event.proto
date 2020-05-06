@@ -25,7 +25,7 @@ option go_package = "github.com/palletone/go-palletone/core/vmContractPub/protos
 
 //ChaincodeEvent is used for events and registrations that are specific to chaincode
 //string type - "chaincode"
-message ChaincodeEvent {
+message PtnChaincodeEvent {
       string chaincode_id = 1;
       string tx_id = 2;
       string event_name = 3;

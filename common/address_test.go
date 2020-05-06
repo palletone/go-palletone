@@ -37,6 +37,16 @@ func TestAddressValidate(t *testing.T) {
 	t.Log(addr)
 }
 
+func TestAddressOutchainValidate(t *testing.T) {
+	p2pkh := "PoGsNEVH8ekHm3r2xpFJemRJUP2ukgifPAj"
+	addr, err := StringToAddress(p2pkh)
+
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(addr)
+}
+
 func TestAddressNotValidate(t *testing.T) {
 	p2pkh := "P1Kp2hcLhGEP45Xgx7vmSrE37QXunJUd8gj"
 	addr, err := StringToAddress(p2pkh)

@@ -97,12 +97,12 @@ func (p *ExchangeMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		if err != nil {
 			return shim.Error(err.Error())
 		}
-        for _,addr := range result{
+		for _, addr := range result {
 			err := p.Cancel(stub, addr.ExchangeSn)
 			if err != nil {
 				return shim.Error(err.Error())
 			}
-	    }
+		}
 		return shim.Success(nil)
 	case "getOrderMatchList": //列出订单的成交记录
 		if len(args) != 1 {

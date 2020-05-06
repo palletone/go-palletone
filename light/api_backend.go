@@ -44,6 +44,7 @@ import (
 	"github.com/palletone/go-palletone/ptnjson/statistics"
 	"github.com/palletone/go-palletone/txspool"
 	"github.com/shopspring/decimal"
+	"github.com/palletone/go-palletone/consensus/jury"
 )
 
 type LesApiBackend struct {
@@ -58,6 +59,11 @@ func (b *LesApiBackend) Lock() {
 func (b *LesApiBackend) Unlock() {
 	b.mutex.Unlock()
 }
+
+func (b *LesApiBackend) EnableGasFee() bool {
+	return b.ptn.config.EnableGasFee
+}
+
 func (b *LesApiBackend) SignAndSendRequest(addr common.Address, tx *modules.Transaction) error {
 	return nil
 }
@@ -118,10 +124,10 @@ func (b *LesApiBackend) GetChainParameters() *core.ChainParameters {
 	return nil
 }
 
-func (b *LesApiBackend) SendTx(ctx context.Context, tx *modules.Transaction) error {
+func (b *LesApiBackend) SendTx(tx *modules.Transaction) error {
 	return b.ptn.txPool.AddLocal(tx)
 }
-func (b *LesApiBackend) SendTxs(ctx context.Context, signedTxs []*modules.Transaction) []error {
+func (b *LesApiBackend) SendTxs(signedTxs []*modules.Transaction) []error {
 	errs := []error{}
 	for _, tx := range signedTxs {
 		err := b.ptn.txPool.AddLocal(tx)
@@ -412,6 +418,10 @@ func (b *LesApiBackend) GetAssetExistence(asset string) ([]*ptnjson.ProofOfExist
 }
 
 //contract control
+
+func (b *LesApiBackend)ContractEventBroadcast(event jury.ContractEvent, local bool) {
+	return
+}
 func (b *LesApiBackend) ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi,
 	ccLanguage string) (TemplateId []byte, err error) {
 	return nil, nil

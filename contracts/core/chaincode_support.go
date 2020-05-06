@@ -250,7 +250,7 @@ type ChaincodeSupport struct {
 
 // DuplicateChaincodeHandlerError returned if attempt to register same chaincodeID while a stream already exists.
 type DuplicateChaincodeHandlerError struct {
-	ChaincodeID *pb.ChaincodeID
+	ChaincodeID *pb.PtnChaincodeID
 }
 
 func (d *DuplicateChaincodeHandlerError) Error() string {
@@ -335,18 +335,18 @@ func (chaincodeSupport *ChaincodeSupport) sendReady(context context.Context, ccc
 	}
 	chaincodeSupport.runningChaincodes.Unlock()
 
-	var notfy chan *pb.ChaincodeMessage
+	var notfy chan *pb.PtnChaincodeMessage
 	var err error
 	if notfy, err = chrte.handler.ready(context, cccid.ChainID, cccid.TxID, cccid.SignedProposal, cccid.Proposal); err != nil {
-		return errors.WithMessage(err, fmt.Sprintf("error sending %s", pb.ChaincodeMessage_READY))
+		return errors.WithMessage(err, fmt.Sprintf("error sending %s", pb.PtnChaincodeMessage_READY))
 	}
 	if notfy != nil {
 		select {
 		case ccMsg := <-notfy:
-			if ccMsg.Type == pb.ChaincodeMessage_ERROR {
+			if ccMsg.Type == pb.PtnChaincodeMessage_ERROR {
 				err = errors.Errorf("error initializing container %s: %s", canName, string(ccMsg.Payload))
 			}
-			if ccMsg.Type == pb.ChaincodeMessage_COMPLETED {
+			if ccMsg.Type == pb.PtnChaincodeMessage_COMPLETED {
 				res := &pb.Response{}
 				_ = proto.Unmarshal(ccMsg.Payload, res)
 				if res.Status != shim.OK {
@@ -380,7 +380,7 @@ func (chaincodeSupport *ChaincodeSupport) getTLSFiles(keyPair *accesscontrol.Cer
 }
 
 //get args and env given chaincodeID
-func (chaincodeSupport *ChaincodeSupport) getLaunchConfigs(cccid *ccprovider.CCContext, cLang pb.ChaincodeSpec_Type) (args []string, envs []string, filesToUpload map[string][]byte, err error) {
+func (chaincodeSupport *ChaincodeSupport) getLaunchConfigs(cccid *ccprovider.CCContext, cLang pb.PtnChaincodeSpec_Type) (args []string, envs []string, filesToUpload map[string][]byte, err error) {
 	canName := cccid.GetCanonicalName()
 	envs = []string{"CORE_CHAINCODE_ID_NAME=" + canName}
 
@@ -423,13 +423,13 @@ func (chaincodeSupport *ChaincodeSupport) getLaunchConfigs(cccid *ccprovider.CCC
 		envs = append(envs, "CORE_CHAINCODE_LOGGING_FORMAT="+chaincodeSupport.logFormat)
 	}
 	switch cLang {
-	case pb.ChaincodeSpec_GOLANG, pb.ChaincodeSpec_CAR:
+	case pb.PtnChaincodeSpec_GOLANG, pb.PtnChaincodeSpec_CAR:
 		//args = []string{"chaincode", fmt.Sprintf("-peer.address=%s", chaincodeSupport.peerAddress)}
 		//args = []string{"/bin/sh", "-c", "cd / && tar -xvf binpackage.tar -C $GOPATH/bin && rm binpackage.tar && rm Dockerfile && cd $GOPATH/bin && ./chaincode"}
 		args = []string{"/bin/sh", "-c", "cd / && tar -xvf binpackage.tar -C $GOPATH/bin && cd $GOPATH/bin && ./chaincode"}
-	case pb.ChaincodeSpec_JAVA:
+	case pb.PtnChaincodeSpec_JAVA:
 		args = []string{"java", "-jar", "chaincode.jar", "--peerAddress", chaincodeSupport.peerAddress}
-	case pb.ChaincodeSpec_NODE:
+	case pb.PtnChaincodeSpec_NODE:
 		args = []string{"/bin/sh", "-c", fmt.Sprintf("cd /usr/local/src; npm start -- --peer.address %s", chaincodeSupport.peerAddress)}
 
 	default:
@@ -459,7 +459,7 @@ type ccLauncherImpl struct {
 	ctxt      context.Context
 	ccSupport *ChaincodeSupport
 	cccid     *ccprovider.CCContext
-	cds       *pb.ChaincodeDeploymentSpec
+	cds       *pb.PtnChaincodeDeploymentSpec
 	builder   api.BuildSpecFactory
 }
 
@@ -497,7 +497,7 @@ func (ccl *ccLauncherImpl) launch(ctxt context.Context, notfy chan bool) (interf
 //the targz to create the image if not found. It uses the supplied launcher
 //for launching the chaincode. UTs use the launcher freely to test various
 //conditions such as timeouts, failed launches and other errors
-func (chaincodeSupport *ChaincodeSupport) launchAndWaitForRegister(ctxt context.Context, cccid *ccprovider.CCContext, cds *pb.ChaincodeDeploymentSpec, launcher launcherIntf) error {
+func (chaincodeSupport *ChaincodeSupport) launchAndWaitForRegister(ctxt context.Context, cccid *ccprovider.CCContext, cds *pb.PtnChaincodeDeploymentSpec, launcher launcherIntf) error {
 	canName := cccid.GetCanonicalName()
 	if canName == "" {
 		return errors.New("chaincode name not set")
@@ -607,7 +607,7 @@ func (chaincodeSupport *ChaincodeSupport) launchAndWaitForRegister(ctxt context.
 //---------- End - launchAndWaitForRegister related functionality --------
 
 //Stop stops a chaincode if running
-func (chaincodeSupport *ChaincodeSupport) Stop(context context.Context, cccid *ccprovider.CCContext, cds *pb.ChaincodeDeploymentSpec, dontRmCon bool) error {
+func (chaincodeSupport *ChaincodeSupport) Stop(context context.Context, cccid *ccprovider.CCContext, cds *pb.PtnChaincodeDeploymentSpec, dontRmCon bool) error {
 	canName := cccid.GetCanonicalName()
 	if canName == "" {
 		return errors.New("chaincode name not set")
@@ -642,7 +642,7 @@ func (chaincodeSupport *ChaincodeSupport) Stop(context context.Context, cccid *c
 }
 
 func (chaincodeSupport *ChaincodeSupport) Destroy(context context.Context, cccid *ccprovider.CCContext,
-	cds *pb.ChaincodeDeploymentSpec) error {
+	cds *pb.PtnChaincodeDeploymentSpec) error {
 	canName := cccid.GetCanonicalName()
 	if canName == "" {
 		return errors.New("chaincode name not set")
@@ -683,18 +683,18 @@ func (chaincodeSupport *ChaincodeSupport) Destroy(context context.Context, cccid
 
 // Launch will launch the chaincode if not running (if running return nil) and will wait for handler of the chaincode to get into FSM ready state.
 func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context,
-	cccid *ccprovider.CCContext, spec interface{}) (*pb.ChaincodeID, *pb.ChaincodeInput, error) {
+	cccid *ccprovider.CCContext, spec interface{}) (*pb.PtnChaincodeID, *pb.PtnChaincodeInput, error) {
 	log.Debugf("launch enter")
 	//build the chaincode
-	var cID *pb.ChaincodeID
-	var cMsg *pb.ChaincodeInput
+	var cID *pb.PtnChaincodeID
+	var cMsg *pb.PtnChaincodeInput
 
-	var cds *pb.ChaincodeDeploymentSpec
-	var ci *pb.ChaincodeInvocationSpec
+	var cds *pb.PtnChaincodeDeploymentSpec
+	var ci *pb.PtnChaincodeInvocationSpec
 
 	log.Infof("chainId=%s, name=%s, version=%s, syscc=%v", cccid.ChainID, cccid.Name, cccid.Version, cccid.Syscc)
-	if cds, _ = spec.(*pb.ChaincodeDeploymentSpec); cds == nil {
-		if ci, _ = spec.(*pb.ChaincodeInvocationSpec); ci == nil {
+	if cds, _ = spec.(*pb.PtnChaincodeDeploymentSpec); cds == nil {
+		if ci, _ = spec.(*pb.PtnChaincodeInvocationSpec); ci == nil {
 			//  TODO
 			return cID, cMsg, errors.New("Launch should be called with deployment or invocation spec")
 			//panic("Launch should be called with deployment or invocation spec")
@@ -767,7 +767,7 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context,
 		//	return cID, cMsg, errors.WithMessage(err, fmt.Sprintf("nil ChaincodeDeploymentSpec for %s", canName))
 		//}
 		//
-		//cds = &pb.ChaincodeDeploymentSpec{}
+		//cds = &pb.PtnChaincodeDeploymentSpec{}
 		//err = proto.Unmarshal(depPayload, cds)
 		//if err != nil {
 		//	return cID, cMsg, errors.Wrap(err, fmt.Sprintf("failed to unmarshal deployment transactions for %s", canName))
@@ -776,7 +776,7 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context,
 
 	//from here on : if we launch the container and get an error, we need to stop the container
 	//launch container if it is a System container or not in dev mode
-	if (!chaincodeSupport.userRunsCC || cds.ExecEnv == pb.ChaincodeDeploymentSpec_SYSTEM) && (chrte == nil || chrte.handler == nil) {
+	if (!chaincodeSupport.userRunsCC || cds.ExecEnv == pb.PtnChaincodeDeploymentSpec_SYSTEM) && (chrte == nil || chrte.handler == nil) {
 		//NOTE-We need to streamline code a bit so the data from LSCC gets passed to this thus
 		//avoiding the need to go to the FS. In particular, we should use cdsfs completely. It is
 		//just a vestige of old protocol that we continue to use ChaincodeDeploymentSpec for
@@ -788,7 +788,7 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context,
 		//in the endorser has gone through LSCC validation. Just get the code from the FS.
 		//if cds.CodePackage == nil {
 		//	//no code bytes for these situations
-		//	if !(chaincodeSupport.userRunsCC || cds.ExecEnv == pb.ChaincodeDeploymentSpec_SYSTEM) {
+		//	if !(chaincodeSupport.userRunsCC || cds.ExecEnv == pb.PtnChaincodeDeploymentSpec_SYSTEM) {
 		//		ccpack, err := ccprovider.GetChaincodeFromFS(cID.Name, cID.Version)
 		//		if err != nil {
 		//			return cID, cMsg, err
@@ -826,8 +826,8 @@ func (chaincodeSupport *ChaincodeSupport) Launch(context context.Context,
 
 //getVMType - just returns a string for now. Another possibility is to use a factory method to
 //return a VM executor
-func (chaincodeSupport *ChaincodeSupport) getVMType(cds *pb.ChaincodeDeploymentSpec) string {
-	if cds.ExecEnv == pb.ChaincodeDeploymentSpec_SYSTEM {
+func (chaincodeSupport *ChaincodeSupport) getVMType(cds *pb.PtnChaincodeDeploymentSpec) string {
+	if cds.ExecEnv == pb.PtnChaincodeDeploymentSpec_SYSTEM {
 		return controller.SYSTEM
 	}
 	return controller.DOCKER
@@ -844,16 +844,16 @@ func (chaincodeSupport *ChaincodeSupport) Register(stream pb.ChaincodeSupport_Re
 }
 
 // createCCMessage creates a transaction message.
-func createCCMessage(contractid []byte, typ pb.ChaincodeMessage_Type, cid string, txid string, cMsg *pb.ChaincodeInput) (*pb.ChaincodeMessage, error) {
+func createCCMessage(contractid []byte, typ pb.PtnChaincodeMessage_Type, cid string, txid string, cMsg *pb.PtnChaincodeInput) (*pb.PtnChaincodeMessage, error) {
 	payload, err := proto.Marshal(cMsg)
 	if err != nil {
 		return nil, err
 	}
-	return &pb.ChaincodeMessage{Type: typ, Payload: payload, Txid: txid, ChannelId: cid, ContractId: contractid}, nil
+	return &pb.PtnChaincodeMessage{Type: typ, Payload: payload, Txid: txid, ChannelId: cid, ContractId: contractid}, nil
 }
 
 // Execute executes a transaction and waits for it to complete until a timeout value.
-func (chaincodeSupport *ChaincodeSupport) Execute(ctxt context.Context, cccid *ccprovider.CCContext, msg *pb.ChaincodeMessage, timeout time.Duration) (*pb.ChaincodeMessage, error) {
+func (chaincodeSupport *ChaincodeSupport) Execute(ctxt context.Context, cccid *ccprovider.CCContext, msg *pb.PtnChaincodeMessage, timeout time.Duration) (*pb.PtnChaincodeMessage, error) {
 	log.Debugf("chain code support execute")
 	log.Debugf("Entry, chainId[%s], txid[%s]", msg.ChannelId, msg.Txid)
 	defer log.Debugf("Exit")
@@ -875,12 +875,12 @@ func (chaincodeSupport *ChaincodeSupport) Execute(ctxt context.Context, cccid *c
 	}
 	chaincodeSupport.runningChaincodes.Unlock()
 
-	var notfy chan *pb.ChaincodeMessage
+	var notfy chan *pb.PtnChaincodeMessage
 	var err error
 	if notfy, err = chrte.handler.sendExecuteMessage(ctxt, cccid.ChainID, msg, cccid.SignedProposal, cccid.Proposal); err != nil {
 		return nil, errors.WithMessage(err, fmt.Sprintf("error sending"))
 	}
-	var ccresp *pb.ChaincodeMessage
+	var ccresp *pb.PtnChaincodeMessage
 	select {
 	case ccresp = <-notfy:
 		log.Debugf("notfy = %v", ccresp)
