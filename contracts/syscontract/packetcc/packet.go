@@ -24,17 +24,20 @@ package packetcc
 import (
 	"encoding/hex"
 	"math/rand"
+	"sort"
 	"strconv"
 	"time"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/contracts/shim"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/shopspring/decimal"
 )
 
-type Packet struct {
+// old packet
+type OldPacket struct {
 	PubKey          []byte         //红包对应的公钥，也是红包的唯一标识
 	Creator         common.Address //红包发放人员地址
 	Token           *modules.Asset //红包中的TokenID
@@ -47,10 +50,48 @@ type Packet struct {
 	Constant        bool           //是否固定数额
 }
 
+// new Packet
+type Packet struct {
+	PubKey          []byte         //红包对应的公钥，也是红包的唯一标识
+	Creator         common.Address //红包发放人员地址
+	Tokens          []*Tokens      //红包中的TokenID
+	Amount          uint64         //红包总金额
+	Count           uint32         //红包数，为0表示可以无限领取
+	MinPacketAmount uint64         //单个红包最小额
+	MaxPacketAmount uint64         //单个红包最大额,最大额最小额相同，则说明不是随机红包,0则表示完全随机
+	ExpiredTime     uint64         //红包过期时间，0表示永不过期
+	Remark          string         //红包的备注
+	Constant        bool           //是否固定数额
+}
+
+type Tokens struct {
+	Amount        uint64         `json:"amount"` //数量
+	Asset         *modules.Asset `json:"asset"`  //资产
+	BalanceAmount uint64         //红包剩余额度
+	BalanceCount  uint32         //红包剩余次数
+}
+
+type TokensJson struct {
+	Amount        decimal.Decimal `json:"amount"` //数量
+	Asset         string          `json:"asset"`  //资产
+	BalanceAmount decimal.Decimal //红包剩余额度
+	BalanceCount  uint32          //红包剩余次数
+}
+
+type RecordTokensJson struct {
+	Amount decimal.Decimal `json:"amount"` //数量
+	Asset  string          `json:"asset"`  //资产
+}
+
+type RecordTokens struct {
+	Amount uint64         `json:"amount"` //数量
+	Asset  *modules.Asset `json:"asset"`  //资产
+}
+
 type PacketJson struct {
 	PubKey          string          //红包对应的公钥，也是红包的唯一标识
 	Creator         common.Address  //红包发放人员地址
-	Token           string          //红包中的TokenID
+	Token           []*TokensJson   //红包中的TokenID
 	TotalAmount     decimal.Decimal //红包总金额
 	PacketCount     uint32          //红包数，为0表示可以无限领取
 	MinPacketAmount decimal.Decimal //单个红包最小额
@@ -70,6 +111,10 @@ type PacketBalance struct {
 
 func (p *Packet) IsFixAmount() bool {
 	return p.MinPacketAmount == p.MaxPacketAmount && p.MaxPacketAmount > 0
+}
+
+func (p *Packet) PubKeyAddress() common.Address {
+	return crypto.PubkeyBytesToAddress(p.PubKey)
 }
 
 func (p *Packet) GetPullAmount(seed int64, amount uint64, count uint32) uint64 {
@@ -137,27 +182,51 @@ func getPacket(stub shim.ChaincodeStubInterface, pubKey []byte) (*Packet, error)
 	p := Packet{}
 	err = rlp.DecodeBytes(value, &p)
 	if err != nil {
-		return nil, err
+		// 兼容
+		op := OldPacket{}
+		err = rlp.DecodeBytes(value, &op)
+		if err != nil {
+			return nil, err
+		}
+		// 转换
+		balanceAmount, balanceCount, _ := getPacketBalance(stub, op.PubKey)
+		np := OldPacket2New(&op, balanceAmount, balanceCount)
+		p = *np
 	}
+	sort.Slice(p.Tokens, func(i, j int) bool {
+		return p.Tokens[i].Amount > p.Tokens[j].Amount
+	})
 	return &p, nil
 }
 
 // 获取所有红包
-func getPackets(stub shim.ChaincodeStubInterface) ([]*Packet,error) {
+func getPackets(stub shim.ChaincodeStubInterface) ([]*Packet, error) {
 	value, err := stub.GetStateByPrefix(PacketPrefix)
 	if err != nil {
 		return nil, err
 	}
 	ps := []*Packet{}
-	for _,pp := range value {
+	for _, pp := range value {
 		p := Packet{}
 		err = rlp.DecodeBytes(pp.Value, &p)
 		if err != nil {
-			return nil, err
+			// 兼容
+			op := OldPacket{}
+			err = rlp.DecodeBytes(pp.Value, &op)
+			if err != nil {
+				return nil, err
+			}
+			// 转换
+			balanceAmount, balanceCount, _ := getPacketBalance(stub, op.PubKey)
+			np := OldPacket2New(&op, balanceAmount, balanceCount)
+			p = *np
 		}
-		ps = append(ps,&p)
+		sort.Slice(p.Tokens, func(i, j int) bool {
+			return p.Tokens[i].Amount > p.Tokens[j].Amount
+		})
+		ps = append(ps, &p)
 	}
-	return ps,nil
+	return ps, nil
 }
 
 // 保存红包余额和个数
@@ -189,20 +258,26 @@ func convertPacket2Json(packet *Packet, balanceAmount uint64, balanceCount uint3
 	js := &PacketJson{
 		PubKey:          hex.EncodeToString(packet.PubKey),
 		Creator:         packet.Creator,
-		Token:           packet.Token.String(),
-		TotalAmount:     packet.Token.DisplayAmount(packet.Amount),
-		MinPacketAmount: packet.Token.DisplayAmount(packet.MinPacketAmount),
-		MaxPacketAmount: packet.Token.DisplayAmount(packet.MaxPacketAmount),
+		TotalAmount:     packet.Tokens[0].Asset.DisplayAmount(packet.Amount),
+		MinPacketAmount: packet.Tokens[0].Asset.DisplayAmount(packet.MinPacketAmount),
+		MaxPacketAmount: packet.Tokens[0].Asset.DisplayAmount(packet.MaxPacketAmount),
 		PacketCount:     packet.Count,
 		Remark:          packet.Remark,
 		IsConstant:      strconv.FormatBool(packet.Constant),
-		BalanceAmount:   packet.Token.DisplayAmount(balanceAmount),
+		BalanceAmount:   packet.Tokens[0].Asset.DisplayAmount(balanceAmount),
 		BalanceCount:    balanceCount,
 	}
 	if packet.ExpiredTime != 0 {
 		js.ExpiredTime = time.Unix(int64(packet.ExpiredTime), 0).String()
 	}
-
+	js.Token = make([]*TokensJson, len(packet.Tokens))
+	for i, t := range packet.Tokens {
+		js.Token[i] = &TokensJson{}
+		js.Token[i].Amount = t.Asset.DisplayAmount(t.Amount)
+		js.Token[i].Asset = t.Asset.String()
+		js.Token[i].BalanceAmount = t.Asset.DisplayAmount(t.BalanceAmount)
+		js.Token[i].BalanceCount = t.BalanceCount
+	}
 	return js
 }
 
@@ -236,3 +311,24 @@ func isPulledPacket(stub shim.ChaincodeStubInterface, pubKey []byte, message str
 	return true
 }
 
+func OldPacket2New(old *OldPacket, BalanceAmount uint64, BalanceCount uint32) *Packet {
+	return &Packet{
+		PubKey:  old.PubKey,
+		Creator: old.Creator,
+		Tokens: []*Tokens{
+			{
+				Amount:        old.Amount,
+				Asset:         old.Token,
+				BalanceCount:  BalanceCount,
+				BalanceAmount: BalanceAmount,
+			},
+		},
+		Amount:          old.Amount,
+		Count:           old.Count,
+		MinPacketAmount: old.MinPacketAmount,
+		MaxPacketAmount: old.MaxPacketAmount,
+		ExpiredTime:     old.ExpiredTime,
+		Remark:          old.Remark,
+		Constant:        old.Constant,
+	}
+}

@@ -23,6 +23,9 @@ package storage
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/palletone/go-palletone/contracts/syscontract/packetcc"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"io/ioutil"
 	"os"
 	"sort"
@@ -278,4 +281,51 @@ func TestMapToSlice(t *testing.T) {
 	for k := range jl {
 		fmt.Println("key = ", k)
 	}
+}
+
+func TestPacketCompatibility(t *testing.T) {
+	db ,_ := ptndb.NewMemDatabase()
+	statedb := NewStateDb(db)
+	packetAddr := syscontract.PacketContractAddress
+	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123}, TxIndex: 1}
+	a,_ :=common.StringToAddress("P16JiQ3U23zqGmpAhBZwH7gDksBz4ySzLT2")
+	oP := &packetcc.OldPacket{
+		PubKey:          []byte("old"),
+		Creator:         a,
+		Token:           dagconfig.DagConfig.GetGasToken().ToAsset(),
+		Amount:          90,
+		Count:           10,
+		MinPacketAmount: 1,
+		MaxPacketAmount: 10,
+		ExpiredTime:     0,
+		Remark:          "remark",
+		Constant:        false,
+	}
+	fmt.Printf("old = %v\n",oP)
+	value, _ := rlp.EncodeToBytes(oP)
+	wrs := modules.NewWriteSet(string(oP.PubKey), value)
+	err := statedb.SaveContractState(packetAddr.Bytes21(),wrs,version)
+	if err != nil {
+		t.Error(err)
+	}
+	//
+	bytes, _, err := statedb.GetContractState(packetAddr.Bytes21(), string(oP.PubKey))
+	if err != nil {
+		t.Error(err)
+	}
+	p := packetcc.Packet{}
+	err = rlp.DecodeBytes(bytes, &p)
+	if err != nil {
+		t.Log("进入")
+		// 兼容
+		op := packetcc.OldPacket{}
+		err = rlp.DecodeBytes(bytes, &op)
+		if err != nil {
+			t.Error(err)
+		}
+		// 转换
+		np := packetcc.OldPacket2New(&op,uint64(90),uint32(10))
+		p = *np
+	}
+	fmt.Printf("new = %v\n",&p)
 }
