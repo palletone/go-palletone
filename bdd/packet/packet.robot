@@ -607,34 +607,37 @@ packet8
     getAllPacketInfo
 
 multiToken
+    [Documentation]    创建包含 t1 和 t2 多 token 的红包，并且领取 3 次
     listAccounts    #    主要获取 tokenHolder
     unlockAccount    ${tokenHolder}    1    #    解锁 tokenHolder
-    ${twoAddr}    newAccount
+    ${twoAddr}    newAccount    #获取红包测试地址
     sleep    3
     transferPtn    ${tokenHolder}    ${twoAddr}    10000    1    1
     sleep    3
     unlockAccount    ${twoAddr}    1
     getBalance    ${twoAddr}    PTN
-    getPublicKey    ${twoAddr}
-    ${result}    createToken    ${twoAddr}    t11
+    getPublicKey    ${twoAddr}    #获取红包测试地址的公钥
+    ${result}    createToken    ${twoAddr}    t1
     log    ${result}
     sleep    5
-    ${assetId1}    ccquery    t11
+    ${assetId1}    ccquery    t1
     ${t}    getBalance    ${twoAddr}    ${assetId1}
     log    ${t}
     Should Be Equal As Numbers    ${t}    1000
     ${t}    getBalance    ${twoAddr}    PTN
     log    ${t}
-    ${result}    createToken    ${twoAddr}    t22
+    ${result}    createToken    ${twoAddr}    t2
     log    ${result}
     sleep    5
-    ${assetId2}    ccquery    t22
+    ${assetId2}    ccquery    t2
     ${t}    getBalance    ${twoAddr}    ${assetId2}
     Should Be Equal As Numbers    ${t}    1000
-    createMultiTokenPacket    ${twoAddr}    90    ${tokenHolderPubKey}    10    1    10
+    createMultiTokenPacket    ${twoAddr}    90    ${tokenHolderPubKey}    0    0    0
     ...    ${EMPTY}    true    ${assetId1}    ${assetId2}
     sleep    3
-    getPacketInfo    ${tokenHolderPubKey}
+    ${result}    getPacketInfo    ${tokenHolderPubKey}
+    Should Be Equal As Strings    ${result["Token"][0]["BalanceAmount"]}    90
+    Should Be Equal As Strings    ${result["Token"][1]["amount"]}    90
     getPacketAllocationHistory    ${tokenHolderPubKey}
     ${oneAddr}    newAccount
     sleep    3
@@ -666,22 +669,26 @@ multiToken
     ${result}    getPacketInfo    ${tokenHolderPubKey}
     Should Be Equal As Strings    ${result["Token"][0]["BalanceAmount"]}    84
     log    ${result}
-    getPacketAllocationHistory    ${tokenHolderPubKey}
+    ${result}    getPacketAllocationHistory    ${tokenHolderPubKey}
+    Should Be Equal As Strings    ${result[0]["PubKey"]}    ${tokenHolderPubKey}
     ${pulled}    isPulledPacket    ${tokenHolderPubKey}    3
     Should Be Equal As Strings    ${pulled}    true
 
 multiTokenUpdate
-    [Documentation]    amount = 90
-    ...    count = 10
-    ...    min = 1
-    ...    max = 10
+    [Documentation]    t3,t4 token 从
+    ...
+    ...
+    ...    amount = 90
+    ...    count = 0
+    ...    min = 0
+    ...    max = 0
     ...
     ...    调整为
     ...
     ...    amount = 100
-    ...    count = 11
-    ...    min = 2
-    ...    max = 11
+    ...    count = 0
+    ...    min = 0
+    ...    max = 0
     listAccounts    #    主要获取 tokenHolder
     unlockAccount    ${tokenHolder}    1    #    解锁 tokenHolder
     ${twoAddr}    newAccount
@@ -706,16 +713,17 @@ multiTokenUpdate
     ${assetId2}    ccquery    t4
     ${t}    getBalance    ${twoAddr}    ${assetId2}
     Should Be Equal As Numbers    ${t}    1000
-    createMultiTokenPacket    ${twoAddr}    90    ${tokenHolderPubKey}    10    1    10
+    createMultiTokenPacket    ${twoAddr}    90    ${tokenHolderPubKey}    0    0    0
     ...    ${EMPTY}    true    ${assetId1}    ${assetId2}
     sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    multiTokenUpdate    ${twoAddr}    PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99    10    ${tokenHolderPubKey}    11    2
-    ...    11    ${EMPTY}    TRUE    ${assetId1}    ${assetId2}
+    multiTokenUpdated    ${twoAddr}    PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99    10    ${tokenHolderPubKey}    0    0
+    ...    0    ${EMPTY}    TRUE    ${assetId1}    ${assetId2}
     sleep    4
     getPacketInfo    ${tokenHolderPubKey}
 
 multiAppend
+    [Documentation]    创建包含 t5 和 t6 多 token 的红包，并且最后追加 PTN token 进入
     listAccounts    #    主要获取 tokenHolder
     unlockAccount    ${tokenHolder}    1    #    解锁 tokenHolder
     ${twoAddr}    newAccount
@@ -740,12 +748,12 @@ multiAppend
     ${assetId2}    ccquery    t6
     ${t}    getBalance    ${twoAddr}    ${assetId2}
     Should Be Equal As Numbers    ${t}    1000
-    createMultiTokenPacket    ${twoAddr}    90    ${tokenHolderPubKey}    10    1    10
+    createMultiTokenPacket    ${twoAddr}    90    ${tokenHolderPubKey}    0    0    0
     ...    ${EMPTY}    true    ${assetId1}    ${assetId2}
     sleep    3
     getPacketInfo    ${tokenHolderPubKey}
-    multiTokenUpdate    ${twoAddr}    PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99    10    ${tokenHolderPubKey}    11    2
-    ...    11    ${EMPTY}    TRUE    PTN    ${assetId2}
+    multiTokenUpdated    ${twoAddr}    PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99    10    ${tokenHolderPubKey}    0    0
+    ...    0    ${EMPTY}    TRUE    PTN    ${assetId2}
     sleep    4
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
@@ -771,8 +779,8 @@ post
     [Arguments]    ${method}    ${alias}    ${params}
     ${header}    Create Dictionary    Content-Type=application/json
     ${data}    Create Dictionary    jsonrpc=2.0    method=${method}    params=${params}    id=1
-    Create Session    ${alias}    http://127.0.0.1:8545    #    http://127.0.0.1:8545    http://192.168.44.128:8545
-    ${resp}    Post Request    ${alias}    http://127.0.0.1:8545    data=${data}    headers=${header}
+    Create Session    ${alias}    http://192.168.44.128:8545    #    http://127.0.0.1:8545    http://192.168.44.128:8545
+    ${resp}    Post Request    ${alias}    http://192.168.44.128:8545    data=${data}    headers=${header}
     ${respJson}    To Json    ${resp.content}
     Dictionary Should Contain Key    ${respJson}    result
     ${res}    Get From Dictionary    ${respJson}    result
@@ -833,6 +841,8 @@ getPacketAllocationHistory
     ${two}    Create List    PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99    ${param}    ${10}
     ${res}    post    contract_ccquery    getPacketAllocationHistory    ${two}
     log    ${res}
+    ${addressMap}    To Json    ${res}
+    [Return]    ${addressMap}
 
 updatePacket
     [Arguments]    ${addr}    ${toaddr}    ${amount}    ${pubkey}    ${count}    ${min}
@@ -923,7 +933,7 @@ createMultiTokenPacket
     ...    # PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99    ${param}
     [Return]    ${res}
 
-multiTokenUpdate
+multiTokenUpdated
     [Arguments]    ${addr}    ${toaddr}    ${amount}    ${pubkey}    ${count}    ${min}
     ...    ${max}    ${expiredTime}    ${isConstant}    ${token1}    ${token2}
     ${param}    Create List    updatePacket    ${pubkey}    ${count}    ${min}    ${max}
