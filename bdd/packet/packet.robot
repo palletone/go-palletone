@@ -345,15 +345,15 @@ packet5
     listAccounts    #    主要获取 tokenHolder
     unlockAccount    ${tokenHolder}    1    #    解锁 tokenHolder
     ${twoAddr}    newAccount
-    sleep    10
+    sleep    3
     transferPtn    ${tokenHolder}    ${twoAddr}    10000    1    1
-    sleep    10
+    sleep    3
     unlockAccount    ${twoAddr}    1
-    sleep    10
+    sleep    3
     getPublicKey    ${twoAddr}
     createPacket    ${twoAddr}    900    ${tokenHolderPubKey}    10    1    10
-    ...    ${time}    false
-    sleep    10
+    ...    2020-05-06 14:51:18    false
+    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     getBalance    ${twoAddr}    PTN
@@ -782,6 +782,50 @@ multiAppend
     Should Be Equal As Strings    ${result["Token"][0]["BalanceAmount"]}    100
     Should Be Equal As Strings    ${result["Token"][1]["amount"]}    100
     Should Be Equal As Strings    ${result["Token"][2]["amount"]}    100
+
+multiTokenRecycle
+    listAccounts    #    主要获取 tokenHolder
+    unlockAccount    ${tokenHolder}    1    #    解锁 tokenHolder
+    ${twoAddr}    newAccount
+    sleep    3
+    transferPtn    ${tokenHolder}    ${twoAddr}    10000    1    1
+    sleep    3
+    unlockAccount    ${twoAddr}    1
+    getBalance    ${twoAddr}    PTN
+    getPublicKey    ${twoAddr}
+    ${result}    createToken    ${twoAddr}    t7
+    log    ${result}
+    sleep    3
+    ${assetId1}    ccquery    t7
+    ${t}    getBalance    ${twoAddr}    ${assetId1}
+    log    ${t}
+    Should Be Equal As Numbers    ${t}    1000
+    ${result}    createToken    ${twoAddr}    t8
+    log    ${result}
+    sleep    3
+    ${assetId2}    ccquery    t8
+    ${t}    getBalance    ${twoAddr}    ${assetId2}
+    Should Be Equal As Numbers    ${t}    1000
+    ${t}    getBalance    ${twoAddr}    PTN
+    log    ${t}
+    Should Be Equal As Numbers    ${t}    9998
+    createMultiTokenPacket    ${twoAddr}    90    ${tokenHolderPubKey}    0    0    0
+    ...    2020-05-06 14:51:18    true    ${assetId1}    ${assetId2}
+    sleep    3
+    ${result}    getPacketInfo    ${tokenHolderPubKey}
+    Should Be Equal As Strings    ${result["Token"][0]["BalanceAmount"]}    90
+    Should Be Equal As Strings    ${result["Token"][1]["amount"]}    90
+    recyclePacket    ${twoAddr}    ${tokenHolderPubKey}
+    sleep    5
+    ${result}    getPacketInfo    ${tokenHolderPubKey}
+    Should Be Equal As Strings    ${result["Token"][0]["BalanceAmount"]}    0
+    Should Be Equal As Strings    ${result["Token"][1]["BalanceAmount"]}    0
+    ${t}    getBalance    ${twoAddr}    PTN
+    Should Be Equal As Numbers    ${t}    9996
+    ${t}    getBalance    ${twoAddr}    ${assetId1}
+    Should Be Equal As Numbers    ${t}    1000
+    ${t}    getBalance    ${twoAddr}    ${assetId2}
+    Should Be Equal As Numbers    ${t}    1000
 
 *** Keywords ***
 createPacket
