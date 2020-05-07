@@ -770,12 +770,18 @@ multiAppend
     createMultiTokenPacket    ${twoAddr}    90    ${tokenHolderPubKey}    0    0    0
     ...    ${EMPTY}    true    ${assetId1}    ${assetId2}
     sleep    3
-    getPacketInfo    ${tokenHolderPubKey}
-    multiTokenUpdated    ${twoAddr}    PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99    10    ${tokenHolderPubKey}    0    0
-    ...    0    ${EMPTY}    TRUE    PTN    ${assetId2}
+    ${result}    getPacketInfo    ${tokenHolderPubKey}
+    Should Be Equal As Strings    ${result["Token"][0]["BalanceAmount"]}    90
+    Should Be Equal As Strings    ${result["Token"][1]["amount"]}    90
+    updatePacket    ${twoAddr}    PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99    100    ${tokenHolderPubKey}    0    0
+    ...    0    ${EMPTY}    true
     sleep    4
-    getPacketInfo    ${tokenHolderPubKey}
-    getPacketAllocationHistory    ${tokenHolderPubKey}
+    multiTokenUpdated    ${twoAddr}    ${assetId1}    10    ${assetId2}    10
+    sleep    4
+    ${result}    getPacketInfo    ${tokenHolderPubKey}
+    Should Be Equal As Strings    ${result["Token"][0]["BalanceAmount"]}    100
+    Should Be Equal As Strings    ${result["Token"][1]["amount"]}    100
+    Should Be Equal As Strings    ${result["Token"][2]["amount"]}    100
 
 *** Keywords ***
 createPacket
