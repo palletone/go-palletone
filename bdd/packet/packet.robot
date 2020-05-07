@@ -675,7 +675,23 @@ multiToken
     Should Be Equal As Strings    ${pulled}    true
 
 multiTokenUpdate
-    [Documentation]    t3,t4 token 从
+    [Documentation]    t3 token 从
+    ...
+    ...
+    ...    amount = 90
+    ...    count = 0
+    ...    min = 0
+    ...    max = 0
+    ...
+    ...    调整为
+    ...
+    ...    amount = 100
+    ...    count = 0
+    ...    min = 0
+    ...    max = 0
+    ...
+    ...
+    ...    t4 token 从
     ...
     ...
     ...    amount = 90
@@ -716,11 +732,14 @@ multiTokenUpdate
     createMultiTokenPacket    ${twoAddr}    90    ${tokenHolderPubKey}    0    0    0
     ...    ${EMPTY}    true    ${assetId1}    ${assetId2}
     sleep    3
-    getPacketInfo    ${tokenHolderPubKey}
-    multiTokenUpdated    ${twoAddr}    PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99    10    ${tokenHolderPubKey}    0    0
-    ...    0    ${EMPTY}    TRUE    ${assetId1}    ${assetId2}
+    ${result}    getPacketInfo    ${tokenHolderPubKey}
+    Should Be Equal As Strings    ${result["Token"][0]["BalanceAmount"]}    90
+    Should Be Equal As Strings    ${result["Token"][1]["amount"]}    90
+    multiTokenUpdated    ${twoAddr}    ${assetId1}    10    ${assetId2}    10
     sleep    4
-    getPacketInfo    ${tokenHolderPubKey}
+    ${result}    getPacketInfo    ${tokenHolderPubKey}
+    Should Be Equal As Strings    ${result["Token"][0]["BalanceAmount"]}    100
+    Should Be Equal As Strings    ${result["Token"][1]["amount"]}    100
 
 multiAppend
     [Documentation]    创建包含 t5 和 t6 多 token 的红包，并且最后追加 PTN token 进入
@@ -934,11 +953,10 @@ createMultiTokenPacket
     [Return]    ${res}
 
 multiTokenUpdated
-    [Arguments]    ${addr}    ${toaddr}    ${amount}    ${pubkey}    ${count}    ${min}
-    ...    ${max}    ${expiredTime}    ${isConstant}    ${token1}    ${token2}
-    ${param}    Create List    updatePacket    ${pubkey}    ${count}    ${min}    ${max}
-    ...    ${expiredTime}    remark    ${isConstant}
-    ${two}    Create List    ${addr}    PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99    ${token1}    ${token2}    ${amount}
-    ...    ${amount}    1    PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99    ${param}
+    [Arguments]    ${addr}    ${token1}    ${amount1}    ${token2}    ${amount2}
+    ${param}    Create List    updatePacket    ${tokenHolderPubKey}    0    0    0
+    ...    ${EMPTY}    remark    true
+    ${two}    Create List    ${addr}    PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99    ${token1}    ${token2}    ${amount1}
+    ...    ${amount2}    1    PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99    ${param}
     ${res}    post    contract_ccinvokeMutiToken    updatePacket    ${two}
     log    ${res}
