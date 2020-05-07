@@ -827,6 +827,90 @@ multiTokenRecycle
     ${t}    getBalance    ${twoAddr}    ${assetId2}
     Should Be Equal As Numbers    ${t}    1000
 
+multiTokenPull
+    [Documentation]    领完不够，更新
+    listAccounts    #    主要获取 tokenHolder
+    unlockAccount    ${tokenHolder}    1    #    解锁 tokenHolder
+    ${twoAddr}    newAccount    #获取红包测试地址
+    sleep    3
+    transferPtn    ${tokenHolder}    ${twoAddr}    10000    1    1
+    sleep    3
+    unlockAccount    ${twoAddr}    1
+    getBalance    ${twoAddr}    PTN
+    getPublicKey    ${twoAddr}    #获取红包测试地址的公钥
+    ${result}    createToken    ${twoAddr}    t9
+    log    ${result}
+    sleep    5
+    ${assetId1}    ccquery    t9
+    ${t}    getBalance    ${twoAddr}    ${assetId1}
+    log    ${t}
+    Should Be Equal As Numbers    ${t}    1000
+    ${t}    getBalance    ${twoAddr}    PTN
+    log    ${t}
+    ${result}    createToken    ${twoAddr}    t10
+    log    ${result}
+    sleep    5
+    ${assetId2}    ccquery    t10
+    ${t}    getBalance    ${twoAddr}    ${assetId2}
+    Should Be Equal As Numbers    ${t}    1000
+    createMultiTokenPacket    ${twoAddr}    5    ${tokenHolderPubKey}    0    0    0
+    ...    ${EMPTY}    true    ${assetId1}    ${assetId2}
+    sleep    3
+    ${result}    getPacketInfo    ${tokenHolderPubKey}
+    Should Be Equal As Strings    ${result["Token"][0]["BalanceAmount"]}    5
+    Should Be Equal As Strings    ${result["Token"][1]["amount"]}    5
+    getPacketAllocationHistory    ${tokenHolderPubKey}
+    ${oneAddr}    newAccount
+    sleep    3
+    sign    ${twoAddr}    11,1
+    sleep    3
+    pullPacket    ${tokenHolder}    1    ${signature}    ${oneAddr}    1,1
+    sleep    3
+    getBalance    ${oneAddr}    ${assetId1}
+    getPacketInfo    ${tokenHolderPubKey}
+    getPacketAllocationHistory    ${tokenHolderPubKey}
+    sign    ${twoAddr}    22,2
+    sleep    3
+    pullPacket    ${tokenHolder}    2    ${signature}    ${oneAddr}    2,2
+    sleep    3
+    getBalance    ${oneAddr}    ${assetId1}
+    getPacketInfo    ${tokenHolderPubKey}
+    getPacketAllocationHistory    ${tokenHolderPubKey}
+    sign    ${twoAddr}    33,3
+    sleep    3
+    pullPacket    ${tokenHolder}    3    ${signature}    ${oneAddr}    3,3    # 不成功
+    sleep    3
+    getBalance    ${oneAddr}    ${assetId1}
+    getPacketInfo    ${tokenHolderPubKey}
+    getPacketAllocationHistory    ${tokenHolderPubKey}
+    pullPacket    ${tokenHolder}    3    ${signature}    ${oneAddr}    3,3    # 不成功
+    sleep    3
+    ${amount}    getBalance    ${oneAddr}    ${assetId1}
+    Should Be Equal As Numbers    ${amount}    3
+    ${amount}    getBalance    ${oneAddr}    ${assetId2}
+    Should Be Equal As Numbers    ${amount}    3
+    ${result}    getPacketInfo    ${tokenHolderPubKey}
+    Should Be Equal As Strings    ${result["Token"][0]["BalanceAmount"]}    2
+    Should Be Equal As Strings    ${result["Token"][1]["BalanceAmount"]}    2
+    ${result}    getPacketAllocationHistory    ${tokenHolderPubKey}
+    Should Be Equal As Strings    ${result[0]["PubKey"]}    ${tokenHolderPubKey}
+    multiTokenUpdated    ${twoAddr}    ${assetId1}    10    ${assetId2}    10
+    sleep    3
+    ${result}    getPacketInfo    ${tokenHolderPubKey}
+    Should Be Equal As Strings    ${result["Token"][0]["BalanceAmount"]}    12
+    Should Be Equal As Strings    ${result["Token"][1]["BalanceAmount"]}    12
+    sign    ${twoAddr}    33,3
+    sleep    3
+    pullPacket    ${tokenHolder}    3    ${signature}    ${oneAddr}    3,3    # 成功
+    sleep    3
+    ${amount}    getBalance    ${oneAddr}    ${assetId1}
+    Should Be Equal As Numbers    ${amount}    6
+    ${amount}    getBalance    ${oneAddr}    ${assetId2}
+    Should Be Equal As Numbers    ${amount}    6
+    ${result}    getPacketInfo    ${tokenHolderPubKey}
+    Should Be Equal As Strings    ${result["Token"][0]["BalanceAmount"]}    9
+    Should Be Equal As Strings    ${result["Token"][1]["BalanceAmount"]}    9
+
 *** Keywords ***
 createPacket
     [Arguments]    ${addr}    ${amount}    ${pubkey}    ${count}    ${min}    ${max}
