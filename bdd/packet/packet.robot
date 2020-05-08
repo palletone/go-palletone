@@ -345,15 +345,15 @@ packet5
     listAccounts    #    主要获取 tokenHolder
     unlockAccount    ${tokenHolder}    1    #    解锁 tokenHolder
     ${twoAddr}    newAccount
-    sleep    10
+    sleep    3
     transferPtn    ${tokenHolder}    ${twoAddr}    10000    1    1
-    sleep    10
+    sleep    3
     unlockAccount    ${twoAddr}    1
-    sleep    10
+    sleep    3
     getPublicKey    ${twoAddr}
     createPacket    ${twoAddr}    900    ${tokenHolderPubKey}    10    1    10
-    ...    ${time}    false
-    sleep    10
+    ...    2020-05-06 14:51:18    false
+    sleep    3
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     getBalance    ${twoAddr}    PTN
@@ -607,34 +607,37 @@ packet8
     getAllPacketInfo
 
 multiToken
+    [Documentation]    创建包含 t1 和 t2 多 token 的红包，并且领取 3 次
     listAccounts    #    主要获取 tokenHolder
     unlockAccount    ${tokenHolder}    1    #    解锁 tokenHolder
-    ${twoAddr}    newAccount
+    ${twoAddr}    newAccount    #获取红包测试地址
     sleep    3
     transferPtn    ${tokenHolder}    ${twoAddr}    10000    1    1
     sleep    3
     unlockAccount    ${twoAddr}    1
     getBalance    ${twoAddr}    PTN
-    getPublicKey    ${twoAddr}
-    ${result}    createToken    ${twoAddr}    t11
+    getPublicKey    ${twoAddr}    #获取红包测试地址的公钥
+    ${result}    createToken    ${twoAddr}    t1
     log    ${result}
     sleep    5
-    ${assetId1}    ccquery    t11
+    ${assetId1}    ccquery    t1
     ${t}    getBalance    ${twoAddr}    ${assetId1}
     log    ${t}
     Should Be Equal As Numbers    ${t}    1000
     ${t}    getBalance    ${twoAddr}    PTN
     log    ${t}
-    ${result}    createToken    ${twoAddr}    t22
+    ${result}    createToken    ${twoAddr}    t2
     log    ${result}
     sleep    5
-    ${assetId2}    ccquery    t22
+    ${assetId2}    ccquery    t2
     ${t}    getBalance    ${twoAddr}    ${assetId2}
     Should Be Equal As Numbers    ${t}    1000
-    createMultiTokenPacket    ${twoAddr}    90    ${tokenHolderPubKey}    10    1    10
+    createMultiTokenPacket    ${twoAddr}    90    ${tokenHolderPubKey}    0    0    0
     ...    ${EMPTY}    true    ${assetId1}    ${assetId2}
     sleep    3
-    getPacketInfo    ${tokenHolderPubKey}
+    ${result}    getPacketInfo    ${tokenHolderPubKey}
+    Should Be Equal As Strings    ${result["Token"][0]["BalanceAmount"]}    90
+    Should Be Equal As Strings    ${result["Token"][1]["amount"]}    90
     getPacketAllocationHistory    ${tokenHolderPubKey}
     ${oneAddr}    newAccount
     sleep    3
@@ -666,22 +669,42 @@ multiToken
     ${result}    getPacketInfo    ${tokenHolderPubKey}
     Should Be Equal As Strings    ${result["Token"][0]["BalanceAmount"]}    84
     log    ${result}
-    getPacketAllocationHistory    ${tokenHolderPubKey}
+    ${result}    getPacketAllocationHistory    ${tokenHolderPubKey}
+    Should Be Equal As Strings    ${result[0]["PubKey"]}    ${tokenHolderPubKey}
     ${pulled}    isPulledPacket    ${tokenHolderPubKey}    3
     Should Be Equal As Strings    ${pulled}    true
 
 multiTokenUpdate
-    [Documentation]    amount = 90
-    ...    count = 10
-    ...    min = 1
-    ...    max = 10
+    [Documentation]    t3 token 从
+    ...
+    ...
+    ...    amount = 90
+    ...    count = 0
+    ...    min = 0
+    ...    max = 0
     ...
     ...    调整为
     ...
     ...    amount = 100
-    ...    count = 11
-    ...    min = 2
-    ...    max = 11
+    ...    count = 0
+    ...    min = 0
+    ...    max = 0
+    ...
+    ...
+    ...    t4 token 从
+    ...
+    ...
+    ...    amount = 90
+    ...    count = 0
+    ...    min = 0
+    ...    max = 0
+    ...
+    ...    调整为
+    ...
+    ...    amount = 100
+    ...    count = 0
+    ...    min = 0
+    ...    max = 0
     listAccounts    #    主要获取 tokenHolder
     unlockAccount    ${tokenHolder}    1    #    解锁 tokenHolder
     ${twoAddr}    newAccount
@@ -706,16 +729,20 @@ multiTokenUpdate
     ${assetId2}    ccquery    t4
     ${t}    getBalance    ${twoAddr}    ${assetId2}
     Should Be Equal As Numbers    ${t}    1000
-    createMultiTokenPacket    ${twoAddr}    90    ${tokenHolderPubKey}    10    1    10
+    createMultiTokenPacket    ${twoAddr}    90    ${tokenHolderPubKey}    0    0    0
     ...    ${EMPTY}    true    ${assetId1}    ${assetId2}
     sleep    3
-    getPacketInfo    ${tokenHolderPubKey}
-    multiTokenUpdate    ${twoAddr}    PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99    10    ${tokenHolderPubKey}    11    2
-    ...    11    ${EMPTY}    TRUE    ${assetId1}    ${assetId2}
+    ${result}    getPacketInfo    ${tokenHolderPubKey}
+    Should Be Equal As Strings    ${result["Token"][0]["BalanceAmount"]}    90
+    Should Be Equal As Strings    ${result["Token"][1]["amount"]}    90
+    multiTokenUpdated    ${twoAddr}    ${assetId1}    10    ${assetId2}    10
     sleep    4
-    getPacketInfo    ${tokenHolderPubKey}
+    ${result}    getPacketInfo    ${tokenHolderPubKey}
+    Should Be Equal As Strings    ${result["Token"][0]["BalanceAmount"]}    100
+    Should Be Equal As Strings    ${result["Token"][1]["amount"]}    100
 
 multiAppend
+    [Documentation]    创建包含 t5 和 t6 多 token 的红包，并且最后追加 PTN token 进入
     listAccounts    #    主要获取 tokenHolder
     unlockAccount    ${tokenHolder}    1    #    解锁 tokenHolder
     ${twoAddr}    newAccount
@@ -740,15 +767,149 @@ multiAppend
     ${assetId2}    ccquery    t6
     ${t}    getBalance    ${twoAddr}    ${assetId2}
     Should Be Equal As Numbers    ${t}    1000
-    createMultiTokenPacket    ${twoAddr}    90    ${tokenHolderPubKey}    10    1    10
+    createMultiTokenPacket    ${twoAddr}    90    ${tokenHolderPubKey}    0    0    0
     ...    ${EMPTY}    true    ${assetId1}    ${assetId2}
     sleep    3
-    getPacketInfo    ${tokenHolderPubKey}
-    multiTokenUpdate    ${twoAddr}    PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99    10    ${tokenHolderPubKey}    11    2
-    ...    11    ${EMPTY}    TRUE    PTN    ${assetId2}
+    ${result}    getPacketInfo    ${tokenHolderPubKey}
+    Should Be Equal As Strings    ${result["Token"][0]["BalanceAmount"]}    90
+    Should Be Equal As Strings    ${result["Token"][1]["amount"]}    90
+    updatePacket    ${twoAddr}    PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99    100    ${tokenHolderPubKey}    0    0
+    ...    0    ${EMPTY}    true
     sleep    4
+    multiTokenUpdated    ${twoAddr}    ${assetId1}    10    ${assetId2}    10
+    sleep    4
+    ${result}    getPacketInfo    ${tokenHolderPubKey}
+    Should Be Equal As Strings    ${result["Token"][0]["BalanceAmount"]}    100
+    Should Be Equal As Strings    ${result["Token"][1]["amount"]}    100
+    Should Be Equal As Strings    ${result["Token"][2]["amount"]}    100
+
+multiTokenRecycle
+    listAccounts    #    主要获取 tokenHolder
+    unlockAccount    ${tokenHolder}    1    #    解锁 tokenHolder
+    ${twoAddr}    newAccount
+    sleep    3
+    transferPtn    ${tokenHolder}    ${twoAddr}    10000    1    1
+    sleep    3
+    unlockAccount    ${twoAddr}    1
+    getBalance    ${twoAddr}    PTN
+    getPublicKey    ${twoAddr}
+    ${result}    createToken    ${twoAddr}    t7
+    log    ${result}
+    sleep    3
+    ${assetId1}    ccquery    t7
+    ${t}    getBalance    ${twoAddr}    ${assetId1}
+    log    ${t}
+    Should Be Equal As Numbers    ${t}    1000
+    ${result}    createToken    ${twoAddr}    t8
+    log    ${result}
+    sleep    3
+    ${assetId2}    ccquery    t8
+    ${t}    getBalance    ${twoAddr}    ${assetId2}
+    Should Be Equal As Numbers    ${t}    1000
+    ${t}    getBalance    ${twoAddr}    PTN
+    log    ${t}
+    Should Be Equal As Numbers    ${t}    9998
+    createMultiTokenPacket    ${twoAddr}    90    ${tokenHolderPubKey}    0    0    0
+    ...    2020-05-06 14:51:18    true    ${assetId1}    ${assetId2}
+    sleep    3
+    ${result}    getPacketInfo    ${tokenHolderPubKey}
+    Should Be Equal As Strings    ${result["Token"][0]["BalanceAmount"]}    90
+    Should Be Equal As Strings    ${result["Token"][1]["amount"]}    90
+    recyclePacket    ${twoAddr}    ${tokenHolderPubKey}
+    sleep    5
+    ${result}    getPacketInfo    ${tokenHolderPubKey}
+    Should Be Equal As Strings    ${result["Token"][0]["BalanceAmount"]}    0
+    Should Be Equal As Strings    ${result["Token"][1]["BalanceAmount"]}    0
+    ${t}    getBalance    ${twoAddr}    PTN
+    Should Be Equal As Numbers    ${t}    9996
+    ${t}    getBalance    ${twoAddr}    ${assetId1}
+    Should Be Equal As Numbers    ${t}    1000
+    ${t}    getBalance    ${twoAddr}    ${assetId2}
+    Should Be Equal As Numbers    ${t}    1000
+
+multiTokenPull
+    [Documentation]    领完不够，更新
+    listAccounts    #    主要获取 tokenHolder
+    unlockAccount    ${tokenHolder}    1    #    解锁 tokenHolder
+    ${twoAddr}    newAccount    #获取红包测试地址
+    sleep    3
+    transferPtn    ${tokenHolder}    ${twoAddr}    10000    1    1
+    sleep    3
+    unlockAccount    ${twoAddr}    1
+    getBalance    ${twoAddr}    PTN
+    getPublicKey    ${twoAddr}    #获取红包测试地址的公钥
+    ${result}    createToken    ${twoAddr}    t9
+    log    ${result}
+    sleep    5
+    ${assetId1}    ccquery    t9
+    ${t}    getBalance    ${twoAddr}    ${assetId1}
+    log    ${t}
+    Should Be Equal As Numbers    ${t}    1000
+    ${t}    getBalance    ${twoAddr}    PTN
+    log    ${t}
+    ${result}    createToken    ${twoAddr}    t10
+    log    ${result}
+    sleep    5
+    ${assetId2}    ccquery    t10
+    ${t}    getBalance    ${twoAddr}    ${assetId2}
+    Should Be Equal As Numbers    ${t}    1000
+    createMultiTokenPacket    ${twoAddr}    5    ${tokenHolderPubKey}    0    0    0
+    ...    ${EMPTY}    true    ${assetId1}    ${assetId2}
+    sleep    3
+    ${result}    getPacketInfo    ${tokenHolderPubKey}
+    Should Be Equal As Strings    ${result["Token"][0]["BalanceAmount"]}    5
+    Should Be Equal As Strings    ${result["Token"][1]["amount"]}    5
+    getPacketAllocationHistory    ${tokenHolderPubKey}
+    ${oneAddr}    newAccount
+    sleep    3
+    sign    ${twoAddr}    11,1
+    sleep    3
+    pullPacket    ${tokenHolder}    1    ${signature}    ${oneAddr}    1,1
+    sleep    3
+    getBalance    ${oneAddr}    ${assetId1}
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
+    sign    ${twoAddr}    22,2
+    sleep    3
+    pullPacket    ${tokenHolder}    2    ${signature}    ${oneAddr}    2,2
+    sleep    3
+    getBalance    ${oneAddr}    ${assetId1}
+    getPacketInfo    ${tokenHolderPubKey}
+    getPacketAllocationHistory    ${tokenHolderPubKey}
+    sign    ${twoAddr}    33,3
+    sleep    3
+    pullPacket    ${tokenHolder}    3    ${signature}    ${oneAddr}    3,3    # 不成功
+    sleep    3
+    getBalance    ${oneAddr}    ${assetId1}
+    getPacketInfo    ${tokenHolderPubKey}
+    getPacketAllocationHistory    ${tokenHolderPubKey}
+    pullPacket    ${tokenHolder}    3    ${signature}    ${oneAddr}    3,3    # 不成功
+    sleep    3
+    ${amount}    getBalance    ${oneAddr}    ${assetId1}
+    Should Be Equal As Numbers    ${amount}    3
+    ${amount}    getBalance    ${oneAddr}    ${assetId2}
+    Should Be Equal As Numbers    ${amount}    3
+    ${result}    getPacketInfo    ${tokenHolderPubKey}
+    Should Be Equal As Strings    ${result["Token"][0]["BalanceAmount"]}    2
+    Should Be Equal As Strings    ${result["Token"][1]["BalanceAmount"]}    2
+    ${result}    getPacketAllocationHistory    ${tokenHolderPubKey}
+    Should Be Equal As Strings    ${result[0]["PubKey"]}    ${tokenHolderPubKey}
+    multiTokenUpdated    ${twoAddr}    ${assetId1}    10    ${assetId2}    10
+    sleep    3
+    ${result}    getPacketInfo    ${tokenHolderPubKey}
+    Should Be Equal As Strings    ${result["Token"][0]["BalanceAmount"]}    12
+    Should Be Equal As Strings    ${result["Token"][1]["BalanceAmount"]}    12
+    sign    ${twoAddr}    33,3
+    sleep    3
+    pullPacket    ${tokenHolder}    3    ${signature}    ${oneAddr}    3,3    # 成功
+    sleep    3
+    ${amount}    getBalance    ${oneAddr}    ${assetId1}
+    Should Be Equal As Numbers    ${amount}    6
+    ${amount}    getBalance    ${oneAddr}    ${assetId2}
+    Should Be Equal As Numbers    ${amount}    6
+    ${result}    getPacketInfo    ${tokenHolderPubKey}
+    Should Be Equal As Strings    ${result["Token"][0]["BalanceAmount"]}    9
+    Should Be Equal As Strings    ${result["Token"][1]["BalanceAmount"]}    9
 
 *** Keywords ***
 createPacket
@@ -833,6 +994,8 @@ getPacketAllocationHistory
     ${two}    Create List    PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99    ${param}    ${10}
     ${res}    post    contract_ccquery    getPacketAllocationHistory    ${two}
     log    ${res}
+    ${addressMap}    To Json    ${res}
+    [Return]    ${addressMap}
 
 updatePacket
     [Arguments]    ${addr}    ${toaddr}    ${amount}    ${pubkey}    ${count}    ${min}
@@ -923,12 +1086,11 @@ createMultiTokenPacket
     ...    # PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99    ${param}
     [Return]    ${res}
 
-multiTokenUpdate
-    [Arguments]    ${addr}    ${toaddr}    ${amount}    ${pubkey}    ${count}    ${min}
-    ...    ${max}    ${expiredTime}    ${isConstant}    ${token1}    ${token2}
-    ${param}    Create List    updatePacket    ${pubkey}    ${count}    ${min}    ${max}
-    ...    ${expiredTime}    remark    ${isConstant}
-    ${two}    Create List    ${addr}    PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99    ${token1}    ${token2}    ${amount}
-    ...    ${amount}    1    PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99    ${param}
+multiTokenUpdated
+    [Arguments]    ${addr}    ${token1}    ${amount1}    ${token2}    ${amount2}
+    ${param}    Create List    updatePacket    ${tokenHolderPubKey}    0    0    0
+    ...    ${EMPTY}    remark    true
+    ${two}    Create List    ${addr}    PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99    ${token1}    ${token2}    ${amount1}
+    ...    ${amount2}    1    PCGTta3M4t3yXu8uRgkKvaWd2d8DSDC6K99    ${param}
     ${res}    post    contract_ccinvokeMutiToken    updatePacket    ${two}
     log    ${res}
