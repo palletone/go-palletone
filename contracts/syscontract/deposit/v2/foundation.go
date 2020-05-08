@@ -16,7 +16,6 @@ package v2
 
 import (
 	"fmt"
-	"github.com/palletone/go-palletone/dag/errors"
 	"strings"
 
 	"github.com/palletone/go-palletone/common"
@@ -411,84 +410,84 @@ func hanldeNodeRemoveFromAgreeList(stub shim.ChaincodeStubInterface, address str
 }
 
 //
-func AddMember(stub shim.ChaincodeStubInterface,address string) error {
-	if !isFoundationInvoke(stub) {
-		return errors.New("please use foundation address")
-	}
-	addr, err := common.StringToAddress(address)
-	if err != nil {
-		return err
-	}
-	err = addMediator(stub,addr)
-	if err != nil {
-		return err
-	}
-	err = addJury(stub,addr)
-	if err != nil {
-		return err
-	}
-	return nil
-}
+//func AddMember(stub shim.ChaincodeStubInterface,address string) error {
+//	if !isFoundationInvoke(stub) {
+//		return errors.New("please use foundation address")
+//	}
+//	addr, err := common.StringToAddress(address)
+//	if err != nil {
+//		return err
+//	}
+//	err = addMediator(stub,addr)
+//	if err != nil {
+//		return err
+//	}
+//	err = addJury(stub,addr)
+//	if err != nil {
+//		return err
+//	}
+//	return nil
+//}
+////
+//func addMediator(stub shim.ChaincodeStubInterface,address common.Address) error {
+//	//  加入 mediator 候选列表
+//	err := addCandaditeList(stub, address, modules.MediatorList)
+//	if err != nil {
+//		errStr := fmt.Sprintf("Add address = %s to mediator candidate list failed: error = %s",address.String(),err.Error())
+//		return errors.New(errStr)
+//	}
+//	return nil
+//}
+////
+//func addJury(stub shim.ChaincodeStubInterface,address common.Address) error {
+//	//  加入 jury 候选列表
+//	err := addCandaditeList(stub, address, modules.JuryList)
+//	if err != nil {
+//		errStr := fmt.Sprintf("Add address = %s to jury candidate list failed: error = %s",address.String(),err.Error())
+//		return errors.New(errStr)
+//	}
+//	return nil
+//}
 //
-func addMediator(stub shim.ChaincodeStubInterface,address common.Address) error {
-	//  加入 mediator 候选列表
-	err := addCandaditeList(stub, address, modules.MediatorList)
-	if err != nil {
-		errStr := fmt.Sprintf("Add address = %s to mediator candidate list failed: error = %s",address.String(),err.Error())
-		return errors.New(errStr)
-	}
-	return nil
-}
+////
+//func RemoveMember(stub shim.ChaincodeStubInterface,address string) error {
+//	if !isFoundationInvoke(stub) {
+//		return errors.New("please use foundation address")
+//	}
+//	_, err := common.StringToAddress(address)
+//	if err != nil {
+//		return err
+//	}
+//	err = rmMediator(stub,address)
+//	if err != nil {
+//		return err
+//	}
+//	err = rmJury(stub,address)
+//	if err != nil {
+//		return err
+//	}
+//	return nil
+//}
 //
-func addJury(stub shim.ChaincodeStubInterface,address common.Address) error {
-	//  加入 jury 候选列表
-	err := addCandaditeList(stub, address, modules.JuryList)
-	if err != nil {
-		errStr := fmt.Sprintf("Add address = %s to jury candidate list failed: error = %s",address.String(),err.Error())
-		return errors.New(errStr)
-	}
-	return nil
-}
-
+//func rmMediator(stub shim.ChaincodeStubInterface,address string) error {
+//	//  移除列表
+//	err := moveCandidate(modules.MediatorList, address, stub)
+//	if err != nil {
+//		errStr := fmt.Sprintf("Remove address = %s from mediator candidate list failed: error = %s",address,err.Error())
+//		return errors.New(errStr)
+//	}
+//	return nil
+//}
 //
-func RemoveMember(stub shim.ChaincodeStubInterface,address string) error {
-	if !isFoundationInvoke(stub) {
-		return errors.New("please use foundation address")
-	}
-	_, err := common.StringToAddress(address)
-	if err != nil {
-		return err
-	}
-	err = rmMediator(stub,address)
-	if err != nil {
-		return err
-	}
-	err = rmJury(stub,address)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func rmMediator(stub shim.ChaincodeStubInterface,address string) error {
-	//  移除列表
-	err := moveCandidate(modules.MediatorList, address, stub)
-	if err != nil {
-		errStr := fmt.Sprintf("Remove address = %s from mediator candidate list failed: error = %s",address,err.Error())
-		return errors.New(errStr)
-	}
-	return nil
-}
-
-func rmJury(stub shim.ChaincodeStubInterface,address string) error {
-	//  移除列表
-	err := moveCandidate(modules.JuryList, address, stub)
-	if err != nil {
-		errStr := fmt.Sprintf("Remove address = %s from jury candidate list failed: error = %s",address,err.Error())
-		return errors.New(errStr)
-	}
-	return nil
-}
+//func rmJury(stub shim.ChaincodeStubInterface,address string) error {
+//	//  移除列表
+//	err := moveCandidate(modules.JuryList, address, stub)
+//	if err != nil {
+//		errStr := fmt.Sprintf("Remove address = %s from jury candidate list failed: error = %s",address,err.Error())
+//		return errors.New(errStr)
+//	}
+//	return nil
+//}
 
 //func handleRemoveMediatorNode(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 //	address, err := common.StringToAddress(args[0])
