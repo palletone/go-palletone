@@ -29,6 +29,8 @@ COPY init.sh .
 COPY newgenesis.sh .
 COPY gptn-entrypoint.sh .
 
+RUN chmod +x *.sh
+
 # Exposing 8545 8546 30303 30303/udp ports
 EXPOSE 8545
 
