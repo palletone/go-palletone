@@ -65,8 +65,6 @@ const (
 	HandleForApplyQuitJury         = "HandleForApplyQuitJury"
 	HandleForApplyQuitDev          = "HandleForApplyQuitDev"
 	HanldeNodeRemoveFromAgreeList  = "HanldeNodeRemoveFromAgreeList"
-	HandleForAddMediator		   = "HandleFoAddMediator"
-	HandleForRemoveMediator		   = "HandleFoRemoveMediator"
 
 	GetDeposit     = "GetNodeBalance"
 	GetJuryDeposit = "GetJuryDeposit"

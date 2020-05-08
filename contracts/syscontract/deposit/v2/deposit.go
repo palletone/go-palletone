@@ -515,7 +515,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 			log.Error(errStr)
 			return shim.Error(errStr)
 		}
-		err := d.ApplyBecomeMediator(stub, args[0])
+		err := d.HandleForAddMediator(stub, args[0])
 		if err != nil {
 			return shim.Error(err.Error())
 		}
@@ -524,6 +524,11 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 
 	}
 	return shim.Error("please enter validate function name")
+}
+
+// 基金会手动添加生产节点
+func (d *DepositChaincode) HandleForAddMediator(stub shim.ChaincodeStubInterface, mediatorCreateArgs string) error {
+	return handleForAddMediator(stub, mediatorCreateArgs)
 }
 
 func (d *DepositChaincode) GetMediatorDeposit(stub shim.ChaincodeStubInterface, address string) (*modules.MediatorDepositJson, error) {
