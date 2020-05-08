@@ -30,6 +30,118 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
+//  基金会手动将生产节点移除候选列表
+func handleForRemoveMediator(stub shim.ChaincodeStubInterface, address string) error {
+	// 条件检查
+	if !isFoundationInvoke(stub) {
+		return errors.New("please use foundation address")
+	}
+	_, err := common.StringToAddress(address)
+	if err != nil {
+		return err
+	}
+
+	// 从列表移除
+	err = moveCandidate(modules.MediatorList, address, stub)
+	if err != nil {
+		log.Error("MoveCandidate err:", "error", err)
+		return err
+	}
+	err = moveCandidate(modules.JuryList, address, stub)
+	if err != nil {
+		log.Error("MoveCandidate err:", "error", err)
+		return err
+	}
+
+	return nil
+}
+
+// 处理基金会手动添加生产节点
+func handleForAddMediator(stub shim.ChaincodeStubInterface, mediatorCreateArgs string) error {
+	if !isFoundationInvoke(stub) {
+		return errors.New("please use foundation address")
+	}
+
+	log.Info("Start entering handleForAddMediator func")
+	// 解析参数
+	var mco modules.MediatorCreateArgs
+	err := json.Unmarshal([]byte(mediatorCreateArgs), &mco)
+	if err != nil {
+		errStr := fmt.Sprintf("invalid args: %v", err.Error())
+		log.Errorf(errStr)
+		return errors.New(errStr)
+	}
+
+	// 参数验证
+	if mco.MediatorInfoBase == nil || mco.MediatorApplyInfo == nil {
+		errStr := fmt.Sprintf("invalid args, is null")
+		log.Errorf(errStr)
+		return errors.New(errStr)
+	}
+
+	// 补全参数
+	if mco.RewardAddr == "" {
+		mco.RewardAddr = mco.RewardAdd
+	}
+
+	// 获取作为juror的相关参数
+	_, jde, err := mco.Validate()
+	if err != nil {
+		errStr := fmt.Sprintf("invalid args: %v", err.Error())
+		log.Errorf(errStr)
+		return errors.New(errStr)
+	}
+
+	// 保存juror保证金和相关设置
+	jd := &modules.JurorDeposit{}
+	jd.Balance = 0
+	jd.EnterTime = getTime(stub)
+	jd.Role = modules.Jury
+	jd.Address = mco.AddStr
+	jd.JurorDepositExtra = jde
+	err = saveJuryBalance(stub, mco.AddStr, jd)
+	if err != nil {
+		log.Error("save node balance err: ", "error", err)
+		return err
+	}
+
+	//  加入候选列表
+	err = addToCandaditeList(stub, mco.AddStr, modules.MediatorList)
+	if err != nil {
+		log.Error("addCandidateListAndPutStateForMediator err: ", "error", err)
+		return err
+	}
+
+	//  自动加入jury候选列表
+	err = addToCandaditeList(stub, mco.AddStr, modules.JuryList)
+	if err != nil {
+		log.Error("addCandidateListAndPutStateForMediator err: ", "error", err)
+		return err
+	}
+
+	log.Info("End entering handleForAddMediator func")
+	return nil
+}
+
+//  加入相应候选列表，mediator jury dev
+func addToCandaditeList(stub shim.ChaincodeStubInterface, invokeAddr string, candidate string) error {
+	//  获取列表
+	list, err := getList(stub, candidate)
+	if err != nil {
+		return err
+	}
+	if list == nil {
+		list = make(map[string]bool)
+	}
+
+	list[invokeAddr] = true
+	err = saveList(stub,candidate,list)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 //  申请加入
 func applyBecomeMediator(stub shim.ChaincodeStubInterface, mediatorCreateArgs string) error {
 	log.Info("Start entering apply for become mediator func")

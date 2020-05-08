@@ -33,6 +33,8 @@ const (
 	GetMediatorDeposit = "GetMediatorDeposit"
 	MediatorApplyQuit  = "MediatorApplyQuit"
 	UpdateMediatorInfo = "UpdateMediatorInfo"
+	HandleForAddMediator		   = "HandleForAddMediator"
+	HandleForRemoveMediator		   = "HandleForRemoveMediator"
 )
 
 // mediator 信息

@@ -346,16 +346,6 @@ func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvo
 				return err
 			}
 
-			log.Debugf("Save Apply Mediator Invoke Req for account: (%v)", mco.AddStr)
-
-			mi := modules.NewMediatorInfo()
-			mi.MediatorInfoBase = mco.MediatorInfoBase
-			mi.MediatorApplyInfo = mco.MediatorApplyInfo
-
-			//if mi.RewardAdd == "" {
-			//	mi.RewardAdd = mi.AddStr
-			//}
-
 			// 判断是否是1.0.2之前的mediator
 			if pubKey, isFind := constants.OldMainNetMediatorAndPubKey[mco.AddStr]; isFind {
 				juror := modules.JurorDeposit{}
@@ -389,6 +379,37 @@ func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvo
 				}
 			}
 
+			log.Debugf("Save Apply Mediator Invoke Req for account: (%v)", mco.AddStr)
+
+			mi := modules.NewMediatorInfo()
+			mi.MediatorInfoBase = mco.MediatorInfoBase
+			mi.MediatorApplyInfo = mco.MediatorApplyInfo
+
+			//if mi.RewardAdd == "" {
+			//	mi.RewardAdd = mi.AddStr
+			//}
+
+			addr, err := core.StrToMedAdd(mi.AddStr)
+			if err != nil {
+				log.Warnf("StrToMedAdd err: %v", err.Error())
+				return err
+			}
+
+			statedb.StoreMediatorInfo(addr, mi)
+		} else if string(invoke.Args[0]) == modules.HandleForAddMediator  {
+			mco := modules.NewMediatorCreateArgs()
+
+			err := json.Unmarshal(invoke.Args[1], &mco)
+			if err != nil {
+				log.Warnf("HandleForAddMediator Args Unmarshal: %v", err.Error())
+				return err
+			}
+
+			log.Debugf("Save HandleForAddMediator Invoke Req for account: (%v)", mco.AddStr)
+
+			mi := modules.NewMediatorInfo()
+			mi.MediatorInfoBase = mco.MediatorInfoBase
+			mi.MediatorApplyInfo = mco.MediatorApplyInfo
 			addr, err := core.StrToMedAdd(mi.AddStr)
 			if err != nil {
 				log.Warnf("StrToMedAdd err: %v", err.Error())
