@@ -521,9 +521,24 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		}
 		return shim.Success(nil)
 	case modules.HandleForRemoveMediator:
-
+		log.Info("Enter DepositChaincode Contract " + modules.HandleForRemoveMediator + " Invoke")
+		if len(args) != 1 {
+			errStr := "Arg need only 1 parameter"
+			log.Error(errStr)
+			return shim.Error(errStr)
+		}
+		err := d.HandleForRemoveMediator(stub, args[0])
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		return shim.Success(nil)
 	}
 	return shim.Error("please enter validate function name")
+}
+
+// 基金会手动移除超级节点候选列表
+func (d DepositChaincode) HandleForRemoveMediator(stub shim.ChaincodeStubInterface, address string) error {
+	return handleForRemoveMediator(stub, address)
 }
 
 // 基金会手动添加生产节点

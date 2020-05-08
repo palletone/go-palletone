@@ -30,8 +30,38 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 )
 
+//  基金会手动将生产节点移除候选列表
+func handleForRemoveMediator(stub shim.ChaincodeStubInterface, address string) error {
+	// 条件检查
+	if !isFoundationInvoke(stub) {
+		return errors.New("please use foundation address")
+	}
+	_, err := common.StringToAddress(address)
+	if err != nil {
+		return err
+	}
+
+	// 从列表移除
+	err = moveCandidate(modules.MediatorList, address, stub)
+	if err != nil {
+		log.Error("MoveCandidate err:", "error", err)
+		return err
+	}
+	err = moveCandidate(modules.JuryList, address, stub)
+	if err != nil {
+		log.Error("MoveCandidate err:", "error", err)
+		return err
+	}
+
+	return nil
+}
+
 // 处理基金会手动添加生产节点
 func handleForAddMediator(stub shim.ChaincodeStubInterface, mediatorCreateArgs string) error {
+	if !isFoundationInvoke(stub) {
+		return errors.New("please use foundation address")
+	}
+
 	log.Info("Start entering handleForAddMediator func")
 	// 解析参数
 	var mco modules.MediatorCreateArgs
