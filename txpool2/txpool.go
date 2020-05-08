@@ -78,6 +78,7 @@ func NewTxPool4DI(config txspool.TxPoolConfig, cachedb palletcache.ICache, dag t
 		txValidator:           txValidator,
 		dag:                   dag,
 		tokenengine:           tokenEngine,
+		quit:                  make(chan struct{}),
 	}
 	go pool.loopResendTx(config.OrphanTTL)
 	return pool
@@ -659,8 +660,8 @@ func (pool *TxPool) Queued() ([]*txspool.TxPoolTransaction, error) {
 	return result, nil
 }
 func (pool *TxPool) Stop() {
+	close(pool.quit)
 	pool.scope.Close()
-	pool.quit <- struct{}{}
 	log.Info("Transaction pool stopped")
 }
 
