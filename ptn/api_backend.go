@@ -754,6 +754,11 @@ func (b *PtnApiBackend) GetContractInvokeHistory(addr string) ([]*ptnjson.Contra
 	}
 	return txjs, nil
 }
+
+func (b *PtnApiBackend)ContractEventBroadcast(event jury.ContractEvent, local bool) {
+	b.ptn.ContractBroadcast(event, local)
+}
+
 func (b *PtnApiBackend) ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi,
 ccLanguage string) ([]byte, error) {
 	//channelId := "palletone"

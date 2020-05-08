@@ -37,6 +37,7 @@ import (
 	"github.com/palletone/go-palletone/ptnjson/statistics"
 	"github.com/palletone/go-palletone/txspool"
 	"github.com/shopspring/decimal"
+	"github.com/palletone/go-palletone/consensus/jury"
 )
 
 // Backend interface provides the common API services (that are provided by
@@ -141,6 +142,7 @@ type Backend interface {
 	GetAssetTxHistory(asset *modules.Asset) ([]*ptnjson.TxHistoryJson, error)
 	GetAssetExistence(asset string) ([]*ptnjson.ProofOfExistenceJson, error)
 	//contract control
+	ContractEventBroadcast(event jury.ContractEvent, local bool)
 	ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi,
 		ccLanguage string) (TemplateId []byte, err error)
 	ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error)
