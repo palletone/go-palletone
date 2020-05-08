@@ -15,4 +15,6 @@ sed -i "s/HTTPHost = \"localhost\"/HTTPHost = \"0.0.0.0\"/g" ./ptn-config.toml
 
 sed -i "s/HTTPVirtualHosts = \[\"localhost\"\]/HTTPVirtualHosts = \[\"*\"\]/g" ./ptn-config.toml
 
+sleep 3
+
 ./gptn
