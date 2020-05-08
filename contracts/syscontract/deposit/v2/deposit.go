@@ -104,7 +104,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		log.Info("Enter DepositChaincode Contract " + modules.UpdateJuryInfo + " Invoke")
 		//  检查参数
 		if len(args) != 1 {
-			errStr := "arg need 1 parameter."
+			errStr := "arg need only 1 parameter."
 			log.Error(errStr)
 			return shim.Error(errStr)
 		}
@@ -511,7 +511,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	case modules.HandleForAddMediator:
 		log.Info("Enter DepositChaincode Contract " + modules.HandleForAddMediator + " Invoke")
 		if len(args) != 1 {
-			errStr := "Arg need 1 parameter"
+			errStr := "Arg need only 1 parameter"
 			log.Error(errStr)
 			return shim.Error(errStr)
 		}
@@ -523,7 +523,7 @@ func (d *DepositChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 	case modules.HandleForRemoveMediator:
 		log.Info("Enter DepositChaincode Contract " + modules.HandleForRemoveMediator + " Invoke")
 		if len(args) != 1 {
-			errStr := "Arg need one parameter"
+			errStr := "Arg need only 1 parameter"
 			log.Error(errStr)
 			return shim.Error(errStr)
 		}
