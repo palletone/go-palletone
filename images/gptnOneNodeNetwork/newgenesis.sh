@@ -1,5 +1,7 @@
 #!/usr/bin/expect
 
+set timeout 30
+
 spawn ./gptn newgenesis
 
 expect "Do you want to create a new account as the holder of the token? \[y/N\]"
