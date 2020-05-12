@@ -126,6 +126,13 @@ func (c *ContractSupportRepository) GetAddrByOutPoint(outPoint *modules.OutPoint
 	}
 	return c.tokenEngine.GetAddressFromScript(utxo.PkScript)
 }
+func (c *ContractSupportRepository) GetStxoEntry(outPoint *modules.OutPoint) (*modules.Stxo, error) {
+	stxo, err := c.utxoRep.GetStxoEntry(outPoint)
+	if err != nil {
+		return &modules.Stxo{}, err
+	}
+	return stxo,nil 
+}
 
 func (c *ContractSupportRepository) GetContract(id []byte) (*modules.Contract, error) {
 	return c.stateRep.GetContract(id)
