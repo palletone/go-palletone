@@ -32,6 +32,7 @@ type IContractDag interface {
 	GetContractTplCode(tplId []byte) ([]byte, error)
 	SaveTransaction(tx *modules.Transaction, txIndex int) error
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
+	GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error)
 	GetContractsWithJuryAddr(addr common.Hash) []*modules.Contract
 	SaveContract(contract *modules.Contract) error
 	GetImmutableChainParameters() *core.ImmutableChainParameters
