@@ -428,11 +428,13 @@ func handleMsg0(tx *modules.Transaction, dag dboperation.IContractDag, txPool tx
 	var txArgs [][]byte
 	invokeInfo := modules.InvokeInfo{}
 	utxoQuery := func(outpoint *modules.OutPoint) (*modules.Utxo, error) {
-		preUtxo, err := txPool.GetUtxoFromAll(outpoint)
-		if err == nil {
-			return preUtxo, nil
+		//preUtxo, err := txPool.GetUtxoFromAll(outpoint)
+		utxo, err := dag.GetUtxoEntry(outpoint)
+		if err != nil {
+			return &modules.Utxo{}, nil
 		}
-		return dag.GetUtxoEntry(outpoint)
+	
+		return utxo, nil
 	}
 	msgs := tx.TxMessages()
 	lenTxMsgs := len(msgs)
