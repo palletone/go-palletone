@@ -53,7 +53,6 @@ type ITxPool interface {
 	//查询交易池所有的UTXO，比如有A，B，C连续交易，那么ABC的UTXO都会被查询
 	GetUtxoFromAll(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	//查询交易池中未被使用的UTXO，比如有ABC连续交易，那么只有C的UTXO会被查询，而AB的已经被使用了
-	GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error) 
 	//GetUtxoFromFree(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	//订阅事件
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
