@@ -684,14 +684,13 @@ func CheckContractTxResult(tx *modules.Transaction, rwM rwset.TxManager, dag dbo
 		return false
 	}
 	resultMsgs := []*modules.Message{}
-	isResult := false
-	for _, msg := range tx.GetResultRawTx().TxMessages() {
-		if msg.App.IsRequest() {
-			isResult = true
+	rawTx:=tx.GetResultRawTx()
+	reqMsgCount:=rawTx.GetRequestMsgCount()
+	for i, msg := range rawTx.TxMessages() {
+		if i<reqMsgCount {
+			continue 
 		}
-		if isResult {
-			resultMsgs = append(resultMsgs, msg)
-		}
+		resultMsgs = append(resultMsgs, msg)
 	}
 	isMsgSame := msgsCompareInvoke(msgs, resultMsgs)
 	log.Debugf("CheckContractTxResult, compare request[%s] and execute result:%t", reqId.String(), isMsgSame)
