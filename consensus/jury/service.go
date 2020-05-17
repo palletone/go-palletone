@@ -311,7 +311,7 @@ func (p *Processor) runContractReq(reqId common.Hash, ele *modules.ElectionNode,
 		Dag:          dag,
 		Ele:          ele,
 		RwM:          txMgr,
-		TxPool:       p.ptn.TxPool(),
+		//TxPool:       p.ptn.TxPool(),
 		Contract:     p.contract,
 		ErrMsgEnable: p.errMsgEnable,
 	}
@@ -536,7 +536,7 @@ func (p *Processor) RunAndSignTx(reqTx *modules.Transaction, txMgr rwset.TxManag
 		RwM:          txMgr,
 		Contract:     p.contract,
 		ErrMsgEnable: p.errMsgEnable,
-		TxPool:       p.ptn.TxPool(),
+		//TxPool:       p.ptn.TxPool(),
 	}
 	reqId := reqTx.Hash()
 	log.Debugf("run contract request[%s]", reqId.String())

@@ -204,7 +204,12 @@ func (p *Processor) ContractInstallReqFee(from, to common.Address, daoAmount, da
 		log.Error("ContractInstallReqFee", "CreateGenericTransaction err:", err)
 		return 0, 0, 0, err
 	}
-	ctx := &contracts.ContractProcessContext{RwM: rwset.RwM, Dag: p.dag, TxPool: p.ptn.TxPool(), Contract: p.contract, ErrMsgEnable: p.errMsgEnable}
+	ctx := &contracts.ContractProcessContext{
+		RwM: rwset.RwM,
+		Dag: p.dag,
+		//TxPool: p.ptn.TxPool(),
+		Contract: p.contract,
+		ErrMsgEnable: p.errMsgEnable}
 	msgs, err := runContractCmd(ctx, reqTx)
 	if err != nil {
 		log.Error("ContractInstallReqFee", "RunContractCmd err:", err)

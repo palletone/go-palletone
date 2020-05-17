@@ -170,6 +170,7 @@ func New(ctx *node.ServiceContext, config *Config, cache palletcache.ICache, isT
 	} else {
 		ptn.txPool = txspool.NewTxPool(config.TxPool, cache, ptn.dag, config.EnableGasFee)
 	}
+	txspool.Instance=ptn.txPool
 	//Test for P2P
 	ptn.engine = consensus.New(dag, ptn.txPool)
 

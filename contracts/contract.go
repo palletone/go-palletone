@@ -33,13 +33,12 @@ import (
 	"github.com/palletone/go-palletone/contracts/test"
 	md "github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
-	"github.com/palletone/go-palletone/txspool"
 )
 
 type ContractProcessContext struct {
 	RequestId    common.Hash
 	Dag          dboperation.IContractDag
-	TxPool       txspool.ITxPool
+	//TxPool       txspool.ITxPool
 	Ele          *md.ElectionNode
 	RwM          rwset.TxManager
 	Contract     *Contract

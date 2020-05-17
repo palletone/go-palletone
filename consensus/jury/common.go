@@ -290,7 +290,7 @@ func runContractCmd(ctx *contracts.ContractProcessContext, tx *modules.Transacti
 					args:       reqPay.Args,
 					timeout:    time.Duration(reqPay.Timeout) * time.Second,
 				}
-				fullArgs, err := handleMsg0(tx, ctx.Dag, ctx.TxPool, req.args)
+				fullArgs, err := handleMsg0(tx, ctx.Dag, txspool.Instance, req.args)
 				if err != nil {
 					return nil, err
 				}
@@ -318,7 +318,7 @@ func runContractCmd(ctx *contracts.ContractProcessContext, tx *modules.Transacti
 					timeout:  time.Duration(reqPay.Timeout) * time.Second,
 				}
 				log.Debugf("[%s]process message 0 and arg1 ", reqId.ShortStr())
-				fullArgs, err := handleMsg0(tx, ctx.Dag, ctx.TxPool, req.args)
+				fullArgs, err := handleMsg0(tx, ctx.Dag, txspool.Instance, req.args)
 				if err != nil {
 					return nil, err
 				}
