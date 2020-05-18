@@ -18,6 +18,7 @@ package v2
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/palletone/go-palletone/dag/errors"
@@ -50,6 +51,64 @@ func handleForRemoveMediator(stub shim.ChaincodeStubInterface, address string) e
 	err = moveCandidate(modules.JuryList, address, stub)
 	if err != nil {
 		log.Error("MoveCandidate err:", "error", err)
+		return err
+	}
+
+	// 减少活跃mediator数量
+	gp, err := stub.GetSystemConfig()
+	if err != nil {
+		log.Errorf("fail to get system config err")
+		return err
+	}
+
+	desiredActiveMediatorCount := uint64(gp.ChainParameters.ActiveMediatorCount - 1)
+	if desiredActiveMediatorCount == 0 {
+		log.Errorf("ActiveMediatorCount will become 0")
+		return err
+	}
+
+	err = modifyActiveMediatorCount(stub, desiredActiveMediatorCount)
+	if err != nil {
+		log.Debugf(err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func modifyActiveMediatorCount(stub shim.ChaincodeStubInterface, desiredActiveMediatorCount uint64) error {
+	desiredActiveMediatorCountStr := strconv.FormatUint(desiredActiveMediatorCount, 10)
+
+	// 获取已经要修改的系统参数
+	resultBytes, err := stub.GetState(modules.DesiredSysParamsWithoutVote)
+	if err != nil {
+		log.Debugf(err.Error())
+		return err
+	}
+
+	var modifies map[string]string
+	if resultBytes != nil && string(resultBytes) != "" {
+		err := json.Unmarshal(resultBytes, &modifies)
+		if err != nil {
+			log.Debugf(err.Error())
+			return err
+		}
+	}
+
+	// 增加修改活跃mediator数量
+	if modifies == nil {
+		modifies = make(map[string]string)
+	}
+	modifies["ActiveMediatorCount"] = desiredActiveMediatorCountStr
+
+	modifyByte, err := json.Marshal(modifies)
+	if err != nil {
+		log.Debugf(err.Error())
+		return err
+	}
+	err = stub.PutState(modules.DesiredSysParamsWithoutVote, modifyByte)
+	if err != nil {
+		log.Debugf(err.Error())
 		return err
 	}
 
@@ -116,6 +175,20 @@ func handleForAddMediator(stub shim.ChaincodeStubInterface, mediatorCreateArgs s
 	err = addToCandaditeList(stub, mco.AddStr, modules.JuryList)
 	if err != nil {
 		log.Error("addCandidateListAndPutStateForMediator err: ", "error", err)
+		return err
+	}
+
+	// 增加活跃mediator数量
+	gp, err := stub.GetSystemConfig()
+	if err != nil {
+		log.Errorf("fail to get system config err")
+		return err
+	}
+	desiredActiveMediatorCount := uint64(gp.ChainParameters.ActiveMediatorCount + 1)
+
+	err = modifyActiveMediatorCount(stub, desiredActiveMediatorCount)
+	if err != nil {
+		log.Debugf(err.Error())
 		return err
 	}
 
