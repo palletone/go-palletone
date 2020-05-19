@@ -42,7 +42,7 @@ ${voteContractId}    PCGTta3M4t3yXu8uRgkKvaWd2d8DRLGbeyd
 # Common Input
 ${signType}       ALL
 ${PTNAmount}      4000
-${PTNPoundage}    1
+${PTNPoundage}    0
 ${tokenDecimal}    1
 ${tokenAmount}    60000
 ${supplyTokenAmount}    1500000000

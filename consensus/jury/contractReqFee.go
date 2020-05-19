@@ -4,18 +4,19 @@ import (
 	"encoding/hex"
 	"math/big"
 	"time"
-    "github.com/palletone/go-palletone/core"
+
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/util"
 	"github.com/palletone/go-palletone/contracts"
+	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/gen"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
 	"github.com/palletone/go-palletone/tokenengine"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 )
 
 /*
@@ -33,10 +34,12 @@ const (
 	ContractDefaultRWSize                = 512.0
 	ContractDefaultPayInputSignatureSize = 256.0
 )
+
 type Txo4Greedy struct {
 	modules.OutPoint
 	Amount uint64
 }
+
 func (txo *Txo4Greedy) GetAmount() uint64 {
 	return txo.Amount
 }
@@ -66,7 +69,7 @@ func (p *Processor) getTxContractFee(tx *modules.Transaction, extDataSize float6
 func (p *Processor) createBaseTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
 	enableGasFee bool) (*modules.Transaction, error) {
 	//daoTotal := daoAmount + daoFee
-	// 20200412  wzhyuan  
+	// 20200412  wzhyuan
 	daoTotal := daoAmount
 	if from.Equal(to) {
 		if enableGasFee {
@@ -87,18 +90,18 @@ func (p *Processor) createBaseTransaction(from, to common.Address, daoAmount, da
 	}
 	// 1. 获取转出账户所有的PTN utxo
 	//allUtxos, err := dag.GetAddrUtxos(from)
-	//  20200412   wzhyuan  
+	//  20200412   wzhyuan
 	assetId := dagconfig.DagConfig.GetGasToken()
 	coreUtxos, err := p.ptn.TxPool().GetAddrUtxos(from, assetId.ToAsset())
 	if err != nil {
 		return nil, err
 	}
-    //coreUtxos, err := b.GetPoolAddrUtxos(fromAddr, gasAsset.ToAsset())
+	//coreUtxos, err := b.GetPoolAddrUtxos(fromAddr, gasAsset.ToAsset())
 	//if err != nil {
 	//	return nil,  fmt.Errorf("GetPoolAddrUtxos err:%s", err.Error())
 	//}
 	if len(coreUtxos) == 0 {
-		return nil, err 
+		return nil, err
 	}
 
 	// 2. 利用贪心算法得到指定额度的utxo集合
@@ -110,7 +113,7 @@ func (p *Processor) createBaseTransaction(from, to common.Address, daoAmount, da
 
 	selUtxos, change, err := core.Select_utxo_Greedy(greedyUtxos, daoTotal)
 	if err != nil {
-		return nil, err 
+		return nil, err
 	}
 
 	// 3. 构建PaymentPayload的Inputs
@@ -204,7 +207,12 @@ func (p *Processor) ContractInstallReqFee(from, to common.Address, daoAmount, da
 		log.Error("ContractInstallReqFee", "CreateGenericTransaction err:", err)
 		return 0, 0, 0, err
 	}
-	ctx := &contracts.ContractProcessContext{RwM: rwset.RwM, Dag: p.dag, TxPool: p.ptn.TxPool(), Contract: p.contract, ErrMsgEnable: p.errMsgEnable}
+	ctx := &contracts.ContractProcessContext{
+		RwM: rwset.RwM,
+		Dag: p.dag,
+		//TxPool: p.ptn.TxPool(),
+		Contract:     p.contract,
+		ErrMsgEnable: p.errMsgEnable}
 	msgs, err := runContractCmd(ctx, reqTx)
 	if err != nil {
 		log.Error("ContractInstallReqFee", "RunContractCmd err:", err)

@@ -80,12 +80,13 @@ func (dag *Dag) getBePackedTxs(txp txspool.ITxPool, cp *jury.Processor,
 		}
 		return fmt.Sprintf("Txpool prepare sorted txs:%s for unit[%d]", txHashs, unitNumber)
 	})
+	if dag.enableGasFee { //启用了Gas的情况下
+		i++ //第0条是Coinbase
+	}
 	for _, ptx := range list {
 		txHashStr += ptx.Tx.Hash().String() + ";"
 		tx := ptx.Tx
-		if dag.enableGasFee { //启用了Gas的情况下
-			i++ //第0条是Coinbase
-		}
+
 		log.Debugf("pack tx[%s]-req[%s] into unit[#%d]", tx.Hash().String(), tx.RequestHash().String(), unitNumber)
 		signedTx := tx
 		if tx.IsSystemContract() && tx.IsOnlyContractRequest() { //是未执行的系统合约
@@ -112,7 +113,7 @@ func (dag *Dag) getBePackedTxs(txp txspool.ITxPool, cp *jury.Processor,
 			log.Infof("only have %d second to pack unit", costSecond)
 			break
 		}
-
+		i++
 	}
 
 	log.DebugDynamic(func() string {

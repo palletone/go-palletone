@@ -186,7 +186,7 @@ func SortSigs(pubkeys [][]byte, signs [][]byte, redeem []byte) [][]byte {
 	return signsOrder
 }
 
-func getJurySignature(tx *modules.Transaction) (pubKeys [][]byte,signs [][]byte) {
+func getJurySignature(tx *modules.Transaction) (pubKeys [][]byte, signs [][]byte) {
 	sig, _ := tx.GetResultSignaturePayload()
 	for _, s := range sig.Signatures {
 		pubKeys = append(pubKeys, s.PubKey)
@@ -290,7 +290,7 @@ func runContractCmd(ctx *contracts.ContractProcessContext, tx *modules.Transacti
 					args:       reqPay.Args,
 					timeout:    time.Duration(reqPay.Timeout) * time.Second,
 				}
-				fullArgs, err := handleMsg0(tx, ctx.Dag, ctx.TxPool, req.args)
+				fullArgs, err := handleMsg0(tx, ctx.Dag, txspool.Instance, req.args)
 				if err != nil {
 					return nil, err
 				}
@@ -318,7 +318,7 @@ func runContractCmd(ctx *contracts.ContractProcessContext, tx *modules.Transacti
 					timeout:  time.Duration(reqPay.Timeout) * time.Second,
 				}
 				log.Debugf("[%s]process message 0 and arg1 ", reqId.ShortStr())
-				fullArgs, err := handleMsg0(tx, ctx.Dag, ctx.TxPool, req.args)
+				fullArgs, err := handleMsg0(tx, ctx.Dag, txspool.Instance, req.args)
 				if err != nil {
 					return nil, err
 				}
@@ -428,13 +428,11 @@ func handleMsg0(tx *modules.Transaction, dag dboperation.IContractDag, txPool tx
 	var txArgs [][]byte
 	invokeInfo := modules.InvokeInfo{}
 	utxoQuery := func(outpoint *modules.OutPoint) (*modules.Utxo, error) {
-		//preUtxo, err := txPool.GetUtxoFromAll(outpoint)
-		utxo, err := dag.GetUtxoEntry(outpoint)
-		if err != nil {
-			return &modules.Utxo{}, nil
+		preUtxo, err := txPool.GetUtxoFromAll(outpoint)
+		if err == nil {
+			return preUtxo, nil
 		}
-	
-		return utxo, nil
+		return dag.GetUtxoEntry(outpoint)
 	}
 	msgs := tx.TxMessages()
 	lenTxMsgs := len(msgs)
