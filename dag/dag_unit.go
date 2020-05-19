@@ -83,7 +83,9 @@ func (dag *Dag) getBePackedTxs(txp txspool.ITxPool, cp *jury.Processor,
 	for _, ptx := range list {
 		txHashStr += ptx.Tx.Hash().String() + ";"
 		tx := ptx.Tx
-		i++ //第0条是Coinbase
+		if dag.enableGasFee { //启用了Gas的情况下
+			i++ //第0条是Coinbase
+		}
 		log.Debugf("pack tx[%s]-req[%s] into unit[#%d]", tx.Hash().String(), tx.RequestHash().String(), unitNumber)
 		signedTx := tx
 		if tx.IsSystemContract() && tx.IsOnlyContractRequest() { //是未执行的系统合约
