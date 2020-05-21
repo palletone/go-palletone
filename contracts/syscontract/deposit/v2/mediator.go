@@ -99,7 +99,7 @@ func modifyActiveMediatorCount(stub shim.ChaincodeStubInterface, desiredActiveMe
 	if modifies == nil {
 		modifies = make(map[string]string)
 	}
-	modifies["ActiveMediatorCount"] = desiredActiveMediatorCountStr
+	modifies[modules.DesiredActiveMediatorCount] = desiredActiveMediatorCountStr
 
 	modifyByte, err := json.Marshal(modifies)
 	if err != nil {
