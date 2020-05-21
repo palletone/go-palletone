@@ -458,6 +458,7 @@ func (s *SysConfigChainCode) NodesVote(stub shim.ChaincodeStubInterface, support
 func GetMediatorCount(stub shim.ChaincodeStubInterface) int {
 	bytes, err := stub.GetContractState(syscontract.DepositContractAddress, modules.MediatorList)
 	if err != nil {
+		log.Errorf("GetMediatorCount, GetContractState err:%s", err.Error())
 		return 0
 	}
 	if len(bytes) == 0 {
