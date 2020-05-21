@@ -84,6 +84,7 @@ func (pmg *MemDag) SubscribeSwitchMainChainEvent(ob SwitchMainChainEventFunc) {
 }
 
 func (pmg *MemDag) Close() {
+	close(pmg.quit)
 	pmg.subScope.Close()
 }
 
@@ -153,6 +154,7 @@ func NewMemDag(token modules.AssetId, threshold int, saveHeaderOnly, enableGasFe
 		tokenEngine:          tokenEngine,
 		observers:            []SwitchMainChainEventFunc{},
 		enableGasFee:         enableGasFee,
+		quit:                 make(chan struct{}),
 	}
 	memdag.stableUnitHash.Store(stablehash)
 	memdag.stableUnitHeight.Store(index)

@@ -307,11 +307,11 @@ func (p *Processor) runContractReq(reqId common.Hash, ele *modules.ElectionNode,
 	reqTx := ctx.reqTx.Clone()
 	p.locker.Unlock()
 	cctx := &contracts.ContractProcessContext{
-		RequestId:    reqTx.RequestHash(),
-		Dag:          dag,
-		Ele:          ele,
-		RwM:          txMgr,
-		TxPool:       p.ptn.TxPool(),
+		RequestId: reqTx.RequestHash(),
+		Dag:       dag,
+		Ele:       ele,
+		RwM:       txMgr,
+		//TxPool:       p.ptn.TxPool(),
 		Contract:     p.contract,
 		ErrMsgEnable: p.errMsgEnable,
 	}
@@ -536,7 +536,7 @@ func (p *Processor) RunAndSignTx(reqTx *modules.Transaction, txMgr rwset.TxManag
 		RwM:          txMgr,
 		Contract:     p.contract,
 		ErrMsgEnable: p.errMsgEnable,
-		TxPool:       p.ptn.TxPool(),
+		//TxPool:       p.ptn.TxPool(),
 	}
 	reqId := reqTx.Hash()
 	log.Debugf("run contract request[%s]", reqId.String())
@@ -684,14 +684,13 @@ func CheckContractTxResult(tx *modules.Transaction, rwM rwset.TxManager, dag dbo
 		return false
 	}
 	resultMsgs := []*modules.Message{}
-	isResult := false
-	for _, msg := range tx.GetResultRawTx().TxMessages() {
-		if msg.App.IsRequest() {
-			isResult = true
+	rawTx := tx.GetResultRawTx()
+	reqMsgCount := rawTx.GetRequestMsgCount()
+	for i, msg := range rawTx.TxMessages() {
+		if i < reqMsgCount {
+			continue
 		}
-		if isResult {
-			resultMsgs = append(resultMsgs, msg)
-		}
+		resultMsgs = append(resultMsgs, msg)
 	}
 	isMsgSame := msgsCompareInvoke(msgs, resultMsgs)
 	log.Debugf("CheckContractTxResult, compare request[%s] and execute result:%t", reqId.String(), isMsgSame)
@@ -864,7 +863,7 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 }
 func (p *Processor) CreateTokenTransaction(from, to common.Address, token *modules.Asset, daoAmountToken, daoFee uint64,
 	msg *modules.Message) (*modules.Transaction, uint64, error) {
-	
+
 	if msg.App == modules.APP_DATA {
 		size := float64(modules.CalcDateSize(msg.Payload))
 		pricePerKByte := p.dag.GetChainParameters().TransferPtnPricePerKByte
@@ -1121,9 +1120,9 @@ func (p *Processor) AddLocalTx(tx *modules.Transaction) error {
 			log.Errorf("[%s]AddLocalTx, AddLocal err:%s", reqId.ShortStr(), err.Error())
 			return err
 		}
-	}else{
+	} else {
 		log.Errorf("[%s]AddLocalTx, known transaction", reqId.ShortStr())
-	    return fmt.Errorf("know transaction: %x", txHash)
+		return fmt.Errorf("know transaction: %x", txHash)
 	}
 
 	isExist, _ := p.dag.IsTransactionExist(txHash)
