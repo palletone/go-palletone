@@ -274,7 +274,7 @@ func (s *SysConfigChainCode) CreateVotesTokens(stub shim.ChaincodeStubInterface,
 			}
 
 			err = core.CheckChainParameterValue(oneSupport.TopicTitle, oneOption, &gp.ImmutableParameters,
-				&gp.ChainParameters, func() int { return getMediatorCount(stub) })
+				&gp.ChainParameters, func() int { return GetMediatorCount(stub) })
 			if err != nil {
 				log.Debugf(err.Error())
 				return nil, err
@@ -454,7 +454,9 @@ func (s *SysConfigChainCode) NodesVote(stub shim.ChaincodeStubInterface, support
 //	return sysVal, nil
 //}
 
-func getMediatorCount(stub shim.ChaincodeStubInterface) int {
+func GetMediatorCount(stub shim.ChaincodeStubInterface) int {
+	//key := storage.GetContractStateKey(syscontract.DepositContractAddress.Bytes(), modules.MediatorList)
+	//byte, err := stub.GetState(string(key))
 	byte, err := stub.GetState(modules.MediatorList)
 	if err != nil {
 		return 0
@@ -484,7 +486,7 @@ func (s *SysConfigChainCode) UpdateSysParamWithoutVote(stub shim.ChaincodeStubIn
 	}
 
 	err = core.CheckChainParameterValue(field, value, &gp.ImmutableParameters,
-		&gp.ChainParameters, func() int { return getMediatorCount(stub) })
+		&gp.ChainParameters, func() int { return GetMediatorCount(stub) })
 	if err != nil {
 		log.Debugf(err.Error())
 		return nil, err
