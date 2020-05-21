@@ -109,6 +109,7 @@ type ChaincodeStubInterface interface {
 	// key namespace.
 	PutState(key string, value []byte) error
 	PutGlobalState(key string, value []byte) error
+	PutContractState(contractAddr common.Address, key string, value []byte) error
 
 	OutChainCall(outChainName string, method string, params []byte) ([]byte, error)
 
