@@ -33,6 +33,7 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/contracts/syscontract"
 )
 
 type SysConfigChainCode struct {
@@ -455,21 +456,30 @@ func (s *SysConfigChainCode) NodesVote(stub shim.ChaincodeStubInterface, support
 //}
 
 func GetMediatorCount(stub shim.ChaincodeStubInterface) int {
-	//key := storage.GetContractStateKey(syscontract.DepositContractAddress.Bytes(), modules.MediatorList)
-	//byte, err := stub.GetState(string(key))
-	byte, err := stub.GetState(modules.MediatorList)
+	bytes, err := stub.GetContractState(syscontract.DepositContractAddress, modules.MediatorList)
 	if err != nil {
 		return 0
 	}
-	if len(byte) == 0 {
+	if len(bytes) == 0 {
 		return 0
 	}
-	listSlice := []string{}
-	err = json.Unmarshal(byte, &listSlice)
+	mCount := 0
+	sliceVals := []string{}
+	mList := make(map[string]bool)
+	err = json.Unmarshal(bytes, &sliceVals)
 	if err != nil {
-		return 0
+		//  兼容以前的数据
+		err = json.Unmarshal(bytes, &mList)
+		if err != nil {
+			return 0
+		}
+		mCount = len(mList)
+	} else {
+		mCount = len(sliceVals)
 	}
-	return len(listSlice)
+
+	log.Infof("GetMediatorCount, mediator list:%v", mCount)
+	return mCount
 }
 
 func (s *SysConfigChainCode) UpdateSysParamWithoutVote(stub shim.ChaincodeStubInterface, field, value string) ([]byte, error) {
