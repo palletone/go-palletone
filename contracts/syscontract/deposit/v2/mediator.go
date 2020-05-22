@@ -29,6 +29,7 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/contracts/syscontract"
 )
 
 //  基金会手动将生产节点移除候选列表
@@ -106,7 +107,8 @@ func modifyActiveMediatorCount(stub shim.ChaincodeStubInterface, desiredActiveMe
 		log.Debugf(err.Error())
 		return err
 	}
-	err = stub.PutState(modules.DesiredSysParamsWithoutVote, modifyByte)
+	err = stub.PutContractState(syscontract.SysConfigContractAddress,
+		modules.DesiredSysParamsWithoutVote, modifyByte)
 	if err != nil {
 		log.Debugf(err.Error())
 		return err
