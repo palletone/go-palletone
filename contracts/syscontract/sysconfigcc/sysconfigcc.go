@@ -150,6 +150,7 @@ func (s *SysConfigChainCode) Invoke(stub shim.ChaincodeStubInterface) peer.Respo
 		return shim.Error(jsonResp)
 	}
 }
+
 func (s *SysConfigChainCode) GetWithoutVoteResult(stub shim.ChaincodeStubInterface) ([]byte, error) {
 	return stub.GetState(modules.DesiredSysParamsWithoutVote)
 }
@@ -546,21 +547,6 @@ func (s *SysConfigChainCode) UpdateSysParamWithoutVote(stub shim.ChaincodeStubIn
 
 	return modifyByte, nil
 }
-
-//func (s *SysConfigChainCode) getSysParamValByKey(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-//	if len(args) != 1 {
-//		jsonResp := "{\"Error\":\" need 1 args (AssetID String)\"}"
-//		return nil, fmt.Errorf(jsonResp)
-//	}
-//	val, err := stub.GetSystemConfig(args[0])
-//	//val, err := stub.GetState(args[0])
-//	if err != nil {
-//		return nil, err
-//	}
-//	// 并不是所有的配置的string类型
-//	jsonResp := "{\"" + args[0] + "\":\"" + string(val) + "\"}"
-//	return []byte(jsonResp), nil
-//}
 
 func setGlobal(stub shim.ChaincodeStubInterface, tkInfo *SysTokenInfo) error {
 	gTkInfo := modules.GlobalTokenInfo{Symbol: tkInfo.Symbol, Name: tkInfo.Name, TokenType: 4, Status: 0, CreateAddr: tkInfo.CreateAddr,

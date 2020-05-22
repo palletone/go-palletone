@@ -81,7 +81,7 @@ func modifyActiveMediatorCount(stub shim.ChaincodeStubInterface, desiredActiveMe
 	desiredActiveMediatorCountStr := strconv.FormatUint(desiredActiveMediatorCount, 10)
 
 	// 获取已经要修改的系统参数
-	resultBytes, err := stub.GetState(modules.DesiredSysParamsWithoutVote)
+	resultBytes, err := stub.GetContractState(syscontract.SysConfigContractAddress, modules.DesiredSysParamsWithoutVote)
 	if err != nil {
 		log.Debugf(err.Error())
 		return err

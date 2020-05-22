@@ -280,7 +280,6 @@ func getListForQuit(stub shim.ChaincodeStubInterface) (map[string]*modules.QuitN
 
 //  获取mediator
 func getMediatorDeposit(stub shim.ChaincodeStubInterface, medAddr string) (*modules.MediatorDeposit, error) {
-	//byte, err := stub.GetState(mediatorDepositKey(medAddr))
 	byte, err := stub.GetState(storage.MediatorDepositKey(medAddr))
 	if err != nil || byte == nil {
 		return nil, err
