@@ -579,6 +579,8 @@ func (d *UnitProduceRepository) getDesiredActiveMediatorCount() int {
 				activeMediator = uint8(desiredActiveMediator)
 			}
 		}
+	} else {
+		log.Debugf(err.Error())
 	}
 
 	// 获取通过投票修改的设置
