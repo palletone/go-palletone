@@ -18,6 +18,7 @@ package v2
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/palletone/go-palletone/dag/errors"
@@ -28,7 +29,193 @@ import (
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/contracts/syscontract"
 )
+
+//  基金会手动将生产节点移除候选列表
+func handleForRemoveMediator(stub shim.ChaincodeStubInterface, address string) error {
+	// 条件检查
+	if !isFoundationInvoke(stub) {
+		return errors.New("please use foundation address")
+	}
+	_, err := common.StringToAddress(address)
+	if err != nil {
+		return err
+	}
+
+	// 从列表移除
+	err = moveCandidate(modules.MediatorList, address, stub)
+	if err != nil {
+		log.Error("MoveCandidate err:", "error", err)
+		return err
+	}
+	err = moveCandidate(modules.JuryList, address, stub)
+	if err != nil {
+		log.Error("MoveCandidate err:", "error", err)
+		return err
+	}
+
+	// 减少活跃mediator数量
+	gp, err := stub.GetSystemConfig()
+	if err != nil {
+		log.Errorf("fail to get system config err")
+		return err
+	}
+
+	desiredActiveMediatorCount := uint64(gp.ChainParameters.ActiveMediatorCount - 1)
+	if desiredActiveMediatorCount == 0 {
+		log.Errorf("ActiveMediatorCount will become 0")
+		return err
+	}
+
+	err = modifyActiveMediatorCount(stub, desiredActiveMediatorCount)
+	if err != nil {
+		log.Debugf(err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func modifyActiveMediatorCount(stub shim.ChaincodeStubInterface, desiredActiveMediatorCount uint64) error {
+	desiredActiveMediatorCountStr := strconv.FormatUint(desiredActiveMediatorCount, 10)
+
+	// 获取已经要修改的系统参数
+	resultBytes, err := stub.GetContractState(syscontract.SysConfigContractAddress, modules.DesiredSysParamsWithoutVote)
+	if err != nil {
+		log.Debugf(err.Error())
+		return err
+	}
+
+	var modifies map[string]string
+	if resultBytes != nil && string(resultBytes) != "" {
+		err := json.Unmarshal(resultBytes, &modifies)
+		if err != nil {
+			log.Debugf(err.Error())
+			return err
+		}
+	}
+
+	// 增加修改活跃mediator数量
+	if modifies == nil {
+		modifies = make(map[string]string)
+	}
+	modifies[modules.DesiredActiveMediatorCount] = desiredActiveMediatorCountStr
+
+	modifyByte, err := json.Marshal(modifies)
+	if err != nil {
+		log.Debugf(err.Error())
+		return err
+	}
+	err = stub.PutContractState(syscontract.SysConfigContractAddress,
+		modules.DesiredSysParamsWithoutVote, modifyByte)
+	if err != nil {
+		log.Debugf(err.Error())
+		return err
+	}
+
+	return nil
+}
+
+// 处理基金会手动添加生产节点
+func handleForAddMediator(stub shim.ChaincodeStubInterface, mediatorCreateArgs string) error {
+	if !isFoundationInvoke(stub) {
+		return errors.New("please use foundation address")
+	}
+
+	log.Info("Start entering handleForAddMediator func")
+	// 解析参数
+	var mco modules.MediatorCreateArgs
+	err := json.Unmarshal([]byte(mediatorCreateArgs), &mco)
+	if err != nil {
+		errStr := fmt.Sprintf("invalid args: %v", err.Error())
+		log.Errorf(errStr)
+		return errors.New(errStr)
+	}
+
+	// 参数验证
+	if mco.MediatorInfoBase == nil || mco.MediatorApplyInfo == nil {
+		errStr := fmt.Sprintf("invalid args, is null")
+		log.Errorf(errStr)
+		return errors.New(errStr)
+	}
+
+	// 补全参数
+	if mco.RewardAddr == "" {
+		mco.RewardAddr = mco.RewardAdd
+	}
+
+	// 获取作为juror的相关参数
+	_, jde, err := mco.Validate()
+	if err != nil {
+		errStr := fmt.Sprintf("invalid args: %v", err.Error())
+		log.Errorf(errStr)
+		return errors.New(errStr)
+	}
+
+	// 保存juror保证金和相关设置
+	jd := &modules.JurorDeposit{}
+	jd.Balance = 0
+	jd.EnterTime = getTime(stub)
+	jd.Role = modules.Jury
+	jd.Address = mco.AddStr
+	jd.JurorDepositExtra = jde
+	err = saveJuryBalance(stub, mco.AddStr, jd)
+	if err != nil {
+		log.Error("save node balance err: ", "error", err)
+		return err
+	}
+
+	//  加入候选列表
+	err = addToCandaditeList(stub, mco.AddStr, modules.MediatorList)
+	if err != nil {
+		log.Error("addCandidateListAndPutStateForMediator err: ", "error", err)
+		return err
+	}
+
+	//  自动加入jury候选列表
+	err = addToCandaditeList(stub, mco.AddStr, modules.JuryList)
+	if err != nil {
+		log.Error("addCandidateListAndPutStateForMediator err: ", "error", err)
+		return err
+	}
+
+	// 增加活跃mediator数量
+	gp, err := stub.GetSystemConfig()
+	if err != nil {
+		log.Errorf("fail to get system config err")
+		return err
+	}
+	desiredActiveMediatorCount := uint64(gp.ChainParameters.ActiveMediatorCount + 1)
+
+	err = modifyActiveMediatorCount(stub, desiredActiveMediatorCount)
+	if err != nil {
+		log.Debugf(err.Error())
+		return err
+	}
+
+	log.Info("End entering handleForAddMediator func")
+	return nil
+}
+
+//  加入相应候选列表，mediator jury dev
+func addToCandaditeList(stub shim.ChaincodeStubInterface, invokeAddr string, candidate string) error {
+	//  获取列表
+	list, err := getList(stub, candidate)
+	if err != nil {
+		return err
+	}
+	if list == nil {
+		list = make(map[string]bool)
+	}
+
+	list[invokeAddr] = true
+	err = saveList(stub,candidate,list)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
 //  申请加入
 func applyBecomeMediator(stub shim.ChaincodeStubInterface, mediatorCreateArgs string) error {

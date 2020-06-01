@@ -33,6 +33,7 @@ import (
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/modules"
+	"github.com/palletone/go-palletone/contracts/syscontract"
 )
 
 type SysConfigChainCode struct {
@@ -149,6 +150,7 @@ func (s *SysConfigChainCode) Invoke(stub shim.ChaincodeStubInterface) peer.Respo
 		return shim.Error(jsonResp)
 	}
 }
+
 func (s *SysConfigChainCode) GetWithoutVoteResult(stub shim.ChaincodeStubInterface) ([]byte, error) {
 	return stub.GetState(modules.DesiredSysParamsWithoutVote)
 }
@@ -274,7 +276,7 @@ func (s *SysConfigChainCode) CreateVotesTokens(stub shim.ChaincodeStubInterface,
 			}
 
 			err = core.CheckChainParameterValue(oneSupport.TopicTitle, oneOption, &gp.ImmutableParameters,
-				&gp.ChainParameters, func() int { return getMediatorCount(stub) })
+				&gp.ChainParameters, func() int { return GetMediatorCount(stub) })
 			if err != nil {
 				log.Debugf(err.Error())
 				return nil, err
@@ -454,20 +456,32 @@ func (s *SysConfigChainCode) NodesVote(stub shim.ChaincodeStubInterface, support
 //	return sysVal, nil
 //}
 
-func getMediatorCount(stub shim.ChaincodeStubInterface) int {
-	byte, err := stub.GetState(modules.MediatorList)
+func GetMediatorCount(stub shim.ChaincodeStubInterface) int {
+	bytes, err := stub.GetContractState(syscontract.DepositContractAddress, modules.MediatorList)
 	if err != nil {
+		log.Errorf("GetMediatorCount, GetContractState err:%s", err.Error())
 		return 0
 	}
-	if len(byte) == 0 {
+	if len(bytes) == 0 {
 		return 0
 	}
-	listSlice := []string{}
-	err = json.Unmarshal(byte, &listSlice)
+	mCount := 0
+	sliceVals := []string{}
+	mList := make(map[string]bool)
+	err = json.Unmarshal(bytes, &sliceVals)
 	if err != nil {
-		return 0
+		//  兼容以前的数据
+		err = json.Unmarshal(bytes, &mList)
+		if err != nil {
+			return 0
+		}
+		mCount = len(mList)
+	} else {
+		mCount = len(sliceVals)
 	}
-	return len(listSlice)
+
+	log.Infof("GetMediatorCount, mediator list:%v", mCount)
+	return mCount
 }
 
 func (s *SysConfigChainCode) UpdateSysParamWithoutVote(stub shim.ChaincodeStubInterface, field, value string) ([]byte, error) {
@@ -484,7 +498,7 @@ func (s *SysConfigChainCode) UpdateSysParamWithoutVote(stub shim.ChaincodeStubIn
 	}
 
 	err = core.CheckChainParameterValue(field, value, &gp.ImmutableParameters,
-		&gp.ChainParameters, func() int { return getMediatorCount(stub) })
+		&gp.ChainParameters, func() int { return GetMediatorCount(stub) })
 	if err != nil {
 		log.Debugf(err.Error())
 		return nil, err
@@ -533,21 +547,6 @@ func (s *SysConfigChainCode) UpdateSysParamWithoutVote(stub shim.ChaincodeStubIn
 
 	return modifyByte, nil
 }
-
-//func (s *SysConfigChainCode) getSysParamValByKey(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-//	if len(args) != 1 {
-//		jsonResp := "{\"Error\":\" need 1 args (AssetID String)\"}"
-//		return nil, fmt.Errorf(jsonResp)
-//	}
-//	val, err := stub.GetSystemConfig(args[0])
-//	//val, err := stub.GetState(args[0])
-//	if err != nil {
-//		return nil, err
-//	}
-//	// 并不是所有的配置的string类型
-//	jsonResp := "{\"" + args[0] + "\":\"" + string(val) + "\"}"
-//	return []byte(jsonResp), nil
-//}
 
 func setGlobal(stub shim.ChaincodeStubInterface, tkInfo *SysTokenInfo) error {
 	gTkInfo := modules.GlobalTokenInfo{Symbol: tkInfo.Symbol, Name: tkInfo.Name, TokenType: 4, Status: 0, CreateAddr: tkInfo.CreateAddr,

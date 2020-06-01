@@ -817,6 +817,11 @@ func (pool *TxPool) GetTx(hash common.Hash) (*TxPoolTransaction, error) {
 	interTx, has := pool.all.Load(hash)
 	if has {
 		tx := interTx.(*TxPoolTransaction)
+		if tx.Tx.Hash() != hash {
+			pool.all.Delete(hash)
+			pool.priority_sorted.Removed()
+			return nil, errors.New("not found")
+		}
 		log.Debug("get tx info by hash in txpool... ", "unit_hash", tx.UnitHash, "p_tx", tx)
 		return tx, nil
 	}
@@ -831,7 +836,6 @@ func (pool *TxPool) GetTx(hash common.Hash) (*TxPoolTransaction, error) {
 	if tx, ok := pool.basedOnRequestOrphans[hash]; ok {
 		return tx, nil
 	}
-
 	//4个池都找不到
 	return nil, ErrNotFound
 }

@@ -288,29 +288,40 @@ func convertUtxo2Balance(utxos map[modules.OutPoint]*modules.Utxo) map[modules.A
 	}
 	return result
 }
+
 func (s *RwSetTxSimulator) PayOutToken(ns string, address string, token *modules.Asset, amount uint64,
 	lockTime uint32) error {
-	s.rwsetBuilder.AddTokenPayOut(ns, address, token, amount, lockTime)
+	addr, err := common.StringToAddress(address)
+	if err != nil {
+		return err
+	}
+	s.rwsetBuilder.AddTokenPayOut(ns, addr, token, amount, lockTime)
 	return nil
 }
+
 func (s *RwSetTxSimulator) GetPayOutData(ns string) ([]*modules.TokenPayOut, error) {
 	return s.rwsetBuilder.GetTokenPayOut(ns), nil
 }
+
 func (s *RwSetTxSimulator) GetTokenDefineData(ns string) (*modules.TokenDefine, error) {
 	return s.rwsetBuilder.GetTokenDefine(ns), nil
 }
+
 func (s *RwSetTxSimulator) GetTokenSupplyData(ns string) ([]*modules.TokenSupply, error) {
 	return s.rwsetBuilder.GetTokenSupply(ns), nil
 }
+
 func (s *RwSetTxSimulator) DefineToken(ns string, tokenType int32, define []byte, creator string) error {
 	createAddr, _ := common.StringToAddress(creator)
 	s.rwsetBuilder.DefineToken(ns, tokenType, define, createAddr)
 	return nil
 }
+
 func (s *RwSetTxSimulator) SupplyToken(ns string, assetId, uniqueId []byte, amt uint64, creator string) error {
 	createAddr, _ := common.StringToAddress(creator)
 	return s.rwsetBuilder.AddSupplyToken(ns, assetId, uniqueId, amt, createAddr)
 }
+
 func (s *RwSetTxSimulator) String() string {
 	str := "rwSet_txSimulator: "
 	for k, v := range s.rwsetBuilder.pubRwBuilderMap {
@@ -322,6 +333,7 @@ func (s *RwSetTxSimulator) String() string {
 	}
 	return str
 }
+
 func (s *RwSetTxSimulator) GetContractStatesById(contractid []byte) (map[string]*modules.ContractStateValue, error) {
 	//查询出所有Temp的KeyValue
 	writes, _ := s.rwsetBuilder.GetWriteSets(contractid)
@@ -350,6 +362,7 @@ func (s *RwSetTxSimulator) GetContractStatesById(contractid []byte) (map[string]
 	}
 	return result, nil
 }
+
 func (s *RwSetTxSimulator) GetContractState(contractid []byte, field string) ([]byte, *modules.StateVersion, error) {
 	value, err := s.rwsetBuilder.GetWriteSet(contractid, field)
 	if err != nil {
@@ -358,6 +371,7 @@ func (s *RwSetTxSimulator) GetContractState(contractid []byte, field string) ([]
 	log.Debugf("Get contract state key[%s] from rwset builder", field)
 	return value, nil, nil
 }
+
 func (s *RwSetTxSimulator) GetContractStatesByPrefix(contractid []byte, prefix string) (map[string]*modules.ContractStateValue, error) {
 	//查询出所有Temp的KeyValue
 	writes, _ := s.rwsetBuilder.GetWriteSets(contractid)
@@ -388,6 +402,7 @@ func (s *RwSetTxSimulator) GetContractStatesByPrefix(contractid []byte, prefix s
 	}
 	return result, nil
 }
+
 func mapKeyToSlice(m map[string]*modules.ContractStateValue) []string {
 	sliceKeys := []string{}
 	for key := range m {

@@ -44,6 +44,7 @@ import (
 	"github.com/palletone/go-palletone/ptnjson/statistics"
 	"github.com/palletone/go-palletone/txspool"
 	"github.com/shopspring/decimal"
+	"github.com/palletone/go-palletone/consensus/jury"
 )
 
 type LesApiBackend struct {
@@ -417,6 +418,10 @@ func (b *LesApiBackend) GetAssetExistence(asset string) ([]*ptnjson.ProofOfExist
 }
 
 //contract control
+
+func (b *LesApiBackend)ContractEventBroadcast(event jury.ContractEvent, local bool) {
+	return
+}
 func (b *LesApiBackend) ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi,
 	ccLanguage string) (TemplateId []byte, err error) {
 	return nil, nil

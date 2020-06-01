@@ -425,7 +425,8 @@ func (p *PRC20) SupplyToken(stub shim.ChaincodeStubInterface, symbol string, sup
 //ChangeSupplyAddr change supply address
 func (p *PRC20) ChangeSupplyAddr(stub shim.ChaincodeStubInterface, symbol string, newSupplyAddr string) error {
 	//check name is exist or not
-	gTkInfo := getGlobal(stub, strings.ToUpper(symbol))
+	symbol = strings.ToUpper(symbol)
+	gTkInfo := getGlobal(stub, symbol)
 	if gTkInfo == nil {
 		return fmt.Errorf(jsonResp2)
 	}
