@@ -36,6 +36,7 @@ import (
 	"github.com/palletone/go-palletone/common/hexutil"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/util"
+	"github.com/palletone/go-palletone/consensus/jury"
 	"github.com/palletone/go-palletone/contracts/syscontract"
 	"github.com/palletone/go-palletone/contracts/syscontract/sysconfigcc"
 	"github.com/palletone/go-palletone/contracts/ucc"
@@ -45,7 +46,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/shopspring/decimal"
-	"github.com/palletone/go-palletone/consensus/jury"
 )
 
 var (
@@ -369,6 +369,55 @@ func (s *PrivateContractAPI) Ccinvoketx(from, to string, amount, fee decimal.Dec
 	return s.CcinvokeToken(from, to, dagconfig.DagConfig.GasToken, amount, fee, contractAddress, param, password, timeout)
 }
 
+//调用ccinvoke，并等待打包后返回
+func (s *PrivateContractAPI) CcinvoketxSync(from, to string, amount, fee decimal.Decimal,
+	contractAddress string, param []string, password *string, timeout *Int) (*ptnjson.TxHashWithUnitInfoJson, error) {
+	return s.CcinvokeTokenSync(from, to, dagconfig.DagConfig.GasToken, amount, fee, contractAddress, param, password, timeout)
+}
+
+//调用ccinvokeToken，并等待打包后返回
+func (s *PrivateContractAPI) CcinvokeTokenSync(from, to, token string, amountToken, fee decimal.Decimal,
+	contractAddress string, param []string, pwd *string, timeout *Int) (*ptnjson.TxHashWithUnitInfoJson, error) {
+	start := time.Now()
+	response, err := s.CcinvokeToken(from, to, token, amountToken, fee, contractAddress, param, pwd, timeout)
+	if err != nil {
+		return nil, err
+	}
+	reqHash := common.HexToHash(response.ReqId)
+	start2 := time.Now()
+	headCh := make(chan modules.SaveUnitEvent, 10)
+	defer close(headCh)
+	headSub := s.b.Dag().SubscribeSaveUnitEvent(headCh)
+	defer headSub.Unsubscribe()
+	timer := time.NewTimer(20 * time.Second)
+	for {
+		select {
+		case u := <-headCh:
+			log.Infof("SubscribeSaveUnitEvent received unit:%s", u.Unit.DisplayId())
+			for i, utx := range u.Unit.Transactions() {
+				if utx.RequestHash() == reqHash {
+					txInfo := &ptnjson.TxHashWithUnitInfoJson{
+						Timestamp:   time.Unix(u.Unit.Timestamp(), 0),
+						UnitHash:    u.Unit.Hash().String(),
+						UnitHeight:  u.Unit.NumberU64(),
+						TxIndex:     uint64(i),
+						TxHash:      utx.Hash().String(),
+						RequestHash: reqHash.String(),
+					}
+					log.Infof("receive tx[%s] packed event, spend time:%s, total spend:%s",
+						utx.Hash().String(), time.Since(start2).String(),
+						time.Since(start).String())
+					return txInfo, nil
+				}
+			}
+		case <-timer.C:
+			return nil, errors.New(fmt.Sprintf("get req[%s] package status timeout", reqHash.String()))
+			// Err() channel will be closed when unsubscribing.
+		case err := <-headSub.Err():
+			return nil, err
+		}
+	}
+}
 func (s *PrivateContractAPI) CcinvokeToken(from, to, token string, amountToken, fee decimal.Decimal,
 	contractAddress string, param []string, pwd *string, timeout *Int) (*ContractInvokeRsp, error) {
 	password := ""
@@ -447,7 +496,7 @@ func (s *PrivateContractAPI) CcinvokeToken(from, to, token string, amountToken, 
 	}
 	return rsp, err
 }
-func (s *PrivateContractAPI) CcinvokeMutiToken(from, to, token1,token2 string, amountToken1, amountToken2,fee decimal.Decimal,
+func (s *PrivateContractAPI) CcinvokeMutiToken(from, to, token1, token2 string, amountToken1, amountToken2, fee decimal.Decimal,
 	contractAddress string, param []string, pwd *string, timeout *Int) (*ContractInvokeRsp, error) {
 	password := ""
 	if pwd != nil {
@@ -488,13 +537,13 @@ func (s *PrivateContractAPI) CcinvokeMutiToken(from, to, token1,token2 string, a
 	}
 	//2.构建请求交易
 	ctx := &buildMutiContractContext{
-		tokenId1:    token1,
-		tokenId2:    token2,
+		tokenId1:   token1,
+		tokenId2:   token2,
 		fromAddr:   fromAddr,
 		toAddr:     toAddr,
 		ccAddr:     contractAddr,
-		amount1:     amountToken1,
-		amount2:     amountToken2,
+		amount1:    amountToken1,
+		amount2:    amountToken2,
 		gasFee:     fee,
 		args:       args,
 		password:   password,
