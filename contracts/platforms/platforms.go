@@ -193,7 +193,7 @@ func GenerateDockerBuild(cds *pb.PtnChaincodeDeploymentSpec) (io.Reader, error) 
 	go func() {
 		gw := gzip.NewWriter(output)
 		tw := tar.NewWriter(gw)
-		err := _generateDockerBuild(platform, cds, inputFiles, tw)
+		err = _generateDockerBuild(platform, cds, inputFiles, tw)
 		if err != nil {
 			log.Debugf("GenerateDockerBuild error:%s", err.Error())
 		}

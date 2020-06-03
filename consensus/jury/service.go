@@ -39,6 +39,7 @@ import (
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/core/gen"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/dboperation"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
@@ -113,6 +114,9 @@ type iDag interface {
 	GetJurorByAddrHash(addrHash common.Hash) (*modules.JurorDeposit, error)
 	SaveTransaction(tx *modules.Transaction, txIndex int) error
 	//nouse
+	GetPtnBalance(addr common.Address) uint64
+	GetPayload(from, to common.Address, daoAmount, daoFee uint64,
+		utxos map[modules.OutPoint]*modules.Utxo) (*modules.PaymentPayload, error)
 	GetNewestUnitTimestamp(token modules.AssetId) (int64, error)
 	GetScheduledMediator(slotNum uint32) common.Address
 	GetSlotAtTime(when time.Time) uint32
@@ -303,11 +307,11 @@ func (p *Processor) runContractReq(reqId common.Hash, ele *modules.ElectionNode,
 	reqTx := ctx.reqTx.Clone()
 	p.locker.Unlock()
 	cctx := &contracts.ContractProcessContext{
-		RequestId:    reqTx.RequestHash(),
-		Dag:          dag,
-		Ele:          ele,
-		RwM:          txMgr,
-		TxPool:       p.ptn.TxPool(),
+		RequestId: reqTx.RequestHash(),
+		Dag:       dag,
+		Ele:       ele,
+		RwM:       txMgr,
+		//TxPool:       p.ptn.TxPool(),
 		Contract:     p.contract,
 		ErrMsgEnable: p.errMsgEnable,
 	}
@@ -532,7 +536,7 @@ func (p *Processor) RunAndSignTx(reqTx *modules.Transaction, txMgr rwset.TxManag
 		RwM:          txMgr,
 		Contract:     p.contract,
 		ErrMsgEnable: p.errMsgEnable,
-		TxPool:       p.ptn.TxPool(),
+		//TxPool:       p.ptn.TxPool(),
 	}
 	reqId := reqTx.Hash()
 	log.Debugf("run contract request[%s]", reqId.String())
@@ -680,14 +684,13 @@ func CheckContractTxResult(tx *modules.Transaction, rwM rwset.TxManager, dag dbo
 		return false
 	}
 	resultMsgs := []*modules.Message{}
-	isResult := false
-	for _, msg := range tx.GetResultRawTx().TxMessages() {
-		if msg.App.IsRequest() {
-			isResult = true
+	rawTx := tx.GetResultRawTx()
+	reqMsgCount := rawTx.GetRequestMsgCount()
+	for i, msg := range rawTx.TxMessages() {
+		if i < reqMsgCount {
+			continue
 		}
-		if isResult {
-			resultMsgs = append(resultMsgs, msg)
-		}
+		resultMsgs = append(resultMsgs, msg)
 	}
 	isMsgSame := msgsCompareInvoke(msgs, resultMsgs)
 	log.Debugf("CheckContractTxResult, compare request[%s] and execute result:%t", reqId.String(), isMsgSame)
@@ -858,10 +861,45 @@ func (p *Processor) contractEventExecutable(event ContractEventType, tx *modules
 	}
 	return false
 }
+func (p *Processor) CreateTokenTransaction(from, to common.Address, token *modules.Asset, daoAmountToken, daoFee uint64,
+	msg *modules.Message) (*modules.Transaction, uint64, error) {
+
+	if msg.App == modules.APP_DATA {
+		size := float64(modules.CalcDateSize(msg.Payload))
+		pricePerKByte := p.dag.GetChainParameters().TransferPtnPricePerKByte
+		daoFee += uint64(size * float64(pricePerKByte) / 1024)
+	}
+	tx := &modules.Transaction{}
+	// 1. 获取转出账户所有的PTN utxo
+	assetId := dagconfig.DagConfig.GetGasToken()
+	coreUtxos, err := p.ptn.TxPool().GetAddrUtxos(from, assetId.ToAsset())
+	if err != nil {
+		return nil, 0, err
+	}
+	if len(coreUtxos) == 0 {
+		return nil, 0, err
+	}
+	//if p.ptn.EnableGasFee() {
+	// must pay gasfee
+	if daoFee == 0 {
+		return nil, 0, fmt.Errorf("transaction fee cannot be 0")
+	}
+	daoTotal := daoAmountToken + daoFee
+	if daoTotal > p.dag.GetPtnBalance(from) {
+		return nil, 0, fmt.Errorf("the ptn balance of the account is not enough %v", daoTotal)
+	}
+	//2. 获取 PaymentPayload
+	ploadPTN, err := p.dag.GetPayload(from, to, daoAmountToken, daoFee, coreUtxos)
+	if err != nil {
+		return nil, 0, err
+	}
+	tx.AddMessage(modules.NewMessage(modules.APP_PAYMENT, ploadPTN))
+	return tx, daoFee, nil
+}
 
 func (p *Processor) createContractTxReqToken(contractId, from, to common.Address, token *modules.Asset,
 	daoAmountToken, daoFee uint64, msg *modules.Message) (common.Hash, *modules.Transaction, error) {
-	tx, _, err := p.dag.CreateTokenTransaction(from, to, token, daoAmountToken, daoFee, msg)
+	tx, _, err := p.CreateTokenTransaction(from, to, token, daoAmountToken, daoFee, msg)
 	if err != nil {
 		return common.Hash{}, nil, err
 	}
@@ -1082,12 +1120,15 @@ func (p *Processor) AddLocalTx(tx *modules.Transaction) error {
 			log.Errorf("[%s]AddLocalTx, AddLocal err:%s", reqId.ShortStr(), err.Error())
 			return err
 		}
+	} else {
+		log.Errorf("[%s]AddLocalTx, known transaction", reqId.ShortStr())
+		return fmt.Errorf("know transaction: %x", txHash)
 	}
 
 	isExist, _ := p.dag.IsTransactionExist(txHash)
 	if isExist {
 		log.Debugf("[%s]AddLocalTx,tx already exist dag", reqId.ShortStr())
-		return nil
+		return fmt.Errorf("know transaction: %x", txHash)
 	}
 
 	err := p.dag.SaveLocalTx(tx)

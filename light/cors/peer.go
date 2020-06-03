@@ -22,6 +22,8 @@ import (
 	//"encoding/binary"
 	"errors"
 	"fmt"
+	"sync"
+
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/log"
@@ -29,7 +31,6 @@ import (
 	"github.com/palletone/go-palletone/common/p2p/discover"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/ptn"
-	"sync"
 )
 
 var (
@@ -146,7 +147,7 @@ func (p *peer) SendHeaders(headers []*modules.Header) error {
 }
 
 func (p *peer) RequestCurrentHeader(number modules.ChainIndex) error {
-	return p2p.Send(p.rw, GetCurrentHeaderMsg, number)
+	return p2p.Send(p.rw, GetCurrentHeaderMsg, &number)
 }
 
 func (p *peer) SendCurrentHeader(headers []*modules.Header) error {
@@ -275,7 +276,7 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, headha
 	var send keyValueList
 	send = send.add("protocolVersion", uint64(p.version))
 	send = send.add("networkId", p.network)
-	send = send.add("headNum", *number)
+	send = send.add("headNum", number)
 	//send = send.add("index",number.Index)
 	//send = send.add("assetID",number.AssetID.String())
 	send = send.add("headHash", headhash)
@@ -289,9 +290,8 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, headha
 	recv := recvList.decode()
 
 	var rGenesis, rHash common.Hash
-	var rVersion, rNetwork ,index uint64
+	var rVersion, rNetwork uint64
 	var rNum modules.ChainIndex
-	var assetID string
 	var rGastoken modules.AssetId
 
 	if err := recv.get("protocolVersion", &rVersion); err != nil {
@@ -320,26 +320,23 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, headha
 		return err
 	}
 
+	log.Debug("Cors PalletOne ProtocolManager handle", "rNum",rNum)
 
-	log.Debug("Cors PalletOne ProtocolManager handle","assetID",assetID,"index",index)
-	rNum.AssetID.SetBytes([]byte(assetID))
-	rNum.Index = index
-	
-	if len(ccis) >0 {
+	if len(ccis) > 0 {
 		flag := 0
 		for _, pc := range ccis {
 			if rGenesis != pc.Genesishash {
 				log.Debugf("ErrGenesisBlockMismatch , %x (!= %x)", rGenesis[:8], pc.Genesishash[:8])
 				continue
 			}
-			if rNetwork != pc.NetworkId {
-				log.Debugf("ErrNetworkIdMismatch, %d (!= %d)", rNetwork, pc.NetworkId)
-				continue
-			}
-			if rVersion != pc.Version {
-				log.Debugf("ErrProtocolVersionMismatch %d (!= %d)", rVersion, pc.Version)
-				continue
-			}
+			//if rNetwork != pc.NetworkId {
+			//	log.Debugf("ErrNetworkIdMismatch, %d (!= %d)", rNetwork, pc.NetworkId)
+			//	continue
+			//}
+			//if rVersion != pc.Version {
+			//	log.Debugf("ErrProtocolVersionMismatch %d (!= %d)", rVersion, pc.Version)
+			//	continue
+			//}
 
 			for _, peer := range pc.Peers {
 				node, err := discover.ParseNode(peer)

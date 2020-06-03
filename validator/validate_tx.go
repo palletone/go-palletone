@@ -365,7 +365,7 @@ func (validate *Validate) ValidateTxFeeEnough(tx *modules.Transaction, extSize f
 	fees, err := tx.GetTxFee(validate.utxoquery.GetUtxoEntry) //validate.dagquery.GetTxFee(tx)
 	if err != nil {
 		log.Warnf("[%s]validateTxFeeEnough return ORPHAN since GetTxFee err:%s", reqId.ShortStr(), err.Error())
-		return TxValidationCode_ORPHAN
+		return TxValidationCode_INVALID_DOUBLE_SPEND
 	}
 	cp := validate.propquery.GetChainParameters()
 	timeUnitFee := float64(cp.ContractTxTimeoutUnitFee)

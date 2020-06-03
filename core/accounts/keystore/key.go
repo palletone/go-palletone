@@ -36,6 +36,7 @@ const (
 	version           = 3
 	KeyType_HD_Seed   = "HDSeed"
 	KeyType_ECDSA_KEY = "ECDSA"
+	KeyType_Outchain_KEY = "Outchain"
 )
 
 type Key struct {

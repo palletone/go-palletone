@@ -576,6 +576,9 @@ func (pool *TxPool) add(tx *TxPoolTransaction, local bool) (bool, error) {
 		txOrphanKnownPrometheus.Add(1)
 		return false, fmt.Errorf("know orphanTx: %s", hash.String())
 	}
+	if has, _ := pool.unit.IsTransactionExist(hash); has {
+		return false, fmt.Errorf("the transactionx: %s has been packaged.", hash.String())
+	}
 	// If the transaction fails basic validation, discard it
 	if addition, code, err := pool.validateTx(tx, local); err != nil {
 		if code == validator.TxValidationCode_ORPHAN {
@@ -1079,7 +1082,7 @@ func (pool *TxPool) GetTx(hash common.Hash) (*TxPoolTransaction, error) {
 		}
 		if tx.Pending {
 			log.Debug("get tx info by hash in txpool... tx in unit hash:", "unit_hash", tx.UnitHash, "p_tx", tx)
-			return tx, nil
+			//return tx, nil
 		}
 		return tx, nil
 	} else {
@@ -1132,23 +1135,25 @@ func (pool *TxPool) DeleteTxByHash(hash common.Hash) error {
 
 	if tx != nil {
 		for i, msg := range tx.Tx.TxMessages() {
-			if msg.App == modules.APP_PAYMENT {
-				payment, ok := msg.Payload.(*modules.PaymentPayload)
-				if ok {
-					for _, input := range payment.Inputs {
-						if input.PreviousOutPoint == nil {
-							continue
-						}
-						pool.outpoints.Delete(*input.PreviousOutPoint)
-					}
-					// delete outputs's utxo
-					preout := modules.OutPoint{TxHash: hash}
-					for j := range payment.Outputs {
-						preout.MessageIndex = uint32(i)
-						preout.OutIndex = uint32(j)
-						pool.deleteOrphanTxOutputs(preout)
-					}
+			if msg.App != modules.APP_PAYMENT {
+				continue 
+			}
+			payment, ok := msg.Payload.(*modules.PaymentPayload)
+			if !ok {
+                continue 
+			}
+			for _, input := range payment.Inputs {
+				if input.PreviousOutPoint == nil {
+					continue
 				}
+				pool.outpoints.Delete(*input.PreviousOutPoint)
+			}
+			// delete outputs's utxo
+			preout := modules.OutPoint{TxHash: hash}
+			for j := range payment.Outputs {
+				preout.MessageIndex = uint32(i)
+				preout.OutIndex = uint32(j)
+				pool.deleteOrphanTxOutputs(preout)
 			}
 		}
 	}

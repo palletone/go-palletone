@@ -14,7 +14,7 @@
  * /
  *
  *  * @author PalletOne core developer <dev@pallet.one>
- *  * @date 2018
+ *  * @date 2018-2020
  *
  */
 
@@ -115,6 +115,12 @@ const Wallet_JS = `
 			inputFormatter: [null,null,null,null,null,null,null,null]
 		}),
 		new web3._extend.Method({
+			name: 'transferToken2MultiAddr',
+			call: 'wallet_transferToken2MultiAddr',
+			params: 5,
+			inputFormatter: [null,null,null,null,null]
+		}),
+		new web3._extend.Method({
 			name: 'transferTokenSync',
 			call: 'wallet_transferTokenSync',
 			params: 8,
@@ -133,15 +139,16 @@ const Wallet_JS = `
 			inputFormatter: [null,null,null,null,null,null,null]
 		}),
 		new web3._extend.Method({
-			name: 'createProofTransaction',
-			call: 'wallet_createProofTransaction',
-			params: 1,
-			inputFormatter: [null]
+			name: 'createProofOfExistenceTxSync',
+			call: 'wallet_createProofOfExistenceTxSync',
+			params: 5,
+			inputFormatter: [null,null,null,null,null]
 		}),
 		new web3._extend.Method({
 			name: 'createProofOfExistenceTx',
 			call: 'wallet_createProofOfExistenceTx',
-			params: 5
+			params: 5,
+			inputFormatter: [null,null,null,null,null]
 		}),
         new web3._extend.Method({
 			name: 'createTraceability',

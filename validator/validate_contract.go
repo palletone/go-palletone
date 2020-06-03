@@ -93,15 +93,15 @@ func (validate *Validate) validateContractSignature(signatures []modules.Signatu
 		}
 	}
 	// 1.对于用户合约，确认签名者都是Jury
-	if common.IsUserContractId(contractId) { // user contract
+	if jury == nil && common.IsUserContractId(contractId) { // user contract
 		jury, err = validate.statequery.GetContractJury(contractId)
 		if err != nil {
-			log.Errorf("GetContractJury by contractId[%x] throw an error:%s",
+			log.Errorf("validateContractSignature, GetContractJury by contractId[%x] throw an error:%s",
 				contractId, err.Error())
 			return TxValidationCode_INVALID_CONTRACT_SIGN
 		}
 	}
-	if jury != nil { //有陪审团信息,判断公钥和陪审员是否匹配
+	if jury != nil && len(jury.EleList) > 0 { //有陪审团信息,判断公钥和陪审员是否匹配
 		jurorCount := len(jury.EleList)
 		needSign = int(math.Ceil((float64(jurorCount)*2 + 1) / 3))
 		for _, s := range signatures {
@@ -115,7 +115,7 @@ func (validate *Validate) validateContractSignature(signatures []modules.Signatu
 				}
 			}
 			if !find { //签名者不是合法的陪审员
-				log.Warnf("Tx[%s] signature payload pubKey[%x] is not a valid juror", txHash, s.PubKey)
+				log.Warnf("validateContractSignature, Tx[%s] signature payload addr[%s] is not a valid juror", txHash, crypto.PubkeyBytesToAddress(s.PubKey).String())
 				return TxValidationCode_INVALID_CONTRACT_SIGN
 			}
 		}

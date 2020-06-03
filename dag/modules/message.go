@@ -62,8 +62,8 @@ const (
 )
 
 const (
-	DesiredSysParamsWithoutVote = "desiredSysParamsWithoutVote"
-	DesiredSysParamsWithVote    = "desiredSysParamsWithVote"
+	DesiredSysParamsWithoutVote = "DesiredSysParamsWithoutVote"
+	DesiredSysParamsWithVote    = "DesiredSysParamsWithVote"
 	DesiredActiveMediatorCount  = "ActiveMediatorCount"
 )
 
