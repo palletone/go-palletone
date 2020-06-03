@@ -1285,6 +1285,7 @@ func (s *PrivateWalletAPI) CreateProofOfExistenceTx(addr string,
 	if err != nil {
 		return common.Hash{}, err
 	}
+	log.Infof("Create ProofOfExistence Tx[%s] for main data:%s", rawTx.Hash().String(), mainData)
 	log.DebugDynamic(func() string { return "SignedTx:" + rawTx.String() })
 	//4.
 	return submitTransaction(s.b, rawTx)
