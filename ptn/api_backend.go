@@ -802,7 +802,7 @@ func (b *PtnApiBackend) SignAndSendRequest(addr common.Address, tx *modules.Tran
 	_, err := b.ptn.contractPorcessor.SignAndExecuteAndSendRequest(addr, tx)
 	return err
 }
-
+/*
 //
 func (b *PtnApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName,
 path, version string, description, abi, language string, addrs []common.Address) (reqId common.Hash,
@@ -818,6 +818,7 @@ func (b *PtnApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, 
 	contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
 	return b.ptn.contractPorcessor.ContractInvokeReq(from, to, daoAmount, daoFee, certID, contractAddress, args, timeout)
 }
+*/
 func (b *PtnApiBackend) SendContractInvokeReqTx(requestTx *modules.Transaction) (common.Hash, error) {
 	//Devin：连续合约调用，这里验证不过，先注释
 	//if !b.ptn.contractPorcessor.CheckTxValid(requestTx) {
@@ -835,6 +836,7 @@ func (b *PtnApiBackend) SendContractInvokeReqTx(requestTx *modules.Transaction) 
 	}
 	return requestTx.RequestHash(), nil
 }
+/*
 func (b *PtnApiBackend) ContractInvokeReqTokenTx(from, to common.Address, token *modules.Asset,
 	amountToken, fee uint64, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
 	return b.ptn.contractPorcessor.ContractInvokeReqToken(from, to, token, amountToken, fee, contractAddress, args, timeout)
@@ -843,7 +845,7 @@ func (b *PtnApiBackend) ContractStopReqTx(from, to common.Address, daoAmount, da
 	deleteImage bool) (reqId common.Hash, err error) {
 	return b.ptn.contractPorcessor.ContractStopReq(from, to, daoAmount, daoFee, contractId, deleteImage)
 }
-
+*/
 func (b *PtnApiBackend) ContractInstallReqTxFee(from, to common.Address, daoAmount, daoFee uint64, tplName,
 path, version string, description, abi, language string, addrs []common.Address) (fee float64, size float64, tm uint32,
 	err error) {

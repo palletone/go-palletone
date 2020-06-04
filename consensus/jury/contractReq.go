@@ -20,16 +20,12 @@ package jury
 
 import (
 	"encoding/hex"
-	"encoding/json"
-	"fmt"
-	"math/big"
 	"sync"
 	"time"
 
 	"github.com/palletone/go-palletone/contracts"
 	"github.com/palletone/go-palletone/contracts/comm"
 
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
@@ -37,11 +33,10 @@ import (
 	"github.com/palletone/go-palletone/contracts/contractcfg"
 	"github.com/palletone/go-palletone/contracts/ucc"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
-	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
 )
-
+/*
 func (p *Processor) ContractInstallReq(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string,
 	description, abi, language string, local bool, addrs []common.Address) (reqId common.Hash, TplId []byte, err error) {
 	if from == (common.Address{}) || to == (common.Address{}) || tplName == "" || path == "" || version == "" {
@@ -316,6 +311,8 @@ func (p *Processor) ContractStopReq(from, to common.Address, daoAmount, daoFee u
 	return reqId, nil
 }
 
+
+*/
 //deploy -->invoke
 func (p *Processor) ContractQuery(id []byte, args [][]byte, timeout time.Duration) (rsp []byte, err error) {
 	exist := false
