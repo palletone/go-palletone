@@ -33,18 +33,18 @@ import (
 	"github.com/palletone/go-palletone/common/rpc"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
-	"github.com/palletone/go-palletone/dag"
-	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
-	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptnjson"
-	"github.com/palletone/go-palletone/ptnjson/statistics"
 	"github.com/palletone/go-palletone/txspool"
 	"github.com/shopspring/decimal"
 	"github.com/palletone/go-palletone/consensus/jury"
+	"github.com/palletone/go-palletone/internal/ptnapi"
+	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
+	"github.com/palletone/go-palletone/dag/errors"
+	"github.com/palletone/go-palletone/ptnjson/statistics"
 )
 
 type LesApiBackend struct {
@@ -448,35 +448,9 @@ func (b *LesApiBackend) DecodeJsonTx(hex string) (string, error) {
 func (b *LesApiBackend) EncodeTx(jsonStr string) (string, error) {
 	return "", nil
 }
-
-func (b *LesApiBackend) ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64,
-	tplName, path, version string, description, abi, language string, addrs []common.Address) (reqId common.Hash,
-	tplId []byte, err error) {
-	return
-}
-func (b *LesApiBackend) ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64,
-	templateId []byte, args [][]byte, extData []byte, timeout time.Duration) (reqId common.Hash,
-	depId common.Address, err error) {
-	return
-}
-func (b *LesApiBackend) ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64,
-	certID *big.Int, contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
-	return
-}
 func (b *LesApiBackend) SendContractInvokeReqTx(requestTx *modules.Transaction) (common.Hash, error) {
 	return common.Hash{}, nil
 }
-
-func (b *LesApiBackend) ContractInvokeReqTokenTx(from, to common.Address, token *modules.Asset, amountToken, fee uint64,
-	contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error) {
-	return
-}
-
-func (b *LesApiBackend) ContractStopReqTx(from, to common.Address, daoAmount, daoFee uint64,
-	contractId common.Address, deleteImage bool) (reqId common.Hash, err error) {
-	return
-}
-
 func (b *LesApiBackend) ContractInstallReqTxFee(from, to common.Address, daoAmount, daoFee uint64, tplName,
 	path, version string, description, abi, language string, addrs []common.Address) (fee float64, size float64, tm uint32,
 	err error) {

@@ -897,38 +897,6 @@ func (p *Processor) CreateTokenTransaction(from, to common.Address, token *modul
 	return tx, daoFee, nil
 }
 
-func (p *Processor) createContractTxReqToken(contractId, from, to common.Address, token *modules.Asset,
-	daoAmountToken, daoFee uint64, msg *modules.Message) (common.Hash, *modules.Transaction, error) {
-	tx, _, err := p.CreateTokenTransaction(from, to, token, daoAmountToken, daoFee, msg)
-	if err != nil {
-		return common.Hash{}, nil, err
-	}
-	log.Debugf("[%s]createContractTxReqToken,contractId[%s],tx[%v]",
-		tx.RequestHash().ShortStr(), contractId.String(), tx)
-	return p.signGenericTx(contractId, from, tx)
-}
-
-func (p *Processor) createContractTxReq(contractId, from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
-	msg *modules.Message) (common.Hash, *modules.Transaction, error) {
-	tx, _, err := p.dag.CreateGenericTransaction(from, to, daoAmount, daoFee, certID, msg, p.ptn.EnableGasFee())
-	if err != nil {
-		return common.Hash{}, nil, err
-	}
-	//  构造 signature
-	if !p.ptn.EnableGasFee() && from.Equal(to) {
-		ks := p.ptn.GetKeyStore()
-		pubKey, err := ks.GetPublicKey(from)
-		if err != nil {
-			return common.Hash{}, nil, err
-		}
-		sign, err := ks.SigData(tx, from)
-		if err != nil {
-			return common.Hash{}, nil, err
-		}
-		tx.AddMessage(modules.NewMessage(modules.APP_SIGNATURE, modules.NewSignaturePayload(pubKey, sign)))
-	}
-	return p.signGenericTx(contractId, from, tx)
-}
 func (p *Processor) SignAndExecuteAndSendRequest(from common.Address,
 	tx *modules.Transaction) (*modules.Transaction, error) {
 	requestMsg := tx.Messages()[tx.GetRequestMsgIndex()]
