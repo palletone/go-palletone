@@ -47,6 +47,12 @@ web3._extend({
         	params: 8, //from, to, daoAmount, daoFee , contractAddr, args[]string------>["fun", "key", "value"], password, timeout
 			inputFormatter: [null, null, null,null, null, null,null,null]
 		}),
+		new web3._extend.Method({
+			name: 'ccinvoketxSync',
+        	call: 'contract_ccinvoketxSync',
+        	params: 8, //from, to, daoAmount, daoFee , contractAddr, args[]string------>["fun", "key", "value"], password, timeout
+			inputFormatter: [null, null, null,null, null, null,null,null]
+		}),
         //new web3._extend.Method({
 		//	name: 'ccinvoketxPass',
 		//	call: 'contract_ccinvoketx',

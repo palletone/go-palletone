@@ -371,13 +371,13 @@ func (s *PrivateContractAPI) Ccinvoketx(from, to string, amount, fee decimal.Dec
 
 //调用ccinvoke，并等待打包后返回
 func (s *PrivateContractAPI) CcinvoketxSync(from, to string, amount, fee decimal.Decimal,
-	contractAddress string, param []string, password *string, timeout *Int) (*ptnjson.TxHashWithUnitInfoJson, error) {
+	contractAddress string, param []string, password *string, timeout *Int) (*ptnjson.ContractInvokeResultJson, error) {
 	return s.CcinvokeTokenSync(from, to, dagconfig.DagConfig.GasToken, amount, fee, contractAddress, param, password, timeout)
 }
 
 //调用ccinvokeToken，并等待打包后返回
 func (s *PrivateContractAPI) CcinvokeTokenSync(from, to, token string, amountToken, fee decimal.Decimal,
-	contractAddress string, param []string, pwd *string, timeout *Int) (*ptnjson.TxHashWithUnitInfoJson, error) {
+	contractAddress string, param []string, pwd *string, timeout *Int) (*ptnjson.ContractInvokeResultJson, error) {
 	start := time.Now()
 	response, err := s.CcinvokeToken(from, to, token, amountToken, fee, contractAddress, param, pwd, timeout)
 	if err != nil {
@@ -396,13 +396,24 @@ func (s *PrivateContractAPI) CcinvokeTokenSync(from, to, token string, amountTok
 			log.Infof("SubscribeSaveUnitEvent received unit:%s", u.Unit.DisplayId())
 			for i, utx := range u.Unit.Transactions() {
 				if utx.RequestHash() == reqHash {
-					txInfo := &ptnjson.TxHashWithUnitInfoJson{
-						Timestamp:   time.Unix(u.Unit.Timestamp(), 0),
-						UnitHash:    u.Unit.Hash().String(),
-						UnitHeight:  u.Unit.NumberU64(),
-						TxIndex:     uint64(i),
-						TxHash:      utx.Hash().String(),
-						RequestHash: reqHash.String(),
+					var errCode uint32
+					var errMsg string
+					for _, msg := range utx.Messages() {
+						if msg.App == modules.APP_CONTRACT_INVOKE {
+							result := msg.Payload.(*modules.ContractInvokePayload)
+							errMsg = result.ErrMsg.Message
+							errCode = result.ErrMsg.Code
+						}
+					}
+					txInfo := &ptnjson.ContractInvokeResultJson{
+						Timestamp:          time.Unix(u.Unit.Timestamp(), 0),
+						ResultErrorCode:    errCode,
+						ResultErrorMessage: errMsg,
+						UnitHash:           u.Unit.Hash().String(),
+						UnitHeight:         u.Unit.NumberU64(),
+						TxIndex:            uint64(i),
+						TxHash:             utx.Hash().String(),
+						RequestHash:        reqHash.String(),
 					}
 					log.Infof("receive tx[%s] packed event, spend time:%s, total spend:%s",
 						utx.Hash().String(), time.Since(start2).String(),
