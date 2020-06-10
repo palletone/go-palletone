@@ -24,7 +24,7 @@ import (
 	"github.com/palletone/go-palletone/common/util"
 )
 
-func Evaluate(pri *ecdsa.PrivateKey,  msg []byte) (proof []byte, err error) {
+func Evaluate(pri *ecdsa.PrivateKey, msg []byte) (proof []byte, err error) {
 	h := crypto.Keccak256Hash(util.RHashBytes(msg))
 	sign, err := crypto.Sign(h.Bytes(), pri)
 	if err != nil {

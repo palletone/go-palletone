@@ -19,13 +19,13 @@
 package vrfEss
 
 import (
-	"testing"
 	"crypto/ecdsa"
 	"crypto/rand"
 	"github.com/palletone/go-palletone/common/crypto"
+	"testing"
 )
 
-var vType =new(Ess)
+var vType = new(Ess)
 
 func TestVrf(t *testing.T) {
 	msg := []byte("test")
@@ -38,12 +38,12 @@ func TestVrf(t *testing.T) {
 		return
 	}
 	pubKey := &priKey.PublicKey
-	proof,_, err := vType.VrfProve(priKey, msg)
+	proof, _, err := vType.VrfProve(priKey, msg)
 	if err != nil {
 		t.Fatalf("compute vrf: %v", err)
 	}
 	pk := crypto.CompressPubkey(pubKey)
-	ret, _,err := vType.VrfVerify(pk, msg, proof)
+	ret, _, err := vType.VrfVerify(pk, msg, proof)
 	if err != nil {
 		t.Fatalf("verify vrf: %v", err)
 	}

@@ -17,13 +17,13 @@
 package crypto
 
 import (
-	"crypto/elliptic"
-	"github.com/btcsuite/btcd/btcec"
-	"math/big"
 	"crypto/ecdsa"
-	"fmt"
-	"github.com/palletone/go-palletone/common/log"
+	"crypto/elliptic"
 	"errors"
+	"fmt"
+	"github.com/btcsuite/btcd/btcec"
+	"github.com/palletone/go-palletone/common/log"
+	"math/big"
 )
 
 /*
@@ -114,6 +114,7 @@ func DecompressPubkey(pubkey []byte) (*ecdsa.PublicKey, error) {
 func CompressPubkey(pubkey *ecdsa.PublicKey) []byte {
 	return (*btcec.PublicKey)(pubkey).SerializeCompressed()
 }
+
 // S256 returns an instance of the secp256k1 curve.
 func S256() elliptic.Curve {
 	return btcec.S256()

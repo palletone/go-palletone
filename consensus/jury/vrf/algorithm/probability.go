@@ -19,9 +19,9 @@
 package algorithm
 
 import (
-	"math/big"
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/util"
+	"math/big"
 )
 
 //subUsers return the selected amount of sub-users determined from the mathematics protocol.

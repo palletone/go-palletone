@@ -320,7 +320,7 @@ func (p *peer) Handshake(number *modules.ChainIndex, genesis common.Hash, headha
 		return err
 	}
 
-	log.Debug("Cors PalletOne ProtocolManager handle", "rNum",rNum)
+	log.Debug("Cors PalletOne ProtocolManager handle", "rNum", rNum)
 
 	if len(ccis) > 0 {
 		flag := 0

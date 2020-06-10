@@ -284,11 +284,11 @@ func TestMapToSlice(t *testing.T) {
 }
 
 func TestPacketCompatibility(t *testing.T) {
-	db ,_ := ptndb.NewMemDatabase()
+	db, _ := ptndb.NewMemDatabase()
 	statedb := NewStateDb(db)
 	packetAddr := syscontract.PacketContractAddress
 	version := &modules.StateVersion{Height: &modules.ChainIndex{Index: 123}, TxIndex: 1}
-	a,_ :=common.StringToAddress("P16JiQ3U23zqGmpAhBZwH7gDksBz4ySzLT2")
+	a, _ := common.StringToAddress("P16JiQ3U23zqGmpAhBZwH7gDksBz4ySzLT2")
 	oP := &packetcc.OldPacket{
 		PubKey:          []byte("old"),
 		Creator:         a,
@@ -301,10 +301,10 @@ func TestPacketCompatibility(t *testing.T) {
 		Remark:          "remark",
 		Constant:        false,
 	}
-	fmt.Printf("old = %v\n",oP)
+	fmt.Printf("old = %v\n", oP)
 	value, _ := rlp.EncodeToBytes(oP)
 	wrs := modules.NewWriteSet(string(oP.PubKey), value)
-	err := statedb.SaveContractState(packetAddr.Bytes21(),wrs,version)
+	err := statedb.SaveContractState(packetAddr.Bytes21(), wrs, version)
 	if err != nil {
 		t.Error(err)
 	}
@@ -324,8 +324,8 @@ func TestPacketCompatibility(t *testing.T) {
 			t.Error(err)
 		}
 		// 转换
-		np := packetcc.OldPacket2New(&op,uint64(90),uint32(10))
+		np := packetcc.OldPacket2New(&op, uint64(90), uint32(10))
 		p = *np
 	}
-	fmt.Printf("new = %v\n",&p)
+	fmt.Printf("new = %v\n", &p)
 }

@@ -256,6 +256,7 @@ func PubkeyBytesToAddressOutchain(pubKeyCompressBytes []byte) common.Address {
 	pubKeyHash := Hash160(pubKeyCompressBytes)
 	return common.NewAddress(pubKeyHash, common.OutchainHash)
 }
+
 //This is for P2SH address, start with P3
 func ScriptToAddress(redeemScript []byte) common.Address {
 	scriptHash := Hash160(redeemScript)

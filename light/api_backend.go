@@ -31,20 +31,20 @@ import (
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
+	"github.com/palletone/go-palletone/consensus/jury"
 	"github.com/palletone/go-palletone/core"
 	"github.com/palletone/go-palletone/core/accounts"
+	"github.com/palletone/go-palletone/core/accounts/keystore"
+	"github.com/palletone/go-palletone/dag"
+	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/state"
+	"github.com/palletone/go-palletone/internal/ptnapi"
 	"github.com/palletone/go-palletone/ptn/downloader"
 	"github.com/palletone/go-palletone/ptnjson"
+	"github.com/palletone/go-palletone/ptnjson/statistics"
 	"github.com/palletone/go-palletone/txspool"
 	"github.com/shopspring/decimal"
-	"github.com/palletone/go-palletone/consensus/jury"
-	"github.com/palletone/go-palletone/internal/ptnapi"
-	"github.com/palletone/go-palletone/dag"
-	"github.com/palletone/go-palletone/core/accounts/keystore"
-	"github.com/palletone/go-palletone/dag/errors"
-	"github.com/palletone/go-palletone/ptnjson/statistics"
 )
 
 type LesApiBackend struct {
@@ -419,7 +419,7 @@ func (b *LesApiBackend) GetAssetExistence(asset string) ([]*ptnjson.ProofOfExist
 
 //contract control
 
-func (b *LesApiBackend)ContractEventBroadcast(event jury.ContractEvent, local bool) {
+func (b *LesApiBackend) ContractEventBroadcast(event jury.ContractEvent, local bool) {
 	return
 }
 func (b *LesApiBackend) ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi,

@@ -27,16 +27,16 @@ import (
 type Es struct {
 }
 
-func (e *Es) VrfProve(priKey interface{}, msg []byte) (proof ,selData []byte, err error) {
+func (e *Es) VrfProve(priKey interface{}, msg []byte) (proof, selData []byte, err error) {
 	siger, err := NewVRFSigner(priKey.(*ecdsa.PrivateKey))
 	if err != nil {
 		log.Errorf("VrfProve, NewVRFSigner err:%s", err.Error())
-		return nil, nil,err
+		return nil, nil, err
 	}
 	idx, proof := siger.Evaluate(msg)
 	//log.Debugf("VrfProve, msg[%v], idx[%v], proof[%v]", msg, idx, proof)
 
-	return proof, idx[:],nil
+	return proof, idx[:], nil
 }
 
 func (e *Es) VrfVerify(pubKey, msg, proof []byte) (bool, []byte, error) {

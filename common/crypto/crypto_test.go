@@ -92,7 +92,7 @@ func TestSign(t *testing.T) {
 }
 */
 func TestInvalidSign(t *testing.T) {
-	if _, err := MyCryptoLib. Sign(make([]byte, 1), nil); err == nil {
+	if _, err := MyCryptoLib.Sign(make([]byte, 1), nil); err == nil {
 		t.Errorf("expected sign with hash 1 byte to error")
 	}
 	if _, err := MyCryptoLib.Sign(make([]byte, 33), nil); err == nil {
@@ -217,10 +217,10 @@ func TestPythonIntegration(t *testing.T) {
 	k0, _ := hex.DecodeString(kh)
 
 	msg0 := Keccak256([]byte("foo"))
-	sig0, _ := MyCryptoLib.Sign(k0,msg0)
+	sig0, _ := MyCryptoLib.Sign(k0, msg0)
 
 	msg1 := common.FromHex("00000000000000000000000000000000")
-	sig1, _ := MyCryptoLib.Sign(k0,msg0)
+	sig1, _ := MyCryptoLib.Sign(k0, msg0)
 
 	t.Logf("msg: %x, privkey: %s sig: %x\n", msg0, kh, sig0)
 	t.Logf("msg: %x, privkey: %s sig: %x\n", msg1, kh, sig1)
@@ -230,8 +230,7 @@ func TestPubkeyToAddress(t *testing.T) {
 	prvKey, _ := MyCryptoLib.KeyGen()
 
 	t.Logf("Private Key: %s", hex.EncodeToString(prvKey))
-	pubKey,_ := MyCryptoLib.PrivateKeyToPubKey(prvKey)
-
+	pubKey, _ := MyCryptoLib.PrivateKeyToPubKey(prvKey)
 
 	t.Logf("Public Key: %s", hex.EncodeToString(pubKey))
 	address := PubkeyBytesToAddress(pubKey)

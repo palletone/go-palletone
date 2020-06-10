@@ -1,11 +1,11 @@
 package jury
 
 import (
-	"testing"
-	"math/rand"
-	"time"
 	"fmt"
 	"math"
+	"math/rand"
+	"testing"
+	"time"
 
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/util"
@@ -115,7 +115,7 @@ func eone(expectNm uint, weight, total uint64) (num int) {
 		sel := alg.Selected(expectNm, weight, total, reqId[:])
 		if sel > 0 {
 			//log.Info("sel ok")
-			cnt ++
+			cnt++
 		} else {
 			//fmt.Print(".")
 			//log.Info("TestContractProcess", "Selected", sel, "idx", i, "reqId", reqId)

@@ -395,7 +395,7 @@ func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvo
 			}
 
 			statedb.StoreMediatorInfo(addr, mi)
-		} else if string(invoke.Args[0]) == modules.HandleForAddMediator  {
+		} else if string(invoke.Args[0]) == modules.HandleForAddMediator {
 			mco := modules.NewMediatorCreateArgs()
 
 			err := json.Unmarshal(invoke.Args[1], &mco)
