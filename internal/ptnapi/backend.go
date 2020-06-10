@@ -27,6 +27,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
+	"github.com/palletone/go-palletone/consensus/jury"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag"
@@ -37,7 +38,6 @@ import (
 	"github.com/palletone/go-palletone/ptnjson/statistics"
 	"github.com/palletone/go-palletone/txspool"
 	"github.com/shopspring/decimal"
-	"github.com/palletone/go-palletone/consensus/jury"
 )
 
 // Backend interface provides the common API services (that are provided by

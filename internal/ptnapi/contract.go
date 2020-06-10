@@ -20,43 +20,44 @@
 package ptnapi
 
 import (
+	"bytes"
+	"fmt"
+	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/shopspring/decimal"
-	"github.com/palletone/go-palletone/common/log"
-	"github.com/palletone/go-palletone/common"
-	"fmt"
-	"bytes"
-	"github.com/palletone/go-palletone/common/crypto"
-	"github.com/palletone/go-palletone/dag/errors"
 )
 
 const GOLANG = "golang"
 const GO = "go"
 
 type buildContractContext struct {
-	tokenId  string
-	password string
-	fromAddr common.Address
-	toAddr   common.Address
-	ccAddr   common.Address
-	amount   decimal.Decimal
-	gasFee   decimal.Decimal
-	args     [][]byte
+	tokenId    string
+	password   string
+	fromAddr   common.Address
+	toAddr     common.Address
+	ccAddr     common.Address
+	amount     decimal.Decimal
+	gasFee     decimal.Decimal
+	args       [][]byte
 	exeTimeout *Int
 }
 type buildMutiContractContext struct {
-	tokenId1  string
-	tokenId2  string
-	password string
-	fromAddr common.Address
-	toAddr   common.Address
-	ccAddr   common.Address
-	amount1   decimal.Decimal
-	amount2   decimal.Decimal
-	gasFee   decimal.Decimal
-	args     [][]byte
+	tokenId1   string
+	tokenId2   string
+	password   string
+	fromAddr   common.Address
+	toAddr     common.Address
+	ccAddr     common.Address
+	amount1    decimal.Decimal
+	amount2    decimal.Decimal
+	gasFee     decimal.Decimal
+	args       [][]byte
 	exeTimeout *Int
 }
+
 func getTemplateId(ccName, ccPath, ccVersion string) []byte {
 	var buffer bytes.Buffer
 	buffer.Write([]byte(ccName))
@@ -120,23 +121,23 @@ func (s *PrivateContractAPI) buildMutiContractReqTx(ctx *buildMutiContractContex
 	if ctx == nil || msgReq == nil {
 		return nil, errors.New("buildContractReqTx, param is nil")
 	}
-    totalamount := ctx.amount1.Add(ctx.amount2)
+	totalamount := ctx.amount1.Add(ctx.amount2)
 	//如没有GasFee，而且to address不是合约地址，则不构建Payment，直接InvokeRequest+Signature
 	if s.b.EnableGasFee() || ctx.toAddr == ctx.ccAddr || ctx.fromAddr != ctx.toAddr {
 		var usedUtxo []*modules.UtxoWithOutPoint
 		var usedUtxo2 []*modules.UtxoWithOutPoint
 		//费用检查
 		ctx4check := &buildContractContext{
-		   tokenId:    ctx.tokenId1,
-		   fromAddr:   ctx.fromAddr,
-		   toAddr:     ctx.toAddr,
-		   ccAddr:     ctx.ccAddr,
-		   amount:     totalamount,
-		   gasFee:     ctx.gasFee,
-		   args:       ctx.args,
-		   password:   ctx.password,
-		   exeTimeout: ctx.exeTimeout,
-	    }
+			tokenId:    ctx.tokenId1,
+			fromAddr:   ctx.fromAddr,
+			toAddr:     ctx.toAddr,
+			ccAddr:     ctx.ccAddr,
+			amount:     totalamount,
+			gasFee:     ctx.gasFee,
+			args:       ctx.args,
+			password:   ctx.password,
+			exeTimeout: ctx.exeTimeout,
+		}
 		var fee decimal.Decimal
 		// 当支付给合约，但是没有交易费
 		if s.b.EnableGasFee() {
@@ -161,7 +162,7 @@ func (s *PrivateContractAPI) buildMutiContractReqTx(ctx *buildMutiContractContex
 		if err != nil {
 			return nil, err
 		}
-		usedUtxo=append(usedUtxo,usedUtxo2...)
+		usedUtxo = append(usedUtxo, usedUtxo2...)
 		tx.AddMessage(tx2.TxMessages()[1])
 
 		tx.AddMessage(msgReq)
@@ -179,6 +180,7 @@ func (s *PrivateContractAPI) buildMutiContractReqTx(ctx *buildMutiContractContex
 	}
 	return tx, err
 }
+
 //创建没有Payment的合约请求交易
 func (s *PrivateContractAPI) buildContractReqTxWithoutGasFee(b Backend, from common.Address,
 	pwd string, msgReq *modules.Message) (*modules.Transaction, error) {
