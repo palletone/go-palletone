@@ -28,6 +28,11 @@ mainnet:
 	@echo "Done building."
 	@echo "Run \"./gptn\" to launch mainnet node."
 
+acme:
+	go build -mod=vendor -tags "gm" ./cmd/gptn
+	@echo "Done building."
+	@echo "Run \"./gptn\" to launch acme node."
+
 all:
 	build/env.sh go run -mod=vendor build/ci.go install
 
