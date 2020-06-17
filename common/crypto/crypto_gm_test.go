@@ -22,9 +22,10 @@
 package crypto
 
 import (
+	"testing"
+
 	"github.com/palletone/go-palletone/common/crypto/gmsm/sm2"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestCryptoGm_Sign(t *testing.T) {
@@ -65,7 +66,7 @@ func Test_key(t *testing.T) {
 	t.Logf("Pubkey:%x,len:%d", pubKey, len(pubKey))
 
 	//标准包验证
-	prikey, err := sm2ToECDSA(privKey)
+	prikey, err := Sm2ToECDSA(privKey)
 	assert.Nil(t, err)
 	t.Logf("Prikey:%x", prikey)
 
