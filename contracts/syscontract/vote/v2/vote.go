@@ -287,12 +287,12 @@ func (v *Vote) CreateToken(stub shim.ChaincodeStubInterface, name string, voteTy
 		return shim.Error(jsonResp)
 	}
 
-	//add global state
-	err = setGlobal(stub, &info)
-	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to add global state\"}"
-		return shim.Error(jsonResp)
-	}
+	////add global state
+	//err = setGlobal(stub, &info)
+	//if err != nil {
+	//	jsonResp := "{\"Error\":\"Failed to add global state\"}"
+	//	return shim.Error(jsonResp)
+	//}
 
 	return shim.Success(createJson)
 }
