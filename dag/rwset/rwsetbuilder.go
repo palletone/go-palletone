@@ -62,12 +62,11 @@ func (b *RWSetBuilder) AddToReadSet(contractId []byte, ns string, key string, ve
 		kv[key] = NewKVRead(contractId, key, version)
 	}
 }
-func (b *RWSetBuilder) AddTokenPayOut(ns string, addr string, asset *modules.Asset, amount uint64, lockTime uint32) {
+func (b *RWSetBuilder) AddTokenPayOut(ns string, address common.Address, asset *modules.Asset, amount uint64, lockTime uint32) {
 	nsPubRwBuilder := b.getOrCreateNsPubRwBuilder(ns)
 	if nsPubRwBuilder.tokenPayOut == nil {
 		nsPubRwBuilder.tokenPayOut = []*modules.TokenPayOut{}
 	}
-	address, _ := common.StringToAddress(addr)
 	pay := &modules.TokenPayOut{Asset: asset, Amount: amount, PayTo: address, LockTime: lockTime}
 	nsPubRwBuilder.tokenPayOut = append(nsPubRwBuilder.tokenPayOut, pay)
 

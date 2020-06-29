@@ -20,9 +20,9 @@
 package main
 
 import (
+	"golang.org/x/crypto/ed25519"
 	"io/ioutil"
 	"log"
-	"golang.org/x/crypto/ed25519"
 )
 
 func main() {

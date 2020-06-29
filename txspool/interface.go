@@ -27,7 +27,7 @@ import (
 
 type ITxPool interface {
 	Stop()
-
+	Clear()
 	AddLocal(tx *modules.Transaction) error
 	//AddLocals(txs []*modules.Transaction) []error
 	//AddSequenTx(tx *modules.Transaction) error
@@ -73,3 +73,5 @@ type ITxPool interface {
 	//获取某地址针对某Token的UTXO
 	GetAddrUtxos(addr common.Address, token *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 }
+
+var Instance ITxPool

@@ -141,6 +141,10 @@ func (s *PublicTxPoolAPI) Queue() map[common.Hash]*modules.Transaction {
 	}
 	return result
 }
+func (s *PublicTxPoolAPI) Clear() bool {
+	s.b.TxPoolClear()
+	return true
+}
 
 // 未确认的交易列表
 func (s *PublicTxPoolAPI) Pending() ([]*ptnjson.TxPoolPendingJson, error) {
@@ -490,7 +494,7 @@ func forking(ctx context.Context, b Backend) uint64 {
 //}
 
 func submitTxs(ctx context.Context, b Backend, txs []*modules.Transaction) []error {
-	errs := b.SendTxs(ctx, txs)
+	errs := b.SendTxs(txs)
 	if errs != nil {
 		return errs
 	}

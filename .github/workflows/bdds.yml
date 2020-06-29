@@ -143,3 +143,145 @@ jobs:
       with:
         name: fabricLogs
         path: /home/runner/gopath/src/github.com/palletone/go-palletone/bdd/logs
+
+  fabricbdd:
+    name: UserContract-fabricbdd
+    runs-on: ubuntu-latest
+    steps:
+    - name: Set up Go 1.12
+      uses: actions/setup-go@v1
+      with:
+       go-version: 1.12
+    - name: Install dependencies
+      run: |
+        sudo -H pip install --upgrade pip
+        sudo -H pip install robotframework==2.8.5
+        sudo -H pip install requests
+        sudo -H pip install robotframework-requests
+        sudo -H pip install demjson
+        sudo -H pip install pexpect
+        sudo -H apt-get install expect
+        sudo -H apt-get install lftp
+        
+    - name: Prepare fabric
+      run: |
+          cd $HOME
+          mkdir -p gopath
+          cd gopath
+          export GOPATH=$PWD
+          export GO111MODULE=on
+          go env
+          # create hyperledger directory
+          mkdir -p src/github.com/hyperledger
+          cd src/github.com/hyperledger
+          # download fabric
+          wget https://github.com/hyperledger/fabric/releases/download/v1.4.0/hyperledger-fabric-linux-amd64-1.4.0.tar.gz
+          tar zxvf hyperledger-fabric-linux-amd64-1.4.0.tar.gz
+          export PATH=$PATH:$HOME/gopath/src/github.com/hyperledger/bin
+          peer version #test
+          # download fabric-samples
+          git clone -b v1.4.0 https://github.com/hyperledger/fabric-samples
+          # pull docker images
+          cd $HOME/gopath/src/github.com/hyperledger/fabric-samples/scripts
+          ./bootstrap.sh -b
+          docker images
+
+    - name: Build and run gptn
+      run: |
+          mkdir -p $HOME/gopath/src/github.com/palletone
+          cd $HOME/gopath/src/github.com/palletone
+          git clone -b ${GITHUB_REF##*/} https://github.com/palletone/go-palletone.git
+          cd go-palletone
+          sudo mkdir -p /home/runner/go/src/github.com/palletone/go-palletone
+          sudo cp -r * /home/runner/go/src/github.com/palletone/go-palletone/
+          go build -mod=vendor ./cmd/gptn
+          docker images
+          gptnVersion=`./gptn version|grep ^Version|awk '{print $2}'|awk -F '-' '{print $1}'`
+          cat /proc/sys/net/ipv4/ip_forward
+          sudo ./jurySec.sh
+          sudo cat /etc/docker/daemon.json
+          cd ./cmd/deployment
+          chmod +x ./deploy.sh
+          chmod +x ./start.sh
+          chmod +x editConfig.sh
+          docker network create gptn-net
+          docker pull palletone/goimg
+          docker tag palletone/goimg palletone/goimg:$gptnVersion
+          docker network ls
+          docker images
+          ./deploy.sh 3 3
+          ./editConfig.sh 3 3
+          #fabric msp and connection config file
+          cp -rf $HOME/gopath/src/github.com/hyperledger/fabric-samples/basic-network/crypto-config .
+          #cp -f $HOME/gopath/src/github.com/hyperledger/fabric-samples/basic-network/connection.yaml
+          connPath=$HOME/gopath/src/github.com/palletone/go-palletone/cmd/deployment/connection.yaml
+          array=(${connPath//\// })
+          result=''
+          for var in ${array[@]}
+          do
+             result=$result'\/'$var
+          done
+          sed -i "s/ConfigFile = \"\"/ConfigFile = \"$result\"/" outchain.toml 
+          sed -i "s/UserName = \"\"/UserName = \"User1\"/" outchain.toml 
+          sed -i "s/ChannelID = \"\"/ChannelID = \"mychannel\"/" outchain.toml 
+          sed -i "s/OrgAdmin = \"\"/OrgAdmin = \"Admin\"/" outchain.toml 
+          sed -i "s/OrgName = \"\"/OrgName = \"org1\"/" outchain.toml 
+          sed -i "s/OrgID = \"\"/OrgID = \"Org1MSP\"/" outchain.toml 
+          cat outchain.toml
+          ./start.sh 3
+          sleep 30
+
+    - name: Run fabric contract bdd
+      run: |
+          export GOPATH=$HOME/gopath
+          export GO111MODULE=on
+          go env
+          # start base-network
+          cd $HOME/gopath/src/github.com/hyperledger/fabric-samples/basic-network
+          ./start.sh
+          docker-compose -f ./docker-compose.yml up -d cli
+          docker ps -a
+          # deploy chaincode_example02
+          docker exec -e "CORE_PEER_LOCALMSPID=Org1MSP" -e "CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp" cli peer chaincode install -n chaincode_example02 -v 1.0 -p "github.com/chaincode_example02/go" -l "golang"
+          docker exec -e "CORE_PEER_LOCALMSPID=Org1MSP" -e "CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp" cli peer chaincode instantiate -o orderer.example.com:7050 -C mychannel -n chaincode_example02 -l "golang" -v 1.0 -c '{"Args":["init","A","100000","B","1000"]}' -P "OR ('Org1MSP.member','Org2MSP.member')"
+          sleep 10
+          docker exec cli peer chaincode query -C mychannel -n chaincode_example02 -c '{"Function": "query", "Args": ["B"]}'
+          docker ps -a
+          # get invoke txid
+          cd $HOME/gopath/src/github.com/palletone
+          git clone https://github.com/palletone/fabric-adaptor.git
+          cd fabric-adaptor
+          git checkout 87b853bf450ad77449f45fe688dbafc8a4afc625
+          sed -i "s/123.126.106.89/localhost/g" ./connection.yaml
+          cp -f ./connection.yaml $HOME/gopath/src/github.com/palletone/go-palletone/cmd/deployment/connection.yaml
+          result=`go run ./testadaptor/main.go`
+          txid=`echo ${result##* }`
+          echo $txid
+          docker ps -a
+          balance=`docker exec cli peer chaincode query -C mychannel -n chaincode_example02 -c '{"Function": "query", "Args": ["B"]}'`
+          echo $balance
+          # run bdd
+          ps aux | grep gptn
+          cd $HOME/gopath/src/github.com/palletone/go-palletone
+          python -m robot.run -v fabricTxID:$txid -d ./bdd/logs/fabric -i fabric ./bdd/UserContract/Testcases
+          # check B balance
+          balance=`docker exec cli peer chaincode query -C mychannel -n chaincode_example02 -c '{"Function": "query", "Args": ["B"]}'`
+          if [ ${balance} -ne "900" ]; then echo "ne" && exit 1;fi
+
+    - name: Upload to ftp
+      if: always()
+      run: |
+          killall -9 gptn
+          cd $HOME/gopath/src/github.com/palletone/go-palletone
+          zip -j bdd/logs/uc3-3_reports_fabric.zip bdd/logs/fabric/*
+          zip -r -l -o bdd/logs/uc3-3_logs_fabric.zip cmd/deployment/node1/log cmd/deployment/node1/nohup.out cmd/deployment/node2/log cmd/deployment/node2/nohup.out cmd/deployment/node3/log cmd/deployment/node3/nohup.out
+          cd bdd
+          chmod +x ./upload2Ftp.sh 
+          ./upload2Ftp.sh ${{secrets.FTP_PWD}} "WithGas-"${GITHUB_REF##*/} ${GITHUB_RUN_NUMBER} $PWD/logs
+
+    - name: Upload artifact
+      if: always()
+      uses: actions/upload-artifact@v1
+      with:
+        name: fabricLogs
+        path: /home/runner/gopath/src/github.com/palletone/go-palletone/bdd/logs

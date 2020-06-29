@@ -337,7 +337,7 @@ func (mp *MediatorPlugin) AddToResponseBuf(respEvent *VSSResponseEvent) {
 		if ok {
 			respCh <- resp
 		} else {
-			log.Debugf("the mediator(%v)'s respBuf regarding the mediator(%v) is cleared," +
+			log.Debugf("the mediator(%v)'s respBuf regarding the mediator(%v) is cleared,"+
 				" or the mediator(%v) is not local mediator", localMed.Str(), vrfrMed.Str(), localMed.Str())
 		}
 		//log.Debugf("vssBufLock.Unlock()")

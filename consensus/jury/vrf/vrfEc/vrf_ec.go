@@ -20,6 +20,7 @@ package vrfEc
 
 import (
 	"bytes"
+	"crypto"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/hmac"
@@ -27,10 +28,9 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
+	"github.com/palletone/go-palletone/consensus/jury/vrf/ec"
 	"hash"
 	"math/big"
-	"crypto"
-	"github.com/palletone/go-palletone/consensus/jury/vrf/ec"
 )
 
 var (
@@ -227,7 +227,7 @@ func getHash(curve elliptic.Curve) hash.Hash {
 	case 224:
 		return crypto.SHA224.New()
 	case 256:
-		return crypto.SHA256.New()	 //default
+		return crypto.SHA256.New() //default
 		//if curve.Params().Name == "sm2p256v1" {
 		//	log.Debug("sm2p256v1 not support!!")
 		//	//return sm3.New()

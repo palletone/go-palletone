@@ -176,7 +176,8 @@ func (pm *ProtocolManager) fetchHeader() (*modules.Header, error) {
 	number.AssetID = pm.assetId
 	go func() {
 		if err := p.RequestCurrentHeader(number); err != nil {
-			log.Error("Cors ProtocolManager fetchHeader RequestCurrentHeader err", err, "number", number)
+			log.Error("Cors ProtocolManager fetchHeader RequestCurrentHeader ", "err", err, "number.Index",
+				number.Index, "number.AssetID", number.AssetID)
 		}
 	}()
 

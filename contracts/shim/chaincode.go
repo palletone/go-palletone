@@ -430,6 +430,7 @@ func (stub *ChaincodeStub) PutState(key string, value []byte) error {
 	collection := ""
 	return stub.handler.handlePutState(collection, nil, key, value, stub.ChannelId, stub.TxID)
 }
+
 func (stub *ChaincodeStub) PutGlobalState(key string, value []byte) error {
 	if key == "" {
 		return errors.New("key must not be an empty string")
@@ -441,6 +442,20 @@ func (stub *ChaincodeStub) PutGlobalState(key string, value []byte) error {
 	collection := ""
 	return stub.handler.handlePutState(collection, GlobalStateContractId, key, value, stub.ChannelId, stub.TxID)
 
+}
+
+func (stub *ChaincodeStub) PutContractState(contractAddr common.Address, key string, value []byte) error {
+	if key == "" {
+		return errors.New("key must not be an empty string")
+	}
+	if !common.IsSystemContractId(stub.ContractId) {
+		return ERROR_ONLY_SYS_CONTRACT
+	}
+
+	// Access public data by setting the collection to empty string
+	collection := ""
+	contractId := contractAddr.Bytes()
+	return stub.handler.handlePutState(collection, contractId, key, value, stub.ChannelId, stub.TxID)
 }
 
 // DelState documentation can be found in interfaces.go

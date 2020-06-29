@@ -1797,11 +1797,11 @@ func (rep *UnitRepository) GetFileInfo(filehash []byte) ([]*modules.ProofOfExist
 	if err != nil {
 		return nil, err
 	}
-	mds0, err := rep.GetMainDataByHash(hashs)
+	mds0, err := rep.getMainDataByHash(hashs)
 	if hashs == nil {
 		hash := common.HexToHash(string(filehash))
 		hashs = append(hashs, hash)
-		mds1, err := rep.GetMainDataByHash(hashs)
+		mds1, err := rep.getMainDataByHash(hashs)
 		return mds1, err
 	}
 	return mds0, err
@@ -1814,19 +1814,19 @@ func (rep *UnitRepository) GetProofOfExistencesByMaindata(maindata []byte) ([]*m
 	if err != nil {
 		return nil, err
 	}
-	mds0, err := rep.GetMainDataByHash(hashs)
+	mds0, err := rep.getMainDataByHash(hashs)
 	if hashs == nil {
 		hash := common.HexToHash(string(maindata))
 		hashs = append(hashs, hash)
-		mds1, err := rep.GetMainDataByHash(hashs)
+		mds1, err := rep.getMainDataByHash(hashs)
 		return mds1, err
 	}
 	return mds0, err
 }
 
-func (rep *UnitRepository) GetMainDataByHash(hashs []common.Hash) ([]*modules.ProofOfExistencesInfo, error) {
-	rep.lock.RLock()
-	defer rep.lock.RUnlock()
+func (rep *UnitRepository) getMainDataByHash(hashs []common.Hash) ([]*modules.ProofOfExistencesInfo, error) {
+	//rep.lock.RLock()
+	//defer rep.lock.RUnlock()
 	mds := make([]*modules.ProofOfExistencesInfo, 0)
 	for _, hash := range hashs {
 		var md modules.ProofOfExistencesInfo

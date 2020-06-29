@@ -24,16 +24,16 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"errors"
-	"math/big"
 	"github.com/palletone/go-palletone/consensus/jury/vrf/vrfEd/edwards25519"
 	"golang.org/x/crypto/ed25519"
+	"math/big"
 	//ed25519 "go.dedis.ch/kyber/v3/group/edwards25519"
 )
 
 const (
-	limit    = 100
-	N2       = 32 // ceil(log2(q) / 8)
-	N        = N2 / 2
+	limit = 100
+	N2    = 32 // ceil(log2(q) / 8)
+	N     = N2 / 2
 	// 2^252 + 27742317777372353535851937790883648493
 	qs       = "1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed"
 	cofactor = 8
@@ -116,12 +116,12 @@ func ECVRF_verify(pk []byte, pi []byte, m []byte) (bool, error) {
 
 func ECVRF_decode_proof(pi []byte) (r *edwards25519.ExtendedGroupElement, c *[N2]byte, s *[N2]byte, err error) {
 	i := 0
-	sign := pi[i];
+	sign := pi[i]
 	i++
 	if sign != 2 && sign != 3 {
 		return nil, nil, nil, ErrDecodeError
 	}
-	r = OS2ECP(pi[i:i+N2], sign-2);
+	r = OS2ECP(pi[i:i+N2], sign-2)
 	i += N2
 	if r == nil {
 		return nil, nil, nil, ErrDecodeError
@@ -143,7 +143,7 @@ func ECVRF_decode_proof(pi []byte) (r *edwards25519.ExtendedGroupElement, c *[N2
 	return
 }
 
-func ECVRF_hash_points(ps ... []byte) *big.Int {
+func ECVRF_hash_points(ps ...[]byte) *big.Int {
 	h := sha256.New()
 	//	fmt.Printf("hash_points:\n")
 	for _, p := range ps {

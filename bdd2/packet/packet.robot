@@ -333,7 +333,7 @@ packet4
     ${amount}    getBalance    ${oneAddr}
     Should Be Equal As Numbers    ${amount}    6
     ${result}    getPacketInfo    ${tokenHolderPubKey}
-    Should Be Equal As Strings    ${result["BalanceAmount"]}    894
+    Should Be Equal As Strings    ${result["Token"][0]["BalanceAmount"]}    894
     getPacketAllocationHistory    ${tokenHolderPubKey}
     ${pulled}    isPulledPacket    ${tokenHolderPubKey}    3
     Should Be Equal As Strings    ${pulled}    true
@@ -345,15 +345,15 @@ packet5
     listAccounts    #    主要获取 tokenHolder
     unlockAccount    ${tokenHolder}    1    #    解锁 tokenHolder
     ${twoAddr}    newAccount
-    sleep    3
+    sleep    10
     transferPtn    ${tokenHolder}    ${twoAddr}    10000    1    1
     sleep    5
     unlockAccount    ${twoAddr}    1
-    sleep    3
+    sleep    5
     getPublicKey    ${twoAddr}
     createPacket    ${twoAddr}    900    ${tokenHolderPubKey}    10    1    10
     ...    ${time}    false
-    sleep    3
+    sleep    10
     getPacketInfo    ${tokenHolderPubKey}
     getPacketAllocationHistory    ${tokenHolderPubKey}
     getBalance    ${twoAddr}

@@ -53,6 +53,7 @@ const (
 
 var LogConfig = DefaultConfig
 var Logger *zap.Logger
+
 //var mux sync.RWMutex
 
 // init zap.logger

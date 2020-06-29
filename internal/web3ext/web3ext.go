@@ -32,7 +32,13 @@ var Modules = map[string]string{
 const TxPool_JS = `
 web3._extend({
 	property: 'txpool',
-	methods: [],
+	methods: [
+	new web3._extend.Method({
+			name: 'clear',
+			call: 'txpool_clear',
+			params: 0
+		}),
+	],
 	properties:
 	[
 		new web3._extend.Property({

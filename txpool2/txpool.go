@@ -55,6 +55,7 @@ type TxPool struct {
 	sync.RWMutex
 	txFeed event.Feed
 	scope  event.SubscriptionScope
+	quit   chan struct{} // used for exit
 }
 
 // NewTxPool creates a new transaction pool to gather, sort and filter inbound
@@ -69,7 +70,7 @@ func NewTxPool(config txspool.TxPoolConfig, cachedb palletcache.ICache, unit txs
 
 func NewTxPool4DI(config txspool.TxPoolConfig, cachedb palletcache.ICache, dag txspool.IDag,
 	tokenEngine tokenengine.ITokenEngine, txValidator txspool.IValidator) *TxPool {
-	return &TxPool{
+	pool := &TxPool{
 		normals:               newTxList(),
 		orphans:               make(map[common.Hash]*txspool.TxPoolTransaction),
 		basedOnRequestOrphans: make(map[common.Hash]*txspool.TxPoolTransaction),
@@ -77,6 +78,38 @@ func NewTxPool4DI(config txspool.TxPoolConfig, cachedb palletcache.ICache, dag t
 		txValidator:           txValidator,
 		dag:                   dag,
 		tokenengine:           tokenEngine,
+		quit:                  make(chan struct{}),
+	}
+	go pool.loopResendTx(config.OrphanTTL)
+	return pool
+}
+func (pool *TxPool) loopResendTx(tickerDuration time.Duration) {
+
+	resendTicker := time.NewTicker(tickerDuration)
+	defer func() {
+		resendTicker.Stop()
+		log.Info("txpool loopResendTx ticker stopped")
+	}()
+	for {
+		select {
+		case <-resendTicker.C:
+			//找到所有存在超过一定时间的Tx，并重新触发事件，以进行再次广播
+			txs, err := pool.normals.GetTxsByStatus(txspool.TxPoolTxStatus_Unpacked)
+			if err != nil {
+				log.Errorf("get unpacked tx error:%s", err.Error())
+			} else {
+				for _, tx := range txs {
+					if time.Since(tx.CreationDate).Seconds() >= tickerDuration.Seconds() {
+						log.Infof("tx[%s] already stay in txpool more than %d seconds, resend it", tx.TxHash.String(),
+							int(tickerDuration.Seconds()))
+						pool.txFeed.Send(modules.TxPreEvent{Tx: tx.Tx, IsOrphan: false})
+					}
+				}
+			}
+
+		case <-pool.quit:
+			return
+		}
 	}
 }
 
@@ -110,6 +143,10 @@ func (pool *TxPool) AddRemote(tx *modules.Transaction) error {
 	return nil
 }
 func (pool *TxPool) checkDuplicateAdd(txHash common.Hash) error {
+	if exist, _ := pool.dag.IsTransactionExist(txHash); exist {
+		log.Infof("ignore add dag exist tx[%s] to tx pool", txHash.String())
+		return ErrDuplicate
+	}
 	if _, err := pool.normals.GetTx(txHash); err == nil { //found tx
 		log.Infof("ignore add duplicate tx[%s] to tx pool", txHash.String())
 		return ErrDuplicate
@@ -623,6 +660,7 @@ func (pool *TxPool) Queued() ([]*txspool.TxPoolTransaction, error) {
 	return result, nil
 }
 func (pool *TxPool) Stop() {
+	close(pool.quit)
 	pool.scope.Close()
 	log.Info("Transaction pool stopped")
 }
@@ -754,4 +792,13 @@ func (pool *TxPool) GetTx(hash common.Hash) (*txspool.TxPoolTransaction, error) 
 func (pool *TxPool) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subscription {
 	//return pool.txFeed.Subscribe(ch)
 	return pool.scope.Track(pool.txFeed.Subscribe(ch))
+}
+func (pool *TxPool) Clear() {
+	pool.Lock()
+	defer pool.Unlock()
+	pool.normals = newTxList()
+	pool.orphans = make(map[common.Hash]*txspool.TxPoolTransaction)
+	pool.basedOnRequestOrphans = make(map[common.Hash]*txspool.TxPoolTransaction)
+	pool.userContractRequests = make(map[common.Hash]*txspool.TxPoolTransaction)
+	log.Info("Cleared all txpool cache data.")
 }

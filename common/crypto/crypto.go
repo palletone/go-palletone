@@ -39,7 +39,6 @@ var (
 	secp256k1_N, _  = new(big.Int).SetString("fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16)
 	secp256k1_halfN = new(big.Int).Div(secp256k1_N, big.NewInt(2))
 )
-var MyCryptoLib ICrypto = &CryptoS256{}
 
 // Keccak256 calculates and returns the Keccak256 hash of the input data.
 func Keccak256(data ...[]byte) []byte {
@@ -247,6 +246,14 @@ func PubkeyBytesToAddress(pubKeyCompressBytes []byte) common.Address {
 	}
 	pubKeyHash := Hash160(pubKeyCompressBytes)
 	return common.NewAddress(pubKeyHash, common.PublicKeyHash)
+}
+
+func PubkeyBytesToAddressOutchain(pubKeyCompressBytes []byte) common.Address {
+	if len(pubKeyCompressBytes) == 0 {
+		return common.Address{}
+	}
+	pubKeyHash := Hash160(pubKeyCompressBytes)
+	return common.NewAddress(pubKeyHash, common.OutchainHash)
 }
 
 //This is for P2SH address, start with P3

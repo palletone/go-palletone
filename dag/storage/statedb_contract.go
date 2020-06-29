@@ -101,7 +101,7 @@ func (statedb *StateDb) SaveContractState(contractId []byte, ws *modules.Contrac
 	if ws.ContractId != nil {
 		cid = ws.ContractId
 	}
-	key := getContractStateKey(cid, ws.Key)
+	key := GetContractStateKey(cid, ws.Key)
 	if ws.IsDelete {
 		log.Debugf("Delete contract state by key:[%s]", ws.Key)
 		return statedb.db.Delete(key)
@@ -112,7 +112,7 @@ func (statedb *StateDb) SaveContractState(contractId []byte, ws *modules.Contrac
 	return nil
 }
 
-func getContractStateKey(id []byte, field string) []byte {
+func GetContractStateKey(id []byte, field string) []byte {
 	key := append(constants.CONTRACT_STATE_PREFIX, id...)
 	return append(key, field...)
 }
@@ -189,7 +189,7 @@ func (statedb *StateDb) SaveContractStates(id []byte, wset []modules.ContractWri
 		if len(write.ContractId) != 0 {
 			cid = write.ContractId
 		}
-		key := getContractStateKey(cid, write.Key)
+		key := GetContractStateKey(cid, write.Key)
 
 		if write.IsDelete {
 			batch.Delete(key)
@@ -268,8 +268,7 @@ func (statedb *StateDb) GetContractStatesByPrefix(id []byte,
 To get contract or contract template one field
 */
 func (statedb *StateDb) GetContractState(id []byte, field string) ([]byte, *modules.StateVersion, error) {
-
-	key := getContractStateKey(id, field)
+	key := GetContractStateKey(id, field)
 	log.Debugf("DB[%s] GetContractState for key:%x. field:%s ", reflect.TypeOf(statedb.db).String(), key, field)
 	data, version, err := retrieveWithVersion(statedb.db, key)
 	//log.Debugf("GetContractState Result:%x,version:%s", data, version.String())
@@ -346,16 +345,6 @@ func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvo
 				return err
 			}
 
-			log.Debugf("Save Apply Mediator Invoke Req for account: (%v)", mco.AddStr)
-
-			mi := modules.NewMediatorInfo()
-			mi.MediatorInfoBase = mco.MediatorInfoBase
-			mi.MediatorApplyInfo = mco.MediatorApplyInfo
-
-			//if mi.RewardAdd == "" {
-			//	mi.RewardAdd = mi.AddStr
-			//}
-
 			// 判断是否是1.0.2之前的mediator
 			if pubKey, isFind := constants.OldMainNetMediatorAndPubKey[mco.AddStr]; isFind {
 				juror := modules.JurorDeposit{}
@@ -389,6 +378,37 @@ func (statedb *StateDb) UpdateStateByContractInvoke(invoke *modules.ContractInvo
 				}
 			}
 
+			log.Debugf("Save Apply Mediator Invoke Req for account: (%v)", mco.AddStr)
+
+			mi := modules.NewMediatorInfo()
+			mi.MediatorInfoBase = mco.MediatorInfoBase
+			mi.MediatorApplyInfo = mco.MediatorApplyInfo
+
+			//if mi.RewardAdd == "" {
+			//	mi.RewardAdd = mi.AddStr
+			//}
+
+			addr, err := core.StrToMedAdd(mi.AddStr)
+			if err != nil {
+				log.Warnf("StrToMedAdd err: %v", err.Error())
+				return err
+			}
+
+			statedb.StoreMediatorInfo(addr, mi)
+		} else if string(invoke.Args[0]) == modules.HandleForAddMediator {
+			mco := modules.NewMediatorCreateArgs()
+
+			err := json.Unmarshal(invoke.Args[1], &mco)
+			if err != nil {
+				log.Warnf("HandleForAddMediator Args Unmarshal: %v", err.Error())
+				return err
+			}
+
+			log.Debugf("Save HandleForAddMediator Invoke Req for account: (%v)", mco.AddStr)
+
+			mi := modules.NewMediatorInfo()
+			mi.MediatorInfoBase = mco.MediatorInfoBase
+			mi.MediatorApplyInfo = mco.MediatorApplyInfo
 			addr, err := core.StrToMedAdd(mi.AddStr)
 			if err != nil {
 				log.Warnf("StrToMedAdd err: %v", err.Error())

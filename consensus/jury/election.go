@@ -19,20 +19,20 @@
 package jury
 
 import (
+	"bytes"
 	"crypto/ecdsa"
 	"fmt"
 	"time"
-	"bytes"
 
 	"github.com/palletone/go-palletone/common"
+	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/util"
+	alg "github.com/palletone/go-palletone/consensus/jury/vrf/algorithm"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
-	"github.com/palletone/go-palletone/common/crypto"
-	alg "github.com/palletone/go-palletone/consensus/jury/vrf/algorithm"
 
 	"github.com/palletone/go-palletone/consensus/jury/vrf"
 )

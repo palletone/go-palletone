@@ -27,6 +27,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/palletone/go-palletone/common/ptndb"
 	"github.com/palletone/go-palletone/common/rpc"
+	"github.com/palletone/go-palletone/consensus/jury"
 	"github.com/palletone/go-palletone/core/accounts"
 	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"github.com/palletone/go-palletone/dag"
@@ -65,8 +66,8 @@ type Backend interface {
 	//SubscribeChainSideEvent(ch chan<- coredata.ChainSideEvent) event.Subscription
 	GetUnstableUnits() []*ptnjson.UnitSummaryJson
 	// TxPool API
-	SendTx(ctx context.Context, tx *modules.Transaction) error
-	SendTxs(ctx context.Context, signedTxs []*modules.Transaction) []error
+	SendTx(tx *modules.Transaction) error
+	SendTxs(signedTxs []*modules.Transaction) []error
 	GetPoolTransactions() (modules.Transactions, error)
 	GetPoolTransaction(txHash common.Hash) *modules.Transaction
 	GetTxByTxid_back(txid string) (*ptnjson.GetTxIdResult, error)
@@ -75,6 +76,7 @@ type Backend interface {
 	GetPoolAddrUtxos(addr common.Address, token *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	//GetPoolNonce(ctx context.Context, addr common.Address) (uint64, error)
 	Status() (int, int, int)
+	TxPoolClear()
 	TxPoolContent() (map[common.Hash]*txspool.TxPoolTransaction, map[common.Hash]*txspool.TxPoolTransaction)
 	Queued() ([]*txspool.TxPoolTransaction, error)
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
@@ -140,6 +142,7 @@ type Backend interface {
 	GetAssetTxHistory(asset *modules.Asset) ([]*ptnjson.TxHistoryJson, error)
 	GetAssetExistence(asset string) ([]*ptnjson.ProofOfExistenceJson, error)
 	//contract control
+	ContractEventBroadcast(event jury.ContractEvent, local bool)
 	ContractInstall(ccName string, ccPath string, ccVersion string, ccDescription, ccAbi,
 		ccLanguage string) (TemplateId []byte, err error)
 	ContractDeploy(templateId []byte, txid string, args [][]byte, timeout time.Duration) (deployId []byte, err error)
@@ -149,18 +152,7 @@ type Backend interface {
 	DecodeTx(hex string) (string, error)
 	DecodeJsonTx(hex string) (string, error)
 	EncodeTx(jsonStr string) (string, error)
-
-	ContractInstallReqTx(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string,
-		description, abi, language string, addrs []common.Address) (reqId common.Hash, tplId []byte, err error)
-	ContractDeployReqTx(from, to common.Address, daoAmount, daoFee uint64, templateId []byte, args [][]byte,
-		extData []byte, timeout time.Duration) (reqId common.Hash, contractAddr common.Address, err error)
-	ContractInvokeReqTx(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
-		contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error)
 	SendContractInvokeReqTx(requestTx *modules.Transaction) (reqId common.Hash, err error)
-	ContractInvokeReqTokenTx(from, to common.Address, token *modules.Asset, amountToken, fee uint64,
-		contractAddress common.Address, args [][]byte, timeout uint32) (reqId common.Hash, err error)
-	ContractStopReqTx(from, to common.Address, daoAmount, daoFee uint64, contractId common.Address,
-		deleteImage bool) (reqId common.Hash, err error)
 	ContractInstallReqTxFee(from, to common.Address, daoAmount, daoFee uint64, tplName, path, version string,
 		description, abi, language string, addrs []common.Address) (fee float64, size float64, tm uint32, err error)
 	ContractDeployReqTxFee(from, to common.Address, daoAmount, daoFee uint64, templateId []byte,

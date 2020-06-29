@@ -65,13 +65,13 @@ func TestDeleOneMax(t *testing.T) {
 }
 
 func TestEleRand(t *testing.T) {
-	ele :=[]modules.ElectionInf{
-		{EType:1},
-		{EType:2},
-		{EType:3},
-		{EType:4},
+	ele := []modules.ElectionInf{
+		{EType: 1},
+		{EType: 2},
+		{EType: 3},
+		{EType: 4},
 	}
-	out := randSelectEle(ele )
+	out := randSelectEle(ele)
 
 	fmt.Printf("ele len[%d], out len[%d]\n", len(ele), len(out))
 

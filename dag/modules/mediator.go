@@ -26,13 +26,15 @@ import (
 )
 
 const (
-	ApplyMediator      = "ApplyBecomeMediator"
-	IsApproved         = "IsInAgreeList"
-	MediatorPayDeposit = "MediatorPayToDepositContract"
-	MediatorList       = "MediatorList"
-	GetMediatorDeposit = "GetMediatorDeposit"
-	MediatorApplyQuit  = "MediatorApplyQuit"
-	UpdateMediatorInfo = "UpdateMediatorInfo"
+	ApplyMediator           = "ApplyBecomeMediator"
+	IsApproved              = "IsInAgreeList"
+	MediatorPayDeposit      = "MediatorPayToDepositContract"
+	MediatorList            = "MediatorList"
+	GetMediatorDeposit      = "GetMediatorDeposit"
+	MediatorApplyQuit       = "MediatorApplyQuit"
+	UpdateMediatorInfo      = "UpdateMediatorInfo"
+	HandleForAddMediator    = "HandleForAddMediator"
+	HandleForRemoveMediator = "HandleForRemoveMediator"
 )
 
 // mediator 信息

@@ -19,10 +19,10 @@
 package vrfEs
 
 import (
-    "testing"
-    "crypto/ecdsa"
-    "github.com/btcsuite/btcd/btcec"
-    "crypto/rand"
+	"crypto/ecdsa"
+	"crypto/rand"
+	"github.com/btcsuite/btcd/btcec"
+	"testing"
 )
 
 /*
@@ -149,38 +149,38 @@ func flipBit(a []byte, pos int) []byte {
 }
 */
 func TestVRFForS256(t *testing.T) {
-    key, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
-    if err != nil {
-        t.Error(err)
-        return
-    }
-    k, err := NewVRFSigner(key)
-    if err != nil {
-        t.Error(err)
-        return
-    }
-    pk, err := NewVRFVerifier(&key.PublicKey)
-    if err != nil {
-        t.Error(err)
-        return
-    }
-    msg := []byte("data1")
-    index, proof := k.Evaluate(msg)
-    _index, _proof := k.Evaluate(msg)
-    index1, err1 := pk.ProofToHash(msg, proof)
-    index2, err2 := pk.ProofToHash(msg, _proof)
+	key, err := ecdsa.GenerateKey(btcec.S256(), rand.Reader)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	k, err := NewVRFSigner(key)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	pk, err := NewVRFVerifier(&key.PublicKey)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	msg := []byte("data1")
+	index, proof := k.Evaluate(msg)
+	_index, _proof := k.Evaluate(msg)
+	index1, err1 := pk.ProofToHash(msg, proof)
+	index2, err2 := pk.ProofToHash(msg, _proof)
 
-    if err1 != nil {
-        t.Error(err1)
-    }
-    if err2 != nil {
-        t.Error(err2)
-    }
+	if err1 != nil {
+		t.Error(err1)
+	}
+	if err2 != nil {
+		t.Error(err2)
+	}
 
-    if index1 != index {
-        t.Error("index not equal")
-    }
-    t.Log(index, _index)
-    t.Log(index1, index2)
-    t.Log(proof, _proof)
+	if index1 != index {
+		t.Error("index not equal")
+	}
+	t.Log(index, _index)
+	t.Log(index1, index2)
+	t.Log(proof, _proof)
 }

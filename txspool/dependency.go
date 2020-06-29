@@ -42,7 +42,7 @@ type IDag interface {
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	SubscribeChainHeadEvent(ch chan<- modules.ChainHeadEvent) event.Subscription
-	// getTxfee
+	//getTxfee
 	//GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
 	GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error)
 	GetTxOutput(outpoint *modules.OutPoint) (*modules.Utxo, error)

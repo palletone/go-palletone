@@ -134,22 +134,29 @@ func (v *Vote) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 			return shim.Error(err.Error())
 		}
 		return shim.Success(vtJSON)
+	case "getAllVoteInfo":
+		voteInfos := v.GetAllVoteInfo(stub)
+		vtJSON, err := json.Marshal(voteInfos)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		return shim.Success(vtJSON)
 	default:
 		jsonResp := "{\"Error\":\"Unknown function " + f + "\"}"
 		return shim.Error(jsonResp)
 	}
 }
 
-func setGlobal(stub shim.ChaincodeStubInterface, tkInfo *tokenInfo) error {
-	gTkInfo := dm.GlobalTokenInfo{Symbol: tkInfo.Symbol, Name: tkInfo.Name, TokenType: 3, Status: 0, CreateAddr: tkInfo.CreateAddr,
-		TotalSupply: tkInfo.TotalSupply, SupplyAddr: "", AssetID: tkInfo.AssetID}
-	val, err := json.Marshal(gTkInfo)
-	if err != nil {
-		return err
-	}
-	err = stub.PutGlobalState(dm.GlobalPrefix+gTkInfo.Symbol, val)
-	return err
-}
+//func setGlobal(stub shim.ChaincodeStubInterface, tkInfo *tokenInfo) error {
+//	gTkInfo := dm.GlobalTokenInfo{Symbol: tkInfo.Symbol, Name: tkInfo.Name, TokenType: 3, Status: 0, CreateAddr: tkInfo.CreateAddr,
+//		TotalSupply: tkInfo.TotalSupply, SupplyAddr: "", AssetID: tkInfo.AssetID}
+//	val, err := json.Marshal(gTkInfo)
+//	if err != nil {
+//		return err
+//	}
+//	err = stub.PutGlobalState(dm.GlobalPrefix+gTkInfo.Symbol, val)
+//	return err
+//}
 
 func setSymbols(stub shim.ChaincodeStubInterface, tkInfo *tokenInfo) error {
 	val, err := json.Marshal(tkInfo)
@@ -280,12 +287,12 @@ func (v *Vote) CreateToken(stub shim.ChaincodeStubInterface, name string, voteTy
 		return shim.Error(jsonResp)
 	}
 
-	//add global state
-	err = setGlobal(stub, &info)
-	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to add global state\"}"
-		return shim.Error(jsonResp)
-	}
+	////add global state
+	//err = setGlobal(stub, &info)
+	//if err != nil {
+	//	jsonResp := "{\"Error\":\"Failed to add global state\"}"
+	//	return shim.Error(jsonResp)
+	//}
 
 	return shim.Success(createJson)
 }
@@ -525,4 +532,52 @@ func (v *Vote) GetVoteInfo(stub shim.ChaincodeStubInterface, assetID string) (*v
 		TotalSupply: tkInfo.TotalSupply, VoteEndTime: tkInfo.VoteEndTime.String(),
 		VoteTopics: voteTopicIndexs, AssetID: asset.String()}
 	return &tkID, nil
+}
+
+func getSymbolsAll(stub shim.ChaincodeStubInterface) []tokenInfo {
+	KVs, _ := stub.GetStateByPrefix(symbolsKey)
+	tkInfos := make([]tokenInfo, 0, len(KVs))
+	for _, oneKV := range KVs {
+		tkInfo := tokenInfo{}
+		err := json.Unmarshal(oneKV.Value, &tkInfo)
+		if err != nil {
+			continue
+		}
+		tkInfos = append(tkInfos, tkInfo)
+	}
+	return tkInfos
+}
+//GetAllVoteInfo
+func (v *Vote) GetAllVoteInfo(stub shim.ChaincodeStubInterface) []*voteInfo {
+	tkInfos := getSymbolsAll(stub)
+	voteInfos := make([]*voteInfo, 0, len(tkInfos))
+	for _, tkInfo := range tkInfos {
+		//get token information
+		var topicSupports []topicSupports
+		err := json.Unmarshal(tkInfo.VoteContent, &topicSupports)
+		if err != nil {
+			continue
+		}
+
+		//topic info
+		voteTopicIndexs := make([]voteTopicIndex, 0, len(topicSupports))
+		for i, oneTopicSupport := range topicSupports {
+			var oneResult voteTopicIndex
+			oneResult.TopicIndex = uint64(i) + 1
+			oneResult.TopicTitle = oneTopicSupport.TopicTitle
+			for i := range oneTopicSupport.VoteResults {
+				oneResult.SelectOptions = append(oneResult.SelectOptions, oneTopicSupport.VoteResults[i].SelectOption)
+			}
+			oneResult.SelectMax = oneTopicSupport.SelectMax
+			voteTopicIndexs = append(voteTopicIndexs, oneResult)
+		}
+
+		//token
+		asset := tkInfo.AssetID
+		vInfo := &voteInfo{Name: tkInfo.Name, CreateAddr: tkInfo.CreateAddr, VoteType: tkInfo.VoteType,
+			TotalSupply: tkInfo.TotalSupply, VoteEndTime: tkInfo.VoteEndTime.String(),
+			VoteTopics: voteTopicIndexs, AssetID: asset.String()}
+		voteInfos = append(voteInfos, vInfo)
+	}
+	return voteInfos
 }

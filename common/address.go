@@ -58,6 +58,7 @@ const (
 	PublicKeyHash AddressType = 0
 	ScriptHash    AddressType = 5
 	ContractHash  AddressType = 28
+	OutchainHash  AddressType = 115 //PoXxXx
 )
 
 func (a *Address) GetType() AddressType {
@@ -119,6 +120,8 @@ func StringToAddress(a string) (Address, error) {
 		return BytesToAddress(append(addrb, byte(ScriptHash))), nil
 	case 28:
 		return BytesToAddress(append(addrb, byte(ContractHash))), nil
+	case 115:
+		return BytesToAddress(append(addrb, byte(OutchainHash))), nil
 	default:
 		return Address{}, errors.New("Invalid address type")
 	}

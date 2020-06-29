@@ -19,11 +19,11 @@
 package vrfEc
 
 import (
-	"errors"
 	"crypto/ecdsa"
+	"errors"
 
-	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common/crypto"
+	"github.com/palletone/go-palletone/common/log"
 )
 
 var (
@@ -31,11 +31,12 @@ var (
 	ErrEvalVRF         = errors.New("failed to evaluate vrf")
 )
 
-type Ec struct{
+type Ec struct {
 }
+
 //Vrf returns the verifiable random function evaluated m and a NIZK proof
 //func VrfProve(pri *ecdsa.PrivateKey, msg []byte) (vrfValue, vrfProof []byte, err error) {
-func (e *Ec) VrfProve(priKey interface{}, msg []byte) (proof ,selData []byte, err error) {
+func (e *Ec) VrfProve(priKey interface{}, msg []byte) (proof, selData []byte, err error) {
 	sk := priKey.(*ecdsa.PrivateKey)
 	h := getHash(sk.Curve)
 	//byteLen := (sk.Params().BitSize + 7) >> 3
@@ -53,21 +54,21 @@ func (e *Ec) VrfProve(priKey interface{}, msg []byte) (proof ,selData []byte, er
 //func VrfVerify(pub *ecdsa.PublicKey, msg, vrfValue, vrfProof []byte) (bool, error) {
 //func VrfVerify(pub *ecdsa.PublicKey, msg, proof []byte) (bool, error) {
 func (e *Ec) VrfVerify(pubKey, msg, proof []byte) (bool, []byte, error) {
-	pk:= crypto.P256ToECDSAPub(pubKey)
+	pk := crypto.P256ToECDSAPub(pubKey)
 	if pk == nil {
 		log.Error("VrfVerify, P256ToECDSAPub fail")
 		return false, nil, errors.New("VrfVerify, P256ToECDSAPub fail")
 	}
 	h := getHash(pk.Curve)
 	byteLen := (pk.Params().BitSize + 7) >> 3
-	if len(proof) != byteLen*4+1  {
-		return false, nil,nil
+	if len(proof) != byteLen*4+1 {
+		return false, nil, nil
 	}
 	//proof := append(vrfProof, vrfValue...)
 	index, err := ProofToHash(pk, h, msg, proof)
 	if err != nil {
 		log.Debugf("verifying VRF failed: %v", err)
-		return false,nil,  nil
+		return false, nil, nil
 	}
-	return true,index[:], nil
+	return true, index[:], nil
 }

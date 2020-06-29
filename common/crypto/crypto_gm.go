@@ -22,14 +22,15 @@
 package crypto
 
 import (
+	"bytes"
+	"encoding/gob"
 	"errors"
 	"fmt"
-	"hash"
-	"math/big"
-
 	"github.com/palletone/go-palletone/common/crypto/gmsm/sm2"
 	"github.com/palletone/go-palletone/common/crypto/gmsm/sm3"
 	"github.com/palletone/go-palletone/common/math"
+	"hash"
+	"math/big"
 )
 
 type CryptoGm struct {
@@ -49,8 +50,11 @@ func sm2FromECDSA(priv *sm2.PrivateKey) []byte {
 	}
 	return math.PaddedBigBytes(priv.D, priv.Params().BitSize/8)
 }
-func sm2ToECDSA(d []byte) (*sm2.PrivateKey, error) {
+func Sm2ToECDSA(d []byte) (*sm2.PrivateKey, error) {
 	strict := false
+	if len(d) != 32 {
+		return nil, errors.New("invalid length, need 256 bits")
+	}
 	priv := new(sm2.PrivateKey)
 	priv.PublicKey.Curve = sm2.P256Sm2()
 	if strict && 8*len(d) != priv.Params().BitSize {
@@ -74,7 +78,7 @@ func sm2ToECDSA(d []byte) (*sm2.PrivateKey, error) {
 	return priv, nil
 }
 func (c *CryptoGm) PrivateKeyToPubKey(privKey []byte) ([]byte, error) {
-	prvKey, err := sm2ToECDSA(privKey)
+	prvKey, err := Sm2ToECDSA(privKey)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +87,7 @@ func (c *CryptoGm) PrivateKeyToPubKey(privKey []byte) ([]byte, error) {
 	return sm2.Compress(&pubKey), nil
 }
 func (c *CryptoGm) PrivateKeyToInstance(privKey []byte) (interface{}, error) {
-	return sm2ToECDSA(privKey)
+	return Sm2ToECDSA(privKey)
 }
 
 func (c *CryptoGm) Hash(msg []byte) (hash []byte, err error) {
@@ -95,7 +99,7 @@ func (c *CryptoGm) GetHash() (h hash.Hash, err error) {
 	return sm3.New(), nil
 }
 func (c *CryptoGm) Sign(privKey, message []byte) (signature []byte, err error) {
-	prvKey, err := sm2ToECDSA(privKey)
+	prvKey, err := Sm2ToECDSA(privKey)
 	if err != nil {
 		return nil, err
 	}
@@ -123,4 +127,14 @@ func (c *CryptoGm) Encrypt(key []byte, plaintext []byte) (ciphertext []byte, err
 }
 func (c *CryptoGm) Decrypt(key, ciphertext []byte) (plaintext []byte, err error) {
 	return nil, errors.New("Not implement")
+}
+
+func GetBytes(key interface{}) ([]byte, error) {
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	err := enc.Encode(key)
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }

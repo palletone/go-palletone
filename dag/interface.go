@@ -172,7 +172,7 @@ type IDag interface {
 
 	RefreshAddrTxIndex() error
 
-	GenVoteMediatorTx(voter common.Address, mediators map[string]bool,enableGasFee bool,ks *keystore.KeyStore) (*modules.Transaction, uint64, error)
+	GenVoteMediatorTx(voter common.Address, mediators map[string]bool, enableGasFee bool, ks *keystore.KeyStore) (*modules.Transaction, uint64, error)
 	GetDynGlobalProp() *modules.DynamicGlobalProperty
 	GetGlobalProp() *modules.GlobalProperty
 	GetMediatorSchl() *modules.MediatorSchedule

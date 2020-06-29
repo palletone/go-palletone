@@ -23,8 +23,8 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/palletone/go-palletone/common/mclock"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/common/mclock"
 )
 
 const (

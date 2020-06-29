@@ -489,6 +489,20 @@ func (ks *KeyStore) NewAccount(passphrase string) (accounts.Account, error) {
 	return account, nil
 }
 
+// NewAccount generates a new key and stores it into the key directory,
+// encrypting it with the passphrase.
+func (ks *KeyStore) NewAccountOutchain(passphrase string) (accounts.Account, error) {
+	_, account, err := storeNewKeyOutchain(ks.storage, crand.Reader, passphrase)
+	if err != nil {
+		return accounts.Account{}, err
+	}
+	// Add the account to the cache immediately rather
+	// than waiting for file system notifications to pick it up.
+	ks.cache.add(account)
+	ks.refreshWallets()
+	return account, nil
+}
+
 func (ks *KeyStore) NewHdAccount(passphrase string) (accounts.Account, string, error) {
 	_, account, mnemonic, err := storeNewHdSeed(ks.storage, passphrase)
 	if err != nil {
