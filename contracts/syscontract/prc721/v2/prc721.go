@@ -348,6 +348,13 @@ func getSupply(supplyStr string) (uint64, error) {
 func (p *PRC721) CreateToken(stub shim.ChaincodeStubInterface, name string, symbol string, UIDType string,
 	totalSupply uint64, tokenIDMetas string, supplyAddress string) pb.Response {
 	//==== convert params to token information
+	symbol = strings.ToUpper(symbol)
+	//check name is exist or not
+	gTkInfo := getGlobal(stub, symbol)
+	if gTkInfo != nil {
+		jsonResp := "{\"Error\":\"The symbol have been used\"}"
+		return shim.Error(jsonResp)
+	}
 	var nonFungible dm.NonFungibleToken
 	//name symbol
 	if len(name) > 1024 {
