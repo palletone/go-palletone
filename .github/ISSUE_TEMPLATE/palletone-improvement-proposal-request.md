@@ -1,13 +1,14 @@
 ---
-name: PalletOne Improvement Proposal Request
-about: Suggest and discuss PIP
+name: PalletOne改进提案
+about: 建议和讨论提案
 
 ---
 
-## Abstract
+## 摘要
 
-## Motivation
+## 动机
 
-## Specification
+## 详细说明
 
-## References
+## 参考
+
