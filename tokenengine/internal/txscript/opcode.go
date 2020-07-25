@@ -405,17 +405,17 @@ var opcodeArray = [256]opcode{
 	OP_16:        {OP_16, "OP_16", 1, opcodeN},
 
 	// Control opcodes.
-	OP_NOP:                 {OP_NOP, "OP_NOP", 1, opcodeNop},
-	OP_VER:                 {OP_VER, "OP_VER", 1, opcodeReserved},
-	OP_IF:                  {OP_IF, "OP_IF", 1, opcodeIf},
-	OP_NOTIF:               {OP_NOTIF, "OP_NOTIF", 1, opcodeNotIf},
-	OP_VERIF:               {OP_VERIF, "OP_VERIF", 1, opcodeReserved},
-	OP_VERNOTIF:            {OP_VERNOTIF, "OP_VERNOTIF", 1, opcodeReserved},
-	OP_ELSE:                {OP_ELSE, "OP_ELSE", 1, opcodeElse},
-	OP_ENDIF:               {OP_ENDIF, "OP_ENDIF", 1, opcodeEndif},
-	OP_VERIFY:              {OP_VERIFY, "OP_VERIFY", 1, opcodeVerify},
+	OP_NOP:      {OP_NOP, "OP_NOP", 1, opcodeNop},
+	OP_VER:      {OP_VER, "OP_VER", 1, opcodeReserved},
+	OP_IF:       {OP_IF, "OP_IF", 1, opcodeIf},
+	OP_NOTIF:    {OP_NOTIF, "OP_NOTIF", 1, opcodeNotIf},
+	OP_VERIF:    {OP_VERIF, "OP_VERIF", 1, opcodeReserved},
+	OP_VERNOTIF: {OP_VERNOTIF, "OP_VERNOTIF", 1, opcodeReserved},
+	OP_ELSE:     {OP_ELSE, "OP_ELSE", 1, opcodeElse},
+	OP_ENDIF:    {OP_ENDIF, "OP_ENDIF", 1, opcodeEndif},
+	OP_VERIFY:   {OP_VERIFY, "OP_VERIFY", 1, opcodeVerify},
 	//OP_RETURN:              {OP_RETURN, "OP_RETURN", 1, opcodeReturn},
-        OP_RETURN:              {OP_RETURN, "OP_RETURN", 1, opcodeFalse},
+	OP_RETURN:              {OP_RETURN, "OP_RETURN", 1, opcodeFalse},
 	OP_CHECKLOCKTIMEVERIFY: {OP_CHECKLOCKTIMEVERIFY, "OP_CHECKLOCKTIMEVERIFY", 1, opcodeCheckLockTimeVerify},
 
 	// Stack opcodes.
@@ -772,7 +772,7 @@ func (pop *parsedOpcode) bytes() ([]byte, error) {
 	if pop.opcode.length > 0 {
 		retbytes = make([]byte, 1, pop.opcode.length)
 	} else {
-		retbytes = make([]byte, 1, 1 + len(pop.data)-
+		retbytes = make([]byte, 1, 1+len(pop.data)-
 			pop.opcode.length)
 	}
 

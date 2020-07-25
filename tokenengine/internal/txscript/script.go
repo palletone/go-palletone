@@ -291,7 +291,7 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType,
 // calcSignatureHash will, given a script and hash type for the current script
 // engine instance, calculate the signature hash to be used for signing and
 // verification.
-func calcSignatureData(script []parsedOpcode, hashType SigHashType,	otx *modules.Transaction, omsgIdx, idx int) []byte {
+func calcSignatureData(script []parsedOpcode, hashType SigHashType, otx *modules.Transaction, omsgIdx, idx int) []byte {
 	tx := otx
 	msgIdx := omsgIdx
 	if hashType&SigHashOneMessage == SigHashOneMessage {
