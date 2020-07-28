@@ -372,12 +372,6 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		//}
 		pm.removePeer(p.id)
 	}()
-	// Register the peer in the downloader. If the downloader considers it banned, we disconnect
-	//if pm.lightSync {
-	//	if p.poolEntry != nil {
-	//		pm.serverPool.registered(p.poolEntry)
-	//	}
-	//}
 
 	stop := make(chan struct{})
 	defer close(stop)
@@ -536,11 +530,6 @@ type peerConnection struct {
 	peer    *peer
 }
 
-//Head(modules.AssetId) (common.Hash, *modules.ChainIndex)
-//RequestHeadersByHash(common.Hash, int, int, bool) error
-//RequestHeadersByNumber(*modules.ChainIndex, int, int, bool) error
-//RequestDagHeadersByHash(common.Hash, int, int, bool) error
-//RequestLeafNodes() error
 
 func (pc *peerConnection) Head(assetId modules.AssetId) (common.Hash, *modules.ChainIndex) {
 	//return common.Hash{}, nil

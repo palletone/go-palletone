@@ -308,16 +308,6 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 		}
 	}()
 	// Start auxiliary services if enabled
-	//if ctx.GlobalBool(utils.MiningEnabledFlag.Name) || ctx.GlobalBool(utils.DeveloperFlag.Name) {
-	//	// Mining only makes sense if a full PalletOne node is running
-	//	if ctx.GlobalBool(utils.LightModeFlag.Name) || ctx.GlobalString(utils.SyncModeFlag.Name) == "light" {
-	//		utils.Fatalf("Light clients do not support mining")
-	//	}
-	//	var palletone *ptn.PalletOne
-	//	if err := stack.Service(&palletone); err != nil {
-	//		utils.Fatalf("PalletOne service not running: %v", err)
-	//	}
-	//}
 }
 
 func welcomePalletOne() {

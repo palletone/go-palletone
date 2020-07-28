@@ -92,9 +92,6 @@ type ProtocolManager struct {
 	fetcher    *fetcher.Fetcher
 	peers      *peerSet
 
-	//lightdownloader *downloader.Downloader
-	//lightFetcher    *lps.LightFetcher
-	//lightPeers      *peerSet
 
 	SubProtocols []p2p.Protocol
 
@@ -209,11 +206,6 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken mod
 	protocolName, _, _, _, _ := gasToken.ParseAssetId()
 	manager.mainAssetId = gasToken
 
-	// Figure out whether to allow fast sync or not
-	//if mode == downloader.FastSync && dag.CurrentUnit().UnitHeader.Index() > 0 {
-	//	log.Info("dag not empty, fast sync disabled")
-	//	mode = downloader.FullSync
-	//}
 
 	if mode == downloader.FastSync {
 		manager.fastSync = uint32(1)
@@ -262,8 +254,6 @@ func NewProtocolManager(mode downloader.SyncMode, networkId uint64, gasToken mod
 	manager.downloader = downloader.New(mode, manager.eventMux, manager.removePeer, nil, dag, txpool)
 	manager.fetcher = manager.newFetcher()
 
-	//manager.lightdownloader = downloader.New(downloader.LightSync, manager.eventMux, nil, nil, dag, txpool)
-	//manager.lightFetcher = manager.newLightFetcher()
 	return manager, nil
 }
 
@@ -510,9 +500,6 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	log.Debug("Enter ProtocolManager handle", "peer id:", p.id)
 	defer log.Debug("End ProtocolManager handle", "peer id:", p.id)
 
-	//if len(p.Caps()) > 0 && (pm.SubProtocols[0].Name != p.Caps()[0].Name) {
-	//	return pm.PartitionHandle(p)
-	//}
 	return pm.LocalHandle(p)
 
 }

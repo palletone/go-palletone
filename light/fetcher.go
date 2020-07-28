@@ -55,11 +55,6 @@ type headerInsertFn func(headers []*modules.Header) (int, error)
 type peerDropFn func(id string)
 
 // headerFilterTask represents a batch of headers needing fetcher filtering.
-//type headerFilterTask struct {
-////	peer    string            // The source peer of block headers
-////	headers []*modules.Header // Collection of headers to filter
-////	time    time.Time         // Arrival time of the headers
-//}
 
 // inject represents a schedules import operation.
 type inject struct {
