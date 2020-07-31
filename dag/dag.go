@@ -1276,11 +1276,6 @@ func (d *Dag) GetProofOfExistencesByMaindata(maindata []byte) ([]*modules.ProofO
 	return d.unstableUnitRep.GetProofOfExistencesByMaindata(maindata)
 }
 
-// Light Palletone Subprotocal
-func (d *Dag) GetLightHeaderByHash(headerHash common.Hash) (*modules.Header, error) {
-	return nil, nil
-}
-
 // return a light chain's height by the assetId
 func (d *Dag) GetLightChainHeight(assetId modules.AssetId) uint64 {
 	header := d.CurrentHeader(assetId)

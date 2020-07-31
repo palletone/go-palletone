@@ -21,9 +21,10 @@
 package dag
 
 import (
-	"github.com/palletone/go-palletone/core/accounts/keystore"
 	"math/big"
 	"time"
+
+	"github.com/palletone/go-palletone/core/accounts/keystore"
 
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/palletone/go-palletone/common"
@@ -151,7 +152,6 @@ type IDag interface {
 	GetFileInfo(maindata []byte) ([]*modules.ProofOfExistencesInfo, error)
 	GetProofOfExistencesByMaindata(maindata []byte) ([]*modules.ProofOfExistencesInfo, error)
 
-	GetLightHeaderByHash(headerHash common.Hash) (*modules.Header, error)
 	GetLightChainHeight(assetId modules.AssetId) uint64
 	InsertLightHeader(headers []*modules.Header) (int, error)
 	GetAllLeafNodes() ([]*modules.Header, error)
