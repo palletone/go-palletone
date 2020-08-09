@@ -622,11 +622,6 @@ func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transa
 			adaInf: make(map[uint32]*AdapterInf),
 		}
 	}
-	//err = p.dag.SaveTransaction(txTmp)
-	//if err != nil {
-	//	log.Errorf("[%s]CheckContractTxValid, SaveTransaction err:%s", reqId.ShortStr(), err.Error())
-	//	return false
-	//}
 	p.mtx[reqId].reqTx = reqTx
 	p.mtx[reqId].rstTx = txTmp
 
@@ -685,9 +680,6 @@ func CheckContractTxResult(tx *modules.Transaction, rwM rwset.TxManager, dag dbo
 	return isMsgSame
 }
 
-//func (p *Processor) IsSystemContractTx(tx *modules.Transaction) bool {
-//	return tx.IsSystemContract()
-//}
 func (p *Processor) getUtxoFromPoolAndDag(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	utxo, err := p.ptn.TxPool().GetUtxoFromAll(outpoint)
 	if err == nil {
@@ -719,7 +711,6 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele *modules.Ele
 	}
 	contractId := tx.GetContractId()
 	reqAddrs, err := tx.GetFromAddrs(p.getUtxoFromPoolAndDag, tokenengine.Instance.GetAddressFromScript)
-	//reqAddr, err := p.dag.GetTxRequesterAddress(tx)
 	if err != nil {
 		log.Errorf("[%s]isValidateElection, GetTxRequesterAddress fail, err:%s", reqId.ShortStr(), err)
 		return false
@@ -759,7 +750,6 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele *modules.Ele
 					continue
 				} else {
 					log.Debugf("[%s]isValidateElection, e.EType == 1, but not jjh request addr", reqId.ShortStr())
-					//log.Debugf("[%s]isValidateElection, reqAddr[%s], jjh[%s]", reqId.ShortStr(), reqAddr.Str(), jjhAd)
 					return false
 				}
 			}
@@ -990,7 +980,6 @@ func (p *Processor) getContractAssignElectionList(tx *modules.Transaction) ([]mo
 	eels := make([]modules.ElectionInf, 0)
 	tplId := msg.Payload.(*modules.ContractDeployRequestPayload).TemplateId
 	//find the address of the contract template binding in the dag
-	//addrHash, err := p.getTemplateAddrHash(tplId)
 	tpl, err := p.dag.GetContractTpl(tplId)
 	if err != nil {
 		log.Debugf("[%s]getContractAssignElectionList, getTemplateAddrHash fail,templateId[%x], fail:%s",
@@ -1027,22 +1016,10 @@ func (p *Processor) BuildUnitTxs(rwM *rwset.RwSetTxMgr, mDag dboperation.IContra
 				}
 				saveTx = signedTx
 			} else { //用户合约,需要从交易池中获取交易请求,根据请求Id再从Processor中获取最终执行后的交易
-
 				//用户合约请求不打包到Unit中
 				continue
-				//if mtx, ok := p.mtx[tx.RequestHash()]; ok {
-				//	log.Debugf("[%s]BuildUnitTxs, get tx from mtx", shortId(tx.RequestHash().String()))
-				//
-				//	if mtx.rstTx != nil {
-				//		saveTx = mtx.rstTx
-				//		mtx.valid = false
-				//		log.Debugf("[%s]BuildUnitTxs, mtx include tx", shortId(tx.RequestHash().String()))
-				//	}
-				//}
 			}
-		} // else { //直接保存交易
-		//saveTx = tx
-		//}
+		}
 
 		if saveTx == nil {
 			log.Debugf("buildUnitTxs,  saveTx is nil, idx[%d]tx[%s]", i, tx.RequestHash().String())

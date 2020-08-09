@@ -72,9 +72,6 @@ func (s *SupportImpl) Execute(contractid []byte, ctxt context.Context, cid, name
 		log.Debugf("invoke")
 		cis := spec.(*pb.PtnChaincodeInvocationSpec)
 
-		//log.Infof("cis:%v", cis)
-		//decorate the chaincode input
-
 		//decorators := library.InitRegistry(library.Config{}).Lookup(library.Decoration).([]decoration.Decorator)
 		//cis.ChaincodeSpec.Input.Decorations = make(map[string][]byte)
 		//cis.ChaincodeSpec.Input = decoration.Apply(prop, cis.ChaincodeSpec.Input, decorators...)

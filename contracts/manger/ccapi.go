@@ -84,8 +84,6 @@ func GetSysCCList() (ccInf []cclist.CCInfo, ccCount int, errs error) {
 	for _, ccinf := range cclist {
 		ci.Name = ccinf.Name
 		ci.Path = ccinf.Path
-		//ci.Enable = ccinf.Enabled
-		//ci.SysCC = true
 		scclist = append(scclist, ci)
 	}
 	return scclist, count, err
@@ -191,18 +189,6 @@ func Deploy(rwM rwset.TxManager, idag dboperation.IContractDag, chainID string, 
 	}
 	return depId.Bytes(), unit, err
 }
-
-//func GetChaincode(dag dag.IDag, contractId common.Address) (*cclist.CCInfo, error) {
-//	return dag.GetChaincode(contractId)
-//}
-//
-//func SaveChaincode(dag dag.IDag, contractId common.Address, chaincode *cclist.CCInfo) error {
-//	return dag.SaveChaincode(contractId, chaincode)
-//}
-//
-//func GetChaincodes(dag dag.IDag) ([]*cclist.CCInfo, error) {
-//	return dag.RetrieveChaincodes()
-//}
 
 //timeout:ms
 // ccName can be contract Id

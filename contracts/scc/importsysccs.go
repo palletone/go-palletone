@@ -57,28 +57,6 @@ var systemChaincodes = []*SystemChaincode{
 		InitArgs:  [][]byte{},
 		Chaincode: &samplesyscc1.SampleSysCC{},
 	},
-	//
-	//{
-	//	Id:        []byte{0x95, 0x28},
-	//	Enabled:   true,
-	//	Name:      "sample_syscc1",
-	//	Path:      "~/go/src/github.com/palletone/go-palletone/contracts/example/go/samplesyscc1/samplesyscc1",
-	//	//Path:      "D:\\test\\syscc\\samplesyscc",
-	//	Version:   "ptn001",
-	//	InitArgs:  [][]byte{},
-	//	Chaincode: &samplesyscc1.SampleSysCC1{},
-	//},
-	//
-	//{
-	//	Id:        []byte{0x95, 0x29},
-	//	Enabled:   true,
-	//	Name:      "sample_syscc2",
-	//	Path:      "~/go/src/github.com/palletone/go-palletone/contracts/example/go/samplesyscc2/samplesyscc2",
-	//	//Path:      "D:\\test\\syscc\\samplesyscc",
-	//	Version:   "ptn001",
-	//	InitArgs:  [][]byte{},
-	//	Chaincode: &samplesyscc2.SampleSysCC2{},
-	//},
 	{
 		Id:        syscontract.DepositContractAddress.Bytes(), //合约ID为20字节
 		Enabled:   true,

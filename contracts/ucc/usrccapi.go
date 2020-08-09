@@ -21,12 +21,7 @@ type UserChaincode struct {
 	Name    string //Unique name of the chaincode
 	Path    string //Path to the chaincode; currently not used
 	Version string //chainCode Version
-	//Desciption     string
-	//Abi            string
 	Language string
-	//InitArgs       [][]byte       //InitArgs initialization arguments to startup the chaincode
-	//Chaincode      shim.Chaincode // Chaincode is the actual chaincode object
-	//InvokableCC2CC bool           //InvokableCC2CC keeps track of whether this chaincode
 	Enabled bool //Enabled a convenient switch to enable/disable chaincode
 }
 
