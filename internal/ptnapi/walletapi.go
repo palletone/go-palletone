@@ -1448,9 +1448,13 @@ func (s *PublicWalletAPI) GetProofOfExistencesByAsset(ctx context.Context, asset
 }
 
 //好像某个UTXO是被那个交易花费的
-func (s *PublicWalletAPI) GetStxo(ctx context.Context, txid string, msgIdx int, outIdx int) (*ptnjson.StxoJson, error) {
+func (s *PublicWalletAPI) GetStxo(txid string, msgIdx int, outIdx int) (*ptnjson.StxoJson, error) {
 	outpoint := modules.NewOutPoint(common.HexToHash(txid), uint32(msgIdx), uint32(outIdx))
 	return s.b.GetStxoEntry(outpoint)
+}
+func (s *PublicWalletAPI) GetUtxo(txid string, msgIdx int, outIdx int) (*ptnjson.UtxoJson, error) {
+	outpoint := modules.NewOutPoint(common.HexToHash(txid), uint32(msgIdx), uint32(outIdx))
+	return s.b.GetUtxoEntry(outpoint)
 }
 
 // 压测交易池，批量添加交易

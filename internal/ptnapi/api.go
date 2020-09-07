@@ -125,19 +125,26 @@ func (s *PublicTxPoolAPI) Content() map[string]map[string]*RPCTransaction {
 }
 
 // Status returns the number of pending and queued transaction in the pool.
-func (s *PublicTxPoolAPI) Status() map[string]hexutil.Uint {
+func (s *PublicTxPoolAPI) Status() map[string]int {
 	pending, queue, orphans := s.b.Status()
-	return map[string]hexutil.Uint{
-		"pending": hexutil.Uint(pending),
-		"queued":  hexutil.Uint(queue),
-		"orphans": hexutil.Uint(orphans),
+	return map[string]int{
+		"unpack":  pending,
+		"packed":  queue,
+		"orphans": orphans,
 	}
 }
-func (s *PublicTxPoolAPI) Queue() map[common.Hash]*modules.Transaction {
-	_, queue := s.b.TxPoolContent()
-	result := make(map[common.Hash]*modules.Transaction)
-	for hash, tx := range queue {
-		result[hash] = tx.Tx
+func (s *PublicTxPoolAPI) Packed() map[common.Hash][]*ptnjson.TxPoolTxJson {
+	packed, _ := s.b.TxPoolPacked()
+	result := make(map[common.Hash][]*ptnjson.TxPoolTxJson)
+	for hash, txs := range packed {
+		for _, tx := range txs {
+			if txjsons, ok := result[hash]; ok {
+				txjsons = append(txjsons, ptnjson.ConvertTxPoolTx2Json(tx, hash))
+				result[hash]=txjsons
+			} else {
+				result[hash] = []*ptnjson.TxPoolTxJson{ptnjson.ConvertTxPoolTx2Json(tx, hash)}
+			}
+		}
 	}
 	return result
 }
@@ -146,9 +153,18 @@ func (s *PublicTxPoolAPI) Clear() bool {
 	return true
 }
 
-// 未确认的交易列表
-func (s *PublicTxPoolAPI) Pending() ([]*ptnjson.TxPoolPendingJson, error) {
-	queue, err := s.b.Queued()
+// 孤儿的交易列表
+func (s *PublicTxPoolAPI) Orphan() ([]*ptnjson.TxPoolPendingJson, error) {
+	queue, err := s.b.TxPoolOrphan()
+	pending := make([]*ptnjson.TxPoolPendingJson, 0)
+	for _, tx := range queue {
+		item := ptnjson.ConvertTxPoolTx2PendingJson(tx)
+		pending = append(pending, item)
+	}
+	return pending, err
+}
+func (s *PublicTxPoolAPI) Unpack() ([]*ptnjson.TxPoolPendingJson, error) {
+	queue, err := s.b.TxPoolUnpack()
 	pending := make([]*ptnjson.TxPoolPendingJson, 0)
 	for _, tx := range queue {
 		item := ptnjson.ConvertTxPoolTx2PendingJson(tx)

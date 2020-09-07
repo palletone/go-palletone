@@ -200,6 +200,11 @@ const Wallet_JS = `
 			call: 'wallet_getStxo',
 			params: 3
 		}),
+		new web3._extend.Method({
+			name: 'getUtxo',
+			call: 'wallet_getUtxo',
+			params: 3
+		}),
         new web3._extend.Method({
             name: 'addBatchTxs',
             call: 'wallet_addBatchTxs',

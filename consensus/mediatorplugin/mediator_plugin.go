@@ -139,7 +139,8 @@ func (mp *MediatorPlugin) unitProductionLoop() ProductionCondition {
 }
 
 func (mp *MediatorPlugin) maybeProduceUnit() (ProductionCondition, map[string]string) {
-	//log.Debugf("try to produce unit")
+	mp.produceLock.Lock()
+	defer mp.produceLock.Unlock()
 	detail := make(map[string]string)
 	dag := mp.dag
 

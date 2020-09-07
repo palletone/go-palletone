@@ -148,7 +148,7 @@ type MediatorPlugin struct {
 	precedingDKGs       map[common.Address]*dkg.DistKeyGenerator
 	lastMaintenanceTime int64
 	dkgLock             *sync.RWMutex
-
+	produceLock         sync.Mutex
 	// dkg 完成 vss 协议相关
 	dealBuf    map[common.Address]chan *dkg.Deal
 	respBuf    map[common.Address]map[common.Address]chan *dkg.Response
@@ -313,6 +313,7 @@ func NewMediatorPlugin( /*ctx *node.ServiceContext, */ cfg *Config, ptn PalletOn
 		precedingDKGs:       make(map[common.Address]*dkg.DistKeyGenerator),
 		lastMaintenanceTime: dag.LastMaintenanceTime(),
 		dkgLock:             new(sync.RWMutex),
+		produceLock:         sync.Mutex{},
 		stopVSS:             make(chan struct{}),
 	}
 

@@ -66,7 +66,6 @@ type PalletOne interface {
 
 type iDag interface {
 	GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
-	//CurrentHeader(token modules.AssetId) *modules.Header
 	GetNewestUnit(token modules.AssetId) (common.Hash, *modules.ChainIndex, error)
 	GetAddrUtxos(addr common.Address) (map[modules.OutPoint]*modules.Utxo, error)
 	GetContractStatesById(id []byte) (map[string]*modules.ContractStateValue, error)
@@ -78,7 +77,6 @@ type iDag interface {
 	GetStableUnitByNumber(number *modules.ChainIndex) (*modules.Unit, error)
 	UnstableHeadUnitProperty(asset modules.AssetId) (*modules.UnitProperty, error)
 	GetDb() ptndb.Database
-	//GetTxFee(pay *modules.Transaction) (*modules.AmountAsset, error)
 	GetUtxoEntry(outpoint *modules.OutPoint) (*modules.Utxo, error)
 	GetAddrByOutPoint(outPoint *modules.OutPoint) (common.Address, error)
 	GetActiveMediators() []common.Address
@@ -88,7 +86,6 @@ type iDag interface {
 	GetContractDevelopers() ([]common.Address, error)
 	IsContractDeveloper(addr common.Address) bool
 	GetStxoEntry(outpoint *modules.OutPoint) (*modules.Stxo, error)
-	//GetActiveJuries() []common.Address
 	IsActiveMediator(addr common.Address) bool
 	GetAddr1TokenUtxos(addr common.Address, asset *modules.Asset) (map[modules.OutPoint]*modules.Utxo, error)
 	CreateGenericTransaction(from, to common.Address, daoAmount, daoFee uint64, certID *big.Int,
@@ -98,8 +95,6 @@ type iDag interface {
 	GetTransaction(hash common.Hash) (*modules.TransactionWithUnitInfo, error)
 	GetTransactionOnly(hash common.Hash) (*modules.Transaction, error)
 	GetHeaderByHash(common.Hash) (*modules.Header, error)
-	//GetTxRequesterAddress(tx *modules.Transaction) (common.Address, error)
-	//GetConfig(name string) ([]byte, *modules.StateVersion, error)
 	IsTransactionExist(hash common.Hash) (bool, error)
 	GetContractJury(contractId []byte) (*modules.ElectionNode, error)
 	GetContractTpl(tplId []byte) (*modules.ContractTemplate, error)
@@ -130,7 +125,6 @@ type iDag interface {
 	HeadUnitNum() uint64
 
 	SubscribeSaveUnitEvent(ch chan<- modules.SaveUnitEvent) event.Subscription
-	//SubscribeUnstableRepositoryUpdatedEvent(ch chan<- modules.UnstableRepositoryUpdatedEvent) event.Subscription
 	SubscribeSaveStableUnitEvent(ch chan<- modules.SaveUnitEvent) event.Subscription
 	//localdb
 	SaveLocalTx(tx *modules.Transaction) error
@@ -173,8 +167,6 @@ type Processor struct {
 	mtx     map[common.Hash]*contractTx              //all contract buffer
 	mel     map[common.Hash]*electionVrf             //election vrf inform
 	lockVrf map[common.Address][]modules.ElectionInf //contractId/deployId ----vrfInfo, jury VRF
-	//stxo         map[modules.OutPoint]bool
-	//utxo         map[modules.OutPoint]*modules.Utxo
 	quit         chan struct{}
 	locker       *sync.Mutex //locker       *sync.Mutex  RWMutex
 	errMsgEnable bool        //package contract execution error information into the transaction
@@ -207,8 +199,6 @@ func NewContractProcessor(ptn PalletOne, dag iDag, contract *contracts.Contract,
 
 	cache := freecache.NewCache(20 * 1024 * 1024)
 	val := validator.NewValidate(dag, dag, dag, dag, dag, cache, false, ptn.EnableGasFee())
-	//val.SetContractTxCheckFun(CheckTxContract)
-	//TODO Devin
 
 	p := &Processor{
 		name:         "contractProcessor",
@@ -311,7 +301,6 @@ func (p *Processor) runContractReq(reqId common.Hash, ele *modules.ElectionNode,
 		Dag:       dag,
 		Ele:       ele,
 		RwM:       txMgr,
-		//TxPool:       p.ptn.TxPool(),
 		Contract:     p.contract,
 		ErrMsgEnable: p.errMsgEnable,
 	}
@@ -322,7 +311,6 @@ func (p *Processor) runContractReq(reqId common.Hash, ele *modules.ElectionNode,
 	}
 	p.locker.Lock()
 	defer p.locker.Unlock()
-	//TODO update utxo,stxo
 
 	tx, err := p.GenContractTransaction(reqTx, msgs)
 	if err != nil {
@@ -634,11 +622,6 @@ func (p *Processor) CheckContractTxValid(rwM rwset.TxManager, tx *modules.Transa
 			adaInf: make(map[uint32]*AdapterInf),
 		}
 	}
-	//err = p.dag.SaveTransaction(txTmp)
-	//if err != nil {
-	//	log.Errorf("[%s]CheckContractTxValid, SaveTransaction err:%s", reqId.ShortStr(), err.Error())
-	//	return false
-	//}
 	p.mtx[reqId].reqTx = reqTx
 	p.mtx[reqId].rstTx = txTmp
 
@@ -697,9 +680,6 @@ func CheckContractTxResult(tx *modules.Transaction, rwM rwset.TxManager, dag dbo
 	return isMsgSame
 }
 
-//func (p *Processor) IsSystemContractTx(tx *modules.Transaction) bool {
-//	return tx.IsSystemContract()
-//}
 func (p *Processor) getUtxoFromPoolAndDag(outpoint *modules.OutPoint) (*modules.Utxo, error) {
 	utxo, err := p.ptn.TxPool().GetUtxoFromAll(outpoint)
 	if err == nil {
@@ -731,7 +711,6 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele *modules.Ele
 	}
 	contractId := tx.GetContractId()
 	reqAddrs, err := tx.GetFromAddrs(p.getUtxoFromPoolAndDag, tokenengine.Instance.GetAddressFromScript)
-	//reqAddr, err := p.dag.GetTxRequesterAddress(tx)
 	if err != nil {
 		log.Errorf("[%s]isValidateElection, GetTxRequesterAddress fail, err:%s", reqId.ShortStr(), err)
 		return false
@@ -771,7 +750,6 @@ func (p *Processor) isValidateElection(tx *modules.Transaction, ele *modules.Ele
 					continue
 				} else {
 					log.Debugf("[%s]isValidateElection, e.EType == 1, but not jjh request addr", reqId.ShortStr())
-					//log.Debugf("[%s]isValidateElection, reqAddr[%s], jjh[%s]", reqId.ShortStr(), reqAddr.Str(), jjhAd)
 					return false
 				}
 			}
@@ -1002,7 +980,6 @@ func (p *Processor) getContractAssignElectionList(tx *modules.Transaction) ([]mo
 	eels := make([]modules.ElectionInf, 0)
 	tplId := msg.Payload.(*modules.ContractDeployRequestPayload).TemplateId
 	//find the address of the contract template binding in the dag
-	//addrHash, err := p.getTemplateAddrHash(tplId)
 	tpl, err := p.dag.GetContractTpl(tplId)
 	if err != nil {
 		log.Debugf("[%s]getContractAssignElectionList, getTemplateAddrHash fail,templateId[%x], fail:%s",
@@ -1039,22 +1016,10 @@ func (p *Processor) BuildUnitTxs(rwM *rwset.RwSetTxMgr, mDag dboperation.IContra
 				}
 				saveTx = signedTx
 			} else { //用户合约,需要从交易池中获取交易请求,根据请求Id再从Processor中获取最终执行后的交易
-
 				//用户合约请求不打包到Unit中
 				continue
-				//if mtx, ok := p.mtx[tx.RequestHash()]; ok {
-				//	log.Debugf("[%s]BuildUnitTxs, get tx from mtx", shortId(tx.RequestHash().String()))
-				//
-				//	if mtx.rstTx != nil {
-				//		saveTx = mtx.rstTx
-				//		mtx.valid = false
-				//		log.Debugf("[%s]BuildUnitTxs, mtx include tx", shortId(tx.RequestHash().String()))
-				//	}
-				//}
 			}
-		} // else { //直接保存交易
-		//saveTx = tx
-		//}
+		}
 
 		if saveTx == nil {
 			log.Debugf("buildUnitTxs,  saveTx is nil, idx[%d]tx[%s]", i, tx.RequestHash().String())

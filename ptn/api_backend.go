@@ -105,7 +105,7 @@ func (b *PtnApiBackend) SetHead(number uint64) {
 }
 
 func (b *PtnApiBackend) HeaderByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*modules.Header, error) {
-	// Pending block is only known by the miner
+	// Packed block is only known by the miner
 	return &modules.Header{}, nil
 }
 
@@ -153,7 +153,7 @@ func (b *PtnApiBackend) SendTxs(signedTxs []*modules.Transaction) []error {
 }
 
 func (b *PtnApiBackend) GetPoolTransactions() (modules.Transactions, error) {
-	pending, err := b.ptn.txPool.Pending()
+	pending, err := b.ptn.txPool.Packed()
 	if err != nil {
 		return nil, err
 	}
@@ -216,10 +216,15 @@ func (b *PtnApiBackend) TxPoolContent() (map[common.Hash]*txspool.TxPoolTransact
 	map[common.Hash]*txspool.TxPoolTransaction) {
 	return b.ptn.TxPool().Content()
 }
-func (b *PtnApiBackend) Queued() ([]*txspool.TxPoolTransaction, error) {
-	return b.ptn.TxPool().Queued()
+func (b *PtnApiBackend) TxPoolOrphan() ([]*txspool.TxPoolTransaction, error) {
+	return b.ptn.TxPool().Orphan()
 }
-
+func (b *PtnApiBackend) TxPoolPacked() (map[common.Hash][]*txspool.TxPoolTransaction, error){
+	return b.ptn.TxPool().Packed()
+}
+func (b *PtnApiBackend) TxPoolUnpack() ([]*txspool.TxPoolTransaction, error){
+	return b.ptn.TxPool().Unpack()
+}
 func (b *PtnApiBackend) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subscription {
 	return b.ptn.TxPool().SubscribeTxPreEvent(ch)
 }

@@ -1316,21 +1316,6 @@ func (mr *MockIDagMockRecorder) GetProofOfExistencesByMaindata(maindata interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProofOfExistencesByMaindata", reflect.TypeOf((*MockIDag)(nil).GetProofOfExistencesByMaindata), maindata)
 }
 
-// GetLightHeaderByHash mocks base method
-func (m *MockIDag) GetLightHeaderByHash(headerHash common.Hash) (*modules.Header, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLightHeaderByHash", headerHash)
-	ret0, _ := ret[0].(*modules.Header)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetLightHeaderByHash indicates an expected call of GetLightHeaderByHash
-func (mr *MockIDagMockRecorder) GetLightHeaderByHash(headerHash interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLightHeaderByHash", reflect.TypeOf((*MockIDag)(nil).GetLightHeaderByHash), headerHash)
-}
-
 // GetLightChainHeight mocks base method
 func (m *MockIDag) GetLightChainHeight(assetId modules.AssetId) uint64 {
 	m.ctrl.T.Helper()

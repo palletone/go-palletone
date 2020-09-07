@@ -110,6 +110,7 @@ func NewMigrations(db ptndb.Database) map[string]IMigration {
 	migrations["1.0.7-release"] = NewNothingMigration("1.0.7-release", "1.0.7-hotfix1")
 	migrations["1.0.7-hotfix1"] = NewNothingMigration("1.0.7-hotfix1", "1.0.8-alpha")
 	migrations["1.0.8-alpha"] = NewNothingMigration("1.0.8-alpha", "1.0.8-release")
+	migrations["1.0.8-release"] = NewNothingMigration("1.0.8-release", "1.0.9-release")
 
 	return migrations
 }

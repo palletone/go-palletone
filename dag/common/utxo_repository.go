@@ -456,24 +456,41 @@ txid： 被哪个tx销毁
 unitTime：被销毁的时间
 */
 func (repository *UtxoRepository) destroyUtxo(txid common.Hash, unitTime uint64, txins []*modules.Input) error {
+	outputs := []*modules.OutPoint{}
 	for _, txin := range txins {
-
 		if txin == nil {
 			continue
 		}
 		if txin.PreviousOutPoint == nil { //Coinbase
 			continue
 		}
-		outpoint := txin.PreviousOutPoint.Clone()
+		o := txin.PreviousOutPoint.Clone()
+		outputs = append(outputs, o)
+	}
+	log.InfoDynamic(func() string {
+		result := "Inputs:"
+		for _, o := range outputs {
+			result += o.String() + ";"
+		}
+		return result
+	})
+	for _, outpoint := range outputs {
 
 		if outpoint.TxHash.IsSelfHash() { //TxHash为0，表示花费当前Tx产生的UTXO
 			log.Debugf("Outpoint is zero:%s,set new txid:%s", outpoint.String(), txid.String())
 			outpoint.TxHash = txid
 		}
+		log.Debugf("Get utxo by[%s] and remove to stxo", outpoint.String())
 		// get utxo info
 		utxo, err := repository.GetUtxoEntry(outpoint)
 		if err != nil {
-			log.Error("Query utxo when destroy uxto", "error", err.Error(), "outpoint", outpoint.String())
+			//难道已经被转移到Stxo了？查一下
+			stxo, err2 := repository.GetStxoEntry(outpoint)
+			if err2 != nil {
+				log.Error("Query utxo when destroy uxto,not stxo", "error", err.Error(), "outpoint", outpoint.String())
+			}
+			log.Error("Query utxo when destroy uxto", "error", err.Error(), "outpoint", outpoint.String(), "Stxo spend by:", stxo.SpentByTxId.String())
+
 			return err
 		}
 
@@ -482,6 +499,7 @@ func (repository *UtxoRepository) destroyUtxo(txid common.Hash, unitTime uint64,
 			log.Error("Delete uxto... ", "error", err.Error())
 			return err
 		}
+		log.Debugf("deleted utxo[%s] by tx[%s]", outpoint.String(), txid.String())
 		// delete index data
 		sAddr, _ := repository.tokenEngine.GetAddressFromScript(utxo.PkScript)
 		if utxo.Asset.AssetId == dagconfig.DagConfig.GetGasToken() { // modules.PTNCOIN

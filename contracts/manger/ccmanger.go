@@ -86,13 +86,6 @@ func createChaincodeProposalWithTxIDNonceAndTransient(txid string, typ common.Pt
 	return &peer.PtnProposal{Header: hdrBytes, Payload: ccPropPayloadBytes}, txid, nil
 }
 
-//func computeProposalTxID(nonce, creator []byte) (string, error) {
-//	opdata := append(nonce, creator...)
-//	digest := util.ComputeSHA256(opdata)
-//
-//	return hex.EncodeToString(digest), nil
-//}
-
 func createChaincodeProposalWithTransient(typ common.PtnHeaderType, chainID string, txid string, cis *peer.PtnChaincodeInvocationSpec, creator []byte, transientMap map[string][]byte) (*peer.PtnProposal, string, error) {
 	// generate a random nonce
 	nonce, err := crypto.GetRandomNonce()

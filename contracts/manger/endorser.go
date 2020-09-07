@@ -35,15 +35,6 @@ import (
 	"github.com/palletone/go-palletone/dag/rwset"
 )
 
-//type chaincodeError struct {
-//	status int32
-//	msg    string
-//}
-//
-//func (ce chaincodeError) Error() string {
-//	return fmt.Sprintf("chaincode error (status: %d, message: %s)", ce.status, ce.msg)
-//}
-
 //var log = flogging.MustGetLogger("ccmanger")
 
 // Support contains functions that the endorser requires to execute its tasks

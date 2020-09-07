@@ -160,3 +160,19 @@ func mockUtxoViews() map[modules.OutPoint]*modules.Utxo {
 	result[*o2] = utxo2
 	return result
 }
+
+func TestDestroyUtxo(t *testing.T) {
+	o1 := modules.NewOutPoint(common.HexToHash("7139786cb1ccee1f08229d878fcf19427380ef65090f1a519ae642bf39bc31b4"), 0, 0)
+	input1 := modules.NewTxIn(o1, nil)
+	o2 := modules.NewOutPoint(common.HexToHash("e2725b319975ef56da915fbee1655587999ac8db45e78fdbe2cf110fe01f1c6d"), 0, 0)
+	input2 := modules.NewTxIn(o2, nil)
+	o3 := modules.NewOutPoint(common.HexToHash("e2725b319975ef56da915fbee1655587999ac8db45e78fdbe2cf110fe01f1c6d"), 3, 0)
+	input3 := modules.NewTxIn(o3, nil)
+	db, _ := ptndb.NewMemDatabase()
+	rep := NewUtxoRepository4Db(db, tokenengine.Instance)
+	rep.txUtxodb.SaveUtxoEntity(o1, &modules.Utxo{Amount: 1, Asset: modules.NewPTNAsset()})
+	rep.txUtxodb.SaveUtxoEntity(o2, &modules.Utxo{Amount: 2, Asset: modules.NewPTNAsset()})
+	rep.txUtxodb.SaveUtxoEntity(o3, &modules.Utxo{Amount: 3, Asset: modules.NewPTNAsset()})
+	err := rep.destroyUtxo(common.HexToHash("aa39786cb1ccee1f08229d878fcf19427380ef65090f1a519ae642bf39bc31b4"), 123, []*modules.Input{input1, input2, input3})
+	assert.Nil(t, err)
+}

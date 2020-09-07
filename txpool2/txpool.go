@@ -121,7 +121,7 @@ func (pool *TxPool) AddLocal(tx *modules.Transaction) error {
 		data, _ := rlp.EncodeToBytes(tx)
 		return fmt.Sprintf("[%s]try to add tx[%s] to txpool, tx hex:%x", tx.RequestHash().ShortStr(), tx.Hash().String(), data)
 	})
-	err := pool.addLocal(tx)
+	err := pool.addLocal(tx, true)
 	if err != nil {
 		return err
 	}
@@ -135,12 +135,18 @@ func (pool *TxPool) AddRemote(tx *modules.Transaction) error {
 		data, _ := rlp.EncodeToBytes(tx)
 		return fmt.Sprintf("[%s]try to add tx[%s] to txpool, tx hex:%x", tx.RequestHash().ShortStr(), tx.Hash().String(), data)
 	})
-	err := pool.addLocal(tx)
+	err := pool.addLocal(tx, true)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+func (pool *TxPool) DeleteTx(hash common.Hash) error {
+	pool.Lock()
+	defer pool.Unlock()
+	log.Infof("Delete tx[%s] from txpool", hash.String())
+	return pool.normals.DiscardTx(hash)
 }
 func (pool *TxPool) checkDuplicateAdd(txHash common.Hash) error {
 	if exist, _ := pool.dag.IsTransactionExist(txHash); exist {
@@ -165,7 +171,7 @@ func (pool *TxPool) checkDuplicateAdd(txHash common.Hash) error {
 	}
 	return nil
 }
-func (pool *TxPool) addLocal(tx *modules.Transaction) error {
+func (pool *TxPool) addLocal(tx *modules.Transaction, validate bool) error {
 	//check duplicate add
 	txHash := tx.Hash()
 	reqHash := tx.RequestHash()
@@ -195,20 +201,22 @@ func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 		}
 	}
 	//1.validate tx
+
 	pool.txValidator.SetUtxoQuery(pool)
 	fee, vcode, err := pool.txValidator.ValidateTx(tx, !tx.IsOnlyContractRequest())
-	//log.Debugf("[%s]validate tx[%s] get result:%v", reqHash.ShortStr(), txHash.String(), vcode)
-	if err != nil && vcode != validator.TxValidationCode_ORPHAN {
-		//验证不通过，而且也不是孤儿
-		log.Warnf("[%s]validate tx[%s] get error:%s", reqHash.ShortStr(), txHash.String(), err.Error())
-		reverseDeleteReq()
-		return err
+	if validate {
+		//log.Debugf("[%s]validate tx[%s] get result:%v", reqHash.ShortStr(), txHash.String(), vcode)
+		if err != nil && vcode != validator.TxValidationCode_ORPHAN {
+			//验证不通过，而且也不是孤儿
+			log.Warnf("[%s]validate tx[%s] get error:%s", reqHash.ShortStr(), txHash.String(), err.Error())
+			reverseDeleteReq()
+			return err
+		}
+		//2. process orphan
+		if vcode == validator.TxValidationCode_ORPHAN {
+			return pool.addOrphanTx(pool.convertBaseTx(tx))
+		}
 	}
-	//2. process orphan
-	if vcode == validator.TxValidationCode_ORPHAN {
-		return pool.addOrphanTx(pool.convertBaseTx(tx))
-	}
-
 	tx2 := pool.convertTx(tx, fee)
 	//如果是用户合约请求，则直接添加到RequestPool
 	//如果是用户合约FullTx，那么需要判断依赖交易是否还是Request，是则认为是孤儿Tx
@@ -240,14 +248,14 @@ func (pool *TxPool) addLocal(tx *modules.Transaction) error {
 			}
 			pool.txFeed.Send(modules.TxPreEvent{Tx: tx, IsOrphan: false})
 			//添加了该Tx后，会不会导致其他Orphan变成普通交易？所以需要检查一下
-			err = pool.checkBasedOnReqOrphanTxToNormal(tx2.TxHash, tx2.ReqHash)
+			err = pool.checkBasedOnReqOrphanTxToNormal(tx2.TxHash, tx2.ReqHash, validate)
 			if err != nil {
 				return err
 			}
 		}
 	}
 	//4. check orphan txpool
-	return pool.checkOrphanTxToNormal(tx2.TxHash, tx2.ReqHash)
+	return pool.checkOrphanTxToNormal(tx2.TxHash, tx2.ReqHash, validate)
 }
 func (pool *TxPool) isBasedOnRequestPool(tx *txspool.TxPoolTransaction) bool {
 	for h := range tx.DependOnTxs {
@@ -268,7 +276,7 @@ func (pool *TxPool) isBasedOnRequestPool(tx *txspool.TxPoolTransaction) bool {
 }
 
 //检查如果将一个Tx加入Normal后，有没有后续的孤儿Tx需要连带加入
-func (pool *TxPool) checkOrphanTxToNormal(txHash, reqHash common.Hash) error {
+func (pool *TxPool) checkOrphanTxToNormal(txHash, reqHash common.Hash, validate bool) error {
 	readyTx := []*modules.Transaction{}
 	for hash, otx := range pool.orphans {
 		if otx.IsFineToNormal(txHash) || otx.IsFineToNormal(reqHash) { //满足Normal的条件了
@@ -278,14 +286,14 @@ func (pool *TxPool) checkOrphanTxToNormal(txHash, reqHash common.Hash) error {
 		}
 	}
 	for _, tx := range readyTx {
-		err := pool.addLocal(tx) //因为之前孤儿交易没有手续费，UTXO等，所以需要重新计算
+		err := pool.addLocal(tx, validate) //因为之前孤儿交易没有手续费，UTXO等，所以需要重新计算
 		if err != nil {
 			log.Warnf("add tx[%s] to pool fail:%s", tx.Hash().String(), err.Error())
 		}
 	}
 	return nil
 }
-func (pool *TxPool) checkBasedOnReqOrphanTxToNormal(txHash, reqHash common.Hash) error {
+func (pool *TxPool) checkBasedOnReqOrphanTxToNormal(txHash, reqHash common.Hash, validate bool) error {
 	//readyTx := []*modules.Transaction{}
 	for hash, otx := range pool.basedOnRequestOrphans {
 		if !pool.isBasedOnRequestPool(otx) && (otx.IsDependOnTx(txHash) || otx.IsDependOnTx(reqHash)) { //满足Normal的条件了
@@ -293,7 +301,7 @@ func (pool *TxPool) checkBasedOnReqOrphanTxToNormal(txHash, reqHash common.Hash)
 				otx.TxHash.String(), txHash.String())
 			delete(pool.basedOnRequestOrphans, hash) //从孤儿池删除
 			//readyTx = append(readyTx, otx.Tx)
-			err := pool.addLocal(otx.Tx) //因为之前孤儿交易没有手续费，UTXO等，所以需要重新计算
+			err := pool.addLocal(otx.Tx, validate) //因为之前孤儿交易没有手续费，UTXO等，所以需要重新计算
 			if err != nil {
 				log.Warnf("add tx[%s] to pool fail:%s", otx.TxHash.String(), err.Error())
 				return err
@@ -349,6 +357,15 @@ func (pool *TxPool) GetSortedTxs() ([]*txspool.TxPoolTransaction, error) {
 	pool.RLock()
 	defer pool.RUnlock()
 	return pool.normals.GetSortedTxs()
+
+	//sortedTxs, err := pool.normals.GetSortedTxs()
+	//if err != nil {
+	//	return nil, err
+	//}
+	//if len(sortedTxs) > 0 {
+	//	return []*txspool.TxPoolTransaction{sortedTxs[0]}, nil
+	//}
+	//return sortedTxs, nil
 }
 
 //带锁的对外暴露的查询,只查询Pool的所有新UTXO，不查询DAG
@@ -596,7 +613,7 @@ func (pool *TxPool) DiscardTxs(txs []*modules.Transaction) error {
 			if _, ok := pool.userContractRequests[requestHash]; ok {
 				log.Debugf("Request[%s] already packed into unit, delete it from request pool", requestHash.String())
 				delete(pool.userContractRequests, requestHash)
-				pool.checkBasedOnReqOrphanTxToNormal(tx.Hash(), requestHash)
+				pool.checkBasedOnReqOrphanTxToNormal(tx.Hash(), requestHash, true)
 			}
 		}
 		err := pool.normals.DiscardTx(tx.Hash())
@@ -633,7 +650,7 @@ func (pool *TxPool) GetUnpackedTxsByAddr(addr common.Address) ([]*txspool.TxPool
 //func (pool *TxPool) GetUnpackedTxs() (map[common.Hash]*txspool.TxPoolTransaction, error) {
 //	return pool.normals.GetTxsByStatus(txspool.TxPoolTxStatus_Unpacked)
 //}
-func (pool *TxPool) Pending() (map[common.Hash][]*txspool.TxPoolTransaction, error) {
+func (pool *TxPool) Packed() (map[common.Hash][]*txspool.TxPoolTransaction, error) {
 	pool.RLock()
 	defer pool.RUnlock()
 	packedTxs, err := pool.normals.GetTxsByStatus(txspool.TxPoolTxStatus_Packed)
@@ -650,7 +667,7 @@ func (pool *TxPool) Pending() (map[common.Hash][]*txspool.TxPoolTransaction, err
 	}
 	return result, nil
 }
-func (pool *TxPool) Queued() ([]*txspool.TxPoolTransaction, error) {
+func (pool *TxPool) Orphan() ([]*txspool.TxPoolTransaction, error) {
 	pool.RLock()
 	defer pool.RUnlock()
 	result := []*txspool.TxPoolTransaction{}
@@ -659,6 +676,20 @@ func (pool *TxPool) Queued() ([]*txspool.TxPoolTransaction, error) {
 	}
 	return result, nil
 }
+func (pool *TxPool) Unpack() ([]*txspool.TxPoolTransaction, error) {
+	pool.RLock()
+	defer pool.RUnlock()
+	txs, err := pool.normals.GetTxsByStatus(txspool.TxPoolTxStatus_Unpacked)
+	if err != nil {
+		return nil, err
+	}
+	result := []*txspool.TxPoolTransaction{}
+	for _, tx := range txs {
+		result = append(result, tx)
+	}
+	return result, nil
+}
+
 func (pool *TxPool) Stop() {
 	close(pool.quit)
 	pool.scope.Close()
@@ -712,7 +743,7 @@ func (pool *TxPool) SetPendingTxs(unitHash common.Hash, num uint64, txs []*modul
 		if tx.IsSystemContract() {
 			if _, err := pool.normals.GetTx(tx.RequestHash()); err != nil {
 				//如果有交易没有出现在交易池中，则直接补充
-				e := pool.addLocal(tx.GetRequestTx())
+				e := pool.addLocal(tx.GetRequestTx(), false)
 				if e != nil {
 					return e
 				}
@@ -724,7 +755,7 @@ func (pool *TxPool) SetPendingTxs(unitHash common.Hash, num uint64, txs []*modul
 		} else {
 			if _, err := pool.normals.GetTx(tx.Hash()); err != nil {
 				//如果有交易没有出现在交易池中，则直接补充
-				e := pool.addLocal(tx)
+				e := pool.addLocal(tx, false)
 				if e != nil {
 					return e
 				}
@@ -732,6 +763,39 @@ func (pool *TxPool) SetPendingTxs(unitHash common.Hash, num uint64, txs []*modul
 			err := pool.normals.UpdateTxStatusPacked(tx.Hash(), unitHash, num)
 			if err != nil && err != ErrNotFound {
 				return err
+			}
+		}
+	}
+	//设置打包状态后，未打包的Tx可能是双花的，所以需要重新检查
+	return pool.removeDoubleSpendUnpackTxs()
+}
+
+//已打包的交易和未打包的交易如果存在双花，则直接把未打包的交易删除
+func (pool *TxPool) removeDoubleSpendUnpackTxs() error {
+	txs1, err := pool.normals.GetTxsByStatus(txspool.TxPoolTxStatus_Unpacked)
+	if err != nil {
+		return err
+	}
+	txs2, err := pool.normals.GetTxsByStatus(txspool.TxPoolTxStatus_Packed)
+	if err != nil {
+		return err
+	}
+	spendUtxo := make(map[modules.OutPoint]bool)
+	for _, tx := range txs2 {
+		ops := tx.Tx.GetSpendOutpoints()
+		for _, op := range ops {
+			spendUtxo[*op] = true
+		}
+	}
+	for _, tx := range txs1 {
+		ops := tx.Tx.GetSpendOutpoints()
+		for _, op := range ops {
+			if _, ok := spendUtxo[*op]; ok { //Double spend
+				log.Infof("Discard double spend tx[%s] from unpack list", tx.TxHash.String())
+				err := pool.normals.DiscardTx(tx.TxHash)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
