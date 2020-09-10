@@ -467,7 +467,7 @@ func (repository *UtxoRepository) destroyUtxo(txid common.Hash, unitTime uint64,
 		o := txin.PreviousOutPoint.Clone()
 		outputs = append(outputs, o)
 	}
-	log.InfoDynamic(func() string {
+	log.DebugDynamic(func() string {
 		result := "Inputs:"
 		for _, o := range outputs {
 			result += o.String() + ";"
