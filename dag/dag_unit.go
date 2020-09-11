@@ -93,7 +93,8 @@ func (dag *Dag) getBePackedTxs(txp txspool.ITxPool, cp *jury.Processor,
 			signedTx, err = cp.RunAndSignTx(tx, rwM, tempDag, producer)
 			if err != nil {
 				log.Errorf("run contract request[%s] fail:%s", tx.Hash().String(), err.Error())
-				return nil, err
+				txp.DeleteTx(tx.Hash())
+				continue
 			}
 		}
 		unitSize += signedTx.SerializeSize()
