@@ -178,27 +178,34 @@ func (repository *UtxoRepository) GetAddrOutpoints(addr common.Address) ([]modul
 //活动一个地址的所有UTXO，包括完整交易的和Request的，存证交叉，需要通过Mapping过滤
 func (repository *UtxoRepository) GetAddrUtxos(addr common.Address, asset *modules.Asset) (
 	map[modules.OutPoint]*modules.Utxo, error) {
-	utxo1, err := repository.txUtxodb.GetAddrUtxos(addr, asset)
+
+	//1.找到以ReqHash为Key的UTXO
+	reqUtxo, err := repository.reqUtxodb.GetAddrUtxos(addr, asset)
 	if err != nil {
 		return nil, err
 	}
-	mappingHashs := make(map[common.Hash]bool)
-	for o := range utxo1 {
+	//2.找TxHash->ReqHash的映射
+	mappingHashs := make(map[common.Hash]bool) //key 里面的TxHash不需要再被包含进来了
+	for o := range reqUtxo {
 		mappingHash, err := repository.txUtxodb.GetRequestAndTxMapping(o.TxHash)
 		if err == nil {
+			//找到了映射关系
 			mappingHashs[mappingHash] = true
 		}
 	}
-	utxo2, err := repository.reqUtxodb.GetAddrUtxos(addr, asset)
+	//3.找到以TxHash为Key的UTXO
+	txUtxo, err := repository.txUtxodb.GetAddrUtxos(addr, asset)
 	if err != nil {
 		return nil, err
 	}
-	for o, u := range utxo2 {
+
+	//4.只把没有找到映射关系（也就是只有Tx没有Request的）的UTXO附加进去
+	for o, u := range txUtxo {
 		if _, has := mappingHashs[o.TxHash]; !has {
-			utxo1[o] = u
+			reqUtxo[o] = u
 		}
 	}
-	return utxo1, nil
+	return reqUtxo, nil
 }
 
 //返回一个地址的TxUtxo和该ReqHash对应的TxHash
