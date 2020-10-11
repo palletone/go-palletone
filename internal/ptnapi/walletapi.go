@@ -1424,7 +1424,7 @@ func (s *PublicWalletAPI) GetAllTokenInfo(ctx context.Context) (string, error) {
 	}
 	var all []modules.GlobalTokenInfo
 	for key, val := range result {
-		fmt.Println(key, val.Value)
+		fmt.Println(key, string(val.Value))
 		var oneToken modules.GlobalTokenInfo
 		err := json.Unmarshal(val.Value, &oneToken)
 		if nil == err {

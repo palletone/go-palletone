@@ -28,6 +28,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/syscontract/installcc"
 	"github.com/palletone/go-palletone/contracts/syscontract/packetcc"
 	"github.com/palletone/go-palletone/contracts/syscontract/partitioncc"
+	"github.com/palletone/go-palletone/contracts/syscontract/pdai"
 	prc20v1 "github.com/palletone/go-palletone/contracts/syscontract/prc20/v1"
 	prc20v2 "github.com/palletone/go-palletone/contracts/syscontract/prc20/v2"
 
@@ -209,6 +210,15 @@ var systemChaincodes = []*SystemChaincode{
 		Version:   "ptn001",
 		InitArgs:  [][]byte{},
 		Chaincode: &installcc.InstallMgr{},
+	},
+	{
+		Id:        syscontract.PDaiContractAddress.Bytes(),
+		Enabled:   true,
+		Name:      "pdai_sycc",
+		Path:      "../syscontract/pdai",
+		Version:   "ptn001",
+		InitArgs:  [][]byte{},
+		Chaincode: &pdai.Dai{},
 	},
 	//TODO add other system chaincodes ...
 }

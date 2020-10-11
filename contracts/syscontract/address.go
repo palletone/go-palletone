@@ -68,6 +68,10 @@ var (
 	//PCGTta3M4t3yXu8uRgkKvaWd2d8DSHHyWEW
 	InstallContractAddress = common.HexToAddress("0x000000000000000000000000000000000000000C1C")
 
+	//13 PDai合约
+	//PCGTta3M4t3yXu8uRgkKvaWd2d8DSRr1tUD
+	PDaiContractAddress = common.HexToAddress("0x000000000000000000000000000000000000000D1C")
+
 	//15测试调试用
 	//PCGTta3M4t3yXu8uRgkKvaWd2d8DSfQdUHf
 	TestContractAddress = common.HexToAddress("0x000000000000000000000000000000000000000F1C")
