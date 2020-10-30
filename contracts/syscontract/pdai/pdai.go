@@ -26,6 +26,7 @@ import (
 	"math"
 	"strconv"
 
+	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
 	pb "github.com/palletone/go-palletone/core/vmContractPub/protos/peer"
 	"github.com/palletone/go-palletone/dag/errors"
@@ -38,6 +39,9 @@ type Dai struct {
 
 var Dai_decimal = 0
 var Dai_symbol = "PDAI"
+
+const symbolsCDP = "cdp_"
+const symbolsBalance = "bal_"
 
 func (p *Dai) Init(stub shim.ChaincodeStubInterface) pb.Response {
 	//invokeAddr, err := stub.GetInvokeAddress()
@@ -86,8 +90,11 @@ func (p *Dai) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		}
 		return p.DeleteCDP(stub, args[0])
 
+	case "savePDai":
+		return p.SavePDai(stub)
+
 	case "getAdmin":
-		return p.Get(stub,symbolsAdmin)
+		return p.Get(stub, symbolsAdmin)
 	case "setAdmin":
 		if len(args) < 1 {
 			return shim.Error("need 1 args (PTNAddr)")
@@ -138,9 +145,11 @@ type GlobalTokenInfo struct {
 	SupplyAddr  string
 	AssetID     dm.AssetId
 }
+
 func initGlobal(stub shim.ChaincodeStubInterface) error {
 	assetID, _ := dm.NewAssetId(Dai_symbol, dm.AssetType_FungibleToken,
-		byte(Dai_decimal), []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, dm.UniqueIdType_Null)
+		byte(Dai_decimal), []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		dm.UniqueIdType_Null)
 	gTkInfo := GlobalTokenInfo{Symbol: Dai_symbol, TokenType: 1, Status: 0, CreateAddr: "",
 		TotalSupply: 0, SupplyAddr: "", AssetID: assetID}
 	val, err := json.Marshal(gTkInfo)
@@ -185,7 +194,8 @@ func (p *Dai) InitDai(stub shim.ChaincodeStubInterface) pb.Response {
 	}
 	return shim.Success(nil)
 }
-func (p *Dai) CreateCDP(stub shim.ChaincodeStubInterface, amount uint64, ptnPrice string) pb.Response {
+
+func (p *Dai) CreateCDP(stub shim.ChaincodeStubInterface, wantAmount uint64, ptnPrice string) pb.Response {
 	reqID := stub.GetTxID()
 	if "0x" == reqID[0:2] || "0X" == reqID[0:2] {
 		reqID = reqID[2:]
@@ -208,22 +218,29 @@ func (p *Dai) CreateCDP(stub shim.ChaincodeStubInterface, amount uint64, ptnPric
 		return shim.Error(jsonResp)
 	}
 
-	ptnValue,_ := decimal.NewFromString(ptnPrice)
-	ptnValue = ptnValue.Mul(decimal.New(int64(ptnAmount),0))
-
-	oneDaiValue,_:=decimal.NewFromString("0.01")
-	percent,_:=decimal.NewFromString("1.5")
-	amountPercent := ptnValue.Div(oneDaiValue).Div(percent)
-	if uint64(amountPercent.IntPart()) < amount {
-		return shim.Error("mortgage must bigger than 150%")
-	}
-
 	gTkInfo := getGlobal(stub, Dai_symbol)
 	if gTkInfo == nil {
 		return shim.Error("PDAI not exist")
 	}
 
-	if math.MaxUint64-gTkInfo.TotalSupply < amount {
+	ptnValue, _ := decimal.NewFromString(ptnPrice)
+	pntAsset := dm.NewPTNAsset()
+	ptnAmountAsset := pntAsset.DisplayAmount(ptnAmount)
+	ptnValue = ptnValue.Mul(ptnAmountAsset)
+
+	oneDaiValue, _ := decimal.NewFromString("0.01")
+	percent, _ := decimal.NewFromString("1.5")
+	percentAmount := ptnValue.Div(oneDaiValue).Div(percent)
+	pdaiAsset := gTkInfo.AssetID.ToAsset()
+	wantAssetAmount := pdaiAsset.DisplayAmount(wantAmount)
+	log.Debugf("wantAssetAmount is %s,percentAmount is %s",
+		wantAssetAmount.String(), percentAmount.String())
+	if wantAssetAmount.Cmp(percentAmount) > 0 {
+		return shim.Error("mortgage must bigger than 150%")
+	}
+
+	assetAmount := pdaiAsset.Uint64Amount(wantAssetAmount)
+	if math.MaxUint64-gTkInfo.TotalSupply < assetAmount {
 		return shim.Error("PDAI totalSupply is too big, overflow")
 	}
 
@@ -236,22 +253,23 @@ func (p *Dai) CreateCDP(stub shim.ChaincodeStubInterface, amount uint64, ptnPric
 	//call SupplyToken
 	assetID := gTkInfo.AssetID
 	err = stub.SupplyToken(assetID.Bytes(),
-		[]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, amount, invokeAddr.String())
+		[]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		assetAmount, invokeAddr.String())
 	if err != nil {
 		return shim.Error("Failed to call stub.SupplyToken")
 	}
 
 	//add supply
-	gTkInfo.TotalSupply += amount
+	gTkInfo.TotalSupply += assetAmount
 
 	err = setGlobal(stub, gTkInfo)
 	if err != nil {
 		return shim.Error("Failed to add global state")
 	}
 
-	err = stub.PutState(reqID, []byte(fmt.Sprintf("%d", amount)))
+	err = stub.PutState(symbolsCDP+reqID, []byte(fmt.Sprintf("%d", assetAmount)))
 	if err != nil {
-		return shim.Error("Failed to PutState CDP"+err.Error())
+		return shim.Error("Failed to PutState CDP" + err.Error())
 	}
 
 	return shim.Success([]byte("Success"))
@@ -262,26 +280,38 @@ func (p *Dai) DeleteCDP(stub shim.ChaincodeStubInterface, reqID string) pb.Respo
 		reqID = reqID[2:]
 	}
 
-	invokeTokens, err := stub.GetInvokeTokens()
-	if err != nil {
-		jsonResp := "{\"Error\":\"GetInvokeTokens failed\"}"
-		return shim.Error(jsonResp)
+	result, _ := stub.GetState(symbolsCDP + reqID)
+	if len(result) == 0 {
+		return shim.Error("get CDP by reqID failed")
 	}
-	daiNum := uint64(0)
-	assetID, _ := dm.NewAssetId(Dai_symbol, dm.AssetType_FungibleToken,
-		byte(Dai_decimal), []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, dm.UniqueIdType_Null)
+	daiNum, _ := strconv.ParseUint(string(result), 10, 64)
 
-	for i := 0; i < len(invokeTokens); i++ {
-		if invokeTokens[i].Address == "P1111111111111111111114oLvT2" &&
-			invokeTokens[i].Asset.AssetId == assetID {
-			daiNum += invokeTokens[i].Amount
-			break
-		}
+	//get invoke address
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		return shim.Error("Failed to get invoke address")
 	}
-	if daiNum == 0 { //no vote token
-		jsonResp := "{\"Error\":\"PDAI amount is zero\"}"
-		return shim.Error(jsonResp)
+
+	amount := uint64(0) //todo
+	resultBal, _ := stub.GetState(symbolsBalance + invokeAddr.String())
+	if len(result) != 0 {
+		amount, _ = strconv.ParseUint(string(resultBal), 10, 64)
 	}
+	if amount < daiNum {
+		return shim.Error(fmt.Sprintf("amount of CDP is not match, amount is %d", amount))
+	}
+	amount -= daiNum
+	err = stub.PutState(symbolsBalance+invokeAddr.String(), []byte(fmt.Sprintf("%d", amount)))
+	if err != nil {
+		return shim.Error("Failed to PutState balance" + err.Error())
+	}
+	err = stub.DelState(symbolsCDP + reqID)
+	if err != nil {
+		return shim.Error("Failed to DelState CDP" + err.Error())
+	}
+	assetID, _ := dm.NewAssetId(Dai_symbol, dm.AssetType_FungibleToken,
+		byte(Dai_decimal), []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		dm.UniqueIdType_Null)
 
 	gTkInfo := getGlobal(stub, Dai_symbol)
 	if gTkInfo == nil {
@@ -295,19 +325,61 @@ func (p *Dai) DeleteCDP(stub shim.ChaincodeStubInterface, reqID string) pb.Respo
 		return shim.Error("Failed to add global state")
 	}
 
-	result, _ := stub.GetState(reqID)
-	if len(result) == 0 {
-		return shim.Error("get CDP by reqID failed")
+	amountAsset := &dm.AmountAsset{
+		Amount: daiNum,
+		Asset:  assetID.ToAsset(),
 	}
-
-	amount,_ := strconv.ParseUint(string(result), 10, 64)
-	if amount != daiNum {
-		return shim.Error(fmt.Sprintf("amount of CDP is not match, amount is %d", amount))
-	}
-
-	err = stub.DelState(reqID)
+	err = stub.PayOutToken("P1111111111111111111114oLvT2", amountAsset, 0)
 	if err != nil {
-		return shim.Error("Failed to DelState CDP" +err.Error())
+		return shim.Error("Failed to call stub.PayOutToken")
+	}
+
+	return shim.Success([]byte("Success"))
+}
+
+func (p *Dai) SavePDai(stub shim.ChaincodeStubInterface) pb.Response {
+	invokeTokens, err := stub.GetInvokeTokens()
+	if err != nil {
+		jsonResp := "{\"Error\":\"GetInvokeTokens failed\"}"
+		return shim.Error(jsonResp)
+	}
+
+	daiNum := uint64(0)
+	assetID, _ := dm.NewAssetId(Dai_symbol, dm.AssetType_FungibleToken,
+		byte(Dai_decimal), []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		dm.UniqueIdType_Null)
+
+	for i := 0; i < len(invokeTokens); i++ {
+		if invokeTokens[i].Address == "PCGTta3M4t3yXu8uRgkKvaWd2d8DSRr1tUD" &&
+			invokeTokens[i].Asset.AssetId == assetID {
+			daiNum += invokeTokens[i].Amount
+			break
+		}
+	}
+	if daiNum == 0 { //no vote token
+		jsonResp := "{\"Error\":\"PDAI amount is zero\"}"
+		return shim.Error(jsonResp)
+	}
+
+	//get invoke address
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		return shim.Error("Failed to get invoke address")
+	}
+
+	amount := uint64(0) //todo
+	result, _ := stub.GetState(symbolsBalance + invokeAddr.String())
+	if len(result) != 0 {
+		amount, _ = strconv.ParseUint(string(result), 10, 64)
+	}
+	if amount+daiNum > math.MaxUint64 { //todo
+		return shim.Error(fmt.Sprintf("balannce is overflow, amount is %d", amount))
+	}
+	amount += daiNum
+
+	err = stub.PutState(symbolsBalance+invokeAddr.String(), []byte(fmt.Sprintf("%d", amount)))
+	if err != nil {
+		return shim.Error("Failed to PutState balance" + err.Error())
 	}
 
 	return shim.Success([]byte("Success"))
@@ -368,4 +440,3 @@ func (p *Dai) Set(stub shim.ChaincodeStubInterface, key string, value string) pb
 	}
 	return shim.Success([]byte("Success"))
 }
-
