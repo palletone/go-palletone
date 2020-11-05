@@ -3,6 +3,7 @@ package pdai
 import (
 	"fmt"
 	"github.com/palletone/go-palletone/dag/modules"
+	"strings"
 	"testing"
 )
 
@@ -19,4 +20,8 @@ func TestAmount(t *testing.T) {
 
 	u64Amount := assetID.ToAsset().Uint64Amount(wantAmount)
 	fmt.Println(u64Amount)
+
+	str := "1000-1500"
+	amountsStr := strings.Split(str, "-")
+	fmt.Println(amountsStr)
 }

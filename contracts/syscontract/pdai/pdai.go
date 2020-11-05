@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"strings"
 
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/contracts/shim"
@@ -267,7 +268,7 @@ func (p *Dai) CreateCDP(stub shim.ChaincodeStubInterface, wantAmount uint64, ptn
 		return shim.Error("Failed to add global state")
 	}
 
-	err = stub.PutState(symbolsCDP+reqID, []byte(fmt.Sprintf("%d", assetAmount)))
+	err = stub.PutState(symbolsCDP+reqID, []byte(fmt.Sprintf("%d-%d", assetAmount, ptnAmount)))
 	if err != nil {
 		return shim.Error("Failed to PutState CDP" + err.Error())
 	}
@@ -284,7 +285,9 @@ func (p *Dai) DeleteCDP(stub shim.ChaincodeStubInterface, reqID string) pb.Respo
 	if len(result) == 0 {
 		return shim.Error("get CDP by reqID failed")
 	}
-	daiNum, _ := strconv.ParseUint(string(result), 10, 64)
+	amounts := strings.Split(string(result), "-")
+	daiNum, _ := strconv.ParseUint(amounts[0], 10, 64)
+	ptnNum, _ := strconv.ParseUint(amounts[1], 10, 64)
 
 	//get invoke address
 	invokeAddr, err := stub.GetInvokeAddress()
@@ -331,7 +334,15 @@ func (p *Dai) DeleteCDP(stub shim.ChaincodeStubInterface, reqID string) pb.Respo
 	}
 	err = stub.PayOutToken("P1111111111111111111114oLvT2", amountAsset, 0)
 	if err != nil {
-		return shim.Error("Failed to call stub.PayOutToken")
+		return shim.Error("Failed to call stub.PayOutToken PDai")
+	}
+	amountPTN := &dm.AmountAsset{
+		Amount: ptnNum,
+		Asset:  dm.NewPTNAsset(),
+	}
+	err = stub.PayOutToken(invokeAddr.String(), amountPTN, 0)
+	if err != nil {
+		return shim.Error("Failed to call stub.PayOutToken PTN")
 	}
 
 	return shim.Success([]byte("Success"))
