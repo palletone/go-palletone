@@ -46,10 +46,6 @@ web3._extend({
 			getter: 'txpool_content'
 		}),
 		new web3._extend.Property({
-			name: 'inspect',
-			getter: 'txpool_inspect'
-		}),
-		new web3._extend.Property({
 			name: 'status',
 			getter: 'txpool_status',
 			outputFormatter: function(status) {
@@ -60,12 +56,16 @@ web3._extend({
 			}
 		}),
 		new web3._extend.Property({
-			name: 'pending',
-			getter: 'txpool_pending'
+			name: 'packed',
+			getter: 'txpool_packed'
 		}),
 		new web3._extend.Property({
-			name: 'queue',
-			getter: 'txpool_queue'
+			name: 'unpack',
+			getter: 'txpool_unpack'
+		}),
+		new web3._extend.Property({
+			name: 'orphan',
+			getter: 'txpool_orphan'
 		}),
 	]
 });

@@ -178,27 +178,34 @@ func (repository *UtxoRepository) GetAddrOutpoints(addr common.Address) ([]modul
 //活动一个地址的所有UTXO，包括完整交易的和Request的，存证交叉，需要通过Mapping过滤
 func (repository *UtxoRepository) GetAddrUtxos(addr common.Address, asset *modules.Asset) (
 	map[modules.OutPoint]*modules.Utxo, error) {
-	utxo1, err := repository.txUtxodb.GetAddrUtxos(addr, asset)
+
+	//1.找到以ReqHash为Key的UTXO
+	reqUtxo, err := repository.reqUtxodb.GetAddrUtxos(addr, asset)
 	if err != nil {
 		return nil, err
 	}
-	mappingHashs := make(map[common.Hash]bool)
-	for o := range utxo1 {
+	//2.找TxHash->ReqHash的映射
+	mappingHashs := make(map[common.Hash]bool) //key 里面的TxHash不需要再被包含进来了
+	for o := range reqUtxo {
 		mappingHash, err := repository.txUtxodb.GetRequestAndTxMapping(o.TxHash)
 		if err == nil {
+			//找到了映射关系
 			mappingHashs[mappingHash] = true
 		}
 	}
-	utxo2, err := repository.reqUtxodb.GetAddrUtxos(addr, asset)
+	//3.找到以TxHash为Key的UTXO
+	txUtxo, err := repository.txUtxodb.GetAddrUtxos(addr, asset)
 	if err != nil {
 		return nil, err
 	}
-	for o, u := range utxo2 {
+
+	//4.只把没有找到映射关系（也就是只有Tx没有Request的）的UTXO附加进去
+	for o, u := range txUtxo {
 		if _, has := mappingHashs[o.TxHash]; !has {
-			utxo1[o] = u
+			reqUtxo[o] = u
 		}
 	}
-	return utxo1, nil
+	return reqUtxo, nil
 }
 
 //返回一个地址的TxUtxo和该ReqHash对应的TxHash
@@ -456,24 +463,41 @@ txid： 被哪个tx销毁
 unitTime：被销毁的时间
 */
 func (repository *UtxoRepository) destroyUtxo(txid common.Hash, unitTime uint64, txins []*modules.Input) error {
+	outputs := []*modules.OutPoint{}
 	for _, txin := range txins {
-
 		if txin == nil {
 			continue
 		}
 		if txin.PreviousOutPoint == nil { //Coinbase
 			continue
 		}
-		outpoint := txin.PreviousOutPoint.Clone()
+		o := txin.PreviousOutPoint.Clone()
+		outputs = append(outputs, o)
+	}
+	log.DebugDynamic(func() string {
+		result := "Inputs:"
+		for _, o := range outputs {
+			result += o.String() + ";"
+		}
+		return result
+	})
+	for _, outpoint := range outputs {
 
 		if outpoint.TxHash.IsSelfHash() { //TxHash为0，表示花费当前Tx产生的UTXO
 			log.Debugf("Outpoint is zero:%s,set new txid:%s", outpoint.String(), txid.String())
 			outpoint.TxHash = txid
 		}
+		log.Debugf("Get utxo by[%s] and remove to stxo", outpoint.String())
 		// get utxo info
 		utxo, err := repository.GetUtxoEntry(outpoint)
 		if err != nil {
-			log.Error("Query utxo when destroy uxto", "error", err.Error(), "outpoint", outpoint.String())
+			//难道已经被转移到Stxo了？查一下
+			stxo, err2 := repository.GetStxoEntry(outpoint)
+			if err2 != nil {
+				log.Error("Query utxo when destroy uxto,not stxo", "error", err.Error(), "outpoint", outpoint.String())
+			}
+			log.Error("Query utxo when destroy uxto", "error", err.Error(), "outpoint", outpoint.String(), "Stxo spend by:", stxo.SpentByTxId.String())
+
 			return err
 		}
 
@@ -482,6 +506,7 @@ func (repository *UtxoRepository) destroyUtxo(txid common.Hash, unitTime uint64,
 			log.Error("Delete uxto... ", "error", err.Error())
 			return err
 		}
+		log.Debugf("deleted utxo[%s] by tx[%s]", outpoint.String(), txid.String())
 		// delete index data
 		sAddr, _ := repository.tokenEngine.GetAddressFromScript(utxo.PkScript)
 		if utxo.Asset.AssetId == dagconfig.DagConfig.GetGasToken() { // modules.PTNCOIN

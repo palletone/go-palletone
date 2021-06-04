@@ -532,11 +532,10 @@ func (s *PublicDagAPI) GetTxPoolTxByHash(ctx context.Context, hex string) (strin
 	item, err := s.b.GetTxPoolTxByHash(hash)
 	if err != nil {
 		return "pool_tx:null", err
-	} else {
-		info := NewPublicReturnInfo("txpool_tx", item)
-		result_json, _ := json.Marshal(info)
-		return string(result_json), nil
 	}
+	result_json, _ := json.Marshal(item)
+	return string(result_json), nil
+
 }
 
 //GetTxStatusByHash returns the transaction status for hash

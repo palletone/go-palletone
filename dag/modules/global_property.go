@@ -139,7 +139,8 @@ func (gp *GlobalProperty) PrecedingMediatorsCount() int {
 }
 
 func (gp *GlobalProperty) ChainThreshold() int {
-	return calcThreshold(gp.ActiveMediatorsCount())
+	//return calcThreshold(gp.ActiveMediatorsCount())
+	return int(gp.ImmutableParameters.MinimumMediatorCount)
 }
 
 func (gp *GlobalProperty) PrecedingThreshold() int {

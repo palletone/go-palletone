@@ -292,7 +292,7 @@ func (pool *TxPool) loop() {
 			}
 			// delete tx
 		case <-deleteTxTimer.C:
-			pool.DeleteTx()
+			pool.Clear()
 
 			// quit
 		case <-orphanExpireScan.C:
@@ -367,7 +367,7 @@ func (pool *TxPool) Content() (map[common.Hash]*TxPoolTransaction, map[common.Ha
 // Pending retrieves all currently processable transactions, groupped by origin
 // account and sorted by priority level. The returned transaction set is a copy and can be
 // freely modified by calling code.
-func (pool *TxPool) Pending() (map[common.Hash][]*TxPoolTransaction, error) {
+func (pool *TxPool) Packed() (map[common.Hash][]*TxPoolTransaction, error) {
 	return pool.pending()
 }
 func (pool *TxPool) pending() (map[common.Hash][]*TxPoolTransaction, error) {
@@ -381,12 +381,22 @@ func (pool *TxPool) pending() (map[common.Hash][]*TxPoolTransaction, error) {
 	return pending, nil
 }
 
-// Queued txs
-func (pool *TxPool) Queued() ([]*TxPoolTransaction, error) {
+// TxPoolOrphan txs
+func (pool *TxPool) Orphan() ([]*TxPoolTransaction, error) {
 	queue := make([]*TxPoolTransaction, 0)
 	txs := pool.AllTxpoolTxs()
 	for _, tx := range txs {
 		if !tx.Pending {
+			queue = append(queue, tx)
+		}
+	}
+	return queue, nil
+}
+func (pool *TxPool) Unpack() ([]*TxPoolTransaction, error) {
+	queue := make([]*TxPoolTransaction, 0)
+	txs := pool.AllTxpoolTxs()
+	for _, tx := range txs {
+		if tx.Pending {
 			queue = append(queue, tx)
 		}
 	}
@@ -943,7 +953,7 @@ const (
 //	for i, hash := range hashes {
 //		if tx, has := poolTxs[hash]; has {
 //			if tx != nil {
-//				if tx.Pending {
+//				if tx.Packed {
 //					status[i] = TxStatusPending
 //				} else if tx.Confirmed {
 //					status[i] = TxStatusConfirmed
@@ -1096,32 +1106,32 @@ func (pool *TxPool) GetTx(hash common.Hash) (*TxPoolTransaction, error) {
 }
 
 // DeleteTx
-func (pool *TxPool) DeleteTx() error {
-	txs := pool.AllTxpoolTxs()
-	for hash, tx := range txs {
-		if tx.Discarded {
-			// delete Discarded tx
-			log.Debug("delete the status of Discarded tx.", "tx_hash", hash.String())
-			pool.DeleteTxByHash(hash)
-			continue
-		}
-		if tx.Confirmed {
-			if tx.CreationDate.Add(pool.config.Removetime).Before(time.Now()) {
-				// delete
-				log.Debug("delete the confirmed tx.", "tx_hash", hash)
-				pool.DeleteTxByHash(hash)
-				continue
-			}
-		}
-		if tx.CreationDate.Add(pool.config.Lifetime).Before(time.Now()) {
-			// delete
-			log.Debug("delete the tx(overtime).", "tx_hash", hash)
-			pool.DeleteTxByHash(hash)
-			continue
-		}
-	}
-	return nil
-}
+//func (pool *TxPool) DeleteTx() error {
+//	txs := pool.AllTxpoolTxs()
+//	for hash, tx := range txs {
+//		if tx.Discarded {
+//			// delete Discarded tx
+//			log.Debug("delete the status of Discarded tx.", "tx_hash", hash.String())
+//			pool.DeleteTxByHash(hash)
+//			continue
+//		}
+//		if tx.Confirmed {
+//			if tx.CreationDate.Add(pool.config.Removetime).Before(time.Now()) {
+//				// delete
+//				log.Debug("delete the confirmed tx.", "tx_hash", hash)
+//				pool.DeleteTxByHash(hash)
+//				continue
+//			}
+//		}
+//		if tx.CreationDate.Add(pool.config.Lifetime).Before(time.Now()) {
+//			// delete
+//			log.Debug("delete the tx(overtime).", "tx_hash", hash)
+//			pool.DeleteTxByHash(hash)
+//			continue
+//		}
+//	}
+//	return nil
+//}
 
 func (pool *TxPool) DeleteTxByHash(hash common.Hash) error {
 	inter, has := pool.all.Load(hash)
@@ -1136,11 +1146,11 @@ func (pool *TxPool) DeleteTxByHash(hash common.Hash) error {
 	if tx != nil {
 		for i, msg := range tx.Tx.TxMessages() {
 			if msg.App != modules.APP_PAYMENT {
-				continue 
+				continue
 			}
 			payment, ok := msg.Payload.(*modules.PaymentPayload)
 			if !ok {
-                continue 
+				continue
 			}
 			for _, input := range payment.Inputs {
 				if input.PreviousOutPoint == nil {
@@ -1460,6 +1470,10 @@ func (pool *TxPool) Stop() {
 func (pool *TxPool) SendStoredTxs(hashs []common.Hash) error {
 	pool.RemoveTxs(hashs)
 	return nil
+}
+
+func (pool *TxPool) DeleteTx(hash common.Hash) error {
+	return pool.discardTx(hash)
 }
 
 // 打包后的没有被最终确认的交易，废弃处理

@@ -87,13 +87,14 @@ func (dag *Dag) getBePackedTxs(txp txspool.ITxPool, cp *jury.Processor,
 		txHashStr += ptx.Tx.Hash().String() + ";"
 		tx := ptx.Tx
 
-		log.Debugf("pack tx[%s]-req[%s] into unit[#%d]", tx.Hash().String(), tx.RequestHash().String(), unitNumber)
+		log.Infof("pack tx[%s]-req[%s] into unit[#%d]", tx.Hash().String(), tx.RequestHash().String(), unitNumber)
 		signedTx := tx
 		if tx.IsSystemContract() && tx.IsOnlyContractRequest() { //是未执行的系统合约
 			signedTx, err = cp.RunAndSignTx(tx, rwM, tempDag, producer)
 			if err != nil {
 				log.Errorf("run contract request[%s] fail:%s", tx.Hash().String(), err.Error())
-				return nil, err
+				txp.DeleteTx(tx.Hash())
+				continue
 			}
 		}
 		unitSize += signedTx.SerializeSize()
@@ -105,7 +106,12 @@ func (dag *Dag) getBePackedTxs(txp txspool.ITxPool, cp *jury.Processor,
 		if err != nil {
 			log.Errorf("save tx[%s] req[%s] get error:%s", signedTx.Hash().String(),
 				signedTx.RequestHash().String(), err.Error())
-			return nil, err
+			if signedTx.IsSystemContract() {
+				txp.DeleteTx(signedTx.RequestHash())
+			} else {
+				txp.DeleteTx(signedTx.Hash())
+			}
+			continue
 		}
 		tx4Pack = append(tx4Pack, signedTx)
 		// 判断时间，决定是否继续增加Tx
@@ -133,7 +139,7 @@ func (dag *Dag) GenerateUnit(when time.Time, producer common.Address, groupPubKe
 	}(t0)
 
 	// 判断是否满足生产的若干条件
-	//log.Debugf("generate unit ...")
+	log.Info("generate unit ...")
 
 	// 获取待打包的交易
 	ptx, err := dag.getBePackedTxs(txp, cp, producer, ks)

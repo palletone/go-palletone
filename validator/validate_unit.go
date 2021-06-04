@@ -22,13 +22,11 @@ package validator
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/palletone/go-palletone/common/crypto"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/configure"
 	"github.com/palletone/go-palletone/core"
-	"github.com/palletone/go-palletone/dag/dagconfig"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/dag/rwset"
 )
@@ -123,37 +121,37 @@ func (validate *Validate) validateUnitAuthor(h *modules.Header) ValidationCode {
 }
 
 // 验证该单元是否是满足调度顺序的mediator生产的
-func (validate *Validate) validateMediatorSchedule(header *modules.Header) ValidationCode {
-	if validate.propquery == nil {
-		log.Warn("Validator don't have propquery, cannot validate mediator schedule")
-		return TxValidationCode_VALID
-	}
-
-	gasToken := dagconfig.DagConfig.GetGasToken()
-	ts, _ := validate.propquery.GetNewestUnitTimestamp(gasToken)
-	if !(header.Timestamp() > ts) {
-		errStr := "invalidated unit's timestamp"
-		log.Warnf("%s,db newest unit timestamp=%d,current unit[%s] timestamp=%d", errStr, ts,
-			header.Hash().String(), header.Timestamp())
-		return UNIT_STATE_INVALID_HEADER_TIME
-	}
-
-	slotNum := validate.propquery.GetSlotAtTime(time.Unix(header.Timestamp(), 0))
-	if slotNum == 0 {
-		log.Warnf("invalidated unit's slot(%v), slotNum must be greater than 0", slotNum)
-		return UNIT_STATE_INVALID_MEDIATOR_SCHEDULE
-	}
-
-	scheduledMediator := validate.propquery.GetScheduledMediator(slotNum)
-	if !scheduledMediator.Equal(header.Author()) {
-		errStr := fmt.Sprintf("mediator(%v) produced unit at wrong time, scheduled slot number:%d, "+
-			"scheduled mediator is %v", header.Author().Str(), slotNum, scheduledMediator.String())
-		log.Warn(errStr)
-		return UNIT_STATE_INVALID_MEDIATOR_SCHEDULE
-	}
-
-	return TxValidationCode_VALID
-}
+//func (validate *Validate) validateMediatorSchedule(header *modules.Header) ValidationCode {
+//	if validate.propquery == nil {
+//		log.Warn("Validator don't have propquery, cannot validate mediator schedule")
+//		return TxValidationCode_VALID
+//	}
+//
+//	gasToken := dagconfig.DagConfig.GetGasToken()
+//	ts, _ := validate.propquery.GetNewestUnitTimestamp(gasToken)
+//	if !(header.Timestamp() > ts) {
+//		errStr := "invalidated unit's timestamp"
+//		log.Warnf("%s,db newest unit timestamp=%d,current unit[%s] timestamp=%d", errStr, ts,
+//			header.Hash().String(), header.Timestamp())
+//		return UNIT_STATE_INVALID_HEADER_TIME
+//	}
+//
+//	slotNum := validate.propquery.GetSlotAtTime(time.Unix(header.Timestamp(), 0))
+//	if slotNum == 0 {
+//		log.Warnf("invalidated unit's slot(%v), slotNum must be greater than 0", slotNum)
+//		return UNIT_STATE_INVALID_MEDIATOR_SCHEDULE
+//	}
+//
+//	scheduledMediator := validate.propquery.GetScheduledMediator(slotNum)
+//	if !scheduledMediator.Equal(header.Author()) {
+//		errStr := fmt.Sprintf("mediator(%v) produced unit at wrong time, scheduled slot number:%d, "+
+//			"scheduled mediator is %v", header.Author().Str(), slotNum, scheduledMediator.String())
+//		log.Warn(errStr)
+//		return UNIT_STATE_INVALID_MEDIATOR_SCHEDULE
+//	}
+//
+//	return TxValidationCode_VALID
+//}
 
 //不基于数据库，进行Unit最基本的验证
 func ValidateUnitBasic(unit *modules.Unit) error {
@@ -337,12 +335,12 @@ func (validate *Validate) validateHeaderExceptGroupSig(header *modules.Header, e
 			return UNIT_STATE_INVALID_HEADER_NUMBER
 		}
 
-		if enableMediatorSchedule && !validate.light {
-			vcode := validate.validateMediatorSchedule(header)
-			if vcode != TxValidationCode_VALID {
-				return vcode
-			}
-		}
+		//if enableMediatorSchedule && !validate.light {
+		//	vcode := validate.validateMediatorSchedule(header)
+		//	if vcode != TxValidationCode_VALID {
+		//		return vcode
+		//	}
+		//}
 	}
 	return TxValidationCode_VALID
 }

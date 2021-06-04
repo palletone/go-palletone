@@ -40,9 +40,11 @@ type ITxPool interface {
 	//AddRemotes([]*modules.Transaction) []error
 	//ProcessTransaction(tx *modules.Transaction, allowOrphan bool, rateLimit bool, tag Tag) ([]*TxDesc, error)
 	//查询已打包的交易，以UnitHash为Key
-	Pending() (map[common.Hash][]*TxPoolTransaction, error)
+	Packed() (map[common.Hash][]*TxPoolTransaction, error)
 	//查询孤儿交易
-	Queued() ([]*TxPoolTransaction, error)
+	Orphan() ([]*TxPoolTransaction, error)
+	//未打包的交易
+	Unpack() ([]*TxPoolTransaction, error)
 	//将一堆交易修改状态为已打包
 	SetPendingTxs(unit_hash common.Hash, num uint64, txs []*modules.Transaction) error
 	//将一堆交易设置为未打包
@@ -62,6 +64,7 @@ type ITxPool interface {
 	GetSortedTxs() ([]*TxPoolTransaction, error)
 	//从交易池获取某个交易
 	GetTx(hash common.Hash) (*TxPoolTransaction, error)
+	DeleteTx(hash common.Hash) error
 	//获取交易池中某个地址的所有交易
 	//GetPoolTxsByAddr(addr string) ([]*TxPoolTransaction, error)
 	//获得一个地址的未打包的交易

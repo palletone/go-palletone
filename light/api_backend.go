@@ -170,10 +170,15 @@ func (b *LesApiBackend) TxPoolContent() (map[common.Hash]*txspool.TxPoolTransact
 func (b *LesApiBackend) TxPoolClear() {
 	b.ptn.TxPool().Clear()
 }
-func (b *LesApiBackend) Queued() ([]*txspool.TxPoolTransaction, error) {
-	return nil, nil
+func (b *LesApiBackend) TxPoolOrphan() ([]*txspool.TxPoolTransaction, error) {
+	return b.ptn.TxPool().Orphan()
 }
-
+func (b *LesApiBackend) TxPoolPacked() (map[common.Hash][]*txspool.TxPoolTransaction, error){
+	return b.ptn.TxPool().Packed()
+}
+func (b *LesApiBackend) TxPoolUnpack() ([]*txspool.TxPoolTransaction, error){
+	return b.ptn.TxPool().Unpack()
+}
 func (b *LesApiBackend) SubscribeTxPreEvent(ch chan<- modules.TxPreEvent) event.Subscription {
 	return b.ptn.txPool.SubscribeTxPreEvent(ch)
 }

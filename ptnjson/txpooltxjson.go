@@ -1,8 +1,10 @@
 package ptnjson
 
 import (
+	"encoding/hex"
 	"time"
 
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/txspool"
 
 	"github.com/palletone/go-palletone/common"
@@ -29,6 +31,7 @@ type TxPoolTxJson struct {
 	NotExsit     bool            `json:"not_exist"`
 	Index        int             `json:"index"` // index 是该tx在优先级堆中的位置
 	Extra        []byte          `json:"extra"`
+	TxHex        string          `json:"tx_hex"`
 }
 type TxPoolPendingJson struct {
 	TxHash       string    `json:"tx_hash"`
@@ -96,7 +99,7 @@ func ConvertTxPoolTx2Json(tx *txspool.TxPoolTransaction, hash common.Hash) *TxPo
 			froms = append(froms, ConvertOutPoint2Json(out))
 		}
 	}
-
+	txBytes, _ := rlp.EncodeToBytes(tx.Tx)
 	payJson := ConvertPayment2Json(pay)
 	return &TxPoolTxJson{
 		TxHash:     tx.Tx.Hash().String(),
@@ -113,6 +116,7 @@ func ConvertTxPoolTx2Json(tx *txspool.TxPoolTransaction, hash common.Hash) *TxPo
 		Confirmed:    tx.Confirmed,
 		IsOrphan:     tx.IsOrphan,
 		Extra:        tx.Extra[:],
+		TxHex:        hex.EncodeToString(txBytes),
 	}
 }
 

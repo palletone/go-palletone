@@ -78,7 +78,9 @@ type Backend interface {
 	Status() (int, int, int)
 	TxPoolClear()
 	TxPoolContent() (map[common.Hash]*txspool.TxPoolTransaction, map[common.Hash]*txspool.TxPoolTransaction)
-	Queued() ([]*txspool.TxPoolTransaction, error)
+	TxPoolOrphan() ([]*txspool.TxPoolTransaction, error)
+	TxPoolPacked() (map[common.Hash][]*txspool.TxPoolTransaction, error)
+	TxPoolUnpack() ([]*txspool.TxPoolTransaction, error)
 	SubscribeTxPreEvent(chan<- modules.TxPreEvent) event.Subscription
 
 	//ChainConfig() *configure.ChainConfig

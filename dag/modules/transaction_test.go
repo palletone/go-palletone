@@ -569,3 +569,8 @@ func TestSortTxAndRequests(t *testing.T) {
 	assert.Equal(t, 0, len(orphanTxs))
 	assert.Equal(t, 0, len(doubleSpendTxs))
 }
+func TestOutpointClone(t *testing.T) {
+	out := NewOutPoint(common.HexToHash("e2725b319975ef56da915fbee1655587999ac8db45e78fdbe2cf110fe01f1c6d"), 3, 0)
+	clone := out.Clone()
+	t.Log(clone.String())
+}
