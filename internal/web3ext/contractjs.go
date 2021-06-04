@@ -65,6 +65,13 @@ web3._extend({
         	params: 8, //from, to, token, daoAmountToken, daoFee, contractAddr, args[]string------>["fun", "key", "value"]
 			inputFormatter: [null, null, null,null, null, null,null,null]
 		}),
+
+		new web3._extend.Method({
+			name: 'ccinvokeTokenSync',
+        	call: 'contract_ccinvokeTokenSync',
+        	params: 8, //from, to, token, daoAmountToken, daoFee, contractAddr, args[]string------>["fun", "key", "value"]
+			inputFormatter: [null, null, null,null, null, null,null,null]
+		}),
 		new web3._extend.Method({
 			name: 'ccinvokeMutiToken',
         	call: 'contract_ccinvokeMutiToken',

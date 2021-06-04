@@ -68,9 +68,19 @@ var (
 	//PCGTta3M4t3yXu8uRgkKvaWd2d8DSHHyWEW
 	InstallContractAddress = common.HexToAddress("0x000000000000000000000000000000000000000C1C")
 
+	//13token转换合约
+	//PCGTta3M4t3yXu8uRgkKvaWd2d8DSRr1tUD
+	TokenConversionContractAddress = common.HexToAddress("0x000000000000000000000000000000000000000D1C")
+
+	//14拍卖一口价合约(NFT)
+	//PCGTta3M4t3yXu8uRgkKvaWd2d8DSRr1tUD
+	AuctionContractAddress = common.HexToAddress("0x000000000000000000000000000000000000000E1C")
+
 	//15测试调试用
 	//PCGTta3M4t3yXu8uRgkKvaWd2d8DSfQdUHf
 	TestContractAddress = common.HexToAddress("0x000000000000000000000000000000000000000F1C")
 	//PCGTta3M4t3yXu8uRgkKvaWd2d9Vgsc4zGX
 	TestRunContractAddress = common.HexToAddress("0x00000000000000000000000000000000000095271C")
+
+
 )
