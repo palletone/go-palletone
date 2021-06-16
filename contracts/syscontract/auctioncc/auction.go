@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+	"github.com/palletone/go-palletone/common/log"
 )
 
 var myContractAddr = syscontract.AuctionContractAddress.String()
@@ -95,20 +96,24 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 			return shim.Error("AddAuctionOrder error:" + err.Error())
 		}
 		return shim.Success(nil)
-
 	case "taker_auction": //参加竞拍
 		if len(args) != 2 {
-			return shim.Error("must input 3 args: [AuctionSN][BidAmount]")
+			return shim.Error("must input 2 args: [AuctionSN][BidAmount]")
 		}
 		err := p.TakerAuction(stub, args[0], args[1])
 		if err != nil {
 			return shim.Error(err.Error())
 		}
 		return shim.Success(nil)
-
 	case "stop_auction": //拍卖结束
+		if len(args) != 2 {
+			return shim.Error("must input 2 args: [AuctionSN]")
+		}
+		err := p.StopAuction(stub, args[0])
+		if err != nil {
+			return shim.Error(err.Error())
+		}
 		return shim.Success(nil)
-
 	case "cancel": //撤销订单
 		if len(args) != 1 {
 			return shim.Error("must input 1 args: [AuctionSN]")
@@ -196,6 +201,81 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		}
 		data, _ := json.Marshal(result)
 		return shim.Success(data)
+
+	case "setAuctionMgrAddressList": //设置管理地址
+		if len(args) != 0 {
+			return shim.Error("must input 0 arg")
+		}
+		ads := common.Addresses{}
+		for _, arg := range args {
+			addr, err := common.StringToAddress(arg)
+			if err == nil {
+				ads = append(ads, addr)
+			}
+		}
+		err := setAuctionContractMgrAddress(stub, ads)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		data, _ := json.Marshal(ads)
+		return shim.Success(data)
+
+	case "getAuctionMgrAddressList": //获取管理地址
+		if len(args) != 0 {
+			return shim.Error("must input 0 arg")
+		}
+		result, err := getAuctionContractMgrAddress(stub)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		data, _ := json.Marshal(result)
+		return shim.Success(data)
+
+	case "setRewardRate": //设置拍卖资金费率--奖励
+		if len(args) != 1 {
+			return shim.Error("must input 1 arg")
+		}
+		rate, err := decimal.NewFromString(args[0])
+		if err != nil {
+			return shim.Error("Invalid amount:" + args[0])
+		}
+		err = setAuctionFeeRate(stub, 0, rate)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		data, _ := json.Marshal(rate)
+		return shim.Success(data)
+
+	case "setDestructionRate": //设置拍卖资金费率--销毁
+		if len(args) != 1 {
+			return shim.Error("must input 1 arg")
+		}
+		rate, err := decimal.NewFromString(args[0])
+		if err != nil {
+			return shim.Error("Invalid amount:" + args[0])
+		}
+		err = setAuctionFeeRate(stub, 1, rate)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		data, _ := json.Marshal(rate)
+		return shim.Success(data)
+
+	case "getRewardRate": //获取拍卖资金费率--奖励
+		if len(args) != 0 {
+			return shim.Error("must input 0 arg")
+		}
+		rate := getAuctionFeeRate(stub, 0)
+		data, _ := json.Marshal(rate)
+		return shim.Success(data)
+	case "getDestructionRate": //获取拍卖资金费率--奖励
+		if len(args) != 0 {
+			return shim.Error("must input 0 arg")
+		}
+		rate := getAuctionFeeRate(stub, 1)
+		data, _ := json.Marshal(rate)
+		return shim.Success(data)
+
 	default:
 		return shim.Error("no case")
 	}
@@ -225,11 +305,25 @@ func (p *AuctionMgr) MakerFix(stub shim.ChaincodeStubInterface, wantAsset *modul
 	order.AuctionSn = txid
 	order.Status = 1
 
+	log.Debugf("MakerFix:\n"+
+		"AuctionType:%d\n"+
+		"Address:%s\n"+
+		"SaleAsset:%s\n"+
+		"SaleAmount:%d\n"+
+		"WantAsset:%s\n"+
+		"WantAmount:%d\n"+
+		"RewardAddress:%s\n"+
+		"AuctionSn:%s\n"+
+		"Status:%d\n",
+		order.AuctionType, order.Address.String(), order.SaleAsset.String(), order.SaleAmount, order.WantAsset.String(),
+		order.WantAmount, order.RewardAddress.String(), order.AuctionSn, order.Status)
+
 	return p.AddAuctionOrder(stub, order)
 }
 
 func (p *AuctionMgr) TakerFix(stub shim.ChaincodeStubInterface, orderSn string) error {
 	takerAddress, _ := stub.GetInvokeAddress()
+	//takerGasFee, _ := stub.GetInvokeFees()
 	auction, err := getAuctionRecordBySn(stub, orderSn)
 	if err != nil {
 		return errors.New("invalid/sold out/canceled auction SN:" + orderSn)
@@ -242,38 +336,66 @@ func (p *AuctionMgr) TakerFix(stub shim.ChaincodeStubInterface, orderSn string) 
 	if !takerPayAsset.Equal(auction.WantAsset) {
 		return errors.New("current asset not match takerFix order want asset")
 	}
-
 	//检查金额是否满足
 	if takerPayAmount < auction.WantAmount {
 		return errors.New("TakerFix, takerPayAmount < auction.WantAmount")
 	}
-
 	//计算奖励和销毁的费用
 	var rewardAmount uint64 = 0
 	if !auction.RewardAddress.IsZero() {
-		rewardAmount = auction.WantAmount * 1 / 10 //todo   2 / 10
+		rate := getAuctionFeeRate(stub, 0)
+		amount := decimal.NewFromFloat(float64(auction.WantAmount)).Mul(rate).IntPart()
+		rewardAmount = uint64(amount)
+		//rewardAmount = auction.WantAmount * rate //todo   2 / 10
 	}
-	destructionAmount := auction.WantAmount * 1 / 10 //todo
-	remainAmount := auction.WantAmount - rewardAmount - destructionAmount
+	rate := getAuctionFeeRate(stub, 1)
+	amount := decimal.NewFromFloat(float64(auction.WantAmount)).Mul(rate).IntPart()
+	destructionAmount := uint64(amount)
 
+	//destructionAmount := auction.WantAmount * 1 / 10 //todo
+	//remainAmount := auction.WantAmount - rewardAmount - destructionAmount
+	desAddr, _ := common.StringToAddress(DestructionAddress)
 	feeUse := AuctionFeeUse{
-		Asset:             auction.WantAsset,
-		RewardAmount:      rewardAmount,      //auction.WantAsset.DisplayAmount(10), //auction.WantAsset.DisplayAmount(auction.SaleAmount)
-		DestructionAmount: destructionAmount, //auction.WantAsset.DisplayAmount(5),
+		Asset:              auction.WantAsset,
+		RewardAddress:      auction.RewardAddress,
+		RewardAmount:       rewardAmount, //auction.WantAsset.DisplayAmount(10), //auction.WantAsset.DisplayAmount(auction.SaleAmount)
+		DestructionAddress: desAddr,
+		DestructionAmount:  destructionAmount, //auction.WantAsset.DisplayAmount(5),
 	}
 
 	//更新状态数据
 	matchRecord := &MatchRecord{
+		AuctionType:      auction.AuctionType,
 		AuctionOrderSn:   auction.AuctionSn,
 		TakerReqId:       stub.GetTxID(),
 		MakerAddress:     auction.Address,
 		MakerAsset:       auction.SaleAsset,
 		MakerAssetAmount: auction.SaleAmount,
 		TakerAddress:     takerAddress,
-		TakerAsset:       auction.WantAsset,
-		TakerAssetAmount: takerPayAmount,
+		TakerAsset:       takerPayAsset,
+		TakerAssetAmount: takerPayAmount, //todo   - takerGasFee.Amount
 		FeeUse:           feeUse,
 	}
+
+	log.Debugf("TakerFix:\n"+
+		"AuctionType:%d\n"+
+		"AuctionOrderSn:%s\n"+
+		"TakerReqId:%s\n"+
+		"MakerAddress:%s\n"+
+		"MakerAsset:%s\n"+
+		"MakerAssetAmount:%d\n"+
+		"TakerAddress:%s\n"+
+		"TakerAsset:%s\n"+
+		"TakerAssetAmount:%d\n"+
+		"FeeUse.asset:%s\n"+
+		"FeeUse.RewardAddress:%s\n"+
+		"FeeUse.RewardAmount:%d\n"+
+		"FeeUse.DestructionAddress:%s\n"+
+		"FeeUse.DestructionAmount:%d\n",
+		matchRecord.AuctionType, matchRecord.AuctionOrderSn, matchRecord.TakerReqId, matchRecord.MakerAddress.String(), matchRecord.MakerAsset.String(), matchRecord.MakerAssetAmount,
+		matchRecord.TakerAddress.String(), matchRecord.TakerAsset.String(), matchRecord.TakerAssetAmount,
+		matchRecord.FeeUse.Asset.String(), matchRecord.FeeUse.RewardAddress.String(), matchRecord.FeeUse.RewardAmount, matchRecord.FeeUse.DestructionAddress.String(), matchRecord.FeeUse.DestructionAmount)
+
 	err = saveMatchRecord(stub, matchRecord)
 	if err != nil {
 		return err
@@ -283,57 +405,8 @@ func (p *AuctionMgr) TakerFix(stub shim.ChaincodeStubInterface, orderSn string) 
 	if err != nil {
 		return err
 	}
-	//交换给taker的
-	err = stub.PayOutToken(takerAddress.String(), &modules.AmountAsset{
-		Amount: auction.SaleAmount,
-		Asset:  auction.SaleAsset,
-	}, 0)
-	if err != nil {
-		return err
-	}
 
-	//返还taker多余的
-	takerChangeAmount := takerPayAmount - auction.WantAmount
-	if takerChangeAmount > 0 { //剩余的打回
-		err = stub.PayOutToken(takerAddress.String(), &modules.AmountAsset{
-			Amount: takerChangeAmount,
-			Asset:  takerPayAsset,
-		}, 0)
-		if err != nil {
-			return err
-		}
-	}
-	//卖出的
-	if remainAmount > 0 {
-		err = stub.PayOutToken(auction.Address.String(), &modules.AmountAsset{
-			Amount: remainAmount,
-			Asset:  auction.WantAsset,
-		}, 0)
-		if err != nil {
-			return err
-		}
-	}
-	//奖励
-	if feeUse.RewardAmount > 0 {
-		err = stub.PayOutToken(auction.RewardAddress.String(), &modules.AmountAsset{
-			Amount: feeUse.RewardAmount,
-			Asset:  feeUse.Asset,
-		}, 0)
-		if err != nil {
-			return err
-		}
-	}
-	//销毁
-	if feeUse.DestructionAmount > 0 {
-		err = stub.PayOutToken(DestructionAddress, &modules.AmountAsset{
-			Amount: feeUse.DestructionAmount,
-			Asset:  feeUse.Asset,
-		}, 0)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	return transferTokensProcess(stub, auction, matchRecord)
 }
 
 func (p *AuctionMgr) MakerAuction(stub shim.ChaincodeStubInterface, wantAsset *modules.Asset, wantAmount, targetAmount, stepAmount decimal.Decimal, startTime, endTime time.Time, rewardAddress common.Address) error {
@@ -361,6 +434,19 @@ func (p *AuctionMgr) MakerAuction(stub shim.ChaincodeStubInterface, wantAsset *m
 	order.AuctionSn = txid
 	order.Status = 1
 
+	log.Debugf("MakerAuction:\n"+
+		"AuctionType:%d\n"+
+		"Address:%s\n"+
+		"SaleAsset:%s\n"+
+		"SaleAmount:%d\n"+
+		"WantAsset:%s\n"+
+		"WantAmount:%d\n"+
+		"RewardAddress:%s\n"+
+		"AuctionSn:%s\n"+
+		"Status:%d\n",
+		order.AuctionType, order.Address.String(), order.SaleAsset.String(), order.SaleAmount, order.WantAsset.String(),
+		order.WantAmount, order.RewardAddress.String(), order.AuctionSn, order.Status)
+
 	return p.AddAuctionOrder(stub, order)
 }
 
@@ -381,11 +467,6 @@ func (p *AuctionMgr) TakerAuction(stub shim.ChaincodeStubInterface, orderSn, bid
 	if err != nil {
 		return errors.New("takerAuction, GetTxTimestamp err:" + err.Error())
 	}
-	//nowTime := time.Unix(now.Seconds, 0)
-	//if nowTime.Before(auction.StartTime) || nowTime.After(auction.EndTime) {
-	//	//	log.Debugf("")
-	//	//	return errors.New("takerAuction, Not in the auction time zone now")
-	//	//}
 
 	if now.Seconds < auction.StartTime.Unix() {
 		return errors.New("takerAuction, now.Seconds < auction.StartTime")
@@ -407,18 +488,8 @@ func (p *AuctionMgr) TakerAuction(stub shim.ChaincodeStubInterface, orderSn, bid
 		return fmt.Errorf("takerAuction, auction[%s] takerPayAmount[%d] < WantAmount[%d]", auction.AuctionSn, takerPayAmount, auction.WantAmount)
 	}
 
-	//
 	//if auction.AuctionType == 2 { //英式拍卖
-	//	//金额检查
-	//	if takerPayAmount < auction.WantAmount {
-	//		return fmt.Errorf("takerAuction, auction[%s] takerPayAmount[%d] < WantAmount[%d]", auction.AuctionSn, takerPayAmount, auction.WantAmount)
-	//	}
-	//
-	//	//记录订单
-	//}
 	//if auction.AuctionType == 3 { //荷兰式拍卖
-	//	//检查费用
-	//}
 
 	//计算奖励和销毁的费用
 	var rewardAmount uint64 = 0
@@ -426,14 +497,18 @@ func (p *AuctionMgr) TakerAuction(stub shim.ChaincodeStubInterface, orderSn, bid
 		rewardAmount = auction.WantAmount * 1 / 10 //todo
 	}
 	destructionAmount := auction.WantAmount * 1 / 10 //todo
-
+	desAddr, _ := common.StringToAddress(DestructionAddress)
 	feeUse := AuctionFeeUse{
-		Asset:             auction.WantAsset,
-		RewardAmount:      rewardAmount,      //auction.WantAsset.DisplayAmount(10), //auction.WantAsset.DisplayAmount(auction.SaleAmount)
-		DestructionAmount: destructionAmount, //auction.WantAsset.DisplayAmount(5),
+		Asset:              auction.WantAsset,
+		RewardAddress:      auction.RewardAddress,
+		RewardAmount:       rewardAmount, //auction.WantAsset.DisplayAmount(10), //auction.WantAsset.DisplayAmount(auction.SaleAmount)
+		DestructionAddress: desAddr,
+		DestructionAmount:  destructionAmount, //auction.WantAsset.DisplayAmount(5),
 	}
+
 	//更新状态数据
 	submitRecord := &MatchRecord{
+		AuctionType:      auction.AuctionType,
 		AuctionOrderSn:   auction.AuctionSn,
 		TakerReqId:       stub.GetTxID(),
 		MakerAddress:     auction.Address,
@@ -443,9 +518,61 @@ func (p *AuctionMgr) TakerAuction(stub shim.ChaincodeStubInterface, orderSn, bid
 		TakerAsset:       takerPayAsset,
 		TakerAssetAmount: takerPayAmount,
 		FeeUse:           feeUse,
+		recordTime:       now.Seconds,
 	}
 
 	err = saveMatchRecord(stub, submitRecord)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *AuctionMgr) StopAuction(stub shim.ChaincodeStubInterface, orderSn string) error {
+	invokeAddress, _ := stub.GetInvokeAddress()
+	auction, err := getAuctionRecordBySn(stub, orderSn)
+	if err != nil {
+		return errors.New("invalid/sold out/canceled StopAuction SN:" + orderSn)
+	}
+	//检查合约状态是否有效
+	if auction.Status != 1 {
+		return errors.New("StopAuction order is invalid")
+	}
+	if !invokeAddress.Equal(auction.Address) || !isFoundationInvoke(stub) {
+		return errors.New("StopAuction addr are not the owner or not foundation")
+	}
+
+	//按金额、时间获取成交记录
+	matchRecords, err := getMatchRecordByOrderSn(stub, orderSn)
+	if err != nil {
+		return errors.New("StopAuction getMatchRecordByOrderSn err:" + err.Error())
+	}
+	maxRecord := getMaxAmountRecord(matchRecords)
+
+	//费用扣除、退款
+	for _, record := range matchRecords {
+		if record.TakerReqId == maxRecord.TakerReqId {
+			err = transferTokensProcess(stub, auction, maxRecord)
+			if err != nil {
+				return errors.New("StopAuction,TransferTokensProcess err:" + err.Error())
+			}
+			continue
+		}
+		if record.TakerAssetAmount > 0 { //剩余的打回
+			err = stub.PayOutToken(record.TakerAddress.String(), &modules.AmountAsset{
+				Amount: record.TakerAssetAmount,
+				Asset:  record.TakerAsset,
+			}, 0)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	//更新auctionOrder
+	auction.Status = 2
+	err = UpdateAuctionOrder(stub, auction)
 	if err != nil {
 		return err
 	}
@@ -465,20 +592,31 @@ func (p *AuctionMgr) GetHistoryOrderList(stub shim.ChaincodeStubInterface) ([]*A
 }
 
 func (p *AuctionMgr) GetOrderMatchList(stub shim.ChaincodeStubInterface, orderSn string) ([]*MatchRecordJson, error) {
-	return getMatchRecordByOrderSn(stub, orderSn)
+	return getMatchRecordJsonByOrderSn(stub, orderSn)
 }
 func (p *AuctionMgr) GetAllMatchList(stub shim.ChaincodeStubInterface) ([]*MatchRecordJson, error) {
-	return getAllMatchRecord(stub)
+	return getAllMatchRecordJson(stub)
 }
 
 func (p *AuctionMgr) Cancel(stub shim.ChaincodeStubInterface, orderSn string) error {
 	auction, err := getAuctionRecordBySn(stub, orderSn)
 	if err != nil {
-		return errors.New("invalid/sold out/canceled exchange SN:" + orderSn)
+		return errors.New("invalid/sold out/canceled auction SN:" + orderSn)
 	}
+	//检查挂单状态是否有效
+	if auction.Status != 1 {
+		return errors.New(" auction.Status is invalid/ auction SN:" + orderSn)
+	}
+	//检查是否有成交记录
+	//match, err := getAllMatchRecordJson(stub )
+	//if isInMatchRecord(orderSn){
+	//
+	//}
+
+	//检查是否是Maker或者基金会
 	addr, err := stub.GetInvokeAddress()
-	if addr != auction.Address {
-		return errors.New("you are not the owner")
+	if addr != auction.Address || !isFoundationInvoke(stub) {
+		return errors.New("you are not the owner or not foundation")
 	}
 	err = cancelAuctionOrder(stub, auction)
 	if err != nil {
