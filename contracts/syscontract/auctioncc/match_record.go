@@ -7,6 +7,7 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/shopspring/decimal"
 	"github.com/palletone/go-palletone/common/log"
+	"time"
 )
 
 const MatchRecordPrefix = "AuctionMatchRecord-"
@@ -42,12 +43,15 @@ type MatchRecordJson struct {
 	RewardAmount       decimal.Decimal
 	DestructionAddress string
 	DestructionAmount  decimal.Decimal
+	recordTime         string
 }
 
 func convertMatchRecord(record *MatchRecord) *MatchRecordJson {
 	if record.AuctionOrderSn == "" {
 		return nil
 	}
+
+	rTime := time.Unix(record.recordTime, 0)
 	return &MatchRecordJson{
 		AuctionType:    string(record.AuctionType),
 		AuctionOrderSn: record.AuctionOrderSn,
@@ -66,6 +70,7 @@ func convertMatchRecord(record *MatchRecord) *MatchRecordJson {
 		RewardAmount:       record.FeeUse.Asset.DisplayAmount(record.FeeUse.RewardAmount),
 		DestructionAddress: record.FeeUse.DestructionAddress.String(),
 		DestructionAmount:  record.FeeUse.Asset.DisplayAmount(record.FeeUse.DestructionAmount),
+		recordTime:         rTime.Format(TimeFormt),
 	}
 }
 

@@ -12,15 +12,10 @@ import (
 
 const AuctionContractMgrAddressPrefix = "AuctionContractMgrAddress-"
 const AuctionContractFeeRate = "AuctionContractFeeRate-"
-
+const TimeFormt = "2006-01-02 15:04:05 MST"
 //todo tmp
 var DestructionAddress = "PCGTta3M4t3yXu8uRgkKvaWd2d9Vgsc4zGX" //""PCLOST00000000000000000000000000000"  //销毁地址
 var AuctionTransactionGas = uint64(1)                          //ptn  临时的
-
-type auctionContractFeeRate struct {
-	rewardRate      decimal.Decimal
-	destructionRate decimal.Decimal
-}
 
 func getPayToContract(stub shim.ChaincodeStubInterface) (*modules.Asset, uint64, error) {
 	payAssets, _ := stub.GetInvokeTokens()

@@ -293,6 +293,7 @@ func (p *AuctionMgr) MakerFix(stub shim.ChaincodeStubInterface, wantAsset *modul
 	if err != nil {
 		return err
 	}
+	t, _ := stub.GetTxTimestamp(10)
 	txid := stub.GetTxID()
 	order := &AuctionOrder{}
 	order.AuctionType = 1 //fix
@@ -304,6 +305,8 @@ func (p *AuctionMgr) MakerFix(stub shim.ChaincodeStubInterface, wantAsset *modul
 	order.RewardAddress = rewardAddress
 	order.AuctionSn = txid
 	order.Status = 1
+	order.CreateTime = time.Unix(t.Seconds, 0)
+	//return order.CreateTime.UTC().Format(modules.Layout2)
 
 	log.Debugf("MakerFix:\n"+
 		"AuctionType:%d\n"+
@@ -352,6 +355,11 @@ func (p *AuctionMgr) TakerFix(stub shim.ChaincodeStubInterface, orderSn string) 
 	amount := decimal.NewFromFloat(float64(auction.WantAmount)).Mul(rate).IntPart()
 	destructionAmount := uint64(amount)
 
+	now, err := stub.GetTxTimestamp(10)
+	if err != nil {
+		return errors.New("takerAuction, GetTxTimestamp err:" + err.Error())
+	}
+
 	//destructionAmount := auction.WantAmount * 1 / 10 //todo
 	//remainAmount := auction.WantAmount - rewardAmount - destructionAmount
 	desAddr, _ := common.StringToAddress(DestructionAddress)
@@ -375,6 +383,7 @@ func (p *AuctionMgr) TakerFix(stub shim.ChaincodeStubInterface, orderSn string) 
 		TakerAsset:       takerPayAsset,
 		TakerAssetAmount: takerPayAmount, //todo   - takerGasFee.Amount
 		FeeUse:           feeUse,
+		recordTime:       now.Seconds,
 	}
 
 	log.Debugf("TakerFix:\n"+
@@ -418,6 +427,7 @@ func (p *AuctionMgr) MakerAuction(stub shim.ChaincodeStubInterface, wantAsset *m
 	if err != nil {
 		return err
 	}
+	t, _ := stub.GetTxTimestamp(10)
 	txid := stub.GetTxID()
 	order := &AuctionOrder{}
 	order.AuctionType = 2
@@ -433,6 +443,7 @@ func (p *AuctionMgr) MakerAuction(stub shim.ChaincodeStubInterface, wantAsset *m
 	order.RewardAddress = rewardAddress
 	order.AuctionSn = txid
 	order.Status = 1
+	order.CreateTime = time.Unix(t.Seconds, 0)
 
 	log.Debugf("MakerAuction:\n"+
 		"AuctionType:%d\n"+

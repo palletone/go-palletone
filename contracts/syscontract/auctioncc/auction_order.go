@@ -28,6 +28,7 @@ type AuctionOrder struct {
 
 	RewardAddress common.Address
 	AuctionSn     string
+	CreateTime    time.Time
 	Status        byte //0 撤销， 1 挂单中，2 成交完毕，
 }
 
@@ -40,27 +41,37 @@ type AuctionFeeUse struct {
 }
 
 type AuctionOrderJson struct {
-	Address           common.Address //挂单地址
-	SaleAsset         string
-	SaleAmount        decimal.Decimal
-	CurrentSaleAmount decimal.Decimal
-	DealSaleAmount    decimal.Decimal
-	WantAsset         string
-	WantAmount        decimal.Decimal
-	DealWantAmount    decimal.Decimal
-	CurrentWantAmount decimal.Decimal
-	AuctionSn         string
-	Status            string
+	AuctionType   string
+	Address       common.Address //挂单地址
+	SaleAsset     string
+	SaleAmount    decimal.Decimal
+	WantAsset     string
+	WantAmount    decimal.Decimal
+	TargetAmount  decimal.Decimal
+	StepAmount    decimal.Decimal
+	StartTime     string
+	EndTime       string
+	RewardAddress string
+	AuctionSn     string
+	Status        string
+	CreateTime    string
 }
 
 func convertSheet(exm AuctionOrder) *AuctionOrderJson {
 	newSheet := AuctionOrderJson{}
+	newSheet.AuctionType = string(exm.AuctionType)
 	newSheet.Address = exm.Address
 	newSheet.SaleAsset = exm.SaleAsset.String()
 	newSheet.SaleAmount = exm.SaleAsset.DisplayAmount(exm.SaleAmount)
 	newSheet.WantAsset = exm.WantAsset.String()
 	newSheet.WantAmount = exm.WantAsset.DisplayAmount(exm.WantAmount)
+	newSheet.TargetAmount = exm.WantAsset.DisplayAmount(exm.TargetAmount)
+	newSheet.StepAmount = exm.WantAsset.DisplayAmount(exm.StepAmount)
+	newSheet.StartTime = exm.StartTime.Format(TimeFormt)
+	newSheet.EndTime = exm.EndTime.Format(TimeFormt)
+	newSheet.RewardAddress = exm.RewardAddress.String()
 	newSheet.AuctionSn = exm.AuctionSn
+	newSheet.CreateTime = exm.CreateTime.Format(TimeFormt)
 	return &newSheet
 }
 
