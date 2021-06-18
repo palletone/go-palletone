@@ -8,9 +8,11 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/palletone/go-palletone/common/log"
 	"time"
+	"fmt"
 )
 
 const MatchRecordPrefix = "AuctionMatchRecord-"
+const AuctionLastAmountPrefix = "AuctionLastAmountRecord-"
 
 //订单成交记录/提交记录
 type MatchRecord struct {
@@ -24,8 +26,7 @@ type MatchRecord struct {
 	TakerAsset       *modules.Asset
 	TakerAssetAmount uint64        //Taker提交多少金额
 	FeeUse           AuctionFeeUse //消耗的费用：奖励和燃烧
-
-	recordTime int64 //成交时间
+	recordTime       int64         //成交时间
 }
 
 type MatchRecordJson struct {
@@ -44,6 +45,14 @@ type MatchRecordJson struct {
 	DestructionAddress string
 	DestructionAmount  decimal.Decimal
 	recordTime         string
+}
+
+type AuctionLastAmount struct {
+	AuctionOrderSn string
+	TakerReqId     string
+	TakerAddress   common.Address
+	TakerAsset     *modules.Asset
+	TakerAmount    uint64
 }
 
 func convertMatchRecord(record *MatchRecord) *MatchRecordJson {
@@ -78,6 +87,7 @@ func convertMatchRecord(record *MatchRecord) *MatchRecordJson {
 func saveMatchRecord(stub shim.ChaincodeStubInterface, record *MatchRecord) error {
 	data, _ := rlp.EncodeToBytes(record)
 	key := MatchRecordPrefix + record.AuctionOrderSn + "-" + record.TakerReqId
+	stub.DelState(key)
 	return stub.PutState(key, data)
 }
 
@@ -129,6 +139,22 @@ func getMatchRecordByOrderSn(stub shim.ChaincodeStubInterface, orderSn string) (
 	return result, nil
 }
 
+func getMatchRecordByAddress(stub shim.ChaincodeStubInterface, orderSn string, addr common.Address) (*MatchRecord, error) {
+	record := &MatchRecord{}
+	key := MatchRecordPrefix + orderSn
+	rows, err := stub.GetStateByPrefix(key)
+	if err != nil {
+		return nil, err
+	}
+	for _, row := range rows {
+		rlp.DecodeBytes(row.Value, record)
+		if record.TakerAddress.Equal(addr) {
+			return record, nil
+		}
+	}
+	return nil, fmt.Errorf("getMatchRecordByAddress, not find address:%s", addr.String())
+}
+
 func getMaxAmountRecord(records []*MatchRecord) (*MatchRecord) {
 	maxRecord := &MatchRecord{}
 	for _, ro := range records {
@@ -163,4 +189,26 @@ func isInMatchRecord(stub shim.ChaincodeStubInterface, orderSn string) bool {
 		}
 	}
 	return false
+}
+
+func saveAuctionLastAmountRecord(stub shim.ChaincodeStubInterface, record *AuctionLastAmount) error {
+	data, _ := rlp.EncodeToBytes(record)
+	key := AuctionLastAmountPrefix + record.AuctionOrderSn
+	stub.DelState(key)
+	return stub.PutState(key, data)
+}
+
+func getAuctionLastAmountRecord(stub shim.ChaincodeStubInterface, orderSn string) (record *AuctionLastAmount, err error) {
+	lastAmount := &AuctionLastAmount{}
+	key := AuctionLastAmountPrefix + orderSn
+	data, err := stub.GetState(key)
+	if err != nil {
+		return nil, err
+	}
+	err = rlp.DecodeBytes(data, lastAmount)
+	if err != nil {
+		return nil, err
+	}
+
+	return lastAmount, nil
 }

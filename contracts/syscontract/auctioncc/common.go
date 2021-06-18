@@ -13,6 +13,7 @@ import (
 const AuctionContractMgrAddressPrefix = "AuctionContractMgrAddress-"
 const AuctionContractFeeRate = "AuctionContractFeeRate-"
 const TimeFormt = "2006-01-02 15:04:05 MST"
+
 //todo tmp
 var DestructionAddress = "PCGTta3M4t3yXu8uRgkKvaWd2d9Vgsc4zGX" //""PCLOST00000000000000000000000000000"  //销毁地址
 var AuctionTransactionGas = uint64(1)                          //ptn  临时的
@@ -145,8 +146,26 @@ func getAuctionContractMgrAddress(stub shim.ChaincodeStubInterface) (mgrAddress 
 	return result, nil
 }
 
+func isAuctionContractMgrAddress(stub shim.ChaincodeStubInterface) bool {
+	invokeAddr, err := stub.GetInvokeAddress()
+	if err != nil {
+		log.Debugf("isAuctionContractMgrAddress, GetInvokeAddress err:%s", err.Error())
+		return false
+	}
+	address, err := getAuctionContractMgrAddress(stub)
+	if err != nil {
+		return false
+	}
+	for _, ad := range address {
+		if ad.Equal(invokeAddr) {
+			return true
+		}
+	}
+	return false
+}
+
 func setAuctionFeeRate(stub shim.ChaincodeStubInterface, rateType uint8, rate decimal.Decimal) error {
-	if !isFoundationInvoke(stub) {
+	if !isFoundationInvoke(stub) || !isAuctionContractMgrAddress(stub) {
 		return errors.New("setAuctionFeeRate, the invoke address is err")
 	}
 	log.Debugf("setAuctionFeeRate, rateType[%d], rate[%s]", rateType, rate.String())
