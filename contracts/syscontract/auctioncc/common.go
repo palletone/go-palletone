@@ -165,7 +165,7 @@ func isAuctionContractMgrAddress(stub shim.ChaincodeStubInterface) bool {
 }
 
 func setAuctionFeeRate(stub shim.ChaincodeStubInterface, rateType uint8, rate decimal.Decimal) error {
-	if !isFoundationInvoke(stub) || !isAuctionContractMgrAddress(stub) {
+	if !isFoundationInvoke(stub) && !isAuctionContractMgrAddress(stub) {
 		return errors.New("setAuctionFeeRate, the invoke address is err")
 	}
 	log.Debugf("setAuctionFeeRate, rateType[%d], rate[%s]", rateType, rate.String())

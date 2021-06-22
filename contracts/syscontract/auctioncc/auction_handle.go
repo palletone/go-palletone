@@ -386,7 +386,7 @@ func (p *AuctionMgr) StopAuction(stub shim.ChaincodeStubInterface, orderSn strin
 	if auction.Status != 1 {
 		return errors.New("StopAuction order is invalid")
 	}
-	if !invokeAddress.Equal(auction.Address) || !isFoundationInvoke(stub) || !isAuctionContractMgrAddress(stub) {
+	if !invokeAddress.Equal(auction.Address) && !isFoundationInvoke(stub) && !isAuctionContractMgrAddress(stub) {
 		return errors.New("StopAuction addr are not the owner or not foundation")
 	}
 	//按金额、时间获取成交记录
