@@ -443,7 +443,7 @@ func (p *AuctionMgr) Cancel(stub shim.ChaincodeStubInterface, orderSn string) er
 
 	//检查是否是Maker或者基金会或者管理地址
 	addr, err := stub.GetInvokeAddress()
-	if !addr.Equal(auction.Address) || !isFoundationInvoke(stub) || !isAuctionContractMgrAddress(stub) {
+	if !addr.Equal(auction.Address) && !isFoundationInvoke(stub) && !isAuctionContractMgrAddress(stub) {
 		return fmt.Errorf("you are not the owner or not foundation, invoke addr[%s]-auction.Address[%s]", addr.String(), auction.Address.String())
 	}
 	err = cancelAuctionOrder(stub, auction)
