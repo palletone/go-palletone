@@ -28,6 +28,7 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/shopspring/decimal"
+	"github.com/palletone/go-palletone/dag/dagconfig"
 )
 
 const GOLANG = "golang"
@@ -196,9 +197,11 @@ func (s *PrivateContractAPI) contractFeeCheck(ctx *buildContractContext, reqMsg 
 
 	var err error
 	fee := ctx.gasFee
-	assetId, _, err := modules.String2AssetId(ctx.tokenId)
+
+	//assetId, _, err := modules.String2AssetId(ctx.tokenId)
+	assetId := dagconfig.DagConfig.GetGasToken()
 	if err != nil {
-		log.Errorf("contractFeeCheck,  String2AssetId err:%s", err.Error())
+		log.Errorf("contractFeeCheck,  String2AssetId err:%s:%s", err.Error(), ctx.tokenId)
 		return fee, fmt.Errorf("contractFeeCheck, String2AssetId err:%s", err.Error())
 	}
 	//baseFee := decimal.NewFromFloat(float64(s.b.Dag().GetChainParameters().TransferPtnBaseFee))
