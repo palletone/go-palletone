@@ -202,10 +202,11 @@ func getAuctionFeeRate(stub shim.ChaincodeStubInterface, rateType uint8) (decima
 		log.Debugf("getAuctionFeeRate, rateType[%d],  use default rate[%s]", rateType, defRate.String())
 		return defRate
 	}
-	data := decimal.Decimal{}
-	data.GobDecode(value)
-
-	log.Debugf("getAuctionFeeRate, rateType[%d], rate[%s]", rateType, data.String())
-
-	return data
+	if value != nil {
+		data := decimal.Decimal{}
+		data.GobDecode(value)
+		log.Debugf("getAuctionFeeRate, rateType[%d], rate[%s]", rateType, data.String())
+		return data
+	}
+	return defRate
 }
