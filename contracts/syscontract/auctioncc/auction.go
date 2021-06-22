@@ -75,13 +75,15 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		if err != nil {
 			return shim.Error("Invalid StepAmount string:" + args[3])
 		}
-		startTime, err := time.Parse("2016-06-01 12:12:12", args[4]) //todo  可以为空
+		startTime, _ := time.Parse("2006-01-02 15:04:05", args[4]) //todo  可以
 		if err != nil {
+//			log.Debugf("maker_auction startTime input:%s, err[%s]", args[4], err.Error())
 			return shim.Error("Invalid StartTime string:" + args[4])
 		}
-		endTime, err := time.Parse("2016-06-01 12:12:12", args[5]) //todo  可以为空
+		endTime, err := time.Parse("2006-01-02 15:04:05", args[5]) //todo  可以为空
 		if err != nil {
-			return shim.Error("Invalid StartTime string:" + args[5])
+//			log.Debugf("maker_auction endTime input:%s, err[%s]", args[5], err.Error())
+			return shim.Error("Invalid EndTime string:" + args[5])
 		}
 		rewardAddress, err := common.StringToAddress(args[6]) //todo  可以为空
 		if err != nil {
