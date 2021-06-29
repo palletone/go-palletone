@@ -8,11 +8,18 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/shopspring/decimal"
+	"time"
 )
 
 const AuctionContractMgrAddressPrefix = "AuctionContractMgrAddress-"
 const AuctionContractFeeRate = "AuctionContractFeeRate-"
-const TimeFormt = "2006-01-02 15:04:05 MST"
+const TimeFormt = "2006-01-02 15:04:05 UTC"
+
+const DefaultRewardFeeRate = 0.025      //默认奖励费率
+const DefaultDestructionFeeRate = 0.025 //默认销毁费率
+
+const FirstRewardFeeRateLevel = 2.0      //第一次奖励级别，第一次奖励=费率*级别*交易额
+const FirstDestructionFeeRateLevel = 2.0 //第一次销毁级别，第一次销毁=费率*级别*交易额
 
 //todo tmp
 var DestructionAddress = "PCGTta3M4t3yXu8uRgkKvaWd2d9Vgsc4zGX" //""PCLOST00000000000000000000000000000"  //销毁地址
@@ -192,10 +199,10 @@ func getAuctionFeeRate(stub shim.ChaincodeStubInterface, rateType uint8) (decima
 	key := AuctionContractFeeRate
 	if rateType == 0 {
 		key = key + "rewardRate"
-		defRate = decimal.NewFromFloat(0.01) //todo
+		defRate = decimal.NewFromFloat(DefaultRewardFeeRate) //todo
 	} else {
 		key = key + "destructionRate"
-		defRate = decimal.NewFromFloat(0.01) //todo
+		defRate = decimal.NewFromFloat(DefaultDestructionFeeRate) //todo
 	}
 	value, err := stub.GetState(key)
 	if err != nil { //use default fee rate
@@ -210,3 +217,17 @@ func getAuctionFeeRate(stub shim.ChaincodeStubInterface, rateType uint8) (decima
 	}
 	return defRate
 }
+
+func getTimeFromString(inStr string) (time.Time, error) {
+	tm, err := time.Parse("2006-01-02 15:04:05", inStr)
+	//tm.Unix()
+	return tm, err
+
+	//	ti := time.Unix(t.Seconds, 0)
+	//	return ti.UTC().Format(modules.Layout2)
+}
+
+//func getTimeFromSeconds(seconds  int64) (time.Time, error) {
+//	ti := time.Unix(seconds, 0)
+//	str := ti.UTC().Format("2006-01-02 15:04:05")
+//}

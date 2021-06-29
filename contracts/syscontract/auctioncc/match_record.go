@@ -7,7 +7,6 @@ import (
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/shopspring/decimal"
 	"github.com/palletone/go-palletone/common/log"
-	"time"
 	"fmt"
 )
 
@@ -26,7 +25,7 @@ type MatchRecord struct {
 	TakerAsset       *modules.Asset
 	TakerAssetAmount uint64        //Taker提交多少金额
 	FeeUse           AuctionFeeUse //消耗的费用：奖励和燃烧
-	recordTime       int64         //成交时间
+	recordTime       string         //成交时间
 }
 
 type MatchRecordJson struct {
@@ -60,7 +59,7 @@ func convertMatchRecord(record *MatchRecord) *MatchRecordJson {
 		return nil
 	}
 
-	rTime := time.Unix(record.recordTime, 0)
+
 	return &MatchRecordJson{
 		AuctionType:    string(record.AuctionType),
 		AuctionOrderSn: record.AuctionOrderSn,
@@ -79,7 +78,7 @@ func convertMatchRecord(record *MatchRecord) *MatchRecordJson {
 		RewardAmount:       record.FeeUse.Asset.DisplayAmount(record.FeeUse.RewardAmount),
 		DestructionAddress: record.FeeUse.DestructionAddress.String(),
 		DestructionAmount:  record.FeeUse.Asset.DisplayAmount(record.FeeUse.DestructionAmount),
-		recordTime:         rTime.Format(TimeFormt),
+		recordTime:        record.recordTime,
 	}
 }
 
@@ -163,8 +162,12 @@ func getMaxAmountRecord(records []*MatchRecord) (*MatchRecord) {
 			continue
 		} else if ro.TakerAssetAmount == maxRecord.TakerAssetAmount {
 			//比较时间
-			if ro.recordTime < maxRecord.recordTime {
-				maxRecord = ro
+			roTime, err1 := getTimeFromString(ro.recordTime)
+			mxTime, err2 := getTimeFromString(maxRecord.recordTime)
+			if err1 == nil && err2 == nil{
+				if roTime.Before(mxTime) {
+					maxRecord = ro
+				}
 			}
 		}
 	}
@@ -172,10 +175,11 @@ func getMaxAmountRecord(records []*MatchRecord) (*MatchRecord) {
 	if maxRecord.AuctionOrderSn == "" || maxRecord.TakerReqId == "" {
 		return nil
 	}
+
 	return maxRecord
 }
 
-func isInMatchRecord(stub shim.ChaincodeStubInterface, orderSn string) bool {
+func isInMatchRecordByOrderSn(stub shim.ChaincodeStubInterface, orderSn string) bool {
 	key := MatchRecordPrefix
 	rows, err := stub.GetStateByPrefix(key)
 	if err != nil {
@@ -185,6 +189,23 @@ func isInMatchRecord(stub shim.ChaincodeStubInterface, orderSn string) bool {
 		record := &MatchRecord{}
 		rlp.DecodeBytes(row.Value, record)
 		if record.AuctionOrderSn == orderSn {
+			return true
+		}
+	}
+	return false
+}
+
+func isInMatchRecordByAssertId(stub shim.ChaincodeStubInterface, assert *modules.Asset) bool {
+	key := MatchRecordPrefix
+	rows, err := stub.GetStateByPrefix(key)
+	if err != nil {
+		return false
+	}
+	for _, row := range rows {
+		record := &MatchRecord{}
+		rlp.DecodeBytes(row.Value, record)
+		log.Debugf("isInMatchRecordByAssertId, record:%v", record)
+		if record.MakerAsset.Equal(assert) {
 			return true
 		}
 	}

@@ -9,6 +9,7 @@ import (
 	"github.com/palletone/go-palletone/common"
 	"encoding/json"
 	"time"
+	"github.com/palletone/go-palletone/common/log"
 )
 
 var myContractAddr = syscontract.AuctionContractAddress.String()
@@ -77,12 +78,12 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		}
 		startTime, _ := time.Parse("2006-01-02 15:04:05", args[4]) //todo  可以
 		if err != nil {
-//			log.Debugf("maker_auction startTime input:%s, err[%s]", args[4], err.Error())
+			//			log.Debugf("maker_auction startTime input:%s, err[%s]", args[4], err.Error())
 			return shim.Error("Invalid StartTime string:" + args[4])
 		}
 		endTime, err := time.Parse("2006-01-02 15:04:05", args[5]) //todo  可以为空
 		if err != nil {
-//			log.Debugf("maker_auction endTime input:%s, err[%s]", args[5], err.Error())
+			//			log.Debugf("maker_auction endTime input:%s, err[%s]", args[5], err.Error())
 			return shim.Error("Invalid EndTime string:" + args[5])
 		}
 		rewardAddress, err := common.StringToAddress(args[6]) //todo  可以为空
@@ -130,7 +131,7 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 			return shim.Error(err.Error())
 		}
 		return shim.Success(nil)
-	case "cancelall": //撤销订单
+	case "cancel_all": //撤销订单
 		result, err := p.GetActiveOrderList(stub)
 		if err != nil {
 			return shim.Error(err.Error())
@@ -138,7 +139,7 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		for _, addr := range result {
 			err := p.Cancel(stub, addr.AuctionSn)
 			if err != nil {
-				return shim.Error(err.Error())
+				 log.Debugf("cancelall, cancel %s fail:%s", addr.AuctionSn, err.Error())
 			}
 		}
 		return shim.Success(nil)
@@ -188,6 +189,18 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		}
 		data, _ := json.Marshal(result)
 		return shim.Success(data)
+
+	case "getActiveOrderById": //列出指定ID订单
+		if len(args) != 1 {
+			return shim.Error("must input 1 args: [Order ID]")
+		}
+		result, err := p.GetActiveOrdersByID(stub, args[0])
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		data, _ := json.Marshal(result)
+		return shim.Success(data)
+
 	case "getOrderMatchList": //列出订单的成交记录
 		if len(args) != 1 {
 			return shim.Error("must input 1 args: [AuctionSN]")
@@ -289,3 +302,4 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 
 	return shim.Error("no case")
 }
+

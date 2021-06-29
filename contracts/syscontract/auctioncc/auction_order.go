@@ -7,7 +7,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/shim"
 
 	"github.com/ethereum/go-ethereum/rlp"
-	"time"
+	"github.com/palletone/go-palletone/common/log"
 )
 
 const AUCTIONLIST_RECORD = "AuctionOrder-"
@@ -21,15 +21,15 @@ type AuctionOrder struct {
 	WantAsset   *modules.Asset
 	WantAmount  uint64 //挂单时想要多少金额//竞拍时起拍价
 
-	TargetAmount uint64    //最大价格,可以不设置，默认0     //auction
-	StepAmount   uint64    //阶梯数量,可以不设置，默认0     //auction
-	StartTime    time.Time //开始时间                    //auction
-	EndTime      time.Time //结束时间                    //auction
+	TargetAmount uint64 //最大价格,可以不设置，默认0     //auction
+	StepAmount   uint64 //阶梯数量,可以不设置，默认0     //auction
+	StartTime    string //time.Time //开始时间           //int64 rlp失败
+	EndTime      string //time.Time //结束时间                    //auction
 
 	RewardAddress common.Address
 	AuctionSn     string
-	CreateTime    time.Time
-	Status        byte //0 撤销， 1 挂单中，2 成交完毕，
+	CreateTime    string //time.Time
+	Status        byte   //0 撤销， 1 挂单中，2 成交完毕，
 }
 
 type AuctionFeeUse struct {
@@ -41,20 +41,20 @@ type AuctionFeeUse struct {
 }
 
 type AuctionOrderJson struct {
-	AuctionType   string
-	Address       common.Address //挂单地址
-	SaleAsset     string
-	SaleAmount    decimal.Decimal
-	WantAsset     string
-	WantAmount    decimal.Decimal
-	TargetAmount  decimal.Decimal
-	StepAmount    decimal.Decimal
-	StartTime     string
-	EndTime       string
-	RewardAddress string
-	AuctionSn     string
-	Status        string
-	CreateTime    string
+	AuctionType   string          `json:"auction_type"` //
+	Address       common.Address  `json:"address"`      //挂单地址
+	SaleAsset     string          `json:"sale_asset"`
+	SaleAmount    decimal.Decimal `json:"sale_amount"`
+	WantAsset     string          `json:"want_asset"`
+	WantAmount    decimal.Decimal `json:"want_amount"`
+	TargetAmount  decimal.Decimal `json:"target_amount"`
+	StepAmount    decimal.Decimal `json:"step_amount"`
+	StartTime     string          `json:"start_time"`
+	EndTime       string          `json:"end_time"`
+	RewardAddress string          `json:"reward_address"`
+	AuctionSn     string          `json:"auction_sn"`
+	Status        string          `json:"status"`
+	CreateTime    string          `json:"create_time"`
 }
 
 func convertSheet(exm AuctionOrder) *AuctionOrderJson {
@@ -67,11 +67,11 @@ func convertSheet(exm AuctionOrder) *AuctionOrderJson {
 	newSheet.WantAmount = exm.WantAsset.DisplayAmount(exm.WantAmount)
 	newSheet.TargetAmount = exm.WantAsset.DisplayAmount(exm.TargetAmount)
 	newSheet.StepAmount = exm.WantAsset.DisplayAmount(exm.StepAmount)
-	newSheet.StartTime = exm.StartTime.Format(TimeFormt)
-	newSheet.EndTime = exm.EndTime.Format(TimeFormt)
+	newSheet.StartTime = exm.StartTime
+	newSheet.EndTime = exm.EndTime
 	newSheet.RewardAddress = exm.RewardAddress.String()
 	newSheet.AuctionSn = exm.AuctionSn
-	newSheet.CreateTime = exm.CreateTime.Format(TimeFormt)
+	newSheet.CreateTime = exm.CreateTime
 	return &newSheet
 }
 
@@ -135,6 +135,7 @@ func getAllAuctionOrder(stub shim.ChaincodeStubInterface) ([]*AuctionOrderJson, 
 		if err != nil {
 			return nil, err
 		}
+		log.Debugf("getAllAuctionOrder, record:%v", record)
 		jsSheet := convertSheet(*record)
 		result = append(result, jsSheet)
 	}
