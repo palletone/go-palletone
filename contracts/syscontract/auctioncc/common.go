@@ -6,9 +6,9 @@ import (
 	"github.com/palletone/go-palletone/dag/errors"
 	"github.com/palletone/go-palletone/common/log"
 	"github.com/palletone/go-palletone/common"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/shopspring/decimal"
 	"time"
+	"encoding/json"
 )
 
 const AuctionContractMgrAddressPrefix = "AuctionContractMgrAddress-"
@@ -127,30 +127,21 @@ func setAuctionContractMgrAddress(stub shim.ChaincodeStubInterface, mgrAddress c
 		return errors.New("setAuctionContractMgrAddress, the invoke address is err")
 	}
 
-	data, _ := rlp.EncodeToBytes(mgrAddress)
+	data, _ := json.Marshal(mgrAddress)
 	key := AuctionContractMgrAddressPrefix
-
+	log.Debugf("setAuctionContractMgrAddress, addrs[%v]", mgrAddress)
 	return stub.PutState(key, data)
 }
 
 func getAuctionContractMgrAddress(stub shim.ChaincodeStubInterface) (mgrAddress common.Addresses, err error) {
-	if !isFoundationInvoke(stub) {
-		return nil, errors.New("getAuctionContractMgrAddress, the invoke address is err")
-	}
+	addrs := common.Addresses{}
 	key := AuctionContractMgrAddressPrefix
-	rows, err := stub.GetStateByPrefix(key)
+	value, err := stub.GetState(key)
 	if err != nil {
 		return nil, err
 	}
-
-	result := common.Addresses{}
-	for _, row := range rows {
-		ad := common.Address{}
-		rlp.DecodeBytes(row.Value, ad)
-		result = append(result, ad)
-	}
-
-	return result, nil
+	json.Unmarshal(value, &addrs)
+	return addrs, nil
 }
 
 func isAuctionContractMgrAddress(stub shim.ChaincodeStubInterface) bool {

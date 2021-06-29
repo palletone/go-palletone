@@ -201,11 +201,11 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		data, _ := json.Marshal(result)
 		return shim.Success(data)
 
-	case "getOrderMatchList": //列出订单的成交记录
+	case "getMatchListByOrderSn": //列出订单的成交记录
 		if len(args) != 1 {
 			return shim.Error("must input 1 args: [AuctionSN]")
 		}
-		result, err := p.GetOrderMatchList(stub, args[0])
+		result, err := p.GetMatchListByOrderSn(stub, args[0])
 		if err != nil {
 			return shim.Error(err.Error())
 		}
@@ -223,8 +223,8 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Success(data)
 
 	case "setAuctionMgrAddressList": //设置管理地址
-		if len(args) != 0 {
-			return shim.Error("must input 0 arg")
+		if len(args) <= 0 {
+			return shim.Error("must input > 0 arg")
 		}
 		ads := common.Addresses{}
 		for _, arg := range args {

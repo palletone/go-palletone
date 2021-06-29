@@ -484,14 +484,25 @@ func (p *AuctionMgr) Cancel(stub shim.ChaincodeStubInterface, orderSn string) er
 	if err != nil {
 		return err
 	}
-	//未成交的金额退回
-	err = stub.PayOutToken(auction.Address.String(), &modules.AmountAsset{
-		Amount: auction.SaleAmount,
-		Asset:  auction.SaleAsset,
-	}, 0)
+
+	//检查token数量是否满足
+	getTokens, err := stub.GetTokenBalance("", auction.SaleAsset)
 	if err != nil {
 		return err
 	}
+	for _, tk := range getTokens {
+		if tk.Asset.Equal(auction.SaleAsset) && tk.Amount >= auction.SaleAmount {
+			//未成交的金额退回
+			err = stub.PayOutToken(auction.Address.String(), &modules.AmountAsset{
+				Amount: auction.SaleAmount,
+				Asset:  auction.SaleAsset,
+			}, 0)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 func (p *AuctionMgr) Payout(stub shim.ChaincodeStubInterface, addr common.Address, amount decimal.Decimal, asset *modules.Asset) error {
@@ -533,7 +544,7 @@ func (p *AuctionMgr) GetActiveOrdersByID(stub shim.ChaincodeStubInterface, order
 func (p *AuctionMgr) GetHistoryOrderList(stub shim.ChaincodeStubInterface) ([]*AuctionOrderJson, error) {
 	return getAllHistoryOrder(stub)
 }
-func (p *AuctionMgr) GetOrderMatchList(stub shim.ChaincodeStubInterface, orderSn string) ([]*MatchRecordJson, error) {
+func (p *AuctionMgr) GetMatchListByOrderSn(stub shim.ChaincodeStubInterface, orderSn string) ([]*MatchRecordJson, error) {
 	return getMatchRecordJsonByOrderSn(stub, orderSn)
 }
 func (p *AuctionMgr) GetAllMatchList(stub shim.ChaincodeStubInterface) ([]*MatchRecordJson, error) {
