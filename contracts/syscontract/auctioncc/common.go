@@ -13,7 +13,7 @@ import (
 
 const AuctionContractMgrAddressPrefix = "AuctionContractMgrAddress-"
 const AuctionContractFeeRate = "AuctionContractFeeRate-"
-const TimeFormt = "2006-01-02 15:04:05 UTC"
+const TimeFormt = "2006-01-02 15:04:05"
 
 const DefaultRewardFeeRate = 0.025      //默认奖励费率
 const DefaultDestructionFeeRate = 0.025 //默认销毁费率
@@ -210,8 +210,17 @@ func getAuctionFeeRate(stub shim.ChaincodeStubInterface, rateType uint8) (decima
 }
 
 func getTimeFromString(inStr string) (time.Time, error) {
-	tm, err := time.Parse("2006-01-02 15:04:05", inStr)
+
+	//l1 := now.Format("2006-01-02 15")
+	tm, err := time.Parse(TimeFormt, inStr)
 	//tm.Unix()
+	if err != nil {
+		tm, err = time.Parse(TimeFormt + " +0000 UTC", inStr)
+		if err != nil {
+			tm, err = time.Parse(TimeFormt + " +0800 CST", inStr)
+			return tm ,err
+		}
+	}
 	return tm, err
 
 	//	ti := time.Unix(t.Seconds, 0)

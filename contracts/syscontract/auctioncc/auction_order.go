@@ -71,8 +71,10 @@ func convertSheet(exm AuctionOrder) *AuctionOrderJson {
 	newSheet.EndTime = exm.EndTime
 	newSheet.RewardAddress = exm.RewardAddress.String()
 	newSheet.AuctionSn = exm.AuctionSn
+	newSheet.Status = string(exm.Status)
 	newSheet.CreateTime = exm.CreateTime
 	return &newSheet
+
 }
 
 //增加一个新订单
@@ -201,6 +203,40 @@ func getAllHistoryOrder(stub shim.ChaincodeStubInterface) ([]*AuctionOrderJson, 
 		}
 		jsSheet := convertSheet(*record)
 		result = append(result, jsSheet)
+	}
+	return result, nil
+}
+func getHistoryOrderBySn(stub shim.ChaincodeStubInterface, auctionSn string) (*AuctionOrderJson, error) {
+	key := AUCTIONLIST_HISTORY + auctionSn
+	value, err := stub.GetState(key)
+	if err != nil {
+		return nil, err
+	}
+	record := &AuctionOrder{}
+	err = rlp.DecodeBytes(value, record)
+	if err != nil {
+		return nil, err
+	}
+	jsSheet := convertSheet(*record)
+	return jsSheet, nil
+}
+
+func getHistoryOrderByMakerAddr(stub shim.ChaincodeStubInterface, addr common.Address) ([]*AuctionOrderJson, error) {
+	kvs, err := stub.GetStateByPrefix(AUCTIONLIST_HISTORY)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*AuctionOrderJson, 0, len(kvs))
+	for _, kv := range kvs {
+		record := &AuctionOrder{}
+		err = rlp.DecodeBytes(kv.Value, record)
+		if err != nil {
+			return nil, err
+		}
+		if record.Address.Equal(addr) {
+			jsSheet := convertSheet(*record)
+			result = append(result, jsSheet)
+		}
 	}
 	return result, nil
 }

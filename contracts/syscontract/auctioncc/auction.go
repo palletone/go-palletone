@@ -38,18 +38,21 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		if err != nil {
 			return shim.Error("Invalid wantAmount string:" + args[1])
 		}
-		rewardAddress, err := common.StringToAddress(args[2])
-		if err != nil {
-			return shim.Error("Invalid rewardAddress string:" + args[2])
+		rewardAddress := common.Address{}
+		if len(args[2]) > 0 {
+			rewardAddress, err = common.StringToAddress(args[2]) //todo  可以为空
+			if err != nil {
+				return shim.Error("Invalid rewardAddress string:" + args[2])
+			}
 		}
 		err = p.MakerFix(stub, wantToken, wantAmount, rewardAddress)
 		if err != nil {
-			return shim.Error("AddAuctionOrder error:" + err.Error())
+			return shim.Error("MakerFix error:" + err.Error())
 		}
 		return shim.Success(nil)
 	case "taker_fix": //获取挂单信息,token互换
 		if len(args) != 1 {
-			return shim.Error("must input 1 args: [AuctionSN]")
+			return shim.Error("taker_fix must input 1 args: [AuctionSN]")
 		}
 		err := p.TakerFix(stub, args[0])
 		if err != nil {
@@ -76,19 +79,31 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		if err != nil {
 			return shim.Error("Invalid StepAmount string:" + args[3])
 		}
-		startTime, _ := time.Parse("2006-01-02 15:04:05", args[4]) //todo  可以
-		if err != nil {
-			//			log.Debugf("maker_auction startTime input:%s, err[%s]", args[4], err.Error())
-			return shim.Error("Invalid StartTime string:" + args[4])
+		startTime := ""
+		endTime := ""
+		if len(args[4]) > 0 {
+			sTime, err := time.Parse("2006-01-02 15:04:05", args[4]) //todo  可以kon
+			if err == nil {
+				startTime = sTime.Format(TimeFormt)
+			} else {
+				return shim.Error("Invalid startTime string:" + args[4])
+			}
 		}
-		endTime, err := time.Parse("2006-01-02 15:04:05", args[5]) //todo  可以为空
-		if err != nil {
-			//			log.Debugf("maker_auction endTime input:%s, err[%s]", args[5], err.Error())
-			return shim.Error("Invalid EndTime string:" + args[5])
+		if args[5] != "" {
+			eTime, err := time.Parse("2006-01-02 15:04:05", args[5]) //todo  可以为空
+			if err == nil {
+				endTime = eTme.Format(TimeFormt)
+			} else {
+				return shim.Error("Invalid endTime string:" + args[5])
+			}
 		}
-		rewardAddress, err := common.StringToAddress(args[6]) //todo  可以为空
-		if err != nil {
-			return shim.Error("Invalid rewardAddress string:" + args[6])
+		log.Debugf("maker_auction startTime :[%s], endTime[%s]", startTime, endTime)
+		rewardAddress := common.Address{}
+		if len(args[6]) > 0 {
+			rewardAddress, err = common.StringToAddress(args[6]) //todo  可以为空
+			if err != nil {
+				return shim.Error("Invalid rewardAddress string:" + args[6])
+			}
 		}
 		err = p.MakerAuction(stub, wantToken, startAmount, targetAmount, stepAmount, startTime, endTime, rewardAddress)
 		if err != nil {
@@ -114,8 +129,8 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		}
 		return shim.Success(nil)
 	case "stop_auction": //拍卖结束
-		if len(args) != 2 {
-			return shim.Error("must input 2 args: [AuctionSN]")
+		if len(args) != 1 {
+			return shim.Error("must input 1 args: [AuctionSN]")
 		}
 		err := p.StopAuction(stub, args[0])
 		if err != nil {
@@ -139,7 +154,7 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		for _, addr := range result {
 			err := p.Cancel(stub, addr.AuctionSn)
 			if err != nil {
-				 log.Debugf("cancelall, cancel %s fail:%s", addr.AuctionSn, err.Error())
+				log.Debugf("cancelall, cancel %s fail:%s", addr.AuctionSn, err.Error())
 			}
 		}
 		return shim.Success(nil)
@@ -168,14 +183,14 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		}
 		return shim.Success(nil)
 
-	case "getActiveOrderList": //列出订单列表
+	case "getActiveOrderList": //列出挂单列表
 		result, err := p.GetActiveOrderList(stub)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
 		data, _ := json.Marshal(result)
 		return shim.Success(data)
-	case "getActiveOrdersByMaker": //列出订单列表
+	case "getActiveOrdersByMaker": //列出挂单列表
 		if len(args) != 1 {
 			return shim.Error("must input 1 args: [maker address]")
 		}
@@ -190,11 +205,47 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		data, _ := json.Marshal(result)
 		return shim.Success(data)
 
-	case "getActiveOrderById": //列出指定ID订单
+	case "getActiveOrderById": //列出指定ID挂单
 		if len(args) != 1 {
 			return shim.Error("must input 1 args: [Order ID]")
 		}
 		result, err := p.GetActiveOrdersByID(stub, args[0])
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		data, _ := json.Marshal(result)
+		return shim.Success(data)
+	case "getHistoryOrderList": //列出所有历史挂单
+		if len(args) != 0 {
+			return shim.Error("must input 0 args")
+		}
+		result, err := p.GetHistoryOrderList(stub)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		data, _ := json.Marshal(result)
+		return shim.Success(data)
+
+	case "GetHistoryOrderBySn": //列出指定ID历史挂单
+		if len(args) != 1 {
+			return shim.Error("must input 1 args[Order ID]")
+		}
+		result, err := p.GetHistoryOrderBySn(stub, args[0])
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		data, _ := json.Marshal(result)
+		return shim.Success(data)
+
+	case "GetHistoryOrderByMaker": //列出指定ID历史挂单
+		if len(args) != 1 {
+			return shim.Error("must input 1 args[MakerAddr]")
+		}
+		addr, err := common.StringToAddress(args[0])
+		if err != nil {
+			return shim.Error("Invalid address:" + err.Error())
+		}
+		result, err := p.GetHistoryOrderByMakerAddr(stub, addr)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
@@ -302,4 +353,3 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 
 	return shim.Error("no case")
 }
-

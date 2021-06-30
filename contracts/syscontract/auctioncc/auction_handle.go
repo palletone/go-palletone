@@ -34,7 +34,7 @@ func (p *AuctionMgr) MakerFix(stub shim.ChaincodeStubInterface, wantAsset *modul
 	order.RewardAddress = rewardAddress
 	order.AuctionSn = txid
 	order.Status = 1
-	order.CreateTime = time.Unix(t.Seconds, 0).String()
+	order.CreateTime = time.Unix(t.Seconds, 0).Format(TimeFormt) //time.Unix(t.Seconds, 0).String()
 
 	log.Debugf("MakerFix:\n"+
 		"AuctionType:%d\n"+
@@ -121,7 +121,7 @@ func (p *AuctionMgr) TakerFix(stub shim.ChaincodeStubInterface, orderSn string) 
 		TakerAsset:       takerPayAsset,
 		TakerAssetAmount: takerPayAmount, //todo   - takerGasFee.Amount
 		FeeUse:           feeUse,
-		recordTime:       now.String(),
+		RecordTime:       time.Unix(now.Seconds, 0).Format(TimeFormt),
 	}
 	log.Debugf("TakerFix:\n"+
 		"AuctionType:%d\n"+
@@ -137,10 +137,12 @@ func (p *AuctionMgr) TakerFix(stub shim.ChaincodeStubInterface, orderSn string) 
 		"FeeUse.RewardAddress:%s\n"+
 		"FeeUse.RewardAmount:%d\n"+
 		"FeeUse.DestructionAddress:%s\n"+
-		"FeeUse.DestructionAmount:%d\n",
+		"FeeUse.DestructionAmount:%d\n"+
+		"recordTime:%s\n",
 		matchRecord.AuctionType, matchRecord.AuctionOrderSn, matchRecord.TakerReqId, matchRecord.MakerAddress.String(), matchRecord.MakerAsset.String(), matchRecord.MakerAssetAmount,
 		matchRecord.TakerAddress.String(), matchRecord.TakerAsset.String(), matchRecord.TakerAssetAmount,
-		matchRecord.FeeUse.Asset.String(), matchRecord.FeeUse.RewardAddress.String(), matchRecord.FeeUse.RewardAmount, matchRecord.FeeUse.DestructionAddress.String(), matchRecord.FeeUse.DestructionAmount)
+		matchRecord.FeeUse.Asset.String(), matchRecord.FeeUse.RewardAddress.String(), matchRecord.FeeUse.RewardAmount, matchRecord.FeeUse.DestructionAddress.String(), matchRecord.FeeUse.DestructionAmount,
+		matchRecord.RecordTime)
 
 	err = saveMatchRecord(stub, matchRecord)
 	if err != nil {
@@ -154,7 +156,7 @@ func (p *AuctionMgr) TakerFix(stub shim.ChaincodeStubInterface, orderSn string) 
 	return transferTokensProcess(stub, auction, matchRecord)
 }
 
-func (p *AuctionMgr) MakerAuction(stub shim.ChaincodeStubInterface, wantAsset *modules.Asset, wantAmount, targetAmount, stepAmount decimal.Decimal, startTime, endTime time.Time, rewardAddress common.Address) error {
+func (p *AuctionMgr) MakerAuction(stub shim.ChaincodeStubInterface, wantAsset *modules.Asset, wantAmount, targetAmount, stepAmount decimal.Decimal, startTime, endTime string, rewardAddress common.Address) error {
 	addr, err := stub.GetInvokeAddress()
 	if err != nil {
 		return errors.New("Invalid address string:" + err.Error())
@@ -174,12 +176,12 @@ func (p *AuctionMgr) MakerAuction(stub shim.ChaincodeStubInterface, wantAsset *m
 	order.WantAmount = wantAsset.Uint64Amount(wantAmount)
 	order.TargetAmount = wantAsset.Uint64Amount(targetAmount)
 	order.StepAmount = wantAsset.Uint64Amount(stepAmount)
-	order.StartTime = startTime.String()
-	order.EndTime = endTime.String()
+	order.StartTime = startTime
+	order.EndTime = endTime
 	order.RewardAddress = rewardAddress
 	order.AuctionSn = txid
 	order.Status = 1
-	order.CreateTime = t.String()
+	order.CreateTime = time.Unix(t.Seconds, 0).Format(TimeFormt)
 
 	log.Debugf("MakerAuction:\n"+
 		"AuctionType:%d\n"+
@@ -220,20 +222,25 @@ func (p *AuctionMgr) TakerAuction(stub shim.ChaincodeStubInterface, orderSn stri
 	if err != nil {
 		return errors.New("takerAuction, GetTxTimestamp err:" + err.Error())
 	}
-	log.Debugf("TakerAuction, startTime[%s], nowTime[%s], endTime[%s]", auction.StartTime, now.String(), auction.EndTime)
+	log.Debugf("TakerAuction, startTime[%s], nowTime[%s], endTime[%s]", auction.StartTime, time.Unix(now.Seconds, 0).Format(TimeFormt), auction.EndTime)
 
-	stTime, err := getTimeFromString(auction.StartTime)
-	if err != nil {
-		return err
+	if len(auction.StartTime) > 0 {
+		stTime, err := getTimeFromString(auction.StartTime)
+		if err != nil {
+			return err
+		}
+		if now.Seconds < stTime.Unix() {
+			return errors.New("TakerAuction, now.Seconds < auction.StartTime")
+		}
 	}
-	edTime, err := getTimeFromString(auction.EndTime)
-	if err != nil {
-		return err
-	}
-	if auction.StartTime != "" && now.Seconds < stTime.Unix() {
-		return errors.New("takerAuction, now.Seconds < auction.StartTime")
-	} else if auction.EndTime != "" && now.Seconds > edTime.Unix() {
-		return errors.New("takerAuction, now.Seconds > auction.EndTime")
+	if len(auction.EndTime) > 0 {
+		edTime, err := getTimeFromString(auction.EndTime)
+		if err != nil {
+			return err
+		}
+		if now.Seconds > edTime.Unix() {
+			return errors.New("TakerAuction, now.Seconds > auction.EndTime")
+		}
 	}
 
 	takerPayAsset, takerPayAmount, err := getPayToContract(stub)
@@ -248,9 +255,12 @@ func (p *AuctionMgr) TakerAuction(stub shim.ChaincodeStubInterface, orderSn stri
 	if auction.StepAmount != 0 { //设置有step level的情况下
 		lastAmount, err := getAuctionLastAmountRecord(stub, auction.AuctionSn)
 		if err != nil {
-			return nil
+			log.Debugf("TakerAuction, getAuctionLastAmountRecord err:%s", err.Error())
+			//return nil
+		} else {
+			log.Debugf("TakerAuction, lastAmount.TakerAmount[%d] + auction.StepAmount[%d]", lastAmount.TakerAmount, auction.StepAmount)
+			needAmount = lastAmount.TakerAmount + auction.StepAmount
 		}
-		needAmount = lastAmount.TakerAmount + auction.StepAmount
 	}
 	//检查提交金额数量是否满足
 	if takerPayAmount < needAmount {
@@ -289,7 +299,7 @@ func (p *AuctionMgr) TakerAuction(stub shim.ChaincodeStubInterface, orderSn stri
 		TakerAsset:       takerPayAsset,
 		TakerAssetAmount: takerPayAmount,
 		FeeUse:           feeUse,
-		recordTime:       now.String(),
+		RecordTime:       time.Unix(now.Seconds, 0).Format(TimeFormt),
 	}
 	err = saveMatchRecord(stub, submitRecord)
 	if err != nil {
@@ -326,20 +336,25 @@ func (p *AuctionMgr) UpdateTakerAuction(stub shim.ChaincodeStubInterface, orderS
 	if err != nil {
 		return errors.New("UpdateTakerAuction, GetTxTimestamp err:" + err.Error())
 	}
-	log.Debugf("UpdateTakerAuction, startTime[%s], nowTime[%s], endTime[%s]", auction.StartTime, now.String(), auction.EndTime)
+	log.Debugf("UpdateTakerAuction, startTime[%s], nowTime[%s], endTime[%s]", auction.StartTime, time.Unix(now.Seconds, 0).Format(TimeFormt), auction.EndTime)
 
-	stTime, err := getTimeFromString(auction.StartTime)
-	if err != nil {
-		return err
+	if len(auction.StartTime) > 0 {
+		stTime, err := getTimeFromString(auction.StartTime)
+		if err != nil {
+			return err
+		}
+		if now.Seconds < stTime.Unix() {
+			return errors.New("UpdateTakerAuction, now.Seconds < auction.StartTime")
+		}
 	}
-	edTime, err := getTimeFromString(auction.EndTime)
-	if err != nil {
-		return err
-	}
-	if auction.StartTime != "" && now.Seconds < stTime.Unix() {
-		return errors.New("UpdateTakerAuction, now.Seconds < auction.StartTime")
-	} else if auction.EndTime != "" && now.Seconds > edTime.Unix() {
-		return errors.New("UpdateTakerAuction, now.Seconds > auction.EndTime")
+	if len(auction.EndTime) > 0 {
+		edTime, err := getTimeFromString(auction.EndTime)
+		if err != nil {
+			return err
+		}
+		if now.Seconds > edTime.Unix() {
+			return errors.New("UpdateTakerAuction, now.Seconds > auction.EndTime")
+		}
 	}
 
 	takerPayAsset, takerPayAddAmount, err := getPayToContract(stub)
@@ -361,13 +376,17 @@ func (p *AuctionMgr) UpdateTakerAuction(stub shim.ChaincodeStubInterface, orderS
 	if auction.StepAmount != 0 { //设置有step level的情况下
 		lastAmount, err := getAuctionLastAmountRecord(stub, auction.AuctionSn)
 		if err != nil {
-			return nil
+			log.Debugf("UpdateTakerAuction, getAuctionLastAmountRecord err:%s", err.Error())
+			//return nil
+		} else {
+			log.Debugf("UpdateTakerAuction, lastAmount.TakerAmount[%d] + auction.StepAmount[%d]", lastAmount.TakerAmount, auction.StepAmount)
+			needAmount = lastAmount.TakerAmount + auction.StepAmount
 		}
-		needAmount = lastAmount.TakerAmount + auction.StepAmount
 	}
 	//检查提交金额数量是否满足
 	if allPayAmount < needAmount {
-		return fmt.Errorf("UpdateTakerAuction, auction[%s] TakerReqId[%s], allPayAmount[%d] < needAmount [%d]", auction.AuctionSn, stub.GetTxID(), allPayAmount, needAmount)
+		return fmt.Errorf("UpdateTakerAuction, auction[%s] TakerReqId[%s], allPayAmount[%d] < needAmount [%d]",
+			auction.AuctionSn, stub.GetTxID(), allPayAmount, needAmount)
 	}
 	//重新计算奖励和销毁的费用
 	var rewardAmount uint64 = 0
@@ -389,7 +408,7 @@ func (p *AuctionMgr) UpdateTakerAuction(stub shim.ChaincodeStubInterface, orderS
 	//更新状态数据
 	record.TakerAssetAmount = allPayAmount
 	record.FeeUse = feeUse
-	record.recordTime = now.String()
+	record.RecordTime = time.Unix(now.Seconds, 0).Format(TimeFormt)
 	err = saveMatchRecord(stub, record)
 	if err != nil {
 		return err
@@ -525,6 +544,7 @@ func (p *AuctionMgr) AddAuctionOrder(stub shim.ChaincodeStubInterface, order *Au
 	return nil
 }
 
+//当前有效挂单
 func (p *AuctionMgr) GetActiveOrderList(stub shim.ChaincodeStubInterface) ([]*AuctionOrderJson, error) {
 	return getAllAuctionOrder(stub)
 }
@@ -541,9 +561,19 @@ func (p *AuctionMgr) GetActiveOrdersByID(stub shim.ChaincodeStubInterface, order
 	log.Debugf("GetActiveOrdersByID, jsSheet:%v", jsSheet)
 	return jsSheet, nil
 }
+
+//历史挂单
 func (p *AuctionMgr) GetHistoryOrderList(stub shim.ChaincodeStubInterface) ([]*AuctionOrderJson, error) {
 	return getAllHistoryOrder(stub)
 }
+func (p *AuctionMgr) GetHistoryOrderBySn(stub shim.ChaincodeStubInterface, auctionSn string) (*AuctionOrderJson, error) {
+	return getHistoryOrderBySn(stub, auctionSn)
+}
+func (p *AuctionMgr) GetHistoryOrderByMakerAddr(stub shim.ChaincodeStubInterface, addr common.Address) ([]*AuctionOrderJson, error) {
+	return getHistoryOrderByMakerAddr(stub, addr)
+}
+
+//交易订单
 func (p *AuctionMgr) GetMatchListByOrderSn(stub shim.ChaincodeStubInterface, orderSn string) ([]*MatchRecordJson, error) {
 	return getMatchRecordJsonByOrderSn(stub, orderSn)
 }

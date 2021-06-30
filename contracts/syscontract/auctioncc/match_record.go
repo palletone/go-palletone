@@ -25,25 +25,25 @@ type MatchRecord struct {
 	TakerAsset       *modules.Asset
 	TakerAssetAmount uint64        //Taker提交多少金额
 	FeeUse           AuctionFeeUse //消耗的费用：奖励和燃烧
-	recordTime       string         //成交时间
+	RecordTime       string        //成交时间
 }
 
 type MatchRecordJson struct {
-	AuctionType        string
-	AuctionOrderSn     string
-	TakerReqId         string
-	MakerAddress       string
-	MakerAsset         string
-	MakerAssetAmount   decimal.Decimal //Makers  NFT数量为1
-	TakerAddress       string
-	TakerAsset         string
-	TakerAssetAmount   decimal.Decimal //Taker成交或者提交了多少金额
-	FeeAsset           string
-	RewardAddress      string
-	RewardAmount       decimal.Decimal
-	DestructionAddress string
-	DestructionAmount  decimal.Decimal
-	recordTime         string
+	AuctionType        string          `json:"auction_type"`
+	AuctionOrderSn     string          `json:"auction_sn"`
+	TakerReqId         string          `json:"taker_reqId"`
+	MakerAddress       string          `json:"maker_address"`
+	MakerAsset         string          `json:"maker_asset"`
+	MakerAssetAmount   decimal.Decimal `json:"maker_asset_amount"` //Makers  NFT数量为1
+	TakerAddress       string          `json:"taker_address"`
+	TakerAsset         string          `json:"taker_asset"`
+	TakerAssetAmount   decimal.Decimal `json:"taker_asset_amount"` //Taker成交或者提交了多少金额
+	FeeAsset           string          `json:"fee_asset"`
+	RewardAddress      string          `json:"reward_address"`
+	RewardAmount       decimal.Decimal `json:"reward_amount"`
+	DestructionAddress string          `json:"destruction_address"`
+	DestructionAmount  decimal.Decimal `json:"destruction_amount"`
+	RecordTime         string          `json:"record_time"`
 }
 
 type AuctionLastAmount struct {
@@ -59,26 +59,22 @@ func convertMatchRecord(record *MatchRecord) *MatchRecordJson {
 		return nil
 	}
 
-
 	return &MatchRecordJson{
-		AuctionType:    string(record.AuctionType),
-		AuctionOrderSn: record.AuctionOrderSn,
-		TakerReqId:     record.TakerReqId,
-
-		MakerAddress:     record.MakerAddress.String(),
-		MakerAsset:       record.MakerAsset.String(),
-		MakerAssetAmount: record.MakerAsset.DisplayAmount(record.MakerAssetAmount),
-
-		TakerAddress:     record.TakerAddress.String(),
-		TakerAsset:       record.TakerAsset.String(),
-		TakerAssetAmount: record.TakerAsset.DisplayAmount(record.TakerAssetAmount),
-
+		AuctionType:        string(record.AuctionType),
+		AuctionOrderSn:     record.AuctionOrderSn,
+		TakerReqId:         record.TakerReqId,
+		MakerAddress:       record.MakerAddress.String(),
+		MakerAsset:         record.MakerAsset.String(),
+		MakerAssetAmount:   record.MakerAsset.DisplayAmount(record.MakerAssetAmount),
+		TakerAddress:       record.TakerAddress.String(),
+		TakerAsset:         record.TakerAsset.String(),
+		TakerAssetAmount:   record.TakerAsset.DisplayAmount(record.TakerAssetAmount),
 		FeeAsset:           record.FeeUse.Asset.String(),
 		RewardAddress:      record.FeeUse.RewardAddress.String(),
 		RewardAmount:       record.FeeUse.Asset.DisplayAmount(record.FeeUse.RewardAmount),
 		DestructionAddress: record.FeeUse.DestructionAddress.String(),
 		DestructionAmount:  record.FeeUse.Asset.DisplayAmount(record.FeeUse.DestructionAmount),
-		recordTime:        record.recordTime,
+		RecordTime:         record.RecordTime,
 	}
 }
 
@@ -119,7 +115,6 @@ func getAllMatchRecordJson(stub shim.ChaincodeStubInterface) ([]*MatchRecordJson
 		log.Debugf("getAllMatchRecordJson:%v", record)
 		result = append(result, convertMatchRecord(record))
 	}
-
 	return result, nil
 }
 
@@ -162,9 +157,9 @@ func getMaxAmountRecord(records []*MatchRecord) (*MatchRecord) {
 			continue
 		} else if ro.TakerAssetAmount == maxRecord.TakerAssetAmount {
 			//比较时间
-			roTime, err1 := getTimeFromString(ro.recordTime)
-			mxTime, err2 := getTimeFromString(maxRecord.recordTime)
-			if err1 == nil && err2 == nil{
+			roTime, err1 := getTimeFromString(ro.RecordTime)
+			mxTime, err2 := getTimeFromString(maxRecord.RecordTime)
+			if err1 == nil && err2 == nil {
 				if roTime.Before(mxTime) {
 					maxRecord = ro
 				}
