@@ -92,7 +92,7 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		if args[5] != "" {
 			eTime, err := time.Parse("2006-01-02 15:04:05", args[5]) //todo  可以为空
 			if err == nil {
-				endTime = eTme.Format(TimeFormt)
+				endTime = eTime.Format(TimeFormt)
 			} else {
 				return shim.Error("Invalid endTime string:" + args[5])
 			}
