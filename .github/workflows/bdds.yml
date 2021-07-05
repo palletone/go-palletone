@@ -137,7 +137,7 @@ jobs:
       - name: Install dependencies
         run: |
             sudo -H pip install --upgrade pip
-            sudo -H pip install robotframework==2.8.6
+            sudo -H pip install robotframework
             sudo -H pip install requests
             sudo -H pip install robotframework-requests
             sudo -H pip install demjson
@@ -192,7 +192,7 @@ jobs:
       - name: Install dependencies
         run: |
             sudo -H pip install --upgrade pip
-            sudo -H pip install robotframework==2.8.6
+            sudo -H pip install robotframework
             sudo -H pip install requests
             sudo -H pip install robotframework-requests
             sudo -H pip install demjson
@@ -249,7 +249,7 @@ jobs:
     - name: Install Dependencies
       run: |
             sudo -H pip install --upgrade pip
-            sudo -H pip install robotframework==2.8.6
+            sudo -H pip install robotframework
             sudo -H pip install requests
             sudo -H pip install robotframework-requests
             sudo -H pip install demjson
@@ -305,7 +305,7 @@ jobs:
     - name: Install dependencies
       run: |
             sudo -H pip install --upgrade pip
-            sudo -H pip install robotframework==2.8.6
+            sudo -H pip install robotframework
             sudo -H pip install requests
             sudo -H pip install robotframework-requests
             sudo -H pip install demjson
@@ -360,7 +360,7 @@ jobs:
     - name: Install dependencies
       run: |
           sudo -H pip install --upgrade pip
-          sudo -H pip install robotframework==2.8.6
+          sudo -H pip install robotframework
           sudo -H pip install requests
           sudo -H pip install robotframework-requests
           sudo -H pip install demjson
@@ -418,7 +418,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo -H pip install --upgrade pip
-        sudo -H pip install robotframework==2.8.6
+        sudo -H pip install robotframework
         sudo -H pip install requests
         sudo -H pip install robotframework-requests
         sudo -H pip install demjson
@@ -488,7 +488,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo -H pip install --upgrade pip
-        sudo -H pip install robotframework==2.8.6
+        sudo -H pip install robotframework
         sudo -H pip install requests
         sudo -H pip install robotframework-requests
         sudo -H pip install demjson
@@ -558,7 +558,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo -H pip install --upgrade pip
-        sudo -H pip install robotframework==2.8.6
+        sudo -H pip install robotframework
         sudo -H pip install requests
         sudo -H pip install robotframework-requests
         sudo -H pip install demjson
@@ -631,7 +631,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo -H pip install --upgrade pip
-        sudo -H pip install robotframework==2.8.6
+        sudo -H pip install robotframework
         sudo -H pip install requests
         sudo -H pip install robotframework-requests
         sudo -H pip install demjson
