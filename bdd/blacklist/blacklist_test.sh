@@ -48,4 +48,4 @@ do
 	../node/gptn --exec "personal.unlockAccount($toAddr,'1',0)" attach ../node/palletone/gptn.ipc
 done
 
-pybot -d ../logs/blacklist -v foundation:$tokenHolder -v one:${one} -v two:${two} blacklist.robot
+robot -d ../logs/blacklist -v foundation:$tokenHolder -v one:${one} -v two:${two} blacklist.robot

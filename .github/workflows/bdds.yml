@@ -16,7 +16,6 @@ jobs:
       - name: Install dependencies
         run: |
             python --version
-            find / -name pybot
             sudo -H pip install --upgrade pip
             sudo -H pip install robotframework
             sudo -H pip install requests
