@@ -15,7 +15,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-            python -version
+            python --version
             sudo -H pip install --upgrade pip
             sudo -H pip install robotframework
             sudo -H pip install requests
