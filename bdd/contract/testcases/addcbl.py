@@ -154,7 +154,7 @@ class createToken():
             return result
 
     def BtoC(self, re_batchSign):
-        print str(time.strftime("%Y-%m-%d %X")) + "  Begin\n"
+        print(str(time.strftime("%Y-%m-%d %X")) + "  Begin\n")
         # @signResult = open(r'geneBatchResult.txt', 'a+', buffering=1)
         signResult = open(r'Transaction/geneSignResult.txt', 'a+', buffering=1)
         for batchSign in re_batchSign:
@@ -165,7 +165,7 @@ class createToken():
 
 threads = []
 for addr in addrs:
-    print  "addr:" + str(addr)+ '\n'
+    print("addr:" + str(addr)+ '\n')
     t1 = threading.Thread(target=createToken().ccinvoketx_create, args=(addr,addr,"PCGTta3M4t3yXu8uRgkKvaWd2d8DSfQdUHf",100,))
     threads.append(t1)
 

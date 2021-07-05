@@ -37,9 +37,7 @@ class createToken():
         result1 = json.loads(response.content)
         try:
             result = result1['result']
-        except(KeyError), error:
-            print("key " + error.message + " not found.\n")
-        else:
+        except KeyError:
             print('Current Balance: ' + str(result) + '\n')
             return result
 
@@ -58,7 +56,7 @@ class createToken():
         result1 = json.loads(response.content)
         try:
             result = result1['result']
-        except(KeyError):
+        except KeyError:
             print("Request transfer failed. \naddr:" +str(senderAddr)+'\n' + str(result1))
         else:
             print('test transfer Result: '+str(senderAddr) +'\n'+ str(result) + '\n')
@@ -78,7 +76,7 @@ class createToken():
         result1 = json.loads(response.content)
         try:
             result = result1['result']
-        except(KeyError):
+        except KeyError:
             print("Request testGetBalance failed.\n" + str(result1))
         else:
             print('testGetBalance result: ' + str(result) + '\n')
@@ -99,7 +97,7 @@ class createToken():
         result1 = json.loads(response.content)
         try:
             result = result1['result']
-        except(KeyError):
+        except KeyError:
             print("Request transferToken failed.\n" + str(result1))
         else:
             print('transferToken Result: ' + str(result) + '\n')
@@ -120,7 +118,7 @@ class createToken():
         result1 = json.loads(response.content)
         try:
             result = result1['result']
-        except(KeyError):
+        except KeyError:
             print("Request getTxByReqId failed.\n" + str(applyResult)+'\n'+ str(result1))
         else:
             print('getTxByReqId Result: ' + str(result) + '\n')
@@ -141,7 +139,7 @@ class createToken():
         result1 = json.loads(response.content)
         try:
             result = result1['result']
-        except(KeyError):
+        except KeyError:
             print("Request getTxByHash failed.\n" + str(result1))
         else:
             print('getTxByHash Result: ' + str(result) + '\n')
