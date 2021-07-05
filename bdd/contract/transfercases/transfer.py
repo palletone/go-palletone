@@ -37,10 +37,10 @@ class createToken():
         result1 = json.loads(response.content)
         try:
             result = result1['result']
-        except KeyError, error:
-            print "key " + error.message + " not found.\n"
+        except(KeyError), error:
+            print("key " + error.message + " not found.\n")
         else:
-            print 'Current Balance: ' + str(result) + '\n'
+            print('Current Balance: ' + str(result) + '\n')
             return result
 
     def ccinvoketx_create(self, senderAddr, recieverAddr, contractAddr, tokenAmount,fee):
@@ -58,10 +58,10 @@ class createToken():
         result1 = json.loads(response.content)
         try:
             result = result1['result']
-        except KeyError:
-            print "Request transfer failed. \naddr:" +str(senderAddr)+'\n' + str(result1)
+        except(KeyError):
+            print("Request transfer failed. \naddr:" +str(senderAddr)+'\n' + str(result1))
         else:
-            print 'test transfer Result: '+str(senderAddr) +'\n'+ str(result) + '\n'
+            print('test transfer Result: '+str(senderAddr) +'\n'+ str(result) + '\n')
             reqIds.append(str(result['request_id']))
             return result
 
@@ -78,10 +78,10 @@ class createToken():
         result1 = json.loads(response.content)
         try:
             result = result1['result']
-        except KeyError:
-            print "Request testGetBalance failed.\n" + str(result1)
+        except(KeyError):
+            print("Request testGetBalance failed.\n" + str(result1))
         else:
-            print 'testGetBalance result: ' + str(result) + '\n'
+            print('testGetBalance result: ' + str(result) + '\n')
             return result
 
     def transferToken(self, senderAddr, recieverAddr, senderAmount, poundage):
@@ -99,10 +99,10 @@ class createToken():
         result1 = json.loads(response.content)
         try:
             result = result1['result']
-        except KeyError:
-            print "Request transferToken failed.\n" + str(result1)
+        except(KeyError):
+            print("Request transferToken failed.\n" + str(result1))
         else:
-            print 'transferToken Result: ' + str(result) + '\n'
+            print('transferToken Result: ' + str(result) + '\n')
             return result
 
     def getTxByReqId(self, applyResult):
@@ -120,10 +120,10 @@ class createToken():
         result1 = json.loads(response.content)
         try:
             result = result1['result']
-        except KeyError:
-            print "Request getTxByReqId failed.\n" + str(applyResult)+'\n'+ str(result1)
+        except(KeyError):
+            print("Request getTxByReqId failed.\n" + str(applyResult)+'\n'+ str(result1))
         else:
-            print 'getTxByReqId Result: ' + str(result) + '\n'
+            print('getTxByReqId Result: ' + str(result) + '\n')
             return result
 
     def getTxByHash(self, txHashInfo):
@@ -141,10 +141,10 @@ class createToken():
         result1 = json.loads(response.content)
         try:
             result = result1['result']
-        except KeyError:
-            print "Request getTxByHash failed.\n" + str(result1)
+        except(KeyError):
+            print("Request getTxByHash failed.\n" + str(result1))
         else:
-            print 'getTxByHash Result: ' + str(result) + '\n'
+            print('getTxByHash Result: ' + str(result) + '\n')
             return result
 
     def BtoC(self, re_batchSign):
@@ -155,13 +155,13 @@ class createToken():
             signResult.write("".join(batchSign) + "\n")
             signResult.flush()
         signResult.close()
-        print str(time.strftime("%Y-%m-%d %X")) + "  Finished!\n"
+        print(str(time.strftime("%Y-%m-%d %X")) + "  Finished!\n")
 
 threads = []
 for addr in addrs:
-    print  "addr:" + str(addr)+ '\n'
+    print("addr:" + str(addr)+ '\n')
     for i in range(5):
-        print  "index:" + str(i)+ '\n'
+        print("index:" + str(i)+ '\n')
         t1 = threading.Thread(target=createToken().ccinvoketx_create, args=(addr,addr,"PCGTta3M4t3yXu8uRgkKvaWd2d8DSfQdUHf",100,1))
         threads.append(t1)
 
@@ -174,5 +174,5 @@ if __name__ == '__main__':
     for id in reqIds:
         # print "reqid:" + str(id) + '\n'
         createToken().getTxByReqId(id)
-    print  "after transfer contract:"+ '\n'
+    print("after transfer contract:"+ '\n')
     createToken().getBalance("PCGTta3M4t3yXu8uRgkKvaWd2d8DSfQdUHf")

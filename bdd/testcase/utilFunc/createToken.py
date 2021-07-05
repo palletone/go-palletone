@@ -29,15 +29,15 @@ class createToken(object):
             "id": 1
         }
         data = json.dumps(data)
-        print "Current URL:"+domain
+        print("Current URL:"+domain)
         response = requests.post(url=domain, data=data, headers=self.headers)
         result1 = json.loads(response.content)
         try:
             result =result1['result']
-        except KeyError,error:
-            print "key " + error.message +" not found.\n"
+        except KeyError:
+            print("key " + str(KeyError) +" not found.\n")
         else:
-            print 'Current Balance: ' + str(result) + '\n'
+            print('Current Balance: ' + str(result) + '\n')
             return result
 
     def getTokenIdFromTokens(self,address,preToken):
@@ -48,7 +48,7 @@ class createToken(object):
     def geneNickname(self):
         nickname = "qa"+str(random.randint(100,999))
         self.nickname = nickname
-        print "TokenId: " +nickname+"\n"
+        print("TokenId: " +nickname+"\n")
         return nickname
 
     def getTokenId(self, nickname, dict):
@@ -90,8 +90,8 @@ class createToken(object):
         return result1
 
     def Ccinvoketx(self,senderAddr,recieverAddr,senderAmount,poundage,contractId,*params):
-        print params[0]
-        print "Request method is: "+ params[0][0]
+        print(params[0])
+        print("Request method is: "+ params[0][0])
         data = {
                 "jsonrpc":"2.0",
                 "method":"contract_ccinvoketx",
@@ -102,11 +102,11 @@ class createToken(object):
         data = json.dumps(data)
         response = requests.post(url=self.domain, data=data, headers=self.headers)
         result1 = json.loads(response.content)
-        print result1
+        print(result1)
         return result1
 
     def ccinvoketx_apply(self,senderAddr,recieverAddr,senderAmount,poundage,tokenAmount):
-        print self.nickname
+        print(self.nickname)
         data = {
             "jsonrpc": "2.0",
             "method": "contract_ccinvoketx",
@@ -121,9 +121,9 @@ class createToken(object):
         try:
             result = result1['result']
         except KeyError:
-            print "Request ApplyToken failed.\n" + str(result1)
+            print("Request ApplyToken failed.\n" + str(result1))
         else:
-            print 'ApplyToken Result: ' + str(result) + '\n'
+            print('ApplyToken Result: ' + str(result) + '\n')
             return result
 
     def transferToken(self,tokenId,senderAddr,recieverAddr,senderAmount,poundage,evidence,unlocktime):
@@ -136,16 +136,16 @@ class createToken(object):
                 "id": 1
             }
             data=json.dumps(data)
-            print "Post data:"+str(data)
+            print("Post data:"+str(data))
             response = requests.post(url=self.domain, data=data, headers=self.headers)
             result1 = json.loads(response.content)
-            print "Response:"+str(result1)
+            print("Response:"+str(result1))
             try:
                 return result1['result']
             except KeyError:
-                print "Request transferToken failed.\n" + str(result1)
+                print("Request transferToken failed.\n" + str(result1))
             else:
-                print 'transferToken Result: ' + str(result1['error']) + '\n'
+                print('transferToken Result: ' + str(result1['error']) + '\n')
                 return result1['error']
 
     def getOneTokenInfo(self,tokenSymbol):
@@ -161,9 +161,9 @@ class createToken(object):
             try:
                 return result1['result']
             except KeyError:
-                print "Request transferToken failed.\n" + str(result1)
+                print("Request transferToken failed.\n" + str(result1))
             else:
-                print 'transferToken Result: ' + str(result1['error']) + '\n'
+                print('transferToken Result: ' + str(result1['error']) + '\n')
                 return result1['error']
 
     def listAccounts(self):
@@ -177,7 +177,7 @@ class createToken(object):
         data = json.dumps(data)
         response = requests.post(url=self.domain, data=data, headers=self.headers)
         result1 = json.loads(response.content)
-        print result1['result'][0]
+        print(result1['result'][0])
         return result1['result'][0]
 
     def personalListAccounts(self):
@@ -191,7 +191,7 @@ class createToken(object):
         data = json.dumps(data)
         response = requests.post(url=self.domain, data=data, headers=self.headers)
         result1 = json.loads(response.content)
-        print result1['result']
+        print(result1['result'])
         return result1['result']
 
     def personalUnlockAccount(self,addr):
@@ -205,7 +205,7 @@ class createToken(object):
         data = json.dumps(data)
         response = requests.post(url=self.domain, data=data, headers=self.headers)
         result1 = json.loads(response.content)
-        print result1['result']
+        print(result1['result'])
         return result1['result']
 
     def ccqueryById(self,contranctId,methodType,preTokenId):
@@ -225,12 +225,11 @@ class createToken(object):
         #result = '{\"Symbol\":\"QA001\",\"CreateAddr\":\"P1N6s8g9if8kSRL86ta4mkVSLq1yLvMr5Je\",\"TotalSupply\":25000,\"Decimals\":1,\"SupplyAddr\":\"P1MdMxNVaKZYdBBFB8Fszt8Bki1AEmRRSxw\",\"AssetID\":\"QA001+10BLAMF0JYO3UVBEDJM\"}'
         result = json.loads(result)
         for key in result:
-            print key,result[key]
+            print(key,result[key])
             try:
                 assert result['Symbol'] == 'QA001'
-            except AssertionError,ext:
-                ext.message
-                print "assert failed.\n"
+            except AssertionError:
+                print("assert failed.\n")
 
     def getTxByReqId(self,reqId):
         data = {
@@ -240,10 +239,10 @@ class createToken(object):
                     [reqId],
                 "id":1
             }
-        print reqId
+        print(reqId)
         data = json.dumps(data)
         response = requests.post(url=self.domain, data=data, headers=self.headers)
-        print response.content
+        print(response.content)
         result1 = json.loads(response.content)
         return result1
 
@@ -258,12 +257,12 @@ class createToken(object):
                       ]
         keyList = []
         valueList = []
-        print "There is key,value of dictionary:"
+        print("There is key,value of dictionary:")
         for key in result:
             #print key,result[key]
             keyList.append(key)
             valueList.append(result[key])
-        print valueList
+        print(valueList)
         for k in range(len(expectList)):
             self.assertDict(result,keyList,expectList,k)
         return result
@@ -273,15 +272,15 @@ class createToken(object):
         try:
             assert result[keyword] == expectList[key]
         except AssertionError:
-            print keyword+" false: Actual is "+str(result[keyword])+".Expect is "+str(expectList[key])
+            print(keyword+" false: Actual is "+str(result[keyword])+".Expect is "+str(expectList[key]))
 
     def voteExist(self,voteId,dict):
         data = json.dumps(dict)
         if voteId in data:
             self.vote_value = dict['result'][voteId]
-            print self.vote_value
+            print(self.vote_value)
         else:
-            print self.vote_value
+            print(self.vote_value)
         return self.vote_value
 
     def jsonLoads(self,dict,*keys):
@@ -291,7 +290,7 @@ class createToken(object):
         for n in range(len(keys)):
             keysList.append(data[keys[n]])
         if n > 0:
-            print keysList[0],keysList[1]
+            print(keysList[0],keysList[1])
             return keysList[0],keysList[1]
         else:
             return keysList[0]
@@ -303,12 +302,12 @@ class createToken(object):
             if key.startswith(nickname):
                 calculate = calculate + 1
                 if calculate==num:
-                    print key
+                    print(key)
                     return key
 
     def getAssetFromDict(self,dict):
         dict = json.loads(dict)
-        print "Asset is: " + dict['info']['payment'][1]['outputs'][0]['asset']
+        print("Asset is: " + dict['info']['payment'][1]['outputs'][0]['asset'])
         return dict['info']['payment'][1]['outputs'][0]['asset']
 
 if __name__ == '__main__':
