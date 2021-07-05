@@ -347,6 +347,52 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		data, _ := json.Marshal(rate)
 		return shim.Success(data)
 
+	case "setFirstRewardFeeRateLevel": //设置第一次交易奖励费率级别  第一交易奖励=正常交易金额*奖励费率*第一次奖励级别
+		if len(args) != 1 {
+			return shim.Error("must input 1 arg")
+		}
+		rate, err := decimal.NewFromString(args[0])
+		if err != nil {
+			return shim.Error("Invalid amount:" + args[0])
+		}
+		err = setFirstFeeRateLevel(stub, 0, rate)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		data, _ := json.Marshal(rate)
+		return shim.Success(data)
+
+	case "setFirstDestructionFeeRateLevel": //设置第一次交易销毁费率级别  第一交易销毁=正常交易金额*销毁费率*第一次销毁级别
+		if len(args) != 1 {
+			return shim.Error("must input 1 arg")
+		}
+		rate, err := decimal.NewFromString(args[0])
+		if err != nil {
+			return shim.Error("Invalid amount:" + args[0])
+		}
+		err = setFirstFeeRateLevel(stub, 1, rate)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		data, _ := json.Marshal(rate)
+		return shim.Success(data)
+
+	case "getFirstRewardFeeRateLevel":
+		if len(args) != 0 {
+			return shim.Error("must input 0 arg")
+		}
+		rate := getFirstFeeRateLevel(stub, 0)
+		data, _ := json.Marshal(rate)
+		return shim.Success(data)
+
+	case "getFirstDestructionFeeRateLevel":
+		if len(args) != 0 {
+			return shim.Error("must input 0 arg")
+		}
+		rate := getFirstFeeRateLevel(stub, 1)
+		data, _ := json.Marshal(rate)
+		return shim.Success(data)
+
 	default:
 		return shim.Error("no case")
 	}

@@ -13,13 +13,14 @@ import (
 
 const AuctionContractMgrAddressPrefix = "AuctionContractMgrAddress-"
 const AuctionContractFeeRate = "AuctionContractFeeRate-"
+const FirstFeeRateLevel = "FirstFeeRateLevel-"
 const TimeFormt = "2006-01-02 15:04:05"
 
 const DefaultRewardFeeRate = 0.025      //默认奖励费率
 const DefaultDestructionFeeRate = 0.025 //默认销毁费率
 
-const FirstRewardFeeRateLevel = 2.0      //第一次奖励级别，第一次奖励=费率*级别*交易额
-const FirstDestructionFeeRateLevel = 2.0 //第一次销毁级别，第一次销毁=费率*级别*交易额
+const DefaultFirstRewardFeeRateLevel = 2.0      //第一次奖励级别，第一次奖励=费率*级别*交易额
+const DefaultFirstDestructionFeeRateLevel = 2.0 //第一次销毁级别，第一次销毁=费率*级别*交易额
 
 //todo tmp
 var DestructionAddress = "PCGTta3M4t3yXu8uRgkKvaWd2d9Vgsc4zGX" //""PCLOST00000000000000000000000000000"  //销毁地址
@@ -169,8 +170,8 @@ func setAuctionFeeRate(stub shim.ChaincodeStubInterface, rateType uint8, rate de
 	log.Debugf("setAuctionFeeRate, rateType[%d], rate[%s]", rateType, rate.String())
 
 	// 0 <= rate < 1
-	if rate.GreaterThanOrEqual(decimal.NewFromFloat(0)) && rate.GreaterThanOrEqual(decimal.NewFromFloat(0)) &&
-		rate.LessThan(decimal.NewFromFloat(1)) && rate.LessThan(decimal.NewFromFloat(1)) {
+	if rate.GreaterThanOrEqual(decimal.NewFromFloat(0)) &&
+		rate.LessThan(decimal.NewFromFloat(1))  {
 		key := AuctionContractFeeRate
 		if rateType == 0 {
 			key = key + "rewardRate"
@@ -209,6 +210,52 @@ func getAuctionFeeRate(stub shim.ChaincodeStubInterface, rateType uint8) (decima
 	return defRate
 }
 
+func setFirstFeeRateLevel(stub shim.ChaincodeStubInterface, rateType uint8, rate decimal.Decimal) error {
+	if !isFoundationInvoke(stub) && !isAuctionContractMgrAddress(stub) {
+		return errors.New("setFirstFeeRateLevel, the invoke address is err")
+	}
+	log.Debugf("setFirstFeeRateLevel, rateType[%d], rate[%s]", rateType, rate.String())
+
+	// 0 < level
+	if rate.GreaterThan(decimal.NewFromFloat(0))  {
+		key := FirstFeeRateLevel
+		if rateType == 0 {
+			key = key + "rewardRate"
+		} else {
+			key = key + "destructionRate"
+		}
+		stub.DelState(key)
+		brate, _ := rate.GobEncode()
+		return stub.PutState(key, brate)
+	} else {
+		return errors.New("setFirstFeeRateLevel， value err :feeRate =" + rate.String())
+	}
+}
+
+func getFirstFeeRateLevel(stub shim.ChaincodeStubInterface, rateType uint8) (decimal.Decimal) {
+	defRate := decimal.Decimal{}
+	key := FirstFeeRateLevel
+	if rateType == 0 {
+		key = key + "rewardRate"
+		defRate = decimal.NewFromFloat(DefaultFirstRewardFeeRateLevel) //todo
+	} else {
+		key = key + "destructionRate"
+		defRate = decimal.NewFromFloat(DefaultFirstDestructionFeeRateLevel) //todo
+	}
+	value, err := stub.GetState(key)
+	if err != nil { //use default fee rate
+		log.Debugf("getFirstFeeRateLevel, rateType[%d],  use default rate[%s]", rateType, defRate.String())
+		return defRate
+	}
+	if value != nil {
+		data := decimal.Decimal{}
+		data.GobDecode(value)
+		log.Debugf("getFirstFeeRateLevel, rateType[%d], rate[%s]", rateType, data.String())
+		return data
+	}
+	return defRate
+}
+
 func getTimeFromString(inStr string) (time.Time, error) {
 
 	//l1 := now.Format("2006-01-02 15")
@@ -226,6 +273,8 @@ func getTimeFromString(inStr string) (time.Time, error) {
 	//	ti := time.Unix(t.Seconds, 0)
 	//	return ti.UTC().Format(modules.Layout2)
 }
+
+
 
 //func getTimeFromSeconds(seconds  int64) (time.Time, error) {
 //	ti := time.Unix(seconds, 0)

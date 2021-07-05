@@ -69,33 +69,12 @@ func (p *AuctionMgr) TakerFix(stub shim.ChaincodeStubInterface, orderSn string) 
 		return errors.New("current asset not match takerFix order want asset")
 	}
 
-	//检查NFT是否是第一次参与交易
-	firstTrade := true
-	if isInMatchRecordByAssertId(stub, auction.SaleAsset) {
-		firstTrade = false
-	}
-	log.Debugf("TakerFix, assertId[%s] firstTrade[%v]", auction.SaleAsset.String(), firstTrade)
-
 	//检查金额是否满足
 	if takerPayAmount < auction.WantAmount {
 		return errors.New("TakerFix, takerPayAmount < auction.WantAmount")
 	}
 	//计算奖励和销毁的费用
-	var rewardAmount uint64 = 0
-	if !auction.RewardAddress.IsZero() {
-		rewardRate := getAuctionFeeRate(stub, 0)
-		if firstTrade {
-			rewardRate = rewardRate.Mul(decimal.NewFromFloat(FirstRewardFeeRateLevel))
-		}
-		amount := decimal.NewFromFloat(float64(auction.WantAmount)).Mul(rewardRate).IntPart()
-		rewardAmount = uint64(amount)
-	}
-	destructionRate := getAuctionFeeRate(stub, 1)
-	if firstTrade {
-		destructionRate = destructionRate.Mul(decimal.NewFromFloat(FirstDestructionFeeRateLevel))
-	}
-	amount := decimal.NewFromFloat(float64(auction.WantAmount)).Mul(destructionRate).IntPart()
-	destructionAmount := uint64(amount)
+	rewardAmount, destructionAmount := calculateFeeRate(stub, auction)
 
 	now, err := stub.GetTxTimestamp(10)
 	if err != nil {
@@ -268,17 +247,8 @@ func (p *AuctionMgr) TakerAuction(stub shim.ChaincodeStubInterface, orderSn stri
 	}
 
 	//计算奖励和销毁的费用
-	var rewardAmount uint64 = 0
-	if !auction.RewardAddress.IsZero() {
-		rate := getAuctionFeeRate(stub, 0)
-		amount := decimal.NewFromFloat(float64(auction.WantAmount)).Mul(rate).IntPart()
-		rewardAmount = uint64(amount)
-	}
-	rate := getAuctionFeeRate(stub, 1)
-	amount := decimal.NewFromFloat(float64(auction.WantAmount)).Mul(rate).IntPart()
-	destructionAmount := uint64(amount)
+	rewardAmount, destructionAmount := calculateFeeRate(stub, auction)
 	desAddr, _ := common.StringToAddress(DestructionAddress)
-
 	feeUse := AuctionFeeUse{
 		Asset:              auction.WantAsset,
 		RewardAddress:      auction.RewardAddress,
@@ -579,4 +549,36 @@ func (p *AuctionMgr) GetMatchListByOrderSn(stub shim.ChaincodeStubInterface, ord
 }
 func (p *AuctionMgr) GetAllMatchList(stub shim.ChaincodeStubInterface) ([]*MatchRecordJson, error) {
 	return getAllMatchRecordJson(stub)
+}
+
+func calculateFeeRate(stub shim.ChaincodeStubInterface, auction *AuctionOrder) (rewardAmount, destructionAmount uint64){
+	//检查NFT是否是第一次参与交易
+	rewardAmount = 0
+	destructionAmount = 0
+
+	firstTrade := true
+	if isInMatchRecordByAssertId(stub, auction.SaleAsset) {
+		firstTrade = false
+	}
+	log.Debugf("calculateFeeRate, assertId[%s] firstTrade[%v]", auction.SaleAsset.String(), firstTrade)
+
+	if !auction.RewardAddress.IsZero() {
+		rewardRate := getAuctionFeeRate(stub, 0)
+		if firstTrade {
+			firstLevel := getFirstFeeRateLevel(stub, 0)
+			rewardRate = rewardRate.Mul(firstLevel)
+		}
+		amount := decimal.NewFromFloat(float64(auction.WantAmount)).Mul(rewardRate).IntPart()
+		rewardAmount = uint64(amount)
+	}
+	destructionRate := getAuctionFeeRate(stub, 1)
+	if firstTrade {
+		firstLevel := getFirstFeeRateLevel(stub, 1)
+		destructionRate = destructionRate.Mul(firstLevel)
+	}
+	amount := decimal.NewFromFloat(float64(auction.WantAmount)).Mul(destructionRate).IntPart()
+	destructionAmount = uint64(amount)
+	log.Debugf("calculateFeeRate, sn[%s], rewardAmount[%d], destructionAmount[%d]", auction.AuctionSn, rewardAmount, destructionAmount)
+
+	return rewardAmount, destructionAmount
 }
