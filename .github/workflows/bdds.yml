@@ -15,8 +15,9 @@ jobs:
 
       - name: Install dependencies
         run: |
+            python -version
             sudo -H pip install --upgrade pip
-            sudo -H pip install robotframework==2.8.6
+            sudo -H pip install robotframework
             sudo -H pip install requests
             sudo -H pip install robotframework-requests
             sudo -H pip install demjson
