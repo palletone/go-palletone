@@ -113,7 +113,7 @@ post
     ${header}    Create Dictionary    Content-Type=application/json
     ${data}    Create Dictionary    jsonrpc=2.0    method=${method}    params=${params}    id=1
     Create Session    ${alias}    http://127.0.0.1:8545
-    ${resp}    Post Request    ${alias}    http://127.0.0.1:8545    data=${data}    headers=${header}
+    ${resp}    POST On Session    ${alias}    http://127.0.0.1:8545    data=${data}    headers=${header}
     ${respJson}    To Json    ${resp.content}
     Dictionary Should Contain Key    ${respJson}    result
     ${res}    Get From Dictionary    ${respJson}    result
@@ -155,7 +155,7 @@ transferPTN
     ${header}    Create Dictionary    Content-Type=application/json
     ${data}    Create Dictionary    jsonrpc=2.0    method=wallet_transferPtn    params=${one}    id=1
     Create Session    transferPTN    http://127.0.0.1:8545
-    ${resp}    Post Request    transferPTN    http://127.0.0.1:8545    data=${data}    headers=${header}
+    ${resp}    POST On Session    transferPTN    http://127.0.0.1:8545    data=${data}    headers=${header}
     ${respJson}    To Json    ${resp.content}
     Dictionary Should Contain Key    ${respJson}    error
     ${res}    Get From Dictionary    ${respJson}    error

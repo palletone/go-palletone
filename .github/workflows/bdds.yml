@@ -220,18 +220,17 @@ jobs:
         if: always()
         run: |
             killall -9 gptn
-            zip -j bdd/logs/oneNodeDeposit_log.zip bdd/node/log/*
-            cd bdd
-            chmod +x ./upload2Ftp.sh ./targz_node.sh
-            ./targz_node.sh oneNodeDeposit
-            ./upload2Ftp.sh ${{secrets.FTP_PWD}} "WithGas-"${GITHUB_REF##*/} ${GITHUB_RUN_NUMBER} $PWD/logs
-
-      - name: Upload artifact
-        if: always()
-        uses: actions/upload-artifact@v1
-        with:
-          name: depositbddLogs
-          path: bdd/logs
+            #zip -j bdd/logs/oneNodeDeposit_log.zip bdd/node/log/*
+            #cd bdd
+            #chmod +x ./upload2Ftp.sh ./targz_node.sh
+            #./targz_node.sh oneNodeDeposit
+            #./upload2Ftp.sh ${{secrets.FTP_PWD}} "WithGas-"${GITHUB_REF##*/} ${GITHUB_RUN_NUMBER} $PWD/logs
+      #- name: Upload artifact
+      #  if: always()
+      #  uses: actions/upload-artifact@v1
+      #  with:
+      #    name: depositbddLogs
+      #    path: bdd/logs
 
   applicationbdd:
     name: applicationbdd

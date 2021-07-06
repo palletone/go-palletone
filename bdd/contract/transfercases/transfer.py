@@ -146,7 +146,7 @@ class createToken():
             return result
 
     def BtoC(self, re_batchSign):
-        print str(time.strftime("%Y-%m-%d %X")) + "  Begin\n"
+        print(str(time.strftime("%Y-%m-%d %X")) + "  Begin\n")
         # @signResult = open(r'geneBatchResult.txt', 'a+', buffering=1)
         signResult = open(r'Transaction/geneSignResult.txt', 'a+', buffering=1)
         for batchSign in re_batchSign:

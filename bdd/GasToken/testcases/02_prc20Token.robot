@@ -22,9 +22,10 @@ Alice issues her personal token named ALICE, amount is 1000, decimal is 1 succee
     Wait for transaction being packaged
     ${balance}=    getAllBalance    ${Alice}
     ${tokenIDs}=    Get Dictionary Keys    ${balance}
-    : FOR    ${id}    IN    @{tokenIDs}
+    FOR    ${id}    IN    @{tokenIDs}
     \    Continue For Loop if    '${id}'=='${gasToken}'
     \    Set Global Variable    ${AliceTokenID}    ${id}
+	END
 
 Alice transfers 500 ALICE to Bob succeed
     transferTokenTo    ${AliceTokenID}    ${Alice}    ${Bob}    500    1
