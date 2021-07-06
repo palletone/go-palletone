@@ -1,8 +1,6 @@
 *** Settings ***
 Library           RequestsLibrary
 Library           Collections
-#Library           D:/Python2.7/Lib/decimal.py    
-Library    /usr/lib/python2.7/decimal.py
 
 *** Variables ***
 #settings
