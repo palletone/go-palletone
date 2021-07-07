@@ -449,7 +449,8 @@ func (p *Processor) processElectionSigResultEvent(evt *ElectionSigResultEvent) e
 	if mel == nil || mel.nType != 1 {
 		return nil
 	}
-	if len(mel.sigs) >= p.dag.ChainThreshold() {
+	//if len(mel.sigs) >= p.dag.ChainThreshold() {
+	if len(mel.sigs) >= getSysCfgContractSignatureNum(p.dag) {
 		log.Debugf("[%s]processElectionSigResultEvent, sig  number is enough", reqId.ShortStr())
 		return nil
 	}
@@ -473,8 +474,8 @@ func (p *Processor) processElectionSigResultEvent(evt *ElectionSigResultEvent) e
 	}
 	mel.sigs = append(mel.sigs, evt.Sig)
 	log.Debugf("[%s]processElectionSigResultEvent,sig num=%d, add sig[%s], Threshold=%d",
-		reqId.ShortStr(), len(mel.sigs), evt.Sig.String(), p.dag.ChainThreshold())
-	if len(mel.sigs) >= p.dag.ChainThreshold() {
+		reqId.ShortStr(), len(mel.sigs), evt.Sig.String(), getSysCfgContractSignatureNum(p.dag))
+	if len(mel.sigs) >= getSysCfgContractSignatureNum(p.dag) {
 		event := ContractEvent{
 			CType: CONTRACT_EVENT_EXEC,
 			Ele:   p.mtx[reqId].eleNode,
