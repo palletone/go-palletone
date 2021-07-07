@@ -36,6 +36,7 @@ import (
 	"github.com/palletone/go-palletone/contracts/syscontract/sysconfigcc"
 	votev1 "github.com/palletone/go-palletone/contracts/syscontract/vote/v1"
 	votev2 "github.com/palletone/go-palletone/contracts/syscontract/vote/v2"
+	"github.com/palletone/go-palletone/contracts/syscontract/auctioncc"
 )
 
 var systemChaincodes = []*SystemChaincode{
@@ -210,15 +211,15 @@ var systemChaincodes = []*SystemChaincode{
 		InitArgs:  [][]byte{},
 		Chaincode: &installcc.InstallMgr{},
 	},
-	//{
-	//	Id:        syscontract.AuctionContractAddress.Bytes(),
-	//	Enabled:   true,
-	//	Name:      "auction_sycc",
-	//	Path:      "./auctioncc",
-	//	Version:   "ptn001",
-	//	InitArgs:  [][]byte{},
-	//	Chaincode: &auctioncc.AuctionMgr{},
-	//},
+	{
+		Id:        syscontract.AuctionContractAddress.Bytes(),
+		Enabled:   true,
+		Name:      "auction_sycc",
+		Path:      "./auctioncc",
+		Version:   "ptn001",
+		InitArgs:  [][]byte{},
+		Chaincode: &auctioncc.AuctionMgr{},
+	},
 	//TODO add other system chaincodes ...
 }
 
