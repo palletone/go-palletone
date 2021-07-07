@@ -175,7 +175,7 @@ sendRpcPost
     ${header}=    Create Dictionary    Content-Type    application/json
     ${data}    Create Dictionary    jsonrpc=2.0    method=${method}    params=${params}    id=1
     Create Session    ${alias}    ${host}
-    ${resp}    Post Request    ${alias}    ${host}    data=${data}    headers=${header}
+    ${resp}    POST On Session    ${alias}    ${host}    data=${data}    headers=${header}
     ${respJson}    To Json    ${resp.content}
     [Return]    ${respJson}
 

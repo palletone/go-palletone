@@ -56,7 +56,7 @@ post
     ${header}    Create Dictionary    Content-Type=application/json
     ${data}    Create Dictionary    jsonrpc=2.0    method=${method}    params=${params}    id=1
     Create Session    ${alias}    ${hostPort}
-    ${resp}    Post Request    ${alias}    ${hostPort}    data=${data}    headers=${header}
+    ${resp}    POST On Session    ${alias}    ${hostPort}    data=${data}    headers=${header}
     ${respJson}    To Json    ${resp.content}
     Dictionary Should Contain Key    ${respJson}    result
     ${res}    Get From Dictionary    ${respJson}    result

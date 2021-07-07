@@ -6,7 +6,7 @@ setPostRequest
     ${headers}    Create Dictionary    Content-Type=application/json    Connection=close
     ${data}    Create Dictionary    jsonrpc=2.0    method=${method}    params=${transList}    id=${1}
     Create Session    trans    ${host}
-    ${resp}    Post Request    trans    ${host}    data=${data}    headers=${headers}
+    ${resp}    POST On Session    trans    ${host}    data=${data}    headers=${headers}
     [Return]    ${resp}
 
 newAccount
