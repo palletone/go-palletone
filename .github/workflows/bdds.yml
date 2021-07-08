@@ -16,6 +16,13 @@ jobs:
       - name: Install dependencies
         run: |
             python --version
+            wget https://www.python.org/ftp/python/3.7.4/Python-3.7.4.tgz
+            tar zxvf Python-3.7.4.tgz
+            cd Python-3.7.4/
+            ./configure --prefix=/usr/local/python3.7
+            make install
+            rm /usr/bin/python3.8
+            ln -s /usr/local/python3.7/bin/* /usr/bin/
             sudo -H pip install --upgrade pip
             sudo -H pip install robotframework==4.0.3
             sudo -H pip install requests
