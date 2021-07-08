@@ -515,8 +515,12 @@ func (p *AuctionMgr) AddAuctionOrder(stub shim.ChaincodeStubInterface, order *Au
 }
 
 //当前有效挂单
-func (p *AuctionMgr) GetActiveOrderList(stub shim.ChaincodeStubInterface) ([]*AuctionOrderJson, error) {
-	return getAllAuctionOrder(stub)
+func (p *AuctionMgr)GetActiveOrderCount(stub shim.ChaincodeStubInterface) (int, error) {
+	return getActiveOrderCount(stub)
+}
+
+func (p *AuctionMgr) GetActiveOrderList(stub shim.ChaincodeStubInterface, start, end int) ([]*AuctionOrderJson, error) {
+	return getAllAuctionOrder(stub, start, end)
 }
 func (p *AuctionMgr) GetActiveOrdersByMaker(stub shim.ChaincodeStubInterface, addr common.Address) ([]*AuctionOrderJson, error) {
 	return getAuctionOrderByAddress(stub, addr)
@@ -533,8 +537,11 @@ func (p *AuctionMgr) GetActiveOrdersByID(stub shim.ChaincodeStubInterface, order
 }
 
 //历史挂单
-func (p *AuctionMgr) GetHistoryOrderList(stub shim.ChaincodeStubInterface) ([]*AuctionOrderJson, error) {
-	return getAllHistoryOrder(stub)
+func (p *AuctionMgr) GetHistoryOrderCount(stub shim.ChaincodeStubInterface) (int, error) {
+	return getHistoryOrderCount(stub )
+}
+func (p *AuctionMgr) GetHistoryOrderList(stub shim.ChaincodeStubInterface, start, end int) ([]*AuctionOrderJson, error) {
+	return getAllHistoryOrder(stub, start, end )
 }
 func (p *AuctionMgr) GetHistoryOrderBySn(stub shim.ChaincodeStubInterface, auctionSn string) (*AuctionOrderJson, error) {
 	return getHistoryOrderBySn(stub, auctionSn)
@@ -547,11 +554,14 @@ func (p *AuctionMgr) GetHistoryOrderByMakerAddr(stub shim.ChaincodeStubInterface
 func (p *AuctionMgr) GetMatchListByOrderSn(stub shim.ChaincodeStubInterface, orderSn string) ([]*MatchRecordJson, error) {
 	return getMatchRecordJsonByOrderSn(stub, orderSn)
 }
-func (p *AuctionMgr) GetAllMatchList(stub shim.ChaincodeStubInterface) ([]*MatchRecordJson, error) {
-	return getAllMatchRecordJson(stub)
+func (p *AuctionMgr) GetAllMatchList(stub shim.ChaincodeStubInterface, start, end int) ([]*MatchRecordJson, error) {
+	return getAllMatchRecordJson(stub, start, end)
+}
+func (p *AuctionMgr) GetMatchCount(stub shim.ChaincodeStubInterface) (int, error) {
+	return getMatchRecordCount(stub)
 }
 
-func calculateFeeRate(stub shim.ChaincodeStubInterface, auction *AuctionOrder) (rewardAmount, destructionAmount uint64){
+func calculateFeeRate(stub shim.ChaincodeStubInterface, auction *AuctionOrder) (rewardAmount, destructionAmount uint64) {
 	//检查NFT是否是第一次参与交易
 	rewardAmount = 0
 	destructionAmount = 0

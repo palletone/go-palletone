@@ -8,6 +8,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/palletone/go-palletone/common/log"
+	"github.com/palletone/go-palletone/dag/errors"
 )
 
 const AUCTIONLIST_RECORD = "AuctionOrder-"
@@ -124,22 +125,42 @@ func cancelAuctionOrder(stub shim.ChaincodeStubInterface, order *AuctionOrder) e
 	return nil
 }
 
+func getActiveOrderCount(stub shim.ChaincodeStubInterface) (int, error) {
+	kvs, err := stub.GetStateByPrefix(AUCTIONLIST_RECORD)
+	if err != nil {
+		return 0, err
+	}
+	return len(kvs), nil
+}
+
 //获得订单列表
-func getAllAuctionOrder(stub shim.ChaincodeStubInterface) ([]*AuctionOrderJson, error) {
+func getAllAuctionOrder(stub shim.ChaincodeStubInterface, start, end int) ([]*AuctionOrderJson, error) {
+	if start > end {
+		return nil, errors.New("input num err")
+	}
 	kvs, err := stub.GetStateByPrefix(AUCTIONLIST_RECORD)
 	if err != nil {
 		return nil, err
 	}
+	from, to := 0, len(kvs)
+	if start > 0 {
+		from = start
+	}
+	if end > 0 {
+		to = end
+	}
 	result := make([]*AuctionOrderJson, 0, len(kvs))
-	for _, kv := range kvs {
-		record := &AuctionOrder{}
-		err = rlp.DecodeBytes(kv.Value, record)
-		if err != nil {
-			return nil, err
+	for i, kv := range kvs {
+		if i >= from && i <= to {
+			record := &AuctionOrder{}
+			err = rlp.DecodeBytes(kv.Value, record)
+			if err != nil {
+				return nil, err
+			}
+			log.Debugf("getAllAuctionOrder, record:%v", record)
+			jsSheet := convertSheet(*record)
+			result = append(result, jsSheet)
 		}
-		log.Debugf("getAllAuctionOrder, record:%v", record)
-		jsSheet := convertSheet(*record)
-		result = append(result, jsSheet)
 	}
 	return result, nil
 }
@@ -174,11 +195,15 @@ func getAuctionRecordBySn(stub shim.ChaincodeStubInterface, auctionSn string) (*
 		return nil, err
 	}
 	record := &AuctionOrder{}
-	err = rlp.DecodeBytes(value, record)
-	if err != nil {
-		return nil, err
+	if len(value) > 0 {
+		err = rlp.DecodeBytes(value, record)
+		if err != nil {
+			return nil, err
+		}
+		return record, nil
+	} else {
+		return nil, errors.New("not find id")
 	}
-	return record, nil
 }
 
 //将一个Order移动到History有两种情况，
@@ -189,20 +214,41 @@ func saveAuctionOrderHistory(stub shim.ChaincodeStubInterface, order *AuctionOrd
 	key := AUCTIONLIST_HISTORY + order.AuctionSn
 	return stub.PutState(key, data)
 }
-func getAllHistoryOrder(stub shim.ChaincodeStubInterface) ([]*AuctionOrderJson, error) {
+
+func getHistoryOrderCount(stub shim.ChaincodeStubInterface) (int, error) {
+	kvs, err := stub.GetStateByPrefix(AUCTIONLIST_HISTORY)
+	if err != nil {
+		return 0, err
+	}
+	return len(kvs), nil
+}
+
+func getAllHistoryOrder(stub shim.ChaincodeStubInterface, start, end int) ([]*AuctionOrderJson, error) {
+	if start > end {
+		return nil, errors.New("input num err")
+	}
 	kvs, err := stub.GetStateByPrefix(AUCTIONLIST_HISTORY)
 	if err != nil {
 		return nil, err
 	}
+	from, to := 0, len(kvs)
+	if start > 0 {
+		from = start
+	}
+	if end > 0 {
+		to = end
+	}
 	result := make([]*AuctionOrderJson, 0, len(kvs))
-	for _, kv := range kvs {
-		record := &AuctionOrder{}
-		err = rlp.DecodeBytes(kv.Value, record)
-		if err != nil {
-			return nil, err
+	for i, kv := range kvs {
+		if i >= from && i <= to {
+			record := &AuctionOrder{}
+			err = rlp.DecodeBytes(kv.Value, record)
+			if err != nil {
+				return nil, err
+			}
+			jsSheet := convertSheet(*record)
+			result = append(result, jsSheet)
 		}
-		jsSheet := convertSheet(*record)
-		result = append(result, jsSheet)
 	}
 	return result, nil
 }
@@ -213,12 +259,16 @@ func getHistoryOrderBySn(stub shim.ChaincodeStubInterface, auctionSn string) (*A
 		return nil, err
 	}
 	record := &AuctionOrder{}
-	err = rlp.DecodeBytes(value, record)
-	if err != nil {
-		return nil, err
+	if len(value) > 0 {
+		err = rlp.DecodeBytes(value, record)
+		if err != nil {
+			return nil, err
+		}
+		jsSheet := convertSheet(*record)
+		return jsSheet, nil
+	} else {
+		return nil, errors.New("not find id")
 	}
-	jsSheet := convertSheet(*record)
-	return jsSheet, nil
 }
 
 func getHistoryOrderByMakerAddr(stub shim.ChaincodeStubInterface, addr common.Address) ([]*AuctionOrderJson, error) {

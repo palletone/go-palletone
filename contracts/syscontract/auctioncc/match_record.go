@@ -8,6 +8,7 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/palletone/go-palletone/common/log"
 	"fmt"
+	"github.com/palletone/go-palletone/dag/errors"
 )
 
 const MatchRecordPrefix = "AuctionMatchRecord-"
@@ -102,20 +103,42 @@ func getMatchRecordJsonByOrderSn(stub shim.ChaincodeStubInterface, orderSn strin
 	}
 	return result, nil
 }
-func getAllMatchRecordJson(stub shim.ChaincodeStubInterface) ([]*MatchRecordJson, error) {
+func getAllMatchRecordJson(stub shim.ChaincodeStubInterface, start, end int) ([]*MatchRecordJson, error) {
+	if start > end {
+		return nil, errors.New("input num err")
+	}
 	key := MatchRecordPrefix
 	rows, err := stub.GetStateByPrefix(key)
 	if err != nil {
 		return nil, err
 	}
+	from, to := 0, len(rows)
+	if start > 0 {
+		from = start
+	}
+	if end > 0 {
+		to = end
+	}
+
 	result := []*MatchRecordJson{}
-	for _, row := range rows {
-		record := &MatchRecord{}
-		rlp.DecodeBytes(row.Value, record)
-		log.Debugf("getAllMatchRecordJson:%v", record)
-		result = append(result, convertMatchRecord(record))
+	for i, row := range rows {
+		if i >= from && i <= to {
+			record := &MatchRecord{}
+			rlp.DecodeBytes(row.Value, record)
+			log.Debugf("getAllMatchRecordJson:%v", record)
+			result = append(result, convertMatchRecord(record))
+		}
 	}
 	return result, nil
+}
+
+func getMatchRecordCount(stub shim.ChaincodeStubInterface) (int, error) {
+	key := MatchRecordPrefix
+	rows, err := stub.GetStateByPrefix(key)
+	if err != nil {
+		return 0, err
+	}
+	return len(rows), nil
 }
 
 func getMatchRecordByOrderSn(stub shim.ChaincodeStubInterface, orderSn string) ([]*MatchRecord, error) {
