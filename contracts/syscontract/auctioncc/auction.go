@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"time"
 	"github.com/palletone/go-palletone/common/log"
+	"strconv"
 )
 
 var myContractAddr = syscontract.AuctionContractAddress.String()
@@ -147,7 +148,7 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		}
 		return shim.Success(nil)
 	case "cancel_all": //撤销订单
-		result, err := p.GetActiveOrderList(stub)
+		result, err := p.GetActiveOrderList(stub, 0, 0)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
@@ -183,14 +184,41 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		}
 		return shim.Success(nil)
 
-	case "getActiveOrderList": //列出挂单列表
-		result, err := p.GetActiveOrderList(stub)
+	case "get_active_order_list": //列出挂单列表
+		start, end := 0, 0
+		if len(args) >= 3 {
+			return shim.Error("must input < 3 arg")
+		}
+		if len(args) > 0 {
+			s, err := strconv.Atoi(args[0])
+			if err == nil {
+				start = s
+			}
+		}
+		if len(args) > 1 {
+			e, err := strconv.Atoi(args[1])
+			if err == nil {
+				end = e
+			}
+		}
+		result, err := p.GetActiveOrderList(stub, start, end)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
 		data, _ := json.Marshal(result)
 		return shim.Success(data)
-	case "getActiveOrdersByMaker": //列出挂单列表
+
+	case "get_active_order_count": //列出挂单列表
+		if len(args) != 0 {
+			return shim.Error("must input0 arg")
+		}
+		data, err := p.GetActiveOrderCount(stub)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		return shim.Success([]byte(strconv.Itoa(data)))
+
+	case "get_active_orders_by_maker": //列出挂单列表
 		if len(args) != 1 {
 			return shim.Error("must input 1 args: [maker address]")
 		}
@@ -205,7 +233,7 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		data, _ := json.Marshal(result)
 		return shim.Success(data)
 
-	case "getActiveOrderById": //列出指定ID挂单
+	case "get_active_order_by_sn": //列出指定ID挂单
 		if len(args) != 1 {
 			return shim.Error("must input 1 args: [Order ID]")
 		}
@@ -215,18 +243,42 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		}
 		data, _ := json.Marshal(result)
 		return shim.Success(data)
-	case "getHistoryOrderList": //列出所有历史挂单
+
+	case "get_history_order_count":
 		if len(args) != 0 {
-			return shim.Error("must input 0 args")
+			return shim.Error("must input0 arg")
 		}
-		result, err := p.GetHistoryOrderList(stub)
+		data, err := p.GetHistoryOrderCount(stub)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		return shim.Success([]byte(strconv.Itoa(data)))
+
+	case "get_history_order_list": //列出所有历史挂单
+		start, end := 0, 0
+		if len(args) >= 3 {
+			return shim.Error("must input < 3 arg")
+		}
+		if len(args) > 0 {
+			s, err := strconv.Atoi(args[0])
+			if err == nil {
+				start = s
+			}
+		}
+		if len(args) > 1 {
+			e, err := strconv.Atoi(args[1])
+			if err == nil {
+				end = e
+			}
+		}
+		result, err := p.GetHistoryOrderList(stub, start, end)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
 		data, _ := json.Marshal(result)
 		return shim.Success(data)
 
-	case "GetHistoryOrderBySn": //列出指定ID历史挂单
+	case "get_history_order_by_sn": //列出指定ID历史挂单
 		if len(args) != 1 {
 			return shim.Error("must input 1 args[Order ID]")
 		}
@@ -237,7 +289,7 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		data, _ := json.Marshal(result)
 		return shim.Success(data)
 
-	case "GetHistoryOrderByMaker": //列出指定ID历史挂单
+	case "get_history_order_by_maker": //列出指定ID历史挂单
 		if len(args) != 1 {
 			return shim.Error("must input 1 args[MakerAddr]")
 		}
@@ -252,7 +304,7 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		data, _ := json.Marshal(result)
 		return shim.Success(data)
 
-	case "getMatchListByOrderSn": //列出订单的成交记录
+	case "get_match_list_by_order_sn": //列出订单的成交记录
 		if len(args) != 1 {
 			return shim.Error("must input 1 args: [AuctionSN]")
 		}
@@ -262,18 +314,41 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		}
 		data, _ := json.Marshal(result)
 		return shim.Success(data)
-	case "getAllMatchList": //列出订单的成交记录
-		if len(args) != 0 {
-			return shim.Error("must input 0 arg")
+	case "get_all_match_list": //列出订单的成交记录
+		start, end := 0, 0
+		if len(args) >= 3 {
+			return shim.Error("must input < 3 arg")
 		}
-		result, err := p.GetAllMatchList(stub)
+		if len(args) > 0 {
+			s, err := strconv.Atoi(args[0])
+			if err == nil {
+				start = s
+			}
+		}
+		if len(args) > 1 {
+			e, err := strconv.Atoi(args[1])
+			if err == nil {
+				end = e
+			}
+		}
+		result, err := p.GetAllMatchList(stub, start, end)
 		if err != nil {
 			return shim.Error(err.Error())
 		}
 		data, _ := json.Marshal(result)
 		return shim.Success(data)
 
-	case "setAuctionMgrAddressList": //设置管理地址
+	case "get_match_count":
+		if len(args) != 0 {
+			return shim.Error("must input0 arg")
+		}
+		data, err := p.GetMatchCount(stub)
+		if err != nil {
+			return shim.Error(err.Error())
+		}
+		return shim.Success([]byte(strconv.Itoa(data)))
+
+	case "set_auction_mgr_address_list": //设置管理地址
 		if len(args) <= 0 {
 			return shim.Error("must input > 0 arg")
 		}
@@ -291,7 +366,7 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		data, _ := json.Marshal(ads)
 		return shim.Success(data)
 
-	case "getAuctionMgrAddressList": //获取管理地址
+	case "get_auction_mgr_address_list": //获取管理地址
 		if len(args) != 0 {
 			return shim.Error("must input 0 arg")
 		}
@@ -302,7 +377,7 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		data, _ := json.Marshal(result)
 		return shim.Success(data)
 
-	case "setRewardRate": //设置拍卖资金费率--奖励
+	case "set_reward_rate": //设置拍卖资金费率--奖励
 		if len(args) != 1 {
 			return shim.Error("must input 1 arg")
 		}
@@ -317,7 +392,7 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		data, _ := json.Marshal(rate)
 		return shim.Success(data)
 
-	case "setDestructionRate": //设置拍卖资金费率--销毁
+	case "set_destruction_rate": //设置拍卖资金费率--销毁
 		if len(args) != 1 {
 			return shim.Error("must input 1 arg")
 		}
@@ -332,14 +407,14 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		data, _ := json.Marshal(rate)
 		return shim.Success(data)
 
-	case "getRewardRate": //获取拍卖资金费率--奖励
+	case "get_reward_rate": //获取拍卖资金费率--奖励
 		if len(args) != 0 {
 			return shim.Error("must input 0 arg")
 		}
 		rate := getAuctionFeeRate(stub, 0)
 		data, _ := json.Marshal(rate)
 		return shim.Success(data)
-	case "getDestructionRate": //获取拍卖资金费率--奖励
+	case "get_destruction_rate": //获取拍卖资金费率--奖励
 		if len(args) != 0 {
 			return shim.Error("must input 0 arg")
 		}
@@ -347,7 +422,7 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		data, _ := json.Marshal(rate)
 		return shim.Success(data)
 
-	case "setFirstRewardFeeRateLevel": //设置第一次交易奖励费率级别  第一交易奖励=正常交易金额*奖励费率*第一次奖励级别
+	case "set_first_reward_fee_rate_level": //设置第一次交易奖励费率级别  第一交易奖励=正常交易金额*奖励费率*第一次奖励级别
 		if len(args) != 1 {
 			return shim.Error("must input 1 arg")
 		}
@@ -362,7 +437,7 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		data, _ := json.Marshal(rate)
 		return shim.Success(data)
 
-	case "setFirstDestructionFeeRateLevel": //设置第一次交易销毁费率级别  第一交易销毁=正常交易金额*销毁费率*第一次销毁级别
+	case "set_first_destruction_fee_rate_level": //设置第一次交易销毁费率级别  第一交易销毁=正常交易金额*销毁费率*第一次销毁级别
 		if len(args) != 1 {
 			return shim.Error("must input 1 arg")
 		}
@@ -377,7 +452,7 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		data, _ := json.Marshal(rate)
 		return shim.Success(data)
 
-	case "getFirstRewardFeeRateLevel":
+	case "get_first_reward_fee_rate_level":
 		if len(args) != 0 {
 			return shim.Error("must input 0 arg")
 		}
@@ -385,7 +460,7 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		data, _ := json.Marshal(rate)
 		return shim.Success(data)
 
-	case "getFirstDestructionFeeRateLevel":
+	case "get_first_destruction_fee_rate_level":
 		if len(args) != 0 {
 			return shim.Error("must input 0 arg")
 		}
@@ -399,3 +474,11 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 
 	return shim.Error("no case")
 }
+
+//
+//func main() {
+//	err := shim.Start(new(AuctionMgr))
+//	if err != nil {
+//		fmt.Printf("Error starting AuctionMgr chaincode: %s", err)
+//	}
+//}
