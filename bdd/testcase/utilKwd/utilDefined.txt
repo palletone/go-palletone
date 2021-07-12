@@ -6,7 +6,7 @@ setPostRequest
     ${headers}    Create Dictionary    Content-Type=application/json    Connection=close
     ${data}    Create Dictionary    jsonrpc=2.0    method=${method}    params=${transList}    id=${1}
     Create Session    trans    ${host}
-    ${resp}    POST On Session    trans    ${host}    data=${data}    headers=${headers}
+    ${resp}    POST Request    trans    ${host}    data=${data}    headers=${headers}
     [Return]    ${resp}
 
 newAccount
@@ -37,7 +37,7 @@ getGeneAdd
     ${resp}    setPostRequest    ${host}    personal_listAccounts    ${list}
     log    ${resp.content}
     ${jsonRes}    Evaluate    demjson.encode(${resp.content})    demjson
-    ${jsonRes}    To Json    ${jsonRes}
+    #${jsonRes}    To Json    ${jsonRes}
     #${log}    evaluate    str(${resp.content}['result'][0])
     [Return]    ${jsonRes['result'][0]}
 

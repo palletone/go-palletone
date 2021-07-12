@@ -17,13 +17,13 @@ jobs:
         run: |
             python --version
             whereis python
-            #wget https://www.python.org/ftp/python/3.7.4/Python-3.7.4.tgz
-            #tar zxvf Python-3.7.4.tgz
-            #cd Python-3.7.4/
-            #sudo -H ./configure --prefix=/usr/local/python3.7
-            #sudo -H make install
-            #sudo -H rm /usr/bin/python3.8
-            #sudo -H ln -s /usr/local/python3.7/bin/* /usr/bin/
+            wget https://www.python.org/ftp/python/3.7.4/Python-3.7.4.tgz
+            tar zxvf Python-3.7.4.tgz
+            cd Python-3.7.4/
+            sudo -H ./configure --prefix=/usr/local/python3.7
+            sudo -H make install
+            sudo -H rm /usr/bin/python3.8
+            sudo -H ln -s /usr/local/python3.7/bin/* /usr/bin/
             sudo apt-get remove python3.8
             sudo apt-get remove --auto-remove python3.8
             sudo apt-get purge python3.8
