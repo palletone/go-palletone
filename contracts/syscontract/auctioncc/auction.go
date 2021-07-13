@@ -468,6 +468,15 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		data, _ := json.Marshal(rate)
 		return shim.Success(data)
 
+	//case "getGlobalToken":
+	//	if len(args) != 1 {
+	//		return shim.Error("must input 1 arg")
+	//	}
+	//	log.Debugf("getGlobalToken, token：%s", args[0])
+	//	token := getGlobalTokenInfo(stub, args[0])
+	//	data, _ := json.Marshal(token)
+	//	return shim.Success(data)
+
 	default:
 		return shim.Error("no case")
 	}

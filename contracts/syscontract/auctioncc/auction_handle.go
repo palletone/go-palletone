@@ -47,7 +47,6 @@ func (p *AuctionMgr) MakerFix(stub shim.ChaincodeStubInterface, wantAsset *modul
 		"AuctionSn:%s\n"+
 		"Status:%d\n"+
 		"CreateTime:%s\n",
-
 		order.AuctionType, order.Address.String(), order.SaleAsset.String(), order.SaleAmount, order.WantAsset.String(),
 		order.WantAmount, order.RewardAddress.String(), order.AuctionSn, order.Status, order.CreateTime)
 
@@ -71,14 +70,14 @@ func (p *AuctionMgr) TakerFix(stub shim.ChaincodeStubInterface, orderSn string) 
 
 	//检查金额是否满足
 	if takerPayAmount < auction.WantAmount {
-		return errors.New("TakerFix, takerPayAmount < auction.WantAmount")
+		return errors.New("TakerFix, takerPayAmount less than auction.WantAmount")
 	}
 	//计算奖励和销毁的费用
 	rewardAmount, destructionAmount := calculateFeeRate(stub, auction)
 
 	now, err := stub.GetTxTimestamp(10)
 	if err != nil {
-		return errors.New("takerAuction, GetTxTimestamp err:" + err.Error())
+		return errors.New("TakerFix, GetTxTimestamp err:" + err.Error())
 	}
 	desAddr, _ := common.StringToAddress(DestructionAddress)
 	feeUse := AuctionFeeUse{
@@ -201,7 +200,7 @@ func (p *AuctionMgr) TakerAuction(stub shim.ChaincodeStubInterface, orderSn stri
 	if err != nil {
 		return errors.New("takerAuction, GetTxTimestamp err:" + err.Error())
 	}
-	log.Debugf("TakerAuction, startTime[%s], nowTime[%s], endTime[%s]", auction.StartTime, time.Unix(now.Seconds, 0).Format(TimeFormt), auction.EndTime)
+	log.Debugf("TakerAuction, orderSn[%s],startTime[%s], nowTime[%s], endTime[%s]", orderSn, auction.StartTime, time.Unix(now.Seconds, 0).Format(TimeFormt), auction.EndTime)
 
 	if len(auction.StartTime) > 0 {
 		stTime, err := getTimeFromString(auction.StartTime)
@@ -209,7 +208,7 @@ func (p *AuctionMgr) TakerAuction(stub shim.ChaincodeStubInterface, orderSn stri
 			return err
 		}
 		if now.Seconds < stTime.Unix() {
-			return errors.New("TakerAuction, now.Seconds < auction.StartTime")
+			return errors.New("TakerAuction, now.Seconds less than auction.StartTime")
 		}
 	}
 	if len(auction.EndTime) > 0 {
@@ -218,7 +217,7 @@ func (p *AuctionMgr) TakerAuction(stub shim.ChaincodeStubInterface, orderSn stri
 			return err
 		}
 		if now.Seconds > edTime.Unix() {
-			return errors.New("TakerAuction, now.Seconds > auction.EndTime")
+			return errors.New("TakerAuction, now.Seconds more than auction.EndTime")
 		}
 	}
 
@@ -234,16 +233,16 @@ func (p *AuctionMgr) TakerAuction(stub shim.ChaincodeStubInterface, orderSn stri
 	if auction.StepAmount != 0 { //设置有step level的情况下
 		lastAmount, err := getAuctionLastAmountRecord(stub, auction.AuctionSn)
 		if err != nil {
-			log.Debugf("TakerAuction, getAuctionLastAmountRecord err:%s", err.Error())
+			log.Debugf("TakerAuction, orderSn[%s], getAuctionLastAmountRecord err:%s", orderSn, err.Error())
 			//return nil
 		} else {
-			log.Debugf("TakerAuction, lastAmount.TakerAmount[%d] + auction.StepAmount[%d]", lastAmount.TakerAmount, auction.StepAmount)
+			log.Debugf("TakerAuction,  orderSn[%s], lastAmount.TakerAmount[%d] + auction.StepAmount[%d]", orderSn, lastAmount.TakerAmount, auction.StepAmount)
 			needAmount = lastAmount.TakerAmount + auction.StepAmount
 		}
 	}
 	//检查提交金额数量是否满足
 	if takerPayAmount < needAmount {
-		return fmt.Errorf("takerAuction, auction[%s] TakerReqId[%s], takerPayAmount[%d] < needAmount [%d]", auction.AuctionSn, stub.GetTxID(), takerPayAmount, needAmount)
+		return fmt.Errorf("takerAuction, auction[%s] TakerReqId[%s], takerPayAmount[%d] less than needAmount [%d]", auction.AuctionSn, stub.GetTxID(), takerPayAmount, needAmount)
 	}
 
 	//计算奖励和销毁的费用
@@ -306,7 +305,7 @@ func (p *AuctionMgr) UpdateTakerAuction(stub shim.ChaincodeStubInterface, orderS
 	if err != nil {
 		return errors.New("UpdateTakerAuction, GetTxTimestamp err:" + err.Error())
 	}
-	log.Debugf("UpdateTakerAuction, startTime[%s], nowTime[%s], endTime[%s]", auction.StartTime, time.Unix(now.Seconds, 0).Format(TimeFormt), auction.EndTime)
+	log.Debugf("UpdateTakerAuction,  orderSn[%s],startTime[%s], nowTime[%s], endTime[%s]", orderSn, auction.StartTime, time.Unix(now.Seconds, 0).Format(TimeFormt), auction.EndTime)
 
 	if len(auction.StartTime) > 0 {
 		stTime, err := getTimeFromString(auction.StartTime)
@@ -314,7 +313,7 @@ func (p *AuctionMgr) UpdateTakerAuction(stub shim.ChaincodeStubInterface, orderS
 			return err
 		}
 		if now.Seconds < stTime.Unix() {
-			return errors.New("UpdateTakerAuction, now.Seconds < auction.StartTime")
+			return errors.New("UpdateTakerAuction, now.Seconds less than auction.StartTime")
 		}
 	}
 	if len(auction.EndTime) > 0 {
@@ -323,7 +322,7 @@ func (p *AuctionMgr) UpdateTakerAuction(stub shim.ChaincodeStubInterface, orderS
 			return err
 		}
 		if now.Seconds > edTime.Unix() {
-			return errors.New("UpdateTakerAuction, now.Seconds > auction.EndTime")
+			return errors.New("UpdateTakerAuction, now.Seconds more than auction.EndTime")
 		}
 	}
 
@@ -346,16 +345,16 @@ func (p *AuctionMgr) UpdateTakerAuction(stub shim.ChaincodeStubInterface, orderS
 	if auction.StepAmount != 0 { //设置有step level的情况下
 		lastAmount, err := getAuctionLastAmountRecord(stub, auction.AuctionSn)
 		if err != nil {
-			log.Debugf("UpdateTakerAuction, getAuctionLastAmountRecord err:%s", err.Error())
+			log.Debugf("UpdateTakerAuction, orderSn[%s], getAuctionLastAmountRecord err:%s", orderSn, err.Error())
 			//return nil
 		} else {
-			log.Debugf("UpdateTakerAuction, lastAmount.TakerAmount[%d] + auction.StepAmount[%d]", lastAmount.TakerAmount, auction.StepAmount)
+			log.Debugf("UpdateTakerAuction, orderSn[%s], lastAmount.TakerAmount[%d] + auction.StepAmount[%d]", orderSn, lastAmount.TakerAmount, auction.StepAmount)
 			needAmount = lastAmount.TakerAmount + auction.StepAmount
 		}
 	}
 	//检查提交金额数量是否满足
 	if allPayAmount < needAmount {
-		return fmt.Errorf("UpdateTakerAuction, auction[%s] TakerReqId[%s], allPayAmount[%d] < needAmount [%d]",
+		return fmt.Errorf("UpdateTakerAuction, auction[%s] TakerReqId[%s], allPayAmount[%d] less than needAmount [%d]",
 			auction.AuctionSn, stub.GetTxID(), allPayAmount, needAmount)
 	}
 	//重新计算奖励和销毁的费用
@@ -515,7 +514,7 @@ func (p *AuctionMgr) AddAuctionOrder(stub shim.ChaincodeStubInterface, order *Au
 }
 
 //当前有效挂单
-func (p *AuctionMgr)GetActiveOrderCount(stub shim.ChaincodeStubInterface) (int, error) {
+func (p *AuctionMgr) GetActiveOrderCount(stub shim.ChaincodeStubInterface) (int, error) {
 	return getActiveOrderCount(stub)
 }
 
@@ -538,10 +537,10 @@ func (p *AuctionMgr) GetActiveOrdersByID(stub shim.ChaincodeStubInterface, order
 
 //历史挂单
 func (p *AuctionMgr) GetHistoryOrderCount(stub shim.ChaincodeStubInterface) (int, error) {
-	return getHistoryOrderCount(stub )
+	return getHistoryOrderCount(stub)
 }
 func (p *AuctionMgr) GetHistoryOrderList(stub shim.ChaincodeStubInterface, start, end int) ([]*AuctionOrderJson, error) {
-	return getAllHistoryOrder(stub, start, end )
+	return getAllHistoryOrder(stub, start, end)
 }
 func (p *AuctionMgr) GetHistoryOrderBySn(stub shim.ChaincodeStubInterface, auctionSn string) (*AuctionOrderJson, error) {
 	return getHistoryOrderBySn(stub, auctionSn)
