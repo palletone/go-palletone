@@ -17,8 +17,7 @@ jobs:
         run: |
             python --version
             whereis python
-            ls -l /usr/lib/python*
-            ls -l /usr/bin/python*
+            ll /usr/bin/python*
             wget https://www.python.org/ftp/python/3.7.4/Python-3.7.4.tgz
             tar zxvf Python-3.7.4.tgz
             cd Python-3.7.4/
