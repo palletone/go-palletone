@@ -41,6 +41,7 @@ import (
 	"github.com/palletone/go-palletone/ptnjson"
 	"github.com/palletone/go-palletone/ptnjson/statistics"
 	"github.com/shopspring/decimal"
+	"sort"
 )
 
 // PublicPalletOneAPI provides an API to access PalletOne related information.
@@ -134,6 +135,9 @@ func (s *PublicBlockChainAPI) GetTokenTxHistory(ctx context.Context,
 		return nil, errors.New("Invalid asset string")
 	}
 	result, err := s.b.GetAssetTxHistory(asset)
+	sort.SliceStable(result, func(i, j int) bool {
+		return result[i].UnitHeight < result[j].UnitHeight
+	})
 
 	return result, err
 }

@@ -15,22 +15,21 @@ const AUCTIONLIST_RECORD = "AuctionOrder-"
 const AUCTIONLIST_HISTORY = "AuctionOrderHistory-"
 
 type AuctionOrder struct {
-	AuctionType byte //1:一口价, 2:英式拍卖, 3:荷兰式拍卖
-	Address     common.Address
-	SaleAsset   *modules.Asset
-	SaleAmount  uint64 //挂单的金额  ，NFT的话为1
-	WantAsset   *modules.Asset
-	WantAmount  uint64 //挂单时想要多少金额//竞拍时起拍价
+	AuctionType  byte           //1:一口价, 2:英式拍卖, 3:荷兰式拍卖
+	Address      common.Address //挂单地址
+	SaleAsset    *modules.Asset //NFT
+	SaleAmount   uint64         //挂单的金额  ，NFT的话为1
+	WantAsset    *modules.Asset //交易asset
+	WantAmount   uint64         //挂单时想要多少金额//竞拍时起拍价
+	TargetAmount uint64         //最大价格,可以不设置，默认0
+	StepAmount   uint64         //阶梯数量,可以不设置，默认0
 
-	TargetAmount uint64 //最大价格,可以不设置，默认0     //auction
-	StepAmount   uint64 //阶梯数量,可以不设置，默认0     //auction
-	StartTime    string //time.Time //开始时间           //int64 rlp失败
-	EndTime      string //time.Time //结束时间                    //auction
-
-	RewardAddress common.Address
-	AuctionSn     string
-	CreateTime    string //time.Time
-	Status        byte   //0 撤销， 1 挂单中，2 成交完毕，
+	StartTime     string         //time.Time //开始时间   //int64 rlp失败
+	EndTime       string         //time.Time //结束时间
+	RewardAddress common.Address //奖励地址
+	AuctionSn     string         //挂单ID
+	CreateTime    string         //time.Time
+	Status        byte           //0 撤销， 1 挂单中，2 成交完毕，
 }
 
 type AuctionFeeUse struct {

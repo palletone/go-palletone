@@ -22,9 +22,7 @@ const DefaultDestructionFeeRate = 0.025 //默认销毁费率
 const DefaultFirstRewardFeeRateLevel = 2.0      //第一次奖励级别，第一次奖励=费率*级别*交易额
 const DefaultFirstDestructionFeeRateLevel = 2.0 //第一次销毁级别，第一次销毁=费率*级别*交易额
 
-//todo tmp
-var DestructionAddress = "PCGTta3M4t3yXu8uRgkKvaWd2d9Vgsc4zGX" //""PCLOST00000000000000000000000000000"  //销毁地址
-var AuctionTransactionGas = uint64(1)                          //ptn  临时的
+var DestructionAddress = "PCGTta3M4t3yXu8uRgkKvaWd2d9Vgsc4zGX" //""PCLOST00000000000000000000000000000"  "PCGTta3M4t3yXu8uRgkKvaWd2d9Vgsc4zGX"//销毁地址
 
 func getPayToContract(stub shim.ChaincodeStubInterface) (*modules.Asset, uint64, error) {
 	payAssets, _ := stub.GetInvokeTokens()
@@ -275,6 +273,29 @@ func getTimeFromString(inStr string) (time.Time, error) {
 }
 
 
+
+//type GlobalTokenInfo struct {
+//	Symbol      string
+//	TokenType   uint8 //1:prc20 2:prc721 3:vote 4:SysVote
+//	Status      uint8
+//	CreateAddr  string
+//	TotalSupply uint64
+//	SupplyAddr  string
+//	AssetID     modules.AssetId
+//}
+//func getGlobalTokenInfo(stub shim.ChaincodeStubInterface, symbol string) *GlobalTokenInfo {
+//	gTkInfo := GlobalTokenInfo{}
+//	tkInfoBytes, _ := stub.GetGlobalState(modules.GlobalPrefix + symbol)
+//	if len(tkInfoBytes) == 0 {
+//		return nil
+//	}
+//	err := json.Unmarshal(tkInfoBytes, &gTkInfo)
+//	if err != nil {
+//		return nil
+//	}
+//	log.Debugf("GlobalTokenInfo:%v", gTkInfo)
+//	return &gTkInfo
+//}
 
 //func getTimeFromSeconds(seconds  int64) (time.Time, error) {
 //	ti := time.Unix(seconds, 0)
