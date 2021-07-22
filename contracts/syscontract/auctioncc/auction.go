@@ -29,7 +29,7 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	switch f {
 	case "maker_fix": //create a maker
 		if len(args) != 3 {
-			return shim.Error("must input 2 args: [WantAsset][WantAmount][RewardAddress]")
+			return shim.Error("must input 3 args: [WantAsset][WantAmount][RewardAddress]")
 		}
 		wantToken, err := modules.StringToAsset(args[0])
 		if err != nil {
@@ -62,7 +62,7 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Success(nil)
 	case "maker_auction": //挂单
 		if len(args) != 7 {
-			return shim.Error("must input 2 args: [WantAsset][StartAmount][TargetAmount][StepAmount][StartTime][EndTime][RewardAddress]")
+			return shim.Error("must input 7 args: [WantAsset][StartAmount][TargetAmount][StepAmount][StartTime][EndTime][RewardAddress]")
 		}
 		wantToken, err := modules.StringToAsset(args[0])
 		if err != nil {
@@ -468,14 +468,14 @@ func (p *AuctionMgr) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		data, _ := json.Marshal(rate)
 		return shim.Success(data)
 
-	//case "getGlobalToken":
-	//	if len(args) != 1 {
-	//		return shim.Error("must input 1 arg")
-	//	}
-	//	log.Debugf("getGlobalToken, token：%s", args[0])
-	//	token := getGlobalTokenInfo(stub, args[0])
-	//	data, _ := json.Marshal(token)
-	//	return shim.Success(data)
+		//case "getGlobalToken":
+		//	if len(args) != 1 {
+		//		return shim.Error("must input 1 arg")
+		//	}
+		//	log.Debugf("getGlobalToken, token：%s", args[0])
+		//	token := getGlobalTokenInfo(stub, args[0])
+		//	data, _ := json.Marshal(token)
+		//	return shim.Success(data)
 
 	default:
 		return shim.Error("no case")
