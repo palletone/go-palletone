@@ -684,6 +684,7 @@ func (pool *TxPool) promoteTx(hash common.Hash, tx *TxPoolTransaction, number, i
 				// An older transaction was better, discard this
 				this.Pending = true
 				this.Discarded = true
+				this.Confirmed = true
 				pool.all.Store(tx_hash, this)
 				// delete utxo
 				pool.deletePoolUtxos(tx.Tx)
@@ -1238,7 +1239,7 @@ func (pool *TxPool) removeTransaction(tx *TxPoolTransaction, removeRedeemers boo
 		}
 	}
 POOLLOAD:
-	// Remove the transaction if needed.
+// Remove the transaction if needed.
 	interTx, has := pool.all.Load(hash)
 	if !has {
 		return
@@ -1768,7 +1769,7 @@ func (pool *TxPool) GetSortedTxs() ([]*TxPoolTransaction, error) {
 	//return list, total
 }
 func (pool *TxPool) getPrecusorTxs(tx *TxPoolTransaction, poolTxs,
-	orphanTxs map[common.Hash]*TxPoolTransaction) (bool, []*TxPoolTransaction) {
+orphanTxs map[common.Hash]*TxPoolTransaction) (bool, []*TxPoolTransaction) {
 	var isNotOriginal bool
 	pretxs := make([]*TxPoolTransaction, 0)
 	for _, op := range tx.Tx.GetSpendOutpoints() {

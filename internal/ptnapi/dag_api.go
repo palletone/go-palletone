@@ -539,28 +539,60 @@ func (s *PublicDagAPI) GetTxPoolTxByHash(ctx context.Context, hex string) (strin
 }
 
 //GetTxStatusByHash returns the transaction status for hash
+//func (s *PublicDagAPI) GetTxStatusByHash(ctx context.Context, hex string) (*ptnjson.TxPoolTxJson, error) {
+//	log.Debug("this is hash tx's hash hex to find tx.", "hex", hex)
+//	if len(hex) > 72 || len(hex) < 64 {
+//		return nil, fmt.Errorf("the hex[%s] is illegal.", hex)
+//	}
+//	hash := common.HexToHash(hex)
+//
+//	tx_status := new(ptnjson.TxPoolTxJson)
+//	item, err := s.b.GetTxPoolTxByHash(hash)
+//	log.Debugf("GetTxStatusByHash,GetTxPoolTxByHash, item[%v]", item)
+//
+//	if err != nil {
+//		log.Debug("GetTxStatusByHash, A")
+//		if tx_info, err := s.b.Dag().GetTxByReqId(hash); err == nil {
+//			log.Debugf("GetTxStatusByHash,GetTxByReqId, tx_info[%v]", ptnjson.ConvertTxWithInfo2Json(tx_info))
+//			return ptnjson.ConvertTxWithInfo2Json(tx_info), nil
+//		}
+//		if tx_info, err := s.b.Dag().GetTransaction(hash); err == nil {
+//			log.Debugf("GetTxStatusByHash,GetTxByReqId, GetTransaction[%v]", ptnjson.ConvertTxWithInfo2Json(tx_info))
+//			return ptnjson.ConvertTxWithInfo2Json(tx_info), nil
+//		}
+//		tx_status.NotExsit = true
+//		log.Debugf("the txhash[%s] is not exist in dag,error[%s]", hash.String(), err.Error())
+//		tx_status.TxHash = hex
+//		return tx_status, nil
+//	}
+//	return item, nil
+//}
 func (s *PublicDagAPI) GetTxStatusByHash(ctx context.Context, hex string) (*ptnjson.TxPoolTxJson, error) {
 	log.Debug("this is hash tx's hash hex to find tx.", "hex", hex)
 	if len(hex) > 72 || len(hex) < 64 {
 		return nil, fmt.Errorf("the hex[%s] is illegal.", hex)
 	}
 	hash := common.HexToHash(hex)
+	
+	if tx_info, err := s.b.Dag().GetTxByReqId(hash); err == nil {
+		//log.Debugf("GetTxStatusByHash,GetTxByReqId, tx_info[%v]", ptnjson.ConvertTxWithInfo2Json(tx_info))
+		return ptnjson.ConvertTxWithInfo2Json(tx_info), nil
+	}
+	if tx_info, err := s.b.Dag().GetTransaction(hash); err == nil {
+		//log.Debugf("GetTxStatusByHash,GetTxByReqId, GetTransaction[%v]", ptnjson.ConvertTxWithInfo2Json(tx_info))
+		return ptnjson.ConvertTxWithInfo2Json(tx_info), nil
+	}
+	if item, err := s.b.GetTxPoolTxByHash(hash); err == nil {
+		//log.Debugf("GetTxStatusByHash,GetTxPoolTxByHash, item[%v]", item)
+		return item, nil
+	}
 
 	tx_status := new(ptnjson.TxPoolTxJson)
-	item, err := s.b.GetTxPoolTxByHash(hash)
-	if err != nil {
-		if tx_info, err := s.b.Dag().GetTxByReqId(hash); err == nil {
-			return ptnjson.ConvertTxWithInfo2Json(tx_info), nil
-		}
-		if tx_info, err := s.b.Dag().GetTransaction(hash); err == nil {
-			return ptnjson.ConvertTxWithInfo2Json(tx_info), nil
-		}
-		tx_status.NotExsit = true
-		log.Debugf("the txhash[%s] is not exist in dag,error[%s]", hash.String(), err.Error())
-		tx_status.TxHash = hex
-		return tx_status, nil
-	}
-	return item, nil
+	tx_status.NotExsit = true
+	log.Debugf("the txhash[%s] is not exist ", hash.String())
+	tx_status.TxHash = hex
+	return tx_status, nil
+
 }
 
 // MemdagInfos returns the pool transaction for the given hash

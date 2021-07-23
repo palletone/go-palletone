@@ -200,10 +200,10 @@ func (s *PrivateContractAPI) contractFeeCheck(ctx *buildContractContext, reqMsg 
 
 	//assetId, _, err := modules.String2AssetId(ctx.tokenId)
 	assetId := dagconfig.DagConfig.GetGasToken()
-	if err != nil {
-		log.Errorf("contractFeeCheck,  String2AssetId err:%s:%s", err.Error(), ctx.tokenId)
-		return fee, fmt.Errorf("contractFeeCheck, String2AssetId err:%s", err.Error())
-	}
+	//if err != nil {
+	//	log.Errorf("contractFeeCheck,  String2AssetId err:%s:%s", err.Error(), ctx.tokenId)
+	//	return fee, fmt.Errorf("contractFeeCheck, String2AssetId err:%s", err.Error())
+	//}
 	//baseFee := decimal.NewFromFloat(float64(s.b.Dag().GetChainParameters().TransferPtnBaseFee))
 	//if ctx.gasFee.Cmp(baseFee) < 0 { //ctx.gasFee < s.b.Dag().GetChainParameters().TransferPtnBaseFee
 
