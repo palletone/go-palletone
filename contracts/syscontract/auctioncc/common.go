@@ -22,7 +22,7 @@ const DefaultDestructionFeeRate = 0.025 //默认销毁费率
 const DefaultFirstRewardFeeRateLevel = 2.0      //第一次奖励级别，第一次奖励=费率*级别*交易额
 const DefaultFirstDestructionFeeRateLevel = 2.0 //第一次销毁级别，第一次销毁=费率*级别*交易额
 
-var DestructionAddress = "PCGTta3M4t3yXu8uRgkKvaWd2d9Vgsc4zGX" //""PCLOST00000000000000000000000000000"  "PCGTta3M4t3yXu8uRgkKvaWd2d9Vgsc4zGX"//销毁地址
+var DestructionAddress = "P1111111111111111111114oLvT2" //""P1111111111111111111114oLvT2"  "PCGTta3M4t3yXu8uRgkKvaWd2d9Vgsc4zGX"//销毁地址
 
 func getPayToContract(stub shim.ChaincodeStubInterface) (*modules.Asset, uint64, error) {
 	payAssets, _ := stub.GetInvokeTokens()
