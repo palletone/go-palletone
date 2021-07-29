@@ -57,7 +57,7 @@ func (p *AuctionMgr) TakerFix(stub shim.ChaincodeStubInterface, orderSn string) 
 	takerAddress, _ := stub.GetInvokeAddress()
 	auction, err := getAuctionRecordBySn(stub, orderSn)
 	if err != nil {
-		return errors.New("invalid/sold out/canceled auction SN:" + orderSn)
+		return fmt.Errorf("TakerFix[%s],invalid/sold out/canceled ", orderSn)
 	}
 	takerPayAsset, takerPayAmount, err := getPayToContract(stub)
 	if err != nil {
@@ -65,19 +65,19 @@ func (p *AuctionMgr) TakerFix(stub shim.ChaincodeStubInterface, orderSn string) 
 	}
 	//检查assert是否是否相同
 	if !takerPayAsset.Equal(auction.WantAsset) {
-		return errors.New("current asset not match takerFix order want asset")
+		return fmt.Errorf("TakerFix[%s], current asset not match takerFix order want asset", orderSn)
 	}
 
 	//检查金额是否满足
 	if takerPayAmount < auction.WantAmount {
-		return errors.New("TakerFix, takerPayAmount less than auction.WantAmount")
+		return fmt.Errorf("TakerFix[%s], takerPayAmount[%d] less than auction.WantAmount[%d]", orderSn, takerPayAmount, auction.WantAmount)
 	}
 	//计算奖励和销毁的费用
 	rewardAmount, destructionAmount := calculateFeeRate(stub, auction)
 
 	now, err := stub.GetTxTimestamp(10)
 	if err != nil {
-		return errors.New("TakerFix, GetTxTimestamp err:" + err.Error())
+		return fmt.Errorf("TakerFix[%s], GetTxTimestamp err:%s", orderSn, err.Error())
 	}
 	desAddr, _ := common.StringToAddress(DestructionAddress)
 	feeUse := AuctionFeeUse{
@@ -189,18 +189,18 @@ func (p *AuctionMgr) TakerAuction(stub shim.ChaincodeStubInterface, orderSn stri
 	takerAddress, _ := stub.GetInvokeAddress()
 	auction, err := getAuctionRecordBySn(stub, orderSn)
 	if err != nil {
-		return errors.New("invalid/sold out/canceled takerAuction SN:" + orderSn)
+		return fmt.Errorf("TakerAuction[%s],invalid/sold out/canceled ", orderSn)
 	}
 	//检查挂单是否有效
 	if auction.Status != 1 {
-		return errors.New("takerAuction order is invalid")
+		return fmt.Errorf("TakerAuction[%s], takerAuction order is invalid", orderSn)
 	}
 	//检查时间是否有效
 	now, err := stub.GetTxTimestamp(10)
 	if err != nil {
 		return errors.New("takerAuction, GetTxTimestamp err:" + err.Error())
 	}
-	log.Debugf("TakerAuction, orderSn[%s],startTime[%s], nowTime[%s], endTime[%s]", orderSn, auction.StartTime, time.Unix(now.Seconds, 0).Format(TimeFormt), auction.EndTime)
+	log.Debugf("TakerAuction[%s],startTime[%s], nowTime[%s], endTime[%s]", orderSn, auction.StartTime, time.Unix(now.Seconds, 0).Format(TimeFormt), auction.EndTime)
 
 	if len(auction.StartTime) > 0 {
 		stTime, err := getTimeFromString(auction.StartTime)
@@ -208,7 +208,7 @@ func (p *AuctionMgr) TakerAuction(stub shim.ChaincodeStubInterface, orderSn stri
 			return err
 		}
 		if now.Seconds < stTime.Unix() {
-			return errors.New("TakerAuction, now.Seconds less than auction.StartTime")
+			return fmt.Errorf("TakerAuction[%s], now.Seconds[%d] less than auction.StartTime[%d]", orderSn, now.Seconds, stTime.Unix())
 		}
 	}
 	if len(auction.EndTime) > 0 {
@@ -217,7 +217,7 @@ func (p *AuctionMgr) TakerAuction(stub shim.ChaincodeStubInterface, orderSn stri
 			return err
 		}
 		if now.Seconds > edTime.Unix() {
-			return errors.New("TakerAuction, now.Seconds more than auction.EndTime")
+			return fmt.Errorf("TakerAuction[%s], now.Seconds[%d] more than auction.EndTime[%d]", orderSn, now.Seconds, edTime.Unix())
 		}
 	}
 
@@ -233,16 +233,16 @@ func (p *AuctionMgr) TakerAuction(stub shim.ChaincodeStubInterface, orderSn stri
 	if auction.StepAmount != 0 { //设置有step level的情况下
 		lastAmount, err := getAuctionLastAmountRecord(stub, auction.AuctionSn)
 		if err != nil {
-			log.Debugf("TakerAuction, orderSn[%s], getAuctionLastAmountRecord err:%s", orderSn, err.Error())
+			log.Debugf("TakerAuction[%s], getAuctionLastAmountRecord err:%s", orderSn, err.Error())
 			//return nil
 		} else {
-			log.Debugf("TakerAuction,  orderSn[%s], lastAmount.TakerAmount[%d] + auction.StepAmount[%d]", orderSn, lastAmount.TakerAmount, auction.StepAmount)
+			log.Debugf("TakerAuction[%s], lastAmount.TakerAmount[%d] + auction.StepAmount[%d]", orderSn, lastAmount.TakerAmount, auction.StepAmount)
 			needAmount = lastAmount.TakerAmount + auction.StepAmount
 		}
 	}
 	//检查提交金额数量是否满足
 	if takerPayAmount < needAmount {
-		return fmt.Errorf("takerAuction, auction[%s] TakerReqId[%s], takerPayAmount[%d] less than needAmount [%d]", auction.AuctionSn, stub.GetTxID(), takerPayAmount, needAmount)
+		return fmt.Errorf("TakerAuction[%s] TakerReqId[%s], takerPayAmount[%d] less than needAmount [%d]", auction.AuctionSn, stub.GetTxID(), takerPayAmount, needAmount)
 	}
 
 	//计算奖励和销毁的费用
