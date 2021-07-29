@@ -16,8 +16,8 @@ const AuctionContractFeeRate = "AuctionContractFeeRate-"
 const FirstFeeRateLevel = "FirstFeeRateLevel-"
 const TimeFormt = "2006-01-02 15:04:05"
 
-const DefaultRewardFeeRate = 0.025      //默认奖励费率
-const DefaultDestructionFeeRate = 0.025 //默认销毁费率
+const DefaultRewardFeeRate = 0.01      //默认奖励费率
+const DefaultDestructionFeeRate = 0.01 //默认销毁费率
 
 const DefaultFirstRewardFeeRateLevel = 2.0      //第一次奖励级别，第一次奖励=费率*级别*交易额
 const DefaultFirstDestructionFeeRateLevel = 2.0 //第一次销毁级别，第一次销毁=费率*级别*交易额
