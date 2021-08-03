@@ -43,21 +43,25 @@ type TxHistoryJson struct {
 
 func ConvertTx2HistoryJson(tx *modules.TransactionWithUnitInfo, utxoQuery modules.QueryUtxoFunc) *TxHistoryJson {
 	json := &TxHistoryJson{
-		TxHash:   tx.Hash().String(),
-		UnitHash: tx.UnitHash.String(),
-		TxSize:   float64(tx.Size()),
-		UnitHeight:tx.UnitIndex,
+		TxHash:     tx.Hash().String(),
+		UnitHash:   tx.UnitHash.String(),
+		TxSize:     float64(tx.Size()),
+		UnitHeight: tx.UnitIndex,
 	}
 	for _, m := range tx.TxMessages() {
 		if m.App == modules.APP_PAYMENT {
 			pay := m.Payload.(*modules.PaymentPayload)
-			if utxoQuery == nil {
-				payJson := ConvertPayment2Json(pay)
-				json.Payment = payJson
-			} else {
-				payJson := ConvertPayment2JsonIncludeFromAddr(pay, utxoQuery)
-				json.Payment = payJson
-			}
+
+			payJson := ConvertPayment2Json(pay)
+			json.Payment = payJson
+
+			//if utxoQuery == nil {
+			//	payJson := ConvertPayment2Json(pay)
+			//	json.Payment = payJson
+			//} else {
+			//	payJson := ConvertPayment2JsonIncludeFromAddr(pay, utxoQuery)
+			//	json.Payment = payJson
+			//}
 		} else if m.App == modules.APP_DATA {
 			data := m.Payload.(*modules.DataPayload)
 			json.Data = &DataJson{
