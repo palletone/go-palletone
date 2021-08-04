@@ -53,17 +53,18 @@ func ConvertTx2HistoryJson(tx *modules.TransactionWithUnitInfo, utxoQuery module
 		if m.App == modules.APP_PAYMENT {
 			pay := m.Payload.(*modules.PaymentPayload)
 
-			pj := ConvertPayment2Json(pay)
+			//pj := ConvertPayment2Json(pay)
+
+			pj := &PaymentJson{}
+			if utxoQuery == nil {
+				pj = ConvertPayment2Json(pay)
+				//json.Payment = pj
+			} else {
+				pj = ConvertPayment2JsonIncludeFromAddr(pay, utxoQuery)
+				//json.Payment = pj
+			}
 			payJson.Outputs = append(payJson.Outputs, pj.Outputs...)
 			payJson.Inputs = append(payJson.Inputs, pj.Inputs...)
-
-			//if utxoQuery == nil {
-			//	payJson := ConvertPayment2Json(pay)
-			//	json.Payment = payJson
-			//} else {
-			//	payJson := ConvertPayment2JsonIncludeFromAddr(pay, utxoQuery)
-			//	json.Payment = payJson
-			//}
 		} else if m.App == modules.APP_DATA {
 			data := m.Payload.(*modules.DataPayload)
 			json.Data = &DataJson{
