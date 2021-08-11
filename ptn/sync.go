@@ -245,8 +245,7 @@ func (pm *ProtocolManager) synchronize(peer *peer, assetId modules.AssetId, sync
 	atomic.StoreUint32(&pm.acceptTxs, 1) // Mark initial sync done
 	log.Info("ptn sync complete")
 
-	//cunit := pm.dag.GetCurrentUnit(assetId)
-	cunit := pm.dag.CurrentUnit(assetId)
+	cunit := pm.dag.GetCurrentUnit(assetId)
 	if cunit != nil && cunit.UnitHeader.GetNumber().Index > 0 {
 		go pm.BroadcastUnit(cunit, false)
 		//Notice light protocol to sync corsheader
