@@ -408,14 +408,39 @@ func (p *AuctionMgr) StopAuction(stub shim.ChaincodeStubInterface, orderSn strin
 	if auction.Status != 1 {
 		return errors.New("StopAuction order is invalid")
 	}
-	if !invokeAddress.Equal(auction.Address) && !isFoundationInvoke(stub) && !isAuctionContractMgrAddress(stub) {
-		return errors.New("StopAuction addr are not the owner or not foundation")
+
+	//检查时间是否有效
+	now, err := stub.GetTxTimestamp(10)
+	if err != nil {
+		return errors.New("StopAuction, GetTxTimestamp err:" + err.Error())
 	}
+	if len(auction.EndTime) > 0 {
+		edTime, err := getTimeFromString(auction.EndTime)
+		if err != nil {
+			return err
+		}
+		if now.Seconds < edTime.Unix() {
+			return fmt.Errorf("StopAuction[%s], now.Seconds[%d] less than auction.EndTime[%d]", orderSn, now.Seconds, edTime.Unix())
+		}
+	}
+
 	//按金额、时间获取成交记录
 	matchRecords, err := getMatchRecordByOrderSn(stub, orderSn)
 	if err != nil {
 		return errors.New("StopAuction getMatchRecordByOrderSn err:" + err.Error())
 	}
+	isInMatchRecords := func(records []*MatchRecord, address common.Address) bool {
+		for _, re := range records {
+			if re.TakerAddress.Equal(address) {
+				return true
+			}
+		}
+		return false
+	}
+	if !invokeAddress.Equal(auction.Address) && !isFoundationInvoke(stub) && !isAuctionContractMgrAddress(stub) && !isInMatchRecords(matchRecords, invokeAddress) {
+		return errors.New("StopAuction addr are not the owner or not foundation or not manger")
+	}
+
 	maxRecord := getMaxAmountRecord(matchRecords)
 	if maxRecord == nil {
 		return errors.New("StopAuction, not find max amount record")
