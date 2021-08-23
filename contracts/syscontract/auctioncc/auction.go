@@ -7,10 +7,10 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/palletone/go-palletone/dag/modules"
 	"github.com/palletone/go-palletone/common"
-	"encoding/json"
-	"time"
 	"github.com/palletone/go-palletone/common/log"
+	"encoding/json"
 	"strconv"
+	"time"
 )
 
 var myContractAddr = syscontract.AuctionContractAddress.String()
