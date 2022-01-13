@@ -76,6 +76,10 @@ var (
 	//PCGTta3M4t3yXu8uRgkKvaWd2d8DSRr1tUD
 	AuctionContractAddress = common.HexToAddress("0x000000000000000000000000000000000000000E1C")
 
+	//16token交易
+	//PCGTta3M4t3yXu8uRgkKvaWd2d8DSt3GNej
+	TradeContractAddress = common.HexToAddress("0x00000000000000000000000000000000000000111C")
+
 	//15测试调试用
 	//PCGTta3M4t3yXu8uRgkKvaWd2d8DSfQdUHf
 	TestContractAddress = common.HexToAddress("0x000000000000000000000000000000000000000F1C")
