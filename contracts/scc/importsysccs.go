@@ -37,6 +37,7 @@ import (
 	votev1 "github.com/palletone/go-palletone/contracts/syscontract/vote/v1"
 	votev2 "github.com/palletone/go-palletone/contracts/syscontract/vote/v2"
 	"github.com/palletone/go-palletone/contracts/syscontract/auctioncc"
+	trade "github.com/palletone/go-palletone/contracts/syscontract/tokentradecc"
 )
 
 var systemChaincodes = []*SystemChaincode{
@@ -211,6 +212,18 @@ var systemChaincodes = []*SystemChaincode{
 		InitArgs:  [][]byte{},
 		Chaincode: &installcc.InstallMgr{},
 	},
+
+	//{
+	//	Id:        syscontract.TokenConversionContractAddress.Bytes(),
+	//	Enabled:   true,
+	//	Name:      "tokenConversion_sycc",
+	//	Path:      "./tokenConversion",
+	//	Version:   "ptn001",
+	//	InitArgs:  [][]byte{},
+	//	Chaincode: &tokenConversion.TokenConversion{},
+	//},
+
+
 	{
 		Id:        syscontract.AuctionContractAddress.Bytes(),
 		Enabled:   true,
@@ -220,6 +233,17 @@ var systemChaincodes = []*SystemChaincode{
 		InitArgs:  [][]byte{},
 		Chaincode: &auctioncc.AuctionMgr{},
 	},
+
+	{
+		Id:        syscontract.TradeContractAddress.Bytes(),
+		Enabled:   true,
+		Name:      "trade_sycc",
+		Path:      "./tokentradecc",
+		Version:   "ptn001",
+		InitArgs:  [][]byte{},
+		Chaincode: &trade.TokenTrade{},
+	},
+
 	//TODO add other system chaincodes ...
 }
 
