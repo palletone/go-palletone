@@ -20,7 +20,7 @@ type TradeOrder struct {
 	InAsset       *modules.Asset //转入Asset
 	InAmount      uint64         //挂单的金额
 	InUnCount     uint64         //未成交数量---want amount
-	Scale         string         //兑换比例
+	Scale         string         //兑换比例   //转换成assert decimal
 	WantAsset     *modules.Asset //交易asset
 	WantAmount    uint64         //挂单时想要多少金额//竞拍时起拍价
 	UnAmount      uint64         //未成交数量---want amount

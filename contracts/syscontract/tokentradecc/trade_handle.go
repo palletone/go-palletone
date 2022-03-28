@@ -15,11 +15,33 @@ import (
 func (p *TokenTrade) MakerTrade(stub shim.ChaincodeStubInterface, tradeType byte, wantAsset *modules.Asset, wantAmount decimal.Decimal, scale string, rewardAddress common.Address) error {
 	addr, err := stub.GetInvokeAddress()
 	if err != nil {
-		return errors.New("makerTrade, Invalid address string:" + err.Error())
+		return errors.New("MakerTrade, Invalid address string:" + err.Error())
 	}
+	if wantAsset == nil {
+		return errors.New("MakerTrade, Invalid address string")
+	}
+
 	inToken, inAmount, err := getPayToContract(stub)
 	if err != nil {
 		return err
+	}
+	mscale := ""
+	if scale == "" {
+		mscale = decimal.New(int64(inAmount), 0).Div(decimal.New(int64(wantAsset.Uint64Amount(wantAmount)), 0)).String()
+	} else {
+		sc, err := decimal.NewFromString(scale)
+		if err != nil {
+			log.Errorf("MakerTrade, scale to decimal err:%s", err)
+			return err
+		}
+		//检查scale的有效性
+		sc= sc.Mul(amt2AssetAmt(inToken, 1)).Div(amt2AssetAmt(wantAsset, 1))
+		if true != sc.Equal(decimal.New(int64(inAmount), 0).Div(decimal.New(int64(wantAsset.Uint64Amount(wantAmount)), 0))) {
+			err = fmt.Errorf("MakerTrade, scale[%s] not equal[%d][%d]", sc.String(), inAmount, wantAsset.Uint64Amount(wantAmount))
+			log.Error(err.Error())
+			return err
+		}
+		mscale = sc.String()
 	}
 
 	t, _ := stub.GetTxTimestamp(10)
@@ -30,7 +52,7 @@ func (p *TokenTrade) MakerTrade(stub shim.ChaincodeStubInterface, tradeType byte
 	order.InAsset = inToken
 	order.InAmount = inAmount
 	order.InUnCount = inAmount
-	order.Scale = scale
+	order.Scale = mscale
 	order.WantAsset = wantAsset
 	order.WantAmount = wantAsset.Uint64Amount(wantAmount)
 	order.UnAmount = order.WantAmount
@@ -56,18 +78,6 @@ func (p *TokenTrade) MakerTrade(stub shim.ChaincodeStubInterface, tradeType byte
 		order.TradeType, order.Address.String(), order.InAsset.String(), order.InAmount, order.InUnCount, order.WantAsset.String(),
 		order.WantAmount, order.Scale, order.UnAmount, order.RewardAddress.String(), order.TradeSn, order.Status, order.CreateTime)
 
-	//检查scale的有效性
-	sc, err := decimal.NewFromString(scale)
-	if err != nil {
-		log.Errorf("MakerTrade, scale to decimal err:%s", err)
-		return err
-	}
-	mscale := sc.Mul(amt2AssetAmt(inToken, 1)).Div(amt2AssetAmt(wantAsset, 1))
-	if true != mscale.Equal(decimal.New(int64(order.InAmount), 0).Div(decimal.New(int64(order.WantAmount), 0))) {
-		err = fmt.Errorf("MakerTrade, scale[%s] not equal[%d][%d]", scale, order.InAmount, order.WantAmount)
-		log.Error(err.Error())
-		return err
-	}
 
 	return p.AddTradeOrder(stub, order)
 }
@@ -102,8 +112,7 @@ func (p *TokenTrade) TakerTrade(stub shim.ChaincodeStubInterface, tradeType byte
 		return fmt.Errorf("TakerTrade[%s], decimal err: %s", orderSn, err.Error())
 	}
 
-	mscale := sc.Mul(amt2AssetAmt( trade.InAsset, 1)).Div(amt2AssetAmt(takerPayAsset, 1))
-	makerTradeCount := uint64(mscale.Mul(decimal.New(int64(takerTradeCount), 0)).IntPart()) //todo
+	makerTradeCount := uint64(sc.Mul(decimal.New(int64(takerTradeCount), 0)).IntPart()) //todo
 	//检查maker 返还金额是否足够
 	if makerTradeCount > trade.InUnCount {
 		return fmt.Errorf("TakerTrade[%s], makerTradeCount[%d] > trade.InUnCount[%d]", orderSn, makerTradeCount, trade.InUnCount)
