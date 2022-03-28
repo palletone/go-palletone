@@ -282,3 +282,13 @@ func string2decimal(data string) decimal.Decimal {
 func checkScaleParam() {
 
 }
+
+func amt2AssetAmt(asset *modules.Asset, amt uint64) decimal.Decimal {
+	dec := asset.GetDecimal()
+	damt := decimal.New(int64(amt),0)
+	for i := 0; i < int(dec); i++ {
+		damt = damt.Mul(decimal.New(10, 0))
+	}
+	//return uint64(damt.IntPart())
+	return damt
+}

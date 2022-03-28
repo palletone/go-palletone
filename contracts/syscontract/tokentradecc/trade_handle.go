@@ -21,6 +21,7 @@ func (p *TokenTrade) MakerTrade(stub shim.ChaincodeStubInterface, tradeType byte
 	if err != nil {
 		return err
 	}
+
 	t, _ := stub.GetTxTimestamp(10)
 	txid := stub.GetTxID()
 	order := &TradeOrder{}
@@ -38,7 +39,7 @@ func (p *TokenTrade) MakerTrade(stub shim.ChaincodeStubInterface, tradeType byte
 	order.Status = 1
 	order.CreateTime = time.Unix(t.Seconds, 0).Format(TimeFormt) //time.Unix(t.Seconds, 0).String()
 
-	log.Debugf("makerTrade:\n"+
+	log.Debugf("MakerTrade:\n"+
 		"TradeType:%d\n"+
 		"Address:%s\n"+
 		"InAsset:%s\n"+
@@ -56,14 +57,14 @@ func (p *TokenTrade) MakerTrade(stub shim.ChaincodeStubInterface, tradeType byte
 		order.WantAmount, order.Scale, order.UnAmount, order.RewardAddress.String(), order.TradeSn, order.Status, order.CreateTime)
 
 	//检查scale的有效性
-	sc, err := decimal.NewFromString(order.Scale)
+	sc, err := decimal.NewFromString(scale)
 	if err != nil {
-		log.Errorf("makerTrade, scale to decimal err:%s", err)
+		log.Errorf("MakerTrade, scale to decimal err:%s", err)
 		return err
 	}
-
-	if true != sc.Equal(decimal.New(int64(order.InAmount), 0).Div(decimal.New(int64(order.WantAmount), 0))) {
-		err = fmt.Errorf("makerTrade, scale[%s] not equal[%d][%d]", scale, order.InAmount, order.WantAmount)
+	mscale := sc.Mul(amt2AssetAmt(inToken, 1)).Div(amt2AssetAmt(wantAsset, 1))
+	if true != mscale.Equal(decimal.New(int64(order.InAmount), 0).Div(decimal.New(int64(order.WantAmount), 0))) {
+		err = fmt.Errorf("MakerTrade, scale[%s] not equal[%d][%d]", scale, order.InAmount, order.WantAmount)
 		log.Error(err.Error())
 		return err
 	}
@@ -80,7 +81,6 @@ func (p *TokenTrade) TakerTrade(stub shim.ChaincodeStubInterface, tradeType byte
 	if trade.Status != 1 {
 		return fmt.Errorf("TakerTrade[%s],trade status[%d] is not active  ", trade.Status)
 	}
-
 	takerPayAsset, takerPayAmount, err := getPayToContract(stub)
 	if err != nil {
 		return err
@@ -89,11 +89,8 @@ func (p *TokenTrade) TakerTrade(stub shim.ChaincodeStubInterface, tradeType byte
 	if !takerPayAsset.Equal(trade.WantAsset) {
 		return fmt.Errorf("TakerTrade[%s], current asset not match takerFix order want asset", orderSn)
 	}
-
-	//DunAmount := trade.unAmount //之前未成交的数额
 	var takerTradeCount uint64
 	takerTradeCount = 0
-
 	//检查金额是否满足
 	if takerPayAmount < trade.UnAmount { //未完全成交
 		takerTradeCount = takerPayAmount
@@ -105,14 +102,14 @@ func (p *TokenTrade) TakerTrade(stub shim.ChaincodeStubInterface, tradeType byte
 		return fmt.Errorf("TakerTrade[%s], decimal err: %s", orderSn, err.Error())
 	}
 
-	makerTradeCount := uint64(sc.Mul(decimal.New(int64(takerTradeCount), 0)).IntPart()) //todo
+	mscale := sc.Mul(amt2AssetAmt( trade.InAsset, 1)).Div(amt2AssetAmt(takerPayAsset, 1))
+	makerTradeCount := uint64(mscale.Mul(decimal.New(int64(takerTradeCount), 0)).IntPart()) //todo
 	//检查maker 返还金额是否足够
 	if makerTradeCount > trade.InUnCount {
 		return fmt.Errorf("TakerTrade[%s], makerTradeCount[%d] > trade.InUnCount[%d]", orderSn, makerTradeCount, trade.InUnCount)
 	}
 	//计算奖励和销毁的费用
 	rewardAmount, destructionAmount := calculateFeeRate(stub, trade)
-
 	now, err := stub.GetTxTimestamp(10)
 	if err != nil {
 		return fmt.Errorf("TakerTrade[%s], GetTxTimestamp err:%s", orderSn, err.Error())
@@ -192,25 +189,25 @@ func (p *TokenTrade) TakerTrade(stub shim.ChaincodeStubInterface, tradeType byte
 func (p *TokenTrade) Cancel(stub shim.ChaincodeStubInterface, orderSn string) error {
 	trade, err := getTradeRecordBySn(stub, orderSn)
 	if err != nil {
-		return errors.New("tokenTrade, invalid/sold out/canceled trade SN:" + orderSn)
+		return errors.New("Cancel, invalid/sold out/canceled trade SN:" + orderSn)
 	}
 	//检查挂单状态是否有效
 	if trade.Status != 1 {
-		return errors.New("tokenTrade,  trade.Status is invalid/ trade SN:" + orderSn)
+		return errors.New("Cancel,  trade.Status is invalid/ trade SN:" + orderSn)
 	}
 	//检查是否是Maker或者基金会或者管理地址
 	addr, err := stub.GetInvokeAddress()
 	if !addr.Equal(trade.Address) && !isFoundationInvoke(stub) && !isTradeContractMgrAddress(stub) {
-		return fmt.Errorf("tokenTrade, you are not the owner or not foundation, invoke addr[%s]-trade.Address[%s]", addr.String(), trade.Address.String())
+		return fmt.Errorf("Cancel, you are not the owner or not foundation, invoke addr[%s]-trade.Address[%s]", addr.String(), trade.Address.String())
 	}
 	err = cancelTradeOrder(stub, trade)
 	if err != nil {
 		return err
 	}
 
-	log.Debugf("tokenTrade, cancel count :%d", trade.InUnCount)
+	log.Debugf("Cancel, cancel count :%d", trade.InUnCount)
 	if trade.InUnCount <= 0 { //没有返还金额
-		log.Debugf("tokenTrade, returnCount is 0")
+		log.Debugf("Cancel, returnCount is 0")
 		return nil
 	}
 	_, contractAddr := stub.GetContractID()
@@ -246,11 +243,11 @@ func (p *TokenTrade) Payout(stub shim.ChaincodeStubInterface, addr common.Addres
 func (p *TokenTrade) AddTradeOrder(stub shim.ChaincodeStubInterface, order *TradeOrder) error {
 	addr := order.Address
 	if !KycUser(addr) {
-		return errors.New("Please verify your ID")
+		return errors.New("AddTradeOrder,Please verify your ID")
 	}
 	err := SaveTradeOrder(stub, order)
 	if err != nil {
-		return errors.New("saveRecord error:" + err.Error())
+		return errors.New("AddTradeOrder, saveRecord error:" + err.Error())
 	}
 	return nil
 }
