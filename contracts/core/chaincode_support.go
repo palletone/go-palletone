@@ -407,7 +407,7 @@ func (chaincodeSupport *ChaincodeSupport) getLaunchConfigs(cccid *ccprovider.CCC
 	} else {
 		envs = append(envs, "CORE_PEER_TLS_ENABLED=false")
 	}
-	chaincodeSupport.chaincodeLogLevel = "info"
+	//chaincodeSupport.chaincodeLogLevel = "info"
 	if chaincodeSupport.chaincodeLogLevel != "" {
 		envs = append(envs, "CORE_CHAINCODE_LOGGING_LEVEL="+chaincodeSupport.chaincodeLogLevel)
 	}
@@ -426,7 +426,7 @@ func (chaincodeSupport *ChaincodeSupport) getLaunchConfigs(cccid *ccprovider.CCC
 	case pb.PtnChaincodeSpec_GOLANG, pb.PtnChaincodeSpec_CAR:
 		//args = []string{"chaincode", fmt.Sprintf("-peer.address=%s", chaincodeSupport.peerAddress)}
 		//args = []string{"/bin/sh", "-c", "cd / && tar -xvf binpackage.tar -C $GOPATH/bin && rm binpackage.tar && rm Dockerfile && cd $GOPATH/bin && ./chaincode"}
-		args = []string{"/bin/sh", "-c", "cd / && tar -xvf binpackage.tar -C $GOPATH/bin && cd $GOPATH/bin && chmod 777 -R ./chaincode && ./chaincode"}
+		args = []string{"/bin/sh", "-c", "cd / && tar -xvf binpackage.tar -C $GOPATH/bin && cd $GOPATH/bin && ./chaincode"}
 	case pb.PtnChaincodeSpec_JAVA:
 		args = []string{"java", "-jar", "chaincode.jar", "--peerAddress", chaincodeSupport.peerAddress}
 	case pb.PtnChaincodeSpec_NODE:
