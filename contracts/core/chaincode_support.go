@@ -407,7 +407,7 @@ func (chaincodeSupport *ChaincodeSupport) getLaunchConfigs(cccid *ccprovider.CCC
 	} else {
 		envs = append(envs, "CORE_PEER_TLS_ENABLED=false")
 	}
-
+	chaincodeSupport.chaincodeLogLevel = "info"
 	if chaincodeSupport.chaincodeLogLevel != "" {
 		envs = append(envs, "CORE_CHAINCODE_LOGGING_LEVEL="+chaincodeSupport.chaincodeLogLevel)
 	}
@@ -426,7 +426,7 @@ func (chaincodeSupport *ChaincodeSupport) getLaunchConfigs(cccid *ccprovider.CCC
 	case pb.PtnChaincodeSpec_GOLANG, pb.PtnChaincodeSpec_CAR:
 		//args = []string{"chaincode", fmt.Sprintf("-peer.address=%s", chaincodeSupport.peerAddress)}
 		//args = []string{"/bin/sh", "-c", "cd / && tar -xvf binpackage.tar -C $GOPATH/bin && rm binpackage.tar && rm Dockerfile && cd $GOPATH/bin && ./chaincode"}
-		args = []string{"/bin/sh", "-c", "cd / && tar -xvf binpackage.tar -C $GOPATH/bin && cd $GOPATH/bin && ./chaincode"}
+		args = []string{"/bin/sh", "-c", "cd / && tar -xvf binpackage.tar -C $GOPATH/bin && cd $GOPATH/bin && chmod 777 -R ./chaincode && ./chaincode"}
 	case pb.PtnChaincodeSpec_JAVA:
 		args = []string{"java", "-jar", "chaincode.jar", "--peerAddress", chaincodeSupport.peerAddress}
 	case pb.PtnChaincodeSpec_NODE:
@@ -557,7 +557,7 @@ func (chaincodeSupport *ChaincodeSupport) launchAndWaitForRegister(ctxt context.
 			}
 		}()
 
-		//log.Debugf("launch info: %+v", launcher)
+		log.Debugf("launch info: %+v", launcher)
 		resp, err := launcher.launch(ctxt, notfy)
 		if err != nil || (resp != nil && resp.(controller.VMCResp).Err != nil) {
 			if err == nil {
@@ -572,6 +572,7 @@ func (chaincodeSupport *ChaincodeSupport) launchAndWaitForRegister(ctxt context.
 			//the launch will be cleaned up
 			err = errors.WithMessage(err, "error starting container")
 		}
+		log.Debugf("")
 	}()
 
 	var err error
@@ -619,7 +620,7 @@ func (chaincodeSupport *ChaincodeSupport) Stop(context context.Context, cccid *c
 	//sir := container.StopImageReq{CCID: ccintf.CCID{ChaincodeSpec: cds.ChaincodeSpec, NetworkID: chaincodeSupport.peerNetworkID, PeerID: chaincodeSupport.peerID, Version: cccid.Version}, Timeout: 0}
 	// The line below is left for debugging. It replaces the line above to keep
 	// the chaincode container around to give you a chance to get data
-	sir := controller.StopImageReq{CCID: ccintf.CCID{ChaincodeSpec: cds.ChaincodeSpec, NetworkID: chaincodeSupport.peerNetworkID, PeerID: chaincodeSupport.peerID, ChainID: "" /*cccid.ChainID*/, Version: cccid.Version}, Timeout: 0, Dontremove: dontRmCon}
+	sir := controller.StopImageReq{CCID: ccintf.CCID{ChaincodeSpec: cds.ChaincodeSpec, NetworkID: chaincodeSupport.peerNetworkID, PeerID: chaincodeSupport.peerID, ChainID: "" /*cccid.ChainID*/ , Version: cccid.Version}, Timeout: 0, Dontremove: dontRmCon}
 	vmtype := chaincodeSupport.getVMType(cds)
 
 	_, err := controller.VMCProcess(context, vmtype, sir)
@@ -975,5 +976,3 @@ func getLogFromContainer(name string) string {
 	}
 	return ""
 }
-
-
