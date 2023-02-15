@@ -19,14 +19,14 @@ require (
 	github.com/fjl/memsize v0.0.0-20180418122429-ca190fb6ffbc
 	github.com/fsouza/go-dockerclient v1.4.2
 	github.com/golang/mock v1.3.1
-	github.com/golang/protobuf v1.3.2
+	github.com/golang/protobuf v1.4.3
 	github.com/golang/snappy v0.0.1
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/hashicorp/golang-lru v0.5.3
 	github.com/huin/goupnp v1.0.0
 	github.com/influxdata/influxdb v0.0.0-20180221223340-01288bdb0883
 	github.com/jackpal/go-nat-pmp v1.0.1
-	github.com/julienschmidt/httprouter v1.2.0
+	github.com/julienschmidt/httprouter v1.3.0
 	github.com/looplab/fsm v0.0.0-20180515091235-f980bdb68a89
 	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/martinlindhe/base36 v0.0.0-20180729042928-5cda0030da17
@@ -40,8 +40,8 @@ require (
 	github.com/palletone/fabric-adaptor v0.0.0-20200331153353-6319b6f26aa4
 	github.com/pborman/uuid v1.2.0
 	github.com/peterh/liner v0.0.0-20170902204657-a37ad3984311
-	github.com/pkg/errors v0.8.1
-	github.com/prometheus/client_golang v1.0.0
+	github.com/pkg/errors v0.9.1
+	github.com/prometheus/client_golang v1.11.1
 	github.com/prometheus/tsdb v0.10.0
 	github.com/rjeczalik/notify v0.9.2
 	github.com/robertkrimen/otto v0.0.0-20170205013659-6a77b7cbc37d
@@ -52,7 +52,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.0.2
-	github.com/stretchr/testify v1.3.0
+	github.com/stretchr/testify v1.4.0
 	github.com/syndtr/goleveldb v1.0.0
 	github.com/tyler-smith/go-bip32 v0.0.0-20170922074101-2c9cfd177564
 	github.com/tyler-smith/go-bip39 v1.0.2
@@ -60,11 +60,11 @@ require (
 	go.uber.org/atomic v1.5.1 // indirect
 	go.uber.org/multierr v1.4.0 // indirect
 	go.uber.org/zap v0.0.0-20180531205250-88c71ae3d702
-	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4
-	golang.org/x/net v0.0.0-20190724013045-ca1201d0de80
+	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+	golang.org/x/net v0.0.0-20200625001655-4c5254603344
 	golang.org/x/tools v0.0.0-20191029190741-b9c20aec41a5
 	google.golang.org/grpc v1.23.0
-	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127
+	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15
 	gopkg.in/errgo.v1 v1.0.1
 	gopkg.in/karalabe/cookiejar.v2 v2.0.0-20150724131613-8dcd6a7f4951
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0-20170531160350-a96e63847dc3
